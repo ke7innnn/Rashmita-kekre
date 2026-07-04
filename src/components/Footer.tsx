@@ -18,17 +18,17 @@ export default function Footer() {
           <div className="footer-column">
             <h4 className="footer-heading">Services</h4>
             <ul>
-              <li><a href="/#assessment">Health Scan</a></li>
-              <li><a href="/#assessment">Postural Analysis</a></li>
-              <li><a href="/#assessment">Mobility Screening</a></li>
-              <li><a href="/#assessment">Strength Testing</a></li>
+              <li><a href="/services/health-scan">Health Scan</a></li>
+              <li><a href="/services/postural-analysis">Postural Analysis</a></li>
+              <li><a href="/services/mobility-screening">Mobility Screening</a></li>
+              <li><a href="/services/strength-testing">Strength Testing</a></li>
             </ul>
           </div>
           
           <div className="footer-column">
             <h4 className="footer-heading">Company</h4>
             <ul>
-              <li><a href="/#about">About us</a></li>
+              <li><a href="/about">About us</a></li>
               <li><a href="/careers">Careers</a></li>
               <li><a href="/contact">Contact</a></li>
               <li><a href="/press">Press</a></li>
