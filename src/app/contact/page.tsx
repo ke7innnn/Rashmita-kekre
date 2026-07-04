@@ -4,7 +4,13 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send, Check } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, Check, ChevronDown, MessageSquare, ShieldCheck } from 'lucide-react';
+
+const FAQS = [
+  { q: 'How long does a HEALTH 360 assessment take?', a: 'The screening itself takes around 45 minutes, followed by a 15-minute consultation with a senior physiotherapist to walk you through your dashboard readings and custom plan.' },
+  { q: 'Do you accept corporate group bookings?', a: 'Yes! We coordinate wellness assessments for corporate teams and athletic clubs. Contact us at partners@health360.clinic to coordinate schedules.' },
+  { q: 'Do I need a prescription to book a session?', a: 'No, you do not need a physician prescription. Our physiotherapists carry out extensive movement analyses to diagnose and treat limitations.' }
+];
 
 export default function ContactPage() {
   const [submitted, setSubmitted] = useState(false);
@@ -12,6 +18,7 @@ export default function ContactPage() {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,11 +31,11 @@ export default function ContactPage() {
     <>
       <Header />
       <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
-        <section style={{ padding: '4rem 0 6rem' }}>
+        <section style={{ padding: '4rem 0 6rem', background: 'radial-gradient(circle at bottom left, rgba(0, 159, 199, 0.04), transparent 50%)' }}>
           <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
             
             {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
               <motion.p 
                 className="subtitle uppercase"
                 initial={{ opacity: 0, y: 15 }}
@@ -38,44 +45,44 @@ export default function ContactPage() {
                 Get in Touch
               </motion.p>
               <motion.h1 
-                style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem' }}
+                style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', letterSpacing: '-0.03em' }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.1 }}
               >
-                We're here to help
+                Connect with our clinic
               </motion.h1>
               <motion.p 
-                style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.5 }}
+                style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', maxWidth: '650px', margin: '0 auto', lineHeight: 1.5 }}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: 0.2 }}
               >
-                Have questions about our assessments or want to consult with a specialist? Fill out the form or reach us directly.
+                Have questions about our biometrics tracking, schedules, or recovery programs? Fill out our secure form or contact us directly.
               </motion.p>
             </div>
 
             {/* Grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
               gap: '3rem',
               alignItems: 'start'
             }}>
               
-              {/* Left Side: Contact Information */}
+              {/* Left Side: Contact Information & FAQs */}
               <motion.div 
-                style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}
+                style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
                 initial={{ opacity: 0, x: -30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
               >
                 {/* Contact Card */}
                 <div className="glass rounded-l" style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                  <h3 style={{ fontSize: '1.5rem', fontWeight: 500 }}>Clinic Details</h3>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 500, borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '1rem' }}>Clinic Details</h3>
                   
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px' }}><MapPin size={24} /></div>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><MapPin size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Address</p>
                       <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
@@ -85,8 +92,8 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px' }}><Phone size={24} /></div>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Phone size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Phone</p>
                       <a href="tel:+919876543210" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
@@ -95,8 +102,8 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px' }}><Mail size={24} /></div>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Mail size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Email</p>
                       <a href="mailto:hello@health360.clinic" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
@@ -105,16 +112,69 @@ export default function ContactPage() {
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px' }}><Clock size={24} /></div>
+                  <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Clock size={20} /></div>
                     <div>
-                      <p style={{ fontWeight: 500, marginBottom: '4px' }}>Hours</p>
+                      <p style={{ fontWeight: 500, marginBottom: '4px' }}>Clinic Hours</p>
                       <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.4 }}>
                         Mon - Sat: 9:00 AM - 1:00 PM, 5:00 PM - 9:00 PM<br />
                         Sun: Closed
                       </p>
                     </div>
                   </div>
+                </div>
+
+                {/* FAQ Sub-Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 500, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <MessageSquare size={20} style={{ color: 'var(--brand)' }} /> Booking FAQs
+                  </h3>
+                  
+                  {FAQS.map((faq, idx) => (
+                    <div 
+                      key={idx} 
+                      className="glass rounded-m" 
+                      style={{ overflow: 'hidden', border: '1px solid rgba(0,0,0,0.04)' }}
+                    >
+                      <button 
+                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                        style={{
+                          width: '100%',
+                          padding: '1.25rem 1.5rem',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          textAlign: 'left',
+                          fontWeight: 500,
+                          fontSize: '1rem',
+                          background: 'none',
+                          border: 'none',
+                          color: 'inherit',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        <span>{faq.q}</span>
+                        <ChevronDown 
+                          size={18} 
+                          style={{ 
+                            transition: 'transform 0.2s', 
+                            transform: openFaq === idx ? 'rotate(180deg)' : 'rotate(0deg)',
+                            color: 'var(--brand)'
+                          }} 
+                        />
+                      </button>
+                      {openFaq === idx && (
+                        <motion.div 
+                          style={{ padding: '0 1.5rem 1.25rem', color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.5 }}
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          {faq.a}
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </motion.div>
 
@@ -127,31 +187,32 @@ export default function ContactPage() {
                 <div className="glass rounded-l" style={{ padding: '2.5rem' }}>
                   {submitted ? (
                     <motion.div 
-                      style={{ textAlign: 'center', padding: '3rem 0' }}
+                      style={{ textAlign: 'center', padding: '4rem 0' }}
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                     >
                       <div style={{ 
-                        width: '64px', 
-                        height: '64px', 
+                        width: '72px', 
+                        height: '72px', 
                         borderRadius: '50%', 
                         background: 'var(--brand)', 
                         color: 'white', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
-                        margin: '0 auto 1.5rem' 
+                        margin: '0 auto 1.5rem',
+                        boxShadow: '0 8px 24px rgba(0, 159, 199, 0.2)'
                       }}>
-                        <Check size={32} />
+                        <Check size={36} />
                       </div>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.5rem' }}>Inquiry Sent!</h3>
-                      <p style={{ color: 'var(--muted-foreground)' }}>
-                        Thank you for reaching out, {name}. A member of our clinical team will get back to you shortly.
+                      <h3 style={{ fontSize: '1.65rem', fontWeight: 500, marginBottom: '0.5rem' }}>Message Received!</h3>
+                      <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
+                        Thank you for contacting HEALTH 360, {name}. A clinic specialist will respond at your phone or email details within 12 hours.
                       </p>
                     </motion.div>
                   ) : (
                     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '0.5rem' }}>Send a Message</h3>
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: 500 }}>Send a secure message</h3>
                       
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         <label htmlFor="name" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Name *</label>
@@ -165,7 +226,7 @@ export default function ContactPage() {
                             padding: '12px 16px',
                             borderRadius: '12px',
                             border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.5)',
+                            background: 'rgba(255, 255, 255, 0.6)',
                             fontSize: '1rem',
                             outline: 'none',
                             fontFamily: 'inherit'
@@ -185,7 +246,7 @@ export default function ContactPage() {
                             padding: '12px 16px',
                             borderRadius: '12px',
                             border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.5)',
+                            background: 'rgba(255, 255, 255, 0.6)',
                             fontSize: '1rem',
                             outline: 'none',
                             fontFamily: 'inherit'
@@ -205,7 +266,7 @@ export default function ContactPage() {
                             padding: '12px 16px',
                             borderRadius: '12px',
                             border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.5)',
+                            background: 'rgba(255, 255, 255, 0.6)',
                             fontSize: '1rem',
                             outline: 'none',
                             fontFamily: 'inherit'
@@ -214,7 +275,7 @@ export default function ContactPage() {
                       </div>
 
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="message" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Message / Concern</label>
+                        <label htmlFor="message" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Concern / Message</label>
                         <textarea 
                           id="message"
                           rows={4}
@@ -224,7 +285,7 @@ export default function ContactPage() {
                             padding: '12px 16px',
                             borderRadius: '12px',
                             border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.5)',
+                            background: 'rgba(255, 255, 255, 0.6)',
                             fontSize: '1rem',
                             outline: 'none',
                             fontFamily: 'inherit',
@@ -233,12 +294,17 @@ export default function ContactPage() {
                         />
                       </div>
 
+                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,0.01)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.03)' }}>
+                        <ShieldCheck size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />
+                        <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>Clinical grade security. Your message is encrypted.</span>
+                      </div>
+
                       <button 
                         type="submit" 
                         className="btn-primary" 
-                        style={{ width: '100%', marginTop: '0.75rem', gap: '8px' }}
+                        style={{ width: '100%', marginTop: '0.5rem', gap: '8px' }}
                       >
-                        Send Inquiry <Send size={18} />
+                        Send message <Send size={16} />
                       </button>
                     </form>
                   )}

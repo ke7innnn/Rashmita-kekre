@@ -3,7 +3,8 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { motion } from 'framer-motion';
-import { ArrowRight, Briefcase, MapPin, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { ArrowRight, Briefcase, MapPin, Clock, Heart, Award, Sparkles, Smile, GraduationCap, Coffee, ChevronDown } from 'lucide-react';
 
 const POSITIONS = [
   {
@@ -29,14 +30,39 @@ const POSITIONS = [
   }
 ];
 
+const PERKS = [
+  { icon: <Heart size={24} />, title: 'Premium Health Coverage', desc: 'Comprehensive medical insurance covering you and your immediate dependents.' },
+  { icon: <Award size={24} />, title: 'Performance Bonuses', desc: 'Quarterly financial rewards based on client satisfaction scores and clinical outcomes.' },
+  { icon: <GraduationCap size={24} />, title: 'Education & Training Fund', desc: 'Annual budget for specialized physiotherapy certifications, courses, and seminars.' },
+  { icon: <Sparkles size={24} />, title: 'State-of-the-Art Tech', desc: 'Work with the latest AI computer-vision systems, force plates, and custom software.' },
+  { icon: <Smile size={24} />, title: 'Wellness Program', desc: 'Free monthly diagnostic scans, physiotherapy sessions, and customized physical therapy.' },
+  { icon: <Coffee size={24} />, title: 'Flexible Time-off', desc: 'Generous paid leaves, wellness days, and a structured, balanced weekly schedule.' }
+];
+
+const STEPS = [
+  { number: '01', title: 'Online Application', desc: 'Submit your resume and brief clinical interests through our application portal.' },
+  { number: '02', title: 'Technical Call', desc: 'A 30-minute discussion regarding your clinical approach, experience, and biomechanics alignment.' },
+  { number: '03', title: 'In-Clinic Assessment', desc: 'Visit our flagship clinic, run a mock assessment, and demonstrate your hands-on therapy methods.' },
+  { number: '04', title: 'Final Review & Offer', desc: 'Align on clinical responsibilities, career growth paths, and receive a formal offer.' }
+];
+
+const FAQS = [
+  { q: 'What is the clinical training timeline for new hires?', a: 'All clinical team members undergo a comprehensive 2-week training program on our proprietary screening software, AI cameras, and dynamometer devices, led by Dr. Rashmita.' },
+  { q: 'Is there a path for career progression?', a: 'Absolutely. We offer paths from Junior Physiotherapist to Senior Clinician, Performance Lab Lead, and Clinic Operations Manager as we scale our locations.' },
+  { q: 'Do you support relocation to Mumbai?', a: 'For senior clinical roles, we offer structured relocation assistance packages covering travel and initial temporary housing support.' }
+];
+
 export default function CareersPage() {
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
+
   return (
     <>
       <Header />
       <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+        
         {/* Hero Section */}
-        <section style={{ padding: '4rem 0 2rem' }}>
-          <div className="xpad" style={{ textAlign: 'center', maxWidth: '800px', margin: '0 auto' }}>
+        <section style={{ padding: '5rem 0 3rem', background: 'radial-gradient(circle at top right, rgba(0, 159, 199, 0.05), transparent 60%)' }}>
+          <div className="xpad" style={{ textAlign: 'center', maxWidth: '850px', margin: '0 auto' }}>
             <motion.p 
               className="subtitle uppercase"
               initial={{ opacity: 0, y: 15 }}
@@ -46,12 +72,12 @@ export default function CareersPage() {
               Careers at HEALTH 360
             </motion.p>
             <motion.h1 
-              style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', lineHeight: 1.1 }}
+              style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', lineHeight: 1.1, letterSpacing: '-0.03em' }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              Join the future of physiotherapy
+              Redefine physical wellness with us
             </motion.h1>
             <motion.p 
               style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', lineHeight: 1.6 }}
@@ -59,71 +85,86 @@ export default function CareersPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              We are merging expert physiotherapy with state-of-the-art biometrics tracking. Come help us redefine movement, recovery, and human performance.
+              We are merging clinical expert physiotherapy with real-time biometric datasets. Join a team dedicated to movement longevity and patient-first innovation.
             </motion.p>
           </div>
         </section>
 
-        {/* Culture & Benefits */}
-        <section style={{ padding: '3rem 0' }}>
-          <div className="xpad">
+        {/* Perks & Benefits */}
+        <section style={{ padding: '4rem 0' }}>
+          <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>The Experience</p>
+              <h2 style={{ fontSize: '2.25rem', fontWeight: 500, marginTop: '0.5rem' }}>Perks & Benefits</h2>
+            </div>
+            
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: '2rem',
-              marginTop: '2rem'
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '2rem'
             }}>
-              <motion.div 
-                className="glass rounded-l" 
-                style={{ padding: '2.5rem' }}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '1rem' }}>Patient-First Innovation</h3>
-                <p style={{ color: 'var(--muted-foreground)' }}>
-                  We spend double the industry standard time with patients to build genuine relationships and craft precise, personalized recovery actions.
-                </p>
-              </motion.div>
+              {PERKS.map((perk, idx) => (
+                <motion.div 
+                  key={idx}
+                  className="glass rounded-l" 
+                  style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                  initial={{ opacity: 0, y: 25 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, delay: idx * 0.05 }}
+                >
+                  <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                    {perk.icon}
+                  </div>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, marginTop: '0.5rem' }}>{perk.title}</h3>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                    {perk.desc}
+                  </p>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-              <motion.div 
-                className="glass rounded-l" 
-                style={{ padding: '2.5rem' }}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '1rem' }}>Modern Workspace</h3>
-                <p style={{ color: 'var(--muted-foreground)' }}>
-                  Work in a sleek, beautifully designed clinic powered by proprietary screening tech, premium gym installations, and streamlined in-house apps.
-                </p>
-              </motion.div>
+        {/* Hiring Process */}
+        <section style={{ padding: '4rem 0', background: 'rgba(0,0,0,0.01)', borderTop: '1px solid rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+          <div className="xpad" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Journey together</p>
+              <h2 style={{ fontSize: '2.25rem', fontWeight: 500, marginTop: '0.5rem' }}>The Hiring Process</h2>
+            </div>
 
-              <motion.div 
-                className="glass rounded-l" 
-                style={{ padding: '2.5rem' }}
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <h3 style={{ fontSize: '1.5rem', fontWeight: 500, marginBottom: '1rem' }}>Constant Growth</h3>
-                <p style={{ color: 'var(--muted-foreground)' }}>
-                  Receive allowances for certifications, attend regular biomechanics training workshops, and work alongside leading clinical experts.
-                </p>
-              </motion.div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem', position: 'relative' }}>
+              {STEPS.map((step, idx) => (
+                <motion.div 
+                  key={idx}
+                  className="glass rounded-m"
+                  style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.75rem', position: 'relative' }}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                >
+                  <span style={{ fontSize: '2.5rem', fontWeight: 700, color: 'rgba(0,159,199,0.15)', lineHeight: 1 }}>
+                    {step.number}
+                  </span>
+                  <h3 style={{ fontSize: '1.2rem', fontWeight: 500 }}>{step.title}</h3>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4 }}>
+                    {step.desc}
+                  </p>
+                </motion.div>
+              ))}
             </div>
           </div>
         </section>
 
         {/* Job Listings */}
-        <section style={{ padding: '4rem 0 6rem' }}>
+        <section style={{ padding: '5rem 0 4rem' }}>
           <div className="xpad" style={{ maxWidth: '900px', margin: '0 auto' }}>
-            <h2 style={{ fontSize: '2rem', fontWeight: 500, marginBottom: '2.5rem', textAlign: 'center' }}>
-              Open Positions
-            </h2>
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Join the team</p>
+              <h2 style={{ fontSize: '2.25rem', fontWeight: 500, marginTop: '0.5rem' }}>Open Roles</h2>
+            </div>
             
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {POSITIONS.map((job, idx) => (
@@ -148,7 +189,7 @@ export default function CareersPage() {
                       <span className="subtitle uppercase" style={{ fontSize: '0.75rem', letterSpacing: '0.1em' }}>{job.department}</span>
                       <h3 style={{ fontSize: '1.35rem', fontWeight: 500, marginTop: '0.25rem' }}>{job.title}</h3>
                     </div>
-                    <button className="btn-primary" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                    <button className="btn-primary" style={{ padding: '10px 20px', fontSize: '0.95rem' }}>
                       Apply <ArrowRight size={16} />
                     </button>
                   </div>
@@ -170,6 +211,64 @@ export default function CareersPage() {
             </div>
           </div>
         </section>
+
+        {/* Careers FAQs */}
+        <section style={{ padding: '3rem 0 6rem' }}>
+          <div className="xpad" style={{ maxWidth: '800px', margin: '0 auto' }}>
+            <h2 style={{ fontSize: '1.75rem', fontWeight: 500, marginBottom: '2rem', textAlign: 'center' }}>
+              Frequently Asked Questions
+            </h2>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {FAQS.map((faq, idx) => (
+                <div 
+                  key={idx} 
+                  className="glass rounded-m" 
+                  style={{ overflow: 'hidden', border: '1px solid rgba(0,0,0,0.04)' }}
+                >
+                  <button 
+                    onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                    style={{
+                      width: '100%',
+                      padding: '1.5rem',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      textAlign: 'left',
+                      fontWeight: 500,
+                      fontSize: '1.05rem',
+                      background: 'none',
+                      border: 'none',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit'
+                    }}
+                  >
+                    <span>{faq.q}</span>
+                    <ChevronDown 
+                      size={20} 
+                      style={{ 
+                        transition: 'transform 0.2s', 
+                        transform: openFaq === idx ? 'rotate(180deg)' : 'rotate(0deg)',
+                        color: 'var(--brand)'
+                      }} 
+                    />
+                  </button>
+                  {openFaq === idx && (
+                    <motion.div 
+                      style={{ padding: '0 1.5rem 1.5rem', color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      {faq.a}
+                    </motion.div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
       </main>
       <Footer />
     </>
