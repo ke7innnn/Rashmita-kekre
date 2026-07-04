@@ -137,65 +137,7 @@ export default function MobilityScreeningPage() {
           </div>
         </section>
 
-        {/* Mock Report Card */}
-        <section style={{ padding: '4rem 0' }}>
-          <div className="xpad" style={{ maxWidth: '850px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
-              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Client Dashboard</p>
-              <h2 style={{ fontSize: '2rem', fontWeight: 500, marginTop: '0.5rem' }}>Sample Mobility Report Card</h2>
-            </div>
 
-            <motion.div 
-              className="glass rounded-l"
-              style={{ padding: '2.5rem', border: '1px solid rgba(0, 159, 199, 0.15)', boxShadow: '0 20px 40px rgba(0, 159, 199, 0.03)' }}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.7 }}
-            >
-              <div style={{ display: 'flex', justifySelf: 'stretch', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(0,0,0,0.06)', paddingBottom: '1.25rem', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--brand)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <User size={20} />
-                  </div>
-                  <div>
-                    <h3 style={{ fontSize: '1.15rem', fontWeight: 500 }}>Alex Rivers</h3>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>Assessment ID: H360-9824</p>
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 14px', background: 'rgba(0,159,199,0.06)', borderRadius: '9999px', fontSize: '0.85rem', color: 'var(--brand)', fontWeight: 500 }}>
-                  <ActivitySquare size={16} /> Mobility Score: 88/100
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '2rem' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Shoulder Flexion (L / R)</span>
-                  <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)' }}>174° / 176°</span>
-                  <div style={{ height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: '95%', height: '100%', background: 'var(--brand)' }}></div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Thoracic Extension</span>
-                  <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)' }}>42°</span>
-                  <div style={{ height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: '70%', height: '100%', background: 'var(--brand)' }}></div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', textTransform: 'uppercase' }}>Hip Flexion ROM</span>
-                  <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--foreground)' }}>118°</span>
-                  <div style={{ height: '6px', background: 'rgba(0,0,0,0.05)', borderRadius: '3px', overflow: 'hidden' }}>
-                    <div style={{ width: '90%', height: '100%', background: 'var(--brand)' }}></div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        </section>
 
         {/* What to Expect (Timeline) */}
         <section style={{ padding: '4rem 0', background: 'rgba(0,0,0,0.01)', borderTop: '1px solid rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
