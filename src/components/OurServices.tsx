@@ -172,6 +172,29 @@ export default function OurServices({ onClose }: OurServicesProps) {
               );
             })}
           </motion.div>
+
+          {/* Adjunct Services & Outcome Goals */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: '2.5rem',
+            marginTop: '4.5rem',
+            textAlign: 'left'
+          }}>
+            <div className="glass rounded-l" style={{ padding: '2.5rem', border: '1px solid rgba(0, 159, 199, 0.08)', background: 'rgba(255,255,255,0.3)' }}>
+              <h4 style={{ fontSize: '1.3rem', fontWeight: 500, color: 'var(--brand)', marginBottom: '0.75rem' }}>Adjunct Services</h4>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                Enhancing overall wellness through fitness and conditioning programs, workplace ergonomics consultations, and sports performance optimization. These services complement physiotherapy care by promoting proactive health and injury prevention.
+              </p>
+            </div>
+
+            <div className="glass rounded-l" style={{ padding: '2.5rem', border: '1px solid rgba(0, 159, 199, 0.08)', background: 'rgba(255,255,255,0.3)' }}>
+              <h4 style={{ fontSize: '1.3rem', fontWeight: 500, color: 'var(--brand)', marginBottom: '0.75rem' }}>Outcome Goals</h4>
+              <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                Our approach focuses on reducing pain, improving mobility and coordination, restoring functional independence, preventing secondary complications, and empowering patients with long-term health maintenance and self-care education.
+              </p>
+            </div>
+          </div>
         </div>
 
       </div>

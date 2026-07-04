@@ -38,28 +38,28 @@ export default function ScrollyServices() {
 
   const services = [
     {
-      id: 'posture',
-      label: 'POSTURE',
-      title: 'Postural analysis – in real-time',
-      description: 'Our AI-powered engine maps your skeletal alignment and body mechanics to detect structural imbalances and coordinate corrections instantly.',
+      id: 'physio',
+      label: 'PHYSIOTHERAPY',
+      title: 'Evidence-based Physiotherapy',
+      description: 'Recover from orthopedic and sports dysfunctions with targeted manual therapy, joint mobilization, and customized conditioning programs.',
       image: '/posture_scan.png',
       y: y1,
       zIndex: 1
     },
     {
-      id: 'mobility',
-      label: 'MOBILITY',
-      title: 'Kinematics & joint flexibility',
-      description: 'A detailed movement screening that identifies range-of-motion restrictions before they develop into chronic pain or athletic plateaus.',
+      id: 'craniosacral',
+      label: 'CRANIOSACRAL',
+      title: 'Biodynamic Craniosacral Therapy',
+      description: 'A gentle, holistic hands-on approach targeting physical and emotional wellbeing to resolve chronic pain and body tension at the root cause.',
       image: '/mobility_screen.png',
       y: y2,
       zIndex: 2
     },
     {
-      id: 'strength',
-      label: 'STRENGTH',
-      title: 'Muscle force & peak power',
-      description: 'Assess peak loading capacity and left-to-right force symmetry across major joint groups with state-of-the-art dynamometers.',
+      id: 'specialized',
+      label: 'SPECIALIZED CARE',
+      title: "Women's Health & Pediatric Rehab",
+      description: 'Tailored clinical conditioning for prenatal/postnatal recovery, pelvic floor rehabilitation, and child milestone development programs.',
       image: '/strength_test.png',
       y: y3,
       zIndex: 3

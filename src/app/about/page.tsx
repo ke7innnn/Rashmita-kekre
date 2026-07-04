@@ -3,19 +3,34 @@
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { motion } from 'framer-motion';
-import { Shield, Sparkles, HeartHandshake, Eye, Award, CheckCircle } from 'lucide-react';
+import { Award, BookOpen, Briefcase, Heart, User, CheckCircle, ShieldCheck, Smile } from 'lucide-react';
 
-const TIMELINE = [
-  { year: '2024', title: 'Conceptualization', desc: 'Dr. Rashmita and a team of software engineers draft plans to integrate real-time computer vision into physiotherapy.' },
-  { year: '2025', title: 'Beta Testing', desc: 'Conducted 500+ trial scans in Mumbai, refining joint marker tracking and dynamometer calibration.' },
-  { year: '2026', title: 'Flagship Launch', desc: 'Opened our premium Linking Road clinic, launching the complete HEALTH 360 screening experience to the public.' }
+const STATS = [
+  { value: '13+', label: 'Years of Experience' },
+  { value: '1000+', label: 'Patients Recovered' },
+  { value: '25+', label: 'Specialized Therapy Programs' },
+  { value: '98%', label: 'Satisfaction Rate' },
+  { value: '95%', label: 'Patient Retention' }
 ];
 
-const CREDENTIALS = [
-  'Indian Association of Physiotherapists (IAP) Certified',
-  'Proprietary Biometrics Software Patent Pending',
-  'Clinical Study Collaboration with Leading Orthopedic Labs',
-  'All Clinicians Carry Advanced Biomechanical Degrees'
+const QUALIFICATIONS = [
+  'Bachelor of Physiotherapy (BPT)',
+  'Biodynamic Craniosacral Therapist (BCST)'
+];
+
+const CERTIFICATIONS = [
+  'Ante and Postnatal Therapist',
+  'Pelvic Floor Rehab Therapist',
+  'Manual Therapist',
+  'Certified Kinesio Taping Therapist (CKTT)',
+  'Dry Needling and Electro Needling Therapist',
+  'Certified Cupping Therapist',
+  'Certified IASTM Therapist'
+];
+
+const ROLES = [
+  'Clinical Director, Health 360 Physiotherapy & Craniosacral Therapy Clinic',
+  'Consultant Senior Physiotherapist, Divine Hospital'
 ];
 
 export default function AboutPage() {
@@ -24,7 +39,7 @@ export default function AboutPage() {
       <Header />
       <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
         
-        {/* Intro Hero */}
+        {/* About Hero */}
         <section style={{ padding: '5rem 0 2rem', background: 'radial-gradient(circle at top right, rgba(0, 159, 199, 0.04), transparent 60%)' }}>
           <div className="xpad" style={{ textAlign: 'center', maxWidth: '850px', margin: '0 auto' }}>
             <motion.p 
@@ -33,7 +48,7 @@ export default function AboutPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5 }}
             >
-              Our Mission
+              About Health 360
             </motion.p>
             <motion.h1 
               style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', lineHeight: 1.1, letterSpacing: '-0.03em' }}
@@ -41,7 +56,7 @@ export default function AboutPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.1 }}
             >
-              Re-imagining physical health and longevity
+              Empowering Movement. Restoring Balance. Enhancing Life.
             </motion.h1>
             <motion.p 
               style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', lineHeight: 1.6 }}
@@ -49,19 +64,19 @@ export default function AboutPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              At HEALTH 360, we believe that understanding your body\'s movement metrics is the first step toward long-term physical freedom. We merge specialized clinical physiotherapy with modern, real-time biometrics.
+              A holistic center dedicated to healing through movement and mindful rehabilitation.
             </motion.p>
           </div>
         </section>
 
-        {/* Doctor Spotlight */}
-        <section style={{ padding: '4rem 0' }}>
+        {/* Doctor Bio Spotlight */}
+        <section style={{ padding: '3rem 0' }}>
           <div className="xpad">
-            <div className="glass rounded-l" style={{ padding: '4rem 3rem', maxWidth: '1000px', margin: '0 auto' }}>
+            <div className="glass rounded-l" style={{ padding: '4rem 3rem', maxWidth: '1100px', margin: '0 auto' }}>
               <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                gap: '3.5rem',
+                gap: '4rem',
                 alignItems: 'center'
               }}>
                 {/* Photo Column */}
@@ -70,7 +85,7 @@ export default function AboutPage() {
                     style={{
                       position: 'relative',
                       width: '100%',
-                      maxWidth: '320px',
+                      maxWidth: '350px',
                       borderRadius: '24px',
                       overflow: 'hidden',
                       aspectRatio: '0.85',
@@ -93,28 +108,31 @@ export default function AboutPage() {
                       left: '20px',
                       background: 'var(--brand)',
                       color: 'white',
-                      padding: '8px 16px',
+                      padding: '8px 18px',
                       borderRadius: '9999px',
                       fontWeight: 500,
                       fontSize: '0.9rem',
                       boxShadow: '0 4px 12px rgba(0, 159, 199, 0.3)'
                     }}>
-                      13+ Years Experience
+                      Consultant Senior Physiotherapist
                     </div>
                   </motion.div>
                 </div>
 
                 {/* Bio Column */}
-                <div>
-                  <span className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Clinical Director</span>
-                  <h2 style={{ fontSize: '2.25rem', fontWeight: 500, margin: '0.5rem 0 1.25rem', letterSpacing: '-0.02em' }}>
-                    Dr. Rashmita Karvir-Kekre
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <span className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Specialist</span>
+                  <h2 style={{ fontSize: '2.5rem', fontWeight: 500, margin: 0, letterSpacing: '-0.02em' }}>
+                    Dr. Rashmita Karvir-Kekre (PT)
                   </h2>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '1.05rem', lineHeight: 1.6, marginBottom: '1.25rem' }}>
-                    Dr. Rashmita is a leading specialist in biomechanical screening and therapeutic recovery. Her clinical career is centered around bridging the gap between traditional physiotherapy methods and state-of-the-art diagnostic data tracking.
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                    Health 360 Physiotherapy & Craniosacral Therapy Clinic, founded by Dr. Rashmita Karvir-Kekre, is a holistic center dedicated to healing through movement and mindful rehabilitation. With over 13 years of professional experience, Dr. Rashmita offers an integrated approach that focuses on complete physical and emotional wellbeing.
                   </p>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '1.05rem', lineHeight: 1.6 }}>
-                    Having successfully managed thousands of patient recoveries, she designed the signature HEALTH 360 screening checklist to offer clients comprehensive, clear, and actionable physiological profiles in under an hour.
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                    Our philosophy is simple — treat the root cause, not just the symptoms. Through evidence-based physiotherapy and gentle craniosacral therapy, we help individuals recover from pain, regain functional strength, and restore their natural body balance.
+                  </p>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem', lineHeight: 1.6 }}>
+                    Whether it’s chronic pain, post-surgical rehab, women’s health concerns, or pediatric development challenges, we design customized therapy programs that promote long-term recovery and improved quality of life.
                   </p>
                 </div>
               </div>
@@ -122,123 +140,95 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Pillars / Values */}
+        {/* Stats Grid Banner */}
         <section style={{ padding: '4rem 0' }}>
-          <div className="xpad" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Pillars</p>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 500, marginTop: '0.5rem' }}>Clinical Philosophy</h2>
-            </div>
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
-              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-                <div style={{ color: 'var(--brand)', padding: '12px', background: 'rgba(0, 159, 199, 0.08)', borderRadius: '16px', flexShrink: 0 }}>
-                  <Shield size={28} />
+          <div className="xpad">
+            <motion.div 
+              className="glass rounded-l" 
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: '2.5rem',
+                padding: '3rem 2rem',
+                maxWidth: '1100px',
+                margin: '0 auto',
+                textAlign: 'center'
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.8 }}
+            >
+              {STATS.map((stat, idx) => (
+                <div key={idx}>
+                  <h4 style={{ fontSize: '3rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>{stat.value}</h4>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500, marginTop: '0.5rem' }}>{stat.label}</p>
                 </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, marginBottom: '0.5rem' }}>Preventative Longevity</h3>
-                  <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
-                    Most physical care is reactive—treating issues only after injury has occurred. We build systems that scan and flag skeletal misalignments, strength imbalances, and range-of-motion restrictions beforehand, setting you up for injury-free longevity.
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-                <div style={{ color: 'var(--brand)', padding: '12px', background: 'rgba(0, 159, 199, 0.08)', borderRadius: '16px', flexShrink: 0 }}>
-                  <Sparkles size={28} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, marginBottom: '0.5rem' }}>Biomechanical Accuracy</h3>
-                  <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
-                    By leveraging state-of-the-art dynamometers and AI computer-vision scanning, we eliminate the guesswork. Our assessments capture actual joint degrees and force differentials to design evidence-based therapies.
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'flex-start' }}>
-                <div style={{ color: 'var(--brand)', padding: '12px', background: 'rgba(0, 159, 199, 0.08)', borderRadius: '16px', flexShrink: 0 }}>
-                  <HeartHandshake size={28} />
-                </div>
-                <div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, marginBottom: '0.5rem' }}>Empathetic Partnership</h3>
-                  <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
-                    We believe data is only powerful when coupled with expert guidance. Our therapists walk you through every metric on your dashboard, building a collaborative partnership focused on helping you feel your best.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Timeline */}
-        <section style={{ padding: '4.5rem 0', background: 'rgba(0,0,0,0.01)', borderTop: '1px solid rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
-          <div className="xpad" style={{ maxWidth: '1000px', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Milestones</p>
-              <h2 style={{ fontSize: '2.25rem', fontWeight: 500, marginTop: '0.5rem' }}>Our Journey</h2>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '2rem' }}>
-              {TIMELINE.map((time, idx) => (
-                <motion.div 
-                  key={idx}
-                  className="glass rounded-m"
-                  style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}
-                  initial={{ opacity: 0, y: 25 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: idx * 0.1 }}
-                >
-                  <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--brand)' }}>{time.year}</span>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500 }}>{time.title}</h3>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.4 }}>{time.desc}</p>
-                </motion.div>
               ))}
-            </div>
+            </motion.div>
           </div>
         </section>
 
-        {/* Technology & Credentials */}
-        <section style={{ padding: '5rem 0 6rem' }}>
-          <div className="xpad" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+        {/* Credentials & Details Layout */}
+        <section style={{ padding: '4rem 0 6rem' }}>
+          <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               gap: '4rem',
               alignItems: 'start'
             }}>
-              {/* Technology */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Eye style={{ color: 'var(--brand)' }} /> Our Technology Stack
-                </h3>
-                <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
-                  The HEALTH 360 lab coordinates an array of computer-vision cameras and dynamometers to scan hundreds of points in under an hour.
-                </p>
-                <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>• 3D Skeletal Marker Arrays</p>
-                  <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>• Wireless Dual-Axis Dynamometers</p>
-                  <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>• Custom Cardiovascular Heart Rate Sensors</p>
+              
+              {/* Left Column: Education & Experience */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3rem' }}>
+                
+                {/* Qualifications */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.75rem' }}>
+                    <BookOpen style={{ color: 'var(--brand)' }} /> Education & Qualifications
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {QUALIFICATIONS.map((qual, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                        <CheckCircle size={18} style={{ color: 'var(--brand)', flexShrink: 0 }} />
+                        <span style={{ fontSize: '1.05rem', color: 'var(--muted-foreground)' }}>{qual}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
+
+                {/* Experience Roles */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.75rem' }}>
+                    <Briefcase style={{ color: 'var(--brand)' }} /> Current Roles
+                  </h3>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {ROLES.map((role, idx) => (
+                      <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                        <ShieldCheck size={18} style={{ color: 'var(--brand)', flexShrink: 0, marginTop: '3px' }} />
+                        <span style={{ fontSize: '1.05rem', color: 'var(--muted-foreground)', lineHeight: 1.4 }}>{role}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
               </div>
 
-              {/* Credentials */}
+              {/* Right Column: Special Trainings & Certifications */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                <h3 style={{ fontSize: '1.75rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <Award style={{ color: 'var(--brand)' }} /> Quality & Accreditations
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.75rem' }}>
+                  <Award style={{ color: 'var(--brand)' }} /> Certifications & Special Training
                 </h3>
-                <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
-                  We operate under stringent regulatory and medical guidelines to provide reliable screening profiles.
-                </p>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  {CREDENTIALS.map((cred, idx) => (
-                    <div key={idx} style={{ display: 'flex', gap: '10px', alignItems: 'center', fontSize: '0.95rem' }}>
-                      <CheckCircle size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-                      <span style={{ color: 'var(--muted-foreground)' }}>{cred}</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {CERTIFICATIONS.map((cert, idx) => (
+                    <div key={idx} style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <CheckCircle size={18} style={{ color: 'var(--brand)', flexShrink: 0 }} />
+                      <span style={{ fontSize: '1.05rem', color: 'var(--muted-foreground)' }}>{cert}</span>
                     </div>
                   ))}
                 </div>
               </div>
+
             </div>
           </div>
         </section>

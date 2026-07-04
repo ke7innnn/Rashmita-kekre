@@ -79,11 +79,11 @@ export const treatmentMethods: TreatmentMethod[] = [
     categoryLabel: "Hands-on & Specialized"
   },
   {
-    title: "Aroleap — AI-Powered Rehabilitation Training",
-    description: "Aroleap is an advanced, AI-powered exercise system that brings intelligent, data-driven training into rehabilitation. It automatically adjusts resistance and range of motion in real time based on the patient's strength and recovery goals, while tracking every repetition for posture and movement quality. This allows our therapists to design safe, precise, and progressively challenging rehab programmes, making recovery both measurable and engaging.",
-    oneLineDescription: "AI-guided resistance training that adapts in real time to your recovery progress.",
-    category: "care",
-    categoryLabel: "Modern Care & Home"
+    title: "Biodynamic Craniosacral Therapy",
+    description: "Biodynamic Craniosacral Therapy is a gentle, non-invasive hands-on treatment that helps release deep-seated physical and emotional tension. By sensing and supporting the body's natural healing rhythms, this therapy works directly with the nervous system to relieve chronic pain, ease stress, resolve trauma, and restore complete structural and energetic balance.",
+    oneLineDescription: "A gentle, hands-on nervous system therapy that releases deep physical and emotional tension.",
+    category: "manual",
+    categoryLabel: "Hands-on & Specialized"
   },
   {
     title: "Treadmill Rehabilitation",

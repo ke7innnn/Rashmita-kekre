@@ -86,8 +86,8 @@ export default function ContactPage() {
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Address</p>
                       <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
-                        101-102, Premium Medical Plaza, Linking Road,<br />
-                        Santacruz West, Mumbai - 400054
+                        Shop no. 1 & 2, Amardeep Society, Om Nagar,<br />
+                        Vasai West, Palghar - 401202
                       </p>
                     </div>
                   </div>
@@ -96,9 +96,14 @@ export default function ContactPage() {
                     <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Phone size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Phone</p>
-                      <a href="tel:+919876543210" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
-                        +91 98765 43210
-                      </a>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <a href="tel:+919834848956" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
+                          +91 98348 48956
+                        </a>
+                        <a href="tel:+918482812859" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
+                          +91 84828 12859
+                        </a>
+                      </div>
                     </div>
                   </div>
 
@@ -117,7 +122,7 @@ export default function ContactPage() {
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Clinic Hours</p>
                       <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.4 }}>
-                        Mon - Sat: 9:00 AM - 1:00 PM, 5:00 PM - 9:00 PM<br />
+                        Mon - Sat: 10:00 AM - 2:00 PM, 5:00 PM - 9:00 PM<br />
                         Sun: Closed
                       </p>
                     </div>
