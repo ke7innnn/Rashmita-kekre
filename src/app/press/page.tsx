@@ -1,0 +1,217 @@
+'use client';
+
+import Header from '../../components/Header';
+import Footer from '../../components/Footer';
+import { motion } from 'framer-motion';
+import { Download, FileText, ArrowRight, Building, Award, Calendar } from 'lucide-react';
+
+const RELEASES = [
+  {
+    title: 'HEALTH 360 Launches Redefined Physiotherapy Clinic in Mumbai',
+    date: 'July 01, 2026',
+    excerpt: 'HEALTH 360 opens its flagship clinic in Mumbai, introducing a completely new physiotherapy experience powered by advanced data-driven postural scans and mobility screening.',
+    link: '#'
+  },
+  {
+    title: 'Biomechanical Screening Reaches 99% Assessment Accuracy in Internal Studies',
+    date: 'May 12, 2026',
+    excerpt: 'Clinical trials demonstrate that HEALTH 360\'s proprietary movement analysis system yields 99% accuracy in diagnosing muscular asymmetry and postural deviations compared to traditional tests.',
+    link: '#'
+  }
+];
+
+export default function PressPage() {
+  return (
+    <>
+      <Header />
+      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+        <section style={{ padding: '4rem 0 6rem' }}>
+          <div className="xpad" style={{ maxWidth: '1000px', margin: '0 auto' }}>
+            
+            {/* Header */}
+            <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
+              <motion.p 
+                className="subtitle uppercase"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                Press Room
+              </motion.p>
+              <motion.h1 
+                style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                Press & Media Assets
+              </motion.h1>
+              <motion.p 
+                style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', maxWidth: '600px', margin: '0 auto', lineHeight: 1.5 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Get the latest announcements, brand guidelines, and high-resolution media resources from HEALTH 360.
+              </motion.p>
+            </div>
+
+            {/* Quick Stats Banner */}
+            <motion.div 
+              className="glass rounded-l" 
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: '2rem',
+                padding: '2.5rem',
+                marginBottom: '4rem',
+                textAlign: 'center'
+              }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div>
+                <h4 style={{ fontSize: '2.5rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>2024</h4>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Founded</p>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '2.5rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>13+</h4>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Expert Years</p>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '2.5rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>300+</h4>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Data Points Screened</p>
+              </div>
+              <div>
+                <h4 style={{ fontSize: '2.5rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>100%</h4>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Personalized Plans</p>
+              </div>
+            </motion.div>
+
+            {/* Content Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '3rem'
+            }}>
+              
+              {/* Left Column: Press Releases */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 500, marginBottom: '0.5rem' }}>Press Releases</h2>
+                
+                {RELEASES.map((release, idx) => (
+                  <motion.div 
+                    key={idx}
+                    className="glass rounded-m"
+                    style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>
+                      <Calendar size={14} /> {release.date}
+                    </div>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 500, lineHeight: 1.3 }}>{release.title}</h3>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                      {release.excerpt}
+                    </p>
+                    <a href={release.link} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.9rem', alignSelf: 'flex-start', marginTop: '0.5rem' }}>
+                      Read More <ArrowRight size={16} />
+                    </a>
+                  </motion.div>
+                ))}
+              </div>
+
+              {/* Right Column: Media Kits & Brand Assets */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <h2 style={{ fontSize: '1.75rem', fontWeight: 500, marginBottom: '0.5rem' }}>Media Kit</h2>
+                
+                <motion.div 
+                  className="glass rounded-m" 
+                  style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}
+                  initial={{ opacity: 0, x: 20 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                    Download our complete press pack containing high-resolution photos of the clinic, bio-screening interfaces, and vector branding logo marks.
+                  </p>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '0.5rem' }}>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      padding: '1rem', 
+                      border: '1px solid rgba(0,0,0,0.06)', 
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.4)' 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Building size={20} style={{ color: 'var(--brand)' }} />
+                        <div>
+                          <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>Clinic Photo Library</p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>ZIP • High-Res JPEG • 24.5 MB</p>
+                        </div>
+                      </div>
+                      <button className="mobile-menu-btn" style={{ padding: '8px', borderRadius: '50%', background: 'var(--brand)', color: 'white' }}>
+                        <Download size={18} />
+                      </button>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      padding: '1rem', 
+                      border: '1px solid rgba(0,0,0,0.06)', 
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.4)' 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <Award size={20} style={{ color: 'var(--brand)' }} />
+                        <div>
+                          <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>Brand Logo Pack</p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>ZIP • SVG & PNG • 3.2 MB</p>
+                        </div>
+                      </div>
+                      <button className="mobile-menu-btn" style={{ padding: '8px', borderRadius: '50%', background: 'var(--brand)', color: 'white' }}>
+                        <Download size={18} />
+                      </button>
+                    </div>
+
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      padding: '1rem', 
+                      border: '1px solid rgba(0,0,0,0.06)', 
+                      borderRadius: '12px',
+                      background: 'rgba(255,255,255,0.4)' 
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <FileText size={20} style={{ color: 'var(--brand)' }} />
+                        <div>
+                          <p style={{ fontSize: '0.95rem', fontWeight: 500 }}>HEALTH 360 Fact Sheet</p>
+                          <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>PDF • English • 0.8 MB</p>
+                        </div>
+                      </div>
+                      <button className="mobile-menu-btn" style={{ padding: '8px', borderRadius: '50%', background: 'var(--brand)', color: 'white' }}>
+                        <Download size={18} />
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+      </main>
+      <Footer />
+    </>
+  );
+}

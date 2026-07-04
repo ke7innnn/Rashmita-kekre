@@ -16,6 +16,35 @@ import BookingModal from '../components/BookingModal';
 export default function Home() {
   const [currentPage, setCurrentPage] = useState<'home' | 'booking' | 'services' | 'about' | 'treatments'>('home');
 
+  // Synchronize URL hash with the currentPage state on initial mount and hash changes
+  useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash;
+      if (hash === '#book') {
+        setCurrentPage('booking');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } else if (hash === '#our-services') {
+        setCurrentPage('services');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } else if (hash === '#treatments') {
+        setCurrentPage('treatments');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } else if (hash === '#about' || hash === '#body-diagram') {
+        setCurrentPage('about');
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      } else if (hash.includes('#')) {
+        setCurrentPage('home');
+        setTimeout(() => {
+          const el = document.querySelector(hash);
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    };
+    handleHashSync();
+    window.addEventListener('hashchange', handleHashSync);
+    return () => window.removeEventListener('hashchange', handleHashSync);
+  }, []);
+
   // Global click interception to catch page transitions like "#book", "#our-services", "#treatments", and "#about" / "#body-diagram"
   useEffect(() => {
     const handleHashClick = (e: MouseEvent) => {
