@@ -1,0 +1,79 @@
+.intro-section {
+  padding-top: 6rem;
+  padding-bottom: 6rem;
+  background-color: var(--background);
+}
+
+@media (min-width: 768px) {
+  .intro-section {
+    padding-top: 8rem;
+    padding-bottom: 8rem;
+  }
+}
+
+.intro-container {
+  display: flex;
+  flex-direction: column;
+  gap: 3rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (min-width: 980px) {
+  .intro-container {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 6rem;
+  }
+}
+
+.intro-heading-col {
+  flex: 1.2;
+}
+
+.intro-heading {
+  font-size: clamp(2.25rem, 4.5vw, 4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--foreground);
+}
+
+/* Mask-clip text reveal classes */
+.intro-line-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 4px; /* Account for descenders like g, y, p */
+  margin-bottom: 2px;
+}
+
+.intro-line-text {
+  display: inline-block;
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.intro-text-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+  color: var(--muted-foreground);
+  font-size: 1.125rem;
+  line-height: 1.7;
+}
+
+.intro-text-col p strong {
+  color: var(--foreground);
+}
+
+.intro-lead {
+  font-size: 1.25rem;
+  line-height: 1.6;
+}
+
+@media (max-width: 767px) {
+  .intro-lead {
+    font-size: 1.15rem;
+  }
+}
