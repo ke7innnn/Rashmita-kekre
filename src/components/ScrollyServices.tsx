@@ -135,12 +135,12 @@ export default function ScrollyServices() {
                       {services[activeIndex].description}
                     </p>
                     
-                    <div className="scrolly-learn-more">
+                    <a href="/#our-services" className="scrolly-learn-more" style={{ textDecoration: 'none' }}>
                       <div className="arrow-circle">
                         <ArrowRight size={18} className="text-white" />
                       </div>
                       <span className="learn-more-text">Learn more</span>
-                    </div>
+                    </a>
                   </motion.div>
                 </AnimatePresence>
               </div>

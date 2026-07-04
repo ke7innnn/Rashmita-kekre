@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Dumbbell, Brain, Baby, Accessibility, Heart, MonitorSmartphone, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Dumbbell, Brain, Baby, Accessibility, Heart, MonitorSmartphone, ArrowRight, ArrowLeft, Hand } from 'lucide-react';
 import './OurServices.css';
 
 interface OurServicesProps {
@@ -33,6 +33,14 @@ export default function OurServices({ onClose }: OurServicesProps) {
       category: "neuro",
       badgeLabel: "Nervous System",
       icon: <Brain className="service-icon" size={20} strokeWidth={1.5} />
+    },
+    {
+      title: "Biodynamic Craniosacral Therapy",
+      description: "A gentle, non-invasive hands-on treatment that helps release deep-seated physical and emotional tension. By sensing and supporting the body's natural healing rhythms, this therapy works directly with the nervous system to relieve chronic pain, ease stress, resolve trauma, and restore complete structural and energetic balance.",
+      oneLineDescription: "A gentle, hands-on nervous system therapy that releases deep physical and emotional tension.",
+      category: "craniosacral",
+      badgeLabel: "Holistic Care",
+      icon: <Hand className="service-icon" size={20} strokeWidth={1.5} />
     },
     {
       title: "Pediatric Physiotherapy",
