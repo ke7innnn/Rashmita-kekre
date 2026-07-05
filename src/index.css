@@ -141,10 +141,35 @@ button {
   align-items: start;
 }
 
+
 @media (max-width: 900px) {
   .legal-grid {
     grid-template-columns: 1fr;
     gap: 2rem;
+  }
+}
+
+/* About Page Clinical Philosophy Grid */
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 2rem;
+}
+
+.pillars-grid > div:nth-child(3) {
+  grid-column: 1 / span 2;
+  justify-self: center;
+  max-width: calc(50% - 1rem);
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .pillars-grid {
+    grid-template-columns: 1fr;
+  }
+  .pillars-grid > div:nth-child(3) {
+    grid-column: auto;
+    max-width: 100%;
   }
 }
 
