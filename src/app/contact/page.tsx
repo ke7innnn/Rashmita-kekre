@@ -369,35 +369,95 @@ export default function ContactPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><ShieldCheck size={20} /></div>
+                  <motion.div 
+                    className="glass rounded-m" 
+                    style={{ 
+                      padding: '1.75rem', 
+                      display: 'flex', 
+                      gap: '1.25rem', 
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 24px -10px rgba(0, 0, 0, 0.03)'
+                    }}
+                    whileHover={{ 
+                      y: -4, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                      <ShieldCheck size={20} />
+                    </div>
                     <div>
-                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Preparation for First Visit</h4>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Preparation for First Visit</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.93rem', lineHeight: 1.5, marginTop: '6px' }}>
                         Please wear loose, comfortable clothing (e.g., track pants, training t-shirts) that allow full movement assessment. Arrive 10 minutes prior to your appointment time.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><MapPin size={20} /></div>
+                  <motion.div 
+                    className="glass rounded-m" 
+                    style={{ 
+                      padding: '1.75rem', 
+                      display: 'flex', 
+                      gap: '1.25rem', 
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 24px -10px rgba(0, 0, 0, 0.03)'
+                    }}
+                    whileHover={{ 
+                      y: -4, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                      <MapPin size={20} />
+                    </div>
                     <div>
-                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Dedicated Patient Parking</h4>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Dedicated Patient Parking</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.93rem', lineHeight: 1.5, marginTop: '6px' }}>
                         Free reserved clinic parking slots are available directly in front of the main entrance at Amardeep Society building for easy wheelchair/stretcher access.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Clock size={20} /></div>
+                  <motion.div 
+                    className="glass rounded-m" 
+                    style={{ 
+                      padding: '1.75rem', 
+                      display: 'flex', 
+                      gap: '1.25rem', 
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 24px -10px rgba(0, 0, 0, 0.03)'
+                    }}
+                    whileHover={{ 
+                      y: -4, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                      <Clock size={20} />
+                    </div>
                     <div>
-                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Public Transit Directions</h4>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Public Transit Directions</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.93rem', lineHeight: 1.5, marginTop: '6px' }}>
                         The clinic is situated a convenient 7-minute auto-rickshaw or taxi drive from the Vasai Road Railway Station (Western Line).
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
 

@@ -227,51 +227,93 @@ export default function AboutPage() {
             }}>
               <motion.div 
                 className="glass rounded-l" 
-                style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                style={{ 
+                  padding: '2.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1.25rem',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255, 255, 255, 0.45)',
+                  boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)'
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ 
+                  y: -6, 
+                  backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                  borderColor: 'rgba(0, 159, 199, 0.25)',
+                  boxShadow: '0 24px 48px -15px rgba(0, 159, 199, 0.08)'
+                }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5 }}
+                transition={{ duration: 0.4 }}
               >
-                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px', border: '1px solid rgba(0,159,199,0.08)' }}>
                   <Heart size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 500 }}>Patient-Centric Recovery</h3>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--foreground)' }}>Patient-Centric Recovery</h3>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.55 }}>
                   Every body is unique. We conduct multi-dimensional metric scans to formulate customized therapies designed around your specific career, lifestyle, and recovery objectives.
                 </p>
               </motion.div>
 
               <motion.div 
                 className="glass rounded-l" 
-                style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                style={{ 
+                  padding: '2.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1.25rem',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255, 255, 255, 0.45)',
+                  boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)'
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ 
+                  y: -6, 
+                  backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                  borderColor: 'rgba(0, 159, 199, 0.25)',
+                  boxShadow: '0 24px 48px -15px rgba(0, 159, 199, 0.08)'
+                }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: 0.1 }}
+                transition={{ duration: 0.4, delay: 0.1 }}
               >
-                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px', border: '1px solid rgba(0,159,199,0.08)' }}>
                   <Award size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 500 }}>Evidence-Based Science</h3>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--foreground)' }}>Evidence-Based Science</h3>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.55 }}>
                   We apply peer-reviewed clinical procedures, utilizing state-of-the-art postural screening and diagnostic movement assessments to locate root imbalances rather than masking symptoms.
                 </p>
               </motion.div>
 
               <motion.div 
                 className="glass rounded-l" 
-                style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                style={{ 
+                  padding: '2.5rem', 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  gap: '1.25rem',
+                  cursor: 'pointer',
+                  border: '1px solid rgba(255, 255, 255, 0.45)',
+                  boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)'
+                }}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
+                whileHover={{ 
+                  y: -6, 
+                  backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                  borderColor: 'rgba(0, 159, 199, 0.25)',
+                  boxShadow: '0 24px 48px -15px rgba(0, 159, 199, 0.08)'
+                }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.5, delay: 0.2 }}
               >
-                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px', border: '1px solid rgba(0,159,199,0.08)' }}>
                   <ShieldCheck size={24} />
                 </div>
-                <h3 style={{ fontSize: '1.35rem', fontWeight: 500 }}>Holistic Restorative Balance</h3>
-                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 600, color: 'var(--foreground)' }}>Holistic Restorative Balance</h3>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.55 }}>
                   Our therapies integrate manual manipulation, specialized exercises, and craniosacral therapy to soothe the nervous system and promote systemic long-term wellness.
                 </p>
               </motion.div>
@@ -415,19 +457,47 @@ export default function AboutPage() {
                 <motion.div 
                   key={idx}
                   className="glass rounded-m"
-                  style={{ padding: '1.5rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden' }}
-                  initial={{ opacity: 0, y: 25 }}
-                  whileInView={{ opacity: 1, y: 0 }}
+                  style={{ 
+                    padding: '1.5rem', 
+                    position: 'relative', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '1rem', 
+                    overflow: 'hidden',
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
+                  initial="initial"
+                  whileInView="animate"
+                  whileHover="hover"
                   viewport={{ once: true }}
-                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                  variants={{
+                    initial: { opacity: 0, y: 25 },
+                    animate: { opacity: 1, y: 0, transition: { duration: 0.5, delay: idx * 0.1 } },
+                    hover: {
+                      y: -6,
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)',
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 24px 48px -15px rgba(0, 159, 199, 0.08)'
+                    }
+                  }}
                 >
                   <div style={{ width: '100%', height: '145px', overflow: 'hidden', borderRadius: '12px', background: '#e5e2d5' }}>
-                    <img src={milestone.img} alt={milestone.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <motion.img 
+                      src={milestone.img} 
+                      alt={milestone.title} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      variants={{
+                        hover: { scale: 1.08 }
+                      }}
+                      transition={{ duration: 0.4, ease: "easeOut" }}
+                    />
                   </div>
                   <div>
                     <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--brand)', lineHeight: 1 }}>{milestone.year}</span>
-                    <h3 style={{ fontSize: '1.2rem', fontWeight: 500, marginTop: '0.25rem' }}>{milestone.title}</h3>
-                    <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', lineHeight: 1.4, marginTop: '0.5rem' }}>{milestone.desc}</p>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, marginTop: '0.25rem', color: 'var(--foreground)' }}>{milestone.title}</h3>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '0.88rem', lineHeight: 1.45, marginTop: '0.5rem' }}>{milestone.desc}</p>
                   </div>
                 </motion.div>
               ))}

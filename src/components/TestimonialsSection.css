@@ -102,9 +102,13 @@
 
 /* Card Styling: minimal white background with soft borders and shadows */
 .testimonial-grid-card {
-  background: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.03);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.015);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.5) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 10px 30px -10px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   padding: 2.25rem;
   border-radius: 20px;
   display: flex;
@@ -114,13 +118,16 @@
   justify-content: space-between;
   align-items: flex-start;
   min-height: 235px;
-  transition: all 0.3s ease;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .testimonial-grid-card:hover {
   transform: translateY(-8px) scale(1.015);
-  border-color: rgba(0, 159, 199, 0.18);
-  box-shadow: 0 25px 45px -10px rgba(0, 159, 199, 0.08);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.75) 100%);
+  border-color: rgba(0, 159, 199, 0.25);
+  box-shadow: 
+    0 24px 48px -15px rgba(0, 159, 199, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .card-stars-flex {

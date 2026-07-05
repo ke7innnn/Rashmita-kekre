@@ -112,16 +112,29 @@ export default function PressPage() {
                   <motion.div 
                     key={idx}
                     className="glass rounded-l" 
-                    style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', transition: 'transform 0.3s ease' }}
+                    style={{ 
+                      padding: '2.5rem', 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      gap: '1.25rem',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)'
+                    }}
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    transition={{ duration: 0.5, delay: idx * 0.08 }}
-                    whileHover={{ translateY: -4 }}
+                    transition={{ duration: 0.4, delay: idx * 0.08 }}
+                    whileHover={{ 
+                      y: -6, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 24px 48px -15px rgba(0, 159, 199, 0.08)'
+                    }}
                   >
                     <span className="subtitle uppercase" style={{ fontSize: '0.75rem', color: 'var(--brand)', fontWeight: 600 }}>{article.outlet}</span>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 500, lineHeight: 1.3 }}>{article.title}</h3>
-                    <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>{article.excerpt}</p>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--foreground)' }}>{article.title}</h3>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.55 }}>{article.excerpt}</p>
                     <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', marginTop: 'auto' }}>{article.date}</span>
                   </motion.div>
                 ))}
@@ -150,17 +163,31 @@ export default function PressPage() {
                     <motion.div 
                       key={idx}
                       className="glass rounded-m"
-                      style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                      style={{ 
+                        padding: '2rem', 
+                        display: 'flex', 
+                        flexDirection: 'column', 
+                        gap: '1rem',
+                        border: '1px solid rgba(255, 255, 255, 0.45)',
+                        boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)',
+                        cursor: 'pointer'
+                      }}
                       initial={{ opacity: 0, x: -20 }}
                       whileInView={{ opacity: 1, x: 0 }}
                       viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: idx * 0.1 }}
+                      transition={{ duration: 0.4, delay: idx * 0.1 }}
+                      whileHover={{ 
+                        y: -4, 
+                        backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                        borderColor: 'rgba(0, 159, 199, 0.25)',
+                        boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                      }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--muted-foreground)', fontSize: '0.85rem' }}>
                         <Calendar size={14} /> {release.date}
                       </div>
-                      <h3 style={{ fontSize: '1.2rem', fontWeight: 500, lineHeight: 1.3 }}>{release.title}</h3>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.4 }}>
+                      <h3 style={{ fontSize: '1.25rem', fontWeight: 600, lineHeight: 1.3, color: 'var(--foreground)' }}>{release.title}</h3>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.45 }}>
                         {release.excerpt}
                       </p>
                       <a href={release.link} className="btn-secondary" style={{ padding: '8px 16px', fontSize: '0.875rem', alignSelf: 'flex-start', marginTop: '0.5rem' }}>

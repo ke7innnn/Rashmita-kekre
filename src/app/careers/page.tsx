@@ -98,7 +98,7 @@ export default function CareersPage() {
               <h2 style={{ fontSize: '2.25rem', fontWeight: 500, marginTop: '0.5rem' }}>Perks & Benefits</h2>
             </div>
             
-            <div style={{
+             <div style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
               gap: '2rem'
@@ -107,17 +107,41 @@ export default function CareersPage() {
                 <motion.div 
                   key={idx}
                   className="glass rounded-l" 
-                  style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                  style={{ 
+                    padding: '2.5rem', 
+                    display: 'flex', 
+                    flexDirection: 'column', 
+                    gap: '1.1rem',
+                    border: '1px solid rgba(255, 255, 255, 0.45)',
+                    boxShadow: '0 8px 30px -10px rgba(0, 0, 0, 0.03)',
+                    cursor: 'pointer'
+                  }}
                   initial={{ opacity: 0, y: 25 }}
                   whileInView={{ opacity: 1, y: 0 }}
+                  whileHover={{ 
+                    y: -6, 
+                    backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                    borderColor: 'rgba(0, 159, 199, 0.25)',
+                    boxShadow: '0 24px 48px -15px rgba(0, 159, 199, 0.08)'
+                  }}
                   viewport={{ once: true }}
-                  transition={{ duration: 0.5, delay: idx * 0.05 }}
+                  transition={{ duration: 0.4, delay: idx * 0.05 }}
                 >
-                  <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                  <div style={{ 
+                    color: 'var(--brand)', 
+                    width: '48px', 
+                    height: '48px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    background: 'rgba(0,159,199,0.06)', 
+                    borderRadius: '12px',
+                    border: '1px solid rgba(0, 159, 199, 0.08)'
+                  }}>
                     {perk.icon}
                   </div>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500, marginTop: '0.5rem' }}>{perk.title}</h3>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 600, marginTop: '0.5rem', color: 'var(--foreground)' }}>{perk.title}</h3>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.55 }}>
                     {perk.desc}
                   </p>
                 </motion.div>
@@ -147,35 +171,95 @@ export default function CareersPage() {
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Award size={20} /></div>
+                  <motion.div 
+                    className="glass rounded-m" 
+                    style={{ 
+                      padding: '1.75rem', 
+                      display: 'flex', 
+                      gap: '1.25rem', 
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 24px -10px rgba(0, 0, 0, 0.03)'
+                    }}
+                    whileHover={{ 
+                      y: -4, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                      <Award size={20} />
+                    </div>
                     <div>
-                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Continuous Growth & Education</h4>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Continuous Growth & Education</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.93rem', lineHeight: 1.5, marginTop: '6px' }}>
                         We fund advanced certifications (manual therapy, dry needling, craniosacral training) and hold bi-weekly peer reviews to elevate clinical competencies.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Heart size={20} /></div>
+                  <motion.div 
+                    className="glass rounded-m" 
+                    style={{ 
+                      padding: '1.75rem', 
+                      display: 'flex', 
+                      gap: '1.25rem', 
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 24px -10px rgba(0, 0, 0, 0.03)'
+                    }}
+                    whileHover={{ 
+                      y: -4, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                      <Heart size={20} />
+                    </div>
                     <div>
-                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Collaboration-First Model</h4>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Collaboration-First Model</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.93rem', lineHeight: 1.5, marginTop: '6px' }}>
                         Our physiotherapists, analysts, and operations leads coordinate dynamically. We treat complex conditions by combining mechanical reviews with neurological perspectives.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
 
-                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Sparkles size={20} /></div>
+                  <motion.div 
+                    className="glass rounded-m" 
+                    style={{ 
+                      padding: '1.75rem', 
+                      display: 'flex', 
+                      gap: '1.25rem', 
+                      alignItems: 'flex-start',
+                      cursor: 'pointer',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      boxShadow: '0 8px 24px -10px rgba(0, 0, 0, 0.03)'
+                    }}
+                    whileHover={{ 
+                      y: -4, 
+                      backgroundColor: 'rgba(255, 255, 255, 0.96)', 
+                      borderColor: 'rgba(0, 159, 199, 0.25)',
+                      boxShadow: '0 16px 36px -12px rgba(0, 159, 199, 0.08)'
+                    }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                  >
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                      <Sparkles size={20} />
+                    </div>
                     <div>
-                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Sustained Professional Wellness</h4>
-                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                      <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Sustained Professional Wellness</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.93rem', lineHeight: 1.5, marginTop: '6px' }}>
                         We respect work-life balances, maintaining structured schedules and limits on daily case volumes to prevent clinical fatigue and ensure premium patient care.
                       </p>
                     </div>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
 
