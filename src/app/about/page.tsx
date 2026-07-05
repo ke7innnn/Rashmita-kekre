@@ -128,7 +128,7 @@ export default function AboutPage() {
                       maxWidth: '350px',
                       borderRadius: '24px',
                       overflow: 'hidden',
-                      aspectRatio: '0.85',
+                      aspectRatio: '0.72',
                       boxShadow: '0 20px 40px rgba(0,0,0,0.06)',
                       background: '#e5e2d5'
                     }}
@@ -140,7 +140,7 @@ export default function AboutPage() {
                     <motion.img 
                       src="/doctor.png" 
                       alt="Dr. Rashmita Karvir-Kekre" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', y: photoY, scale: 1.15 }} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center', y: photoY, scale: 1.05 }} 
                     />
                     <div style={{
                       position: 'absolute',

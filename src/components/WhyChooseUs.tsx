@@ -1,6 +1,7 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { CheckCircle, Clock, Users, Award, Heart, Zap } from 'lucide-react';
 import './WhyChooseUs.css';
 
@@ -14,8 +15,18 @@ const FEATURES = [
 ];
 
 export default function WhyChooseUs() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Main image scrolls up slightly, accent image scrolls down slightly for parallax depth
+  const mainY = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+  const accentY = useTransform(scrollYProgress, [0, 1], ["6%", "-6%"]);
+
   return (
-    <section className="why-section xpad" id="why-us">
+    <section className="why-section xpad" id="why-us" ref={sectionRef}>
       <div className="why-container">
 
         {/* Left: Overlapping Photo Stack */}
@@ -27,10 +38,18 @@ export default function WhyChooseUs() {
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className="why-photo-main rounded-l">
-            <img src="/physio_back_therapy.jpg" alt="Physiotherapy back therapy session" />
+            <motion.img 
+              src="/physio_back_therapy.jpg" 
+              alt="Physiotherapy back therapy session" 
+              style={{ y: mainY, scale: 1.15, width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
           <div className="why-photo-accent rounded-m" style={{ backgroundColor: '#e5e2d5' }}>
-            <img src="/doctor.png" alt="Dr. Rashmita Karvir-Kekre" style={{ objectFit: 'cover', objectPosition: 'top' }} />
+            <motion.img 
+              src="/doctor.png" 
+              alt="Dr. Rashmita Karvir-Kekre" 
+              style={{ y: accentY, scale: 1.12, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} 
+            />
           </div>
         </motion.div>
 

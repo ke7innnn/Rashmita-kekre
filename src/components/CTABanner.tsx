@@ -1,10 +1,19 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import './CTABanner.css';
 
 export default function CTABanner() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+  
+  const y = useTransform(scrollYProgress, [0, 1], ["-12%", "12%"]);
+
   return (
     <section className="cta-banner-section xpad">
       <motion.div
@@ -16,8 +25,13 @@ export default function CTABanner() {
       >
         <div className="cta-banner-bg" />
 
-        <div className="cta-banner-photo-col">
-          <img src="/physio_exercise.jpg" alt="Patient doing rehabilitation exercises" className="cta-banner-photo" />
+        <div className="cta-banner-photo-col" ref={sectionRef}>
+          <motion.img 
+            src="/physio_exercise.jpg" 
+            alt="Patient doing rehabilitation exercises" 
+            className="cta-banner-photo" 
+            style={{ y, scale: 1.25, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         </div>
 
         <div className="cta-banner-text-col">
