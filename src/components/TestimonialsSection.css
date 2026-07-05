@@ -1,5 +1,8 @@
 .testimonials-section-center {
-  background-color: var(--background); /* warm sand */
+  background-image: url('/testimonials_bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   padding-top: 6rem;
   padding-bottom: 6rem;
   width: 100%;
