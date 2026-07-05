@@ -69,7 +69,7 @@ export default function Home() {
             e.preventDefault();
             setCurrentPage('treatments');
             window.scrollTo({ top: 0, behavior: 'instant' });
-          } else if (href === '#about' || href.endsWith('#about') || href === '#body-diagram' || href.endsWith('#body-diagram')) {
+          } else if (href === '#about' || href.endsWith('#about')) {
             e.preventDefault();
             setCurrentPage('about');
             window.scrollTo({ top: 0, behavior: 'instant' });

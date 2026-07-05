@@ -322,7 +322,7 @@ export default function AboutPage() {
         </section>
 
         {/* Interactive Body Diagram Section */}
-        <section style={{ padding: '4rem 0', background: 'rgba(0, 159, 199, 0.01)' }}>
+        <section id="body-diagram" style={{ padding: '4rem 0', background: 'rgba(0, 159, 199, 0.01)' }}>
           <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
             
             <div className="diagram-page-header" style={{ textAlign: 'center', marginBottom: '3rem' }}>

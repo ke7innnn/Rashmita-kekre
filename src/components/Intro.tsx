@@ -77,7 +77,7 @@ export default function Intro() {
             Whether it’s chronic pain, post-surgical rehab, women’s health concerns, or pediatric development challenges, we design customized therapy programs that promote long-term recovery and improved quality of life.
           </motion.p>
           <motion.a 
-            href="#body-diagram" 
+            href="/about#body-diagram" 
             className="btn-primary" 
             style={{ marginTop: '1.5rem', alignSelf: 'flex-start' }}
             variants={itemVariants}
