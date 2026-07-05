@@ -85,36 +85,37 @@
   gap: 1.1rem;
   align-items: flex-start;
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  background: #111111;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 
-    0 8px 24px -10px rgba(0, 0, 0, 0.03),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 8px 30px -10px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 .why-feature-card:hover {
   transform: translateY(-6px);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.7) 100%);
-  border-color: rgba(0, 159, 199, 0.25);
+  background: #181818;
+  border-color: rgba(0, 159, 199, 0.35);
   box-shadow: 
-    0 24px 48px -15px rgba(0, 159, 199, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 24px 48px -15px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 .why-icon {
   color: var(--brand);
-  background: rgba(0, 159, 199, 0.07);
+  background: rgba(0, 159, 199, 0.15);
   width: 44px; height: 44px;
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  border: 1px solid rgba(0, 159, 199, 0.1);
+  border: 1px solid rgba(0, 159, 199, 0.25);
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .why-feature-card:hover .why-icon {
   background: var(--brand);
   color: white;
   transform: scale(1.1) rotate(5deg);
-  box-shadow: 0 8px 16px -4px rgba(0, 159, 199, 0.3);
+  box-shadow: 0 8px 16px -4px rgba(0, 159, 199, 0.35);
   border-color: var(--brand);
 }
-.why-feature-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 5px; color: var(--foreground); }
-.why-feature-desc { font-size: 0.88rem; color: var(--muted-foreground); line-height: 1.5; }
+.why-feature-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 5px; color: #ffffff; }
+.why-feature-desc { font-size: 0.88rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5; }
 .why-cta { align-self: flex-start; margin-top: 0.5rem; }
