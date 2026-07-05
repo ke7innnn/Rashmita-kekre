@@ -1,9 +1,11 @@
 'use client';
 
+import { useRef } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import { Award, BookOpen, Briefcase, Heart, User, CheckCircle, ShieldCheck, Smile } from 'lucide-react';
+import ScrollReveal from '../../components/ScrollReveal';
 
 const STATS = [
   { value: '13+', label: 'Years of Experience' },
@@ -34,6 +36,14 @@ const ROLES = [
 ];
 
 export default function AboutPage() {
+  const bioSectionRef = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: bioSectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  const photoY = useTransform(scrollYProgress, [0, 1], ["-6%", "6%"]);
+
   return (
     <>
       <Header />
@@ -50,19 +60,18 @@ export default function AboutPage() {
             >
               About Health 360
             </motion.p>
-            <motion.h1 
+            <h1 
               style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', lineHeight: 1.1, letterSpacing: '-0.03em' }}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.1 }}
             >
-              Empowering Movement. Restoring Balance. Enhancing Life.
-            </motion.h1>
+              <ScrollReveal>Empowering Movement.</ScrollReveal>
+              <ScrollReveal delay={0.1}>Restoring Balance.</ScrollReveal>
+              <ScrollReveal delay={0.2}>Enhancing Life.</ScrollReveal>
+            </h1>
             <motion.p 
               style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', lineHeight: 1.6 }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
             >
               A holistic center dedicated to healing through movement and mindful rehabilitation.
             </motion.p>
@@ -70,7 +79,7 @@ export default function AboutPage() {
         </section>
 
         {/* Doctor Bio Spotlight */}
-        <section style={{ padding: '3rem 0' }}>
+        <section style={{ padding: '3rem 0' }} ref={bioSectionRef}>
           <div className="xpad">
             <div className="glass rounded-l" style={{ padding: '4rem 3rem', maxWidth: '1100px', margin: '0 auto' }}>
               <div style={{
@@ -97,10 +106,10 @@ export default function AboutPage() {
                     viewport={{ once: true }}
                     transition={{ duration: 0.6 }}
                   >
-                    <img 
+                    <motion.img 
                       src="/doctor.png" 
                       alt="Dr. Rashmita Karvir-Kekre" 
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', y: photoY, scale: 1.15 }} 
                     />
                     <div style={{
                       position: 'absolute',
@@ -123,7 +132,7 @@ export default function AboutPage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <span className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Specialist</span>
                   <h2 style={{ fontSize: '2.5rem', fontWeight: 500, margin: 0, letterSpacing: '-0.02em' }}>
-                    Dr. Rashmita Karvir-Kekre (PT)
+                    <ScrollReveal>Dr. Rashmita Karvir-Kekre (PT)</ScrollReveal>
                   </h2>
                   <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem', lineHeight: 1.6 }}>
                     Health 360 Physiotherapy & Craniosacral Therapy Clinic, founded by Dr. Rashmita Karvir-Kekre, is a holistic center dedicated to healing through movement and mindful rehabilitation. With over 13 years of professional experience, Dr. Rashmita offers an integrated approach that focuses on complete physical and emotional wellbeing.

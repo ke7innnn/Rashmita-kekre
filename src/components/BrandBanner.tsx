@@ -1,9 +1,21 @@
-import { motion } from 'framer-motion';
+'use client';
+
+import { useRef } from 'react';
+import { motion, useScroll, useTransform } from 'framer-motion';
 import './BrandBanner.css';
 
 export default function BrandBanner() {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"]
+  });
+
+  // Calculate subtle image offset based on scroll position inside container
+  const y = useTransform(scrollYProgress, [0, 1], ["-8%", "8%"]);
+
   return (
-    <section className="brand-banner-section">
+    <section className="brand-banner-section" ref={sectionRef}>
       <div className="brand-banner-inner xpad">
         <div className="banner-grid">
           <div className="banner-left">
@@ -16,11 +28,13 @@ export default function BrandBanner() {
               whileInView={{ opacity: 1, y: 0, scale: 1 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.8, ease: "easeOut" }}
+              style={{ overflow: 'hidden', position: 'relative' }}
             >
-              <img 
+              <motion.img 
                 src="/banner_stretching_pose.jpg" 
                 alt="HEALTH 360 stretching pose" 
                 className="banner-photo"
+                style={{ y, scale: 1.15 }}
               />
             </motion.div>
           </div>

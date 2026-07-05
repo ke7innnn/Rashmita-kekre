@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import '../index.css';
+import SmoothScrollProvider from '../components/SmoothScrollProvider';
 
 export const metadata: Metadata = {
   title: 'HEALTH 360 - Comprehensive Movement Analysis & Physiotherapy',
@@ -13,7 +14,11 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <SmoothScrollProvider>
+          {children}
+        </SmoothScrollProvider>
+      </body>
     </html>
   );
 }

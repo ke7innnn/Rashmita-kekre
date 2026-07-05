@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star } from 'lucide-react';
+import ScrollReveal from './ScrollReveal';
 import './TestimonialsSection.css';
 
 const testimonials = [
@@ -106,7 +107,9 @@ export default function TestimonialsSection() {
         {/* Header */}
         <div className="testimonials-center-header">
           <span className="testimonials-center-tag uppercase">Testimonials</span>
-          <h2 className="testimonials-center-title">What Our Patients Say</h2>
+          <h2 className="testimonials-center-title">
+            <ScrollReveal>What Our Patients Say</ScrollReveal>
+          </h2>
           <div className="testimonials-center-stars-row">
             <div className="stars-flex">
               {[...Array(5)].map((_, i) => (

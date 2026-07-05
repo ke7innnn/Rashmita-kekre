@@ -10,6 +10,10 @@
 .service-card.srv-musculo .service-icon {
   color: #5d7052;
 }
+.service-card.srv-musculo:hover {
+  box-shadow: 0 20px 45px -15px rgba(93, 112, 82, 0.15);
+  border-color: rgba(93, 112, 82, 0.3) !important;
+}
 
 /* Neurological: Amber / Copper */
 .service-card.srv-neuro {
@@ -21,6 +25,26 @@
 }
 .service-card.srv-neuro .service-icon {
   color: #b45309;
+}
+.service-card.srv-neuro:hover {
+  box-shadow: 0 20px 45px -15px rgba(180, 83, 9, 0.15);
+  border-color: rgba(180, 83, 9, 0.3) !important;
+}
+
+/* Craniosacral: Brand Cyan */
+.service-card.srv-craniosacral {
+  border-left: 3px solid #009fc7;
+}
+.service-card.srv-craniosacral .service-badge {
+  background-color: rgba(0, 159, 199, 0.08);
+  color: #009fc7;
+}
+.service-card.srv-craniosacral .service-icon {
+  color: #009fc7;
+}
+.service-card.srv-craniosacral:hover {
+  box-shadow: 0 20px 45px -15px rgba(0, 159, 199, 0.15);
+  border-color: rgba(0, 159, 199, 0.3) !important;
 }
 
 /* Pediatric: Plum / Lavender */
@@ -34,6 +58,10 @@
 .service-card.srv-pediatric .service-icon {
   color: #701a75;
 }
+.service-card.srv-pediatric:hover {
+  box-shadow: 0 20px 45px -15px rgba(112, 26, 117, 0.15);
+  border-color: rgba(112, 26, 117, 0.3) !important;
+}
 
 /* Geriatric: Soft Teal */
 .service-card.srv-geriatric {
@@ -45,6 +73,10 @@
 }
 .service-card.srv-geriatric .service-icon {
   color: #0d9488;
+}
+.service-card.srv-geriatric:hover {
+  box-shadow: 0 20px 45px -15px rgba(13, 148, 136, 0.15);
+  border-color: rgba(13, 148, 136, 0.3) !important;
 }
 
 /* Women's Health: Rose / Pink */
@@ -58,6 +90,10 @@
 .service-card.srv-womens .service-icon {
   color: #be185d;
 }
+.service-card.srv-womens:hover {
+  box-shadow: 0 20px 45px -15px rgba(190, 24, 93, 0.15);
+  border-color: rgba(190, 24, 93, 0.3) !important;
+}
 
 /* Tele & Remote: Slate / Slate Blue */
 .service-card.srv-tele {
@@ -69,6 +105,10 @@
 }
 .service-card.srv-tele .service-icon {
   color: #475569;
+}
+.service-card.srv-tele:hover {
+  box-shadow: 0 20px 45px -15px rgba(71, 85, 105, 0.15);
+  border-color: rgba(71, 85, 105, 0.3) !important;
 }
 
 

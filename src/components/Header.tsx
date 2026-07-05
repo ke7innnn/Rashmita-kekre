@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Menu, ArrowRight, X } from 'lucide-react';
+import Magnetic from './Magnetic';
 import './Header.css';
 
 export default function Header() {
@@ -35,9 +36,11 @@ export default function Header() {
         </nav>
 
         <div className="header-actions">
-          <a href="/#book" className="btn-primary">
-            Book Appointment <ArrowRight size={20} />
-          </a>
+          <Magnetic strength={0.25}>
+            <a href="/#book" className="btn-primary">
+              Book Appointment <ArrowRight size={20} />
+            </a>
+          </Magnetic>
           <button 
             className="mobile-menu-btn" 
             aria-label="Toggle menu"

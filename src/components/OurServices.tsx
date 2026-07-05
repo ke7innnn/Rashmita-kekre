@@ -132,10 +132,10 @@ export default function OurServices({ onClose }: OurServicesProps) {
                   className={`service-card glass rounded-l srv-${service.category}`}
                   variants={cardVariants}
                   whileHover={{ 
-                    y: -4,
-                    boxShadow: "0 20px 40px -15px rgba(0, 0, 0, 0.04)",
-                    borderColor: "rgba(0, 0, 0, 0.08)"
+                    y: -8,
+                    scale: 1.02
                   }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
                 >
                   <div className="service-card-top">
                     <div className="service-icon-wrapper">
