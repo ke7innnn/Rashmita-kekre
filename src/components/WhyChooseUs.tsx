@@ -39,16 +39,16 @@ export default function WhyChooseUs() {
         >
           <div className="why-photo-main rounded-l">
             <motion.img 
-              src="/physio_back_therapy.jpg" 
-              alt="Physiotherapy back therapy session" 
+              src="/physio_gym_rehab.jpg" 
+              alt="Physiotherapy training and clinical rehabilitation session" 
               style={{ y: mainY, scale: 1.15, width: '100%', height: '100%', objectFit: 'cover' }}
             />
           </div>
           <div className="why-photo-accent rounded-m" style={{ backgroundColor: '#e5e2d5' }}>
             <motion.img 
-              src="/doctor.png" 
-              alt="Dr. Rashmita Karvir-Kekre" 
-              style={{ y: accentY, scale: 1.12, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} 
+              src="/yoga_stretch.jpg" 
+              alt="Patient performing downward-facing dog stretch pose" 
+              style={{ y: accentY, scale: 1.12, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'center' }} 
             />
           </div>
         </motion.div>
