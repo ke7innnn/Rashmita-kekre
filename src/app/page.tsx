@@ -6,7 +6,6 @@ import Hero from '../components/Hero';
 import Intro from '../components/Intro';
 import ScrollyServices from '../components/ScrollyServices';
 import WhyChooseUs from '../components/WhyChooseUs';
-import ConditionsGrid from '../components/ConditionsGrid';
 import HowItWorks from '../components/HowItWorks';
 import TestimonialsSection from '../components/TestimonialsSection';
 import CTABanner from '../components/CTABanner';
@@ -104,7 +103,6 @@ export default function Home() {
           <Hero />
           <Intro />
           <WhyChooseUs />
-          <ConditionsGrid />
           <ScrollyServices />
           <HowItWorks />
           <TestimonialsSection />

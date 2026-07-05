@@ -29,12 +29,8 @@ export default function WhyChooseUs() {
           <div className="why-photo-main rounded-l">
             <img src="/physio_back_therapy.jpg" alt="Physiotherapy back therapy session" />
           </div>
-          <div className="why-photo-accent rounded-m">
-            <img src="/physio_consultation.jpg" alt="Physiotherapy consultation" />
-            <div className="why-badge glass rounded-m">
-              <span className="why-badge-num">98%</span>
-              <span className="why-badge-label">Satisfaction Rate</span>
-            </div>
+          <div className="why-photo-accent rounded-m" style={{ backgroundColor: '#e5e2d5' }}>
+            <img src="/doctor.png" alt="Dr. Rashmita Karvir-Kekre" style={{ objectFit: 'cover', objectPosition: 'top' }} />
           </div>
         </motion.div>
 
