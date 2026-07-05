@@ -42,12 +42,7 @@ export default function TermsPage() {
             </div>
 
             {/* Split Layout */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-              gap: '3rem',
-              alignItems: 'start'
-            }}>
+            <div className="legal-grid">
               
               {/* Sticky Sidebar */}
               <div style={{
@@ -79,10 +74,10 @@ export default function TermsPage() {
                 </div>
               </div>
 
-              {/* Main Document Text (takes more space, so we use flex-grow or grid span if needed, but a 2-column grid works well) */}
+              {/* Main Document Text */}
               <motion.div 
                 className="glass rounded-l" 
-                style={{ padding: '3.5rem 3rem', display: 'flex', flexDirection: 'column', gap: '2.5rem', lineHeight: 1.6, gridColumn: 'span 2' }}
+                style={{ padding: '3.5rem 3rem', display: 'flex', flexDirection: 'column', gap: '2.5rem', lineHeight: 1.6 }}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.8 }}

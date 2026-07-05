@@ -133,3 +133,18 @@ button {
   animation: fadeIn 0.8s ease forwards;
 }
 
+/* Legal Pages Split Layout Grid */
+.legal-grid {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .legal-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
