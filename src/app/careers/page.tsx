@@ -126,6 +126,93 @@ export default function CareersPage() {
           </div>
         </section>
 
+        {/* Workplace Culture & Core Values */}
+        <section style={{ padding: '5rem 0', background: 'rgba(0,159,199,0.01)', borderTop: '1px solid rgba(0,0,0,0.03)' }}>
+          <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '4rem',
+              alignItems: 'center'
+            }}>
+              
+              {/* Left Column: Values */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div>
+                  <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Environment</p>
+                  <h2 style={{ fontSize: '2.5rem', fontWeight: 500, marginTop: '0.5rem', letterSpacing: '-0.02em' }}>Workplace Culture & Values</h2>
+                  <p style={{ color: 'var(--muted-foreground)', marginTop: '0.75rem', lineHeight: 1.5 }}>
+                    We believe that premium client outcomes start with a supportive, growth-oriented environment for our clinicians and staff.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Award size={20} /></div>
+                    <div>
+                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Continuous Growth & Education</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                        We fund advanced certifications (manual therapy, dry needling, craniosacral training) and hold bi-weekly peer reviews to elevate clinical competencies.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Heart size={20} /></div>
+                    <div>
+                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Collaboration-First Model</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                        Our physiotherapists, analysts, and operations leads coordinate dynamically. We treat complex conditions by combining mechanical reviews with neurological perspectives.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Sparkles size={20} /></div>
+                    <div>
+                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Sustained Professional Wellness</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                        We respect work-life balances, maintaining structured schedules and limits on daily case volumes to prevent clinical fatigue and ensure premium patient care.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right Column: Beautiful Generated Image */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <motion.div 
+                  className="glass rounded-l" 
+                  style={{ 
+                    position: 'relative', 
+                    width: '100%', 
+                    maxWidth: '450px', 
+                    overflow: 'hidden', 
+                    aspectRatio: '1',
+                    padding: '12px'
+                  }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <img 
+                    src="/clinic_careers.png" 
+                    alt="HEALTH 360 Collaborative Clinic Environment" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover', 
+                      borderRadius: '16px' 
+                    }} 
+                  />
+                </motion.div>
+              </div>
+
+            </div>
+          </div>
+        </section>
+
         {/* Hiring Process */}
         <section style={{ padding: '4rem 0', background: 'rgba(0,0,0,0.01)', borderTop: '1px solid rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
           <div className="xpad" style={{ maxWidth: '1000px', margin: '0 auto' }}>

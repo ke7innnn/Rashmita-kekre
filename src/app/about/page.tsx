@@ -182,6 +182,76 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* Clinical Philosophy Section */}
+        <section style={{ padding: '3rem 0 5rem' }}>
+          <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
+              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Pillars</p>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 500, marginTop: '0.5rem' }}>Clinical Philosophy</h2>
+              <p style={{ maxWidth: '650px', margin: '0.75rem auto 0', color: 'var(--muted-foreground)', fontSize: '1.05rem', lineHeight: 1.5 }}>
+                We bridge advanced clinical science with restorative mindfulness to construct a foundation for active, pain-free movement.
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '2rem'
+            }}>
+              <motion.div 
+                className="glass rounded-l" 
+                style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5 }}
+              >
+                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                  <Heart size={24} />
+                </div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 500 }}>Patient-Centric Recovery</h3>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                  Every body is unique. We conduct multi-dimensional metric scans to formulate customized therapies designed around your specific career, lifestyle, and recovery objectives.
+                </p>
+              </motion.div>
+
+              <motion.div 
+                className="glass rounded-l" 
+                style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.1 }}
+              >
+                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                  <Award size={24} />
+                </div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 500 }}>Evidence-Based Science</h3>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                  We apply peer-reviewed clinical procedures, utilizing state-of-the-art postural screening and diagnostic movement assessments to locate root imbalances rather than masking symptoms.
+                </p>
+              </motion.div>
+
+              <motion.div 
+                className="glass rounded-l" 
+                style={{ padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+              >
+                <div style={{ color: 'var(--brand)', width: '48px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,159,199,0.06)', borderRadius: '12px' }}>
+                  <ShieldCheck size={24} />
+                </div>
+                <h3 style={{ fontSize: '1.35rem', fontWeight: 500 }}>Holistic Restorative Balance</h3>
+                <p style={{ color: 'var(--muted-foreground)', fontSize: '0.975rem', lineHeight: 1.5 }}>
+                  Our therapies integrate manual manipulation, specialized exercises, and craniosacral therapy to soothe the nervous system and promote systemic long-term wellness.
+                </p>
+              </motion.div>
+            </div>
+          </div>
+        </section>
+
         {/* Interactive Body Diagram Section */}
         <section style={{ padding: '4rem 0', background: 'rgba(0, 159, 199, 0.01)' }}>
           <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
@@ -289,6 +359,47 @@ export default function AboutPage() {
 
             </div>
 
+          </div>
+        </section>
+
+        {/* Clinical Evolution Timeline */}
+        <section style={{ padding: '5rem 0', background: 'rgba(0, 159, 199, 0.01)', borderTop: '1px solid rgba(0,0,0,0.03)', borderBottom: '1px solid rgba(0,0,0,0.03)' }}>
+          <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+            <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
+              <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our History</p>
+              <h2 style={{ fontSize: '2.5rem', fontWeight: 500, marginTop: '0.5rem' }}>Clinical Evolution Timeline</h2>
+              <p style={{ maxWidth: '600px', margin: '0.75rem auto 0', color: 'var(--muted-foreground)', fontSize: '1.05rem' }}>
+                Thirteen years of dedication, growth, and commitment to holistic physical rehabilitation.
+              </p>
+            </div>
+
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gap: '2rem',
+              position: 'relative'
+            }}>
+              {[
+                { year: '2013', title: 'Clinical Foundation', desc: 'Dr. Rashmita established specialized orthopedic physical therapy support, focusing on manual skeletal treatment and musculoskeletal adjustments.' },
+                { year: '2017', title: 'Craniosacral Integration', desc: 'Integrated Biodynamic Craniosacral Therapy (BCST) into standard recovery, merging neurological wellness with manual rehabilitation.' },
+                { year: '2022', title: 'Digitized Diagnosis', desc: 'Adopted advanced biometrics, introducing dynamic range-of-motion assessments and computerized posture scans for precise client records.' },
+                { year: '2026', title: 'HEALTH 360 Clinic', desc: 'Launched the integrated flagship facility in Vasai West, offering unified physiotherapy, craniosacral therapy, and patient dashboards.' }
+              ].map((milestone, idx) => (
+                <motion.div 
+                  key={idx}
+                  className="glass rounded-m"
+                  style={{ padding: '2.5rem 2rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                  initial={{ opacity: 0, y: 25 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: idx * 0.1 }}
+                >
+                  <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--brand)', lineHeight: 1 }}>{milestone.year}</span>
+                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500 }}>{milestone.title}</h3>
+                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.5 }}>{milestone.desc}</p>
+                </motion.div>
+              ))}
+            </div>
           </div>
         </section>
 

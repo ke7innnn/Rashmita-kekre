@@ -316,6 +316,93 @@ export default function ContactPage() {
                 </div>
               </motion.div>
             </div>
+
+            {/* Clinic Location & Visitor Guide */}
+            <div style={{
+              marginTop: '6rem',
+              borderTop: '1px solid rgba(0,0,0,0.05)',
+              paddingTop: '5rem',
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gap: '4rem',
+              alignItems: 'center'
+            }}>
+              
+              {/* Left Side: Storefront Illustration */}
+              <div style={{ display: 'flex', justifyContent: 'center' }}>
+                <motion.div 
+                  className="glass rounded-l" 
+                  style={{ 
+                    position: 'relative', 
+                    width: '100%', 
+                    maxWidth: '480px', 
+                    overflow: 'hidden', 
+                    aspectRatio: '1',
+                    padding: '12px'
+                  }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <img 
+                    src="/clinic_location_visual.png" 
+                    alt="HEALTH 360 Clinic Building Frontage Watercolor Rendering" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover', 
+                      borderRadius: '16px' 
+                    }} 
+                  />
+                </motion.div>
+              </div>
+
+              {/* Right Side: Visitor Guide Cards */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div>
+                  <p className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Visitor details</p>
+                  <h2 style={{ fontSize: '2.5rem', fontWeight: 500, marginTop: '0.5rem', letterSpacing: '-0.02em' }}>Location & Visitor Guide</h2>
+                  <p style={{ color: 'var(--muted-foreground)', marginTop: '0.75rem', lineHeight: 1.5 }}>
+                    Find us in Vasai West, Palghar. Here is everything you need to know to prepare for your clinical visit.
+                  </p>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><ShieldCheck size={20} /></div>
+                    <div>
+                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Preparation for First Visit</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                        Please wear loose, comfortable clothing (e.g., track pants, training t-shirts) that allow full movement assessment. Arrive 10 minutes prior to your appointment time.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><MapPin size={20} /></div>
+                    <div>
+                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Dedicated Patient Parking</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                        Free reserved clinic parking slots are available directly in front of the main entrance at Amardeep Society building for easy wheelchair/stretcher access.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="glass rounded-m" style={{ padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px' }}><Clock size={20} /></div>
+                    <div>
+                      <h4 style={{ fontWeight: 500, fontSize: '1.1rem' }}>Public Transit Directions</h4>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.4, marginTop: '4px' }}>
+                        The clinic is situated a convenient 7-minute auto-rickshaw or taxi drive from the Vasai Road Railway Station (Western Line).
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
           </div>
         </section>
       </main>
