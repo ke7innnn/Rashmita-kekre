@@ -375,28 +375,33 @@ export default function AboutPage() {
 
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
               gap: '2rem',
               position: 'relative'
             }}>
               {[
-                { year: '2013', title: 'Clinical Foundation', desc: 'Dr. Rashmita established specialized orthopedic physical therapy support, focusing on manual skeletal treatment and musculoskeletal adjustments.' },
-                { year: '2017', title: 'Craniosacral Integration', desc: 'Integrated Biodynamic Craniosacral Therapy (BCST) into standard recovery, merging neurological wellness with manual rehabilitation.' },
-                { year: '2022', title: 'Digitized Diagnosis', desc: 'Adopted advanced biometrics, introducing dynamic range-of-motion assessments and computerized posture scans for precise client records.' },
-                { year: '2026', title: 'HEALTH 360 Clinic', desc: 'Launched the integrated flagship facility in Vasai West, offering unified physiotherapy, craniosacral therapy, and patient dashboards.' }
+                { year: '2013', img: '/milestone_2013.jpg', title: 'Clinical Foundation', desc: 'Dr. Rashmita established specialized orthopedic physical therapy support, focusing on manual skeletal treatment and musculoskeletal adjustments.' },
+                { year: '2017', img: '/milestone_2017.jpg', title: 'Craniosacral Integration', desc: 'Integrated Biodynamic Craniosacral Therapy (BCST) into standard recovery, merging neurological wellness with manual rehabilitation.' },
+                { year: '2022', img: '/milestone_2022.jpg', title: 'Digitized Diagnosis', desc: 'Adopted advanced biometrics, introducing dynamic range-of-motion assessments and computerized posture scans for precise client records.' },
+                { year: '2026', img: '/milestone_2026.jpg', title: 'HEALTH 360 Clinic', desc: 'Launched the integrated flagship facility in Vasai West, offering unified physiotherapy, craniosacral therapy, and patient dashboards.' }
               ].map((milestone, idx) => (
                 <motion.div 
                   key={idx}
                   className="glass rounded-m"
-                  style={{ padding: '2.5rem 2rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem' }}
+                  style={{ padding: '1.5rem', position: 'relative', display: 'flex', flexDirection: 'column', gap: '1rem', overflow: 'hidden' }}
                   initial={{ opacity: 0, y: 25 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ duration: 0.6, delay: idx * 0.1 }}
                 >
-                  <span style={{ fontSize: '2rem', fontWeight: 700, color: 'var(--brand)', lineHeight: 1 }}>{milestone.year}</span>
-                  <h3 style={{ fontSize: '1.25rem', fontWeight: 500 }}>{milestone.title}</h3>
-                  <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', lineHeight: 1.5 }}>{milestone.desc}</p>
+                  <div style={{ width: '100%', height: '145px', overflow: 'hidden', borderRadius: '12px', background: '#e5e2d5' }}>
+                    <img src={milestone.img} alt={milestone.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <div>
+                    <span style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--brand)', lineHeight: 1 }}>{milestone.year}</span>
+                    <h3 style={{ fontSize: '1.2rem', fontWeight: 500, marginTop: '0.25rem' }}>{milestone.title}</h3>
+                    <p style={{ color: 'var(--muted-foreground)', fontSize: '0.875rem', lineHeight: 1.4, marginTop: '0.5rem' }}>{milestone.desc}</p>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -408,7 +413,7 @@ export default function AboutPage() {
           <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
               gap: '4rem',
               alignItems: 'start'
             }}>
@@ -448,7 +453,7 @@ export default function AboutPage() {
 
               </div>
 
-              {/* Right Column: Special Trainings & Certifications */}
+              {/* Middle Column: Special Trainings & Certifications */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                 <h3 style={{ fontSize: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.75rem' }}>
                   <Award style={{ color: 'var(--brand)' }} /> Certifications & Special Training
@@ -461,6 +466,37 @@ export default function AboutPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+
+              {/* Right Column: Accent Clinical Tools Photo */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <h3 style={{ fontSize: '1.5rem', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.75rem' }}>
+                  <Heart style={{ color: 'var(--brand)' }} /> Clinical Equipment
+                </h3>
+                <motion.div 
+                  className="glass rounded-m" 
+                  style={{ 
+                    overflow: 'hidden', 
+                    aspectRatio: '1', 
+                    padding: '10px', 
+                    position: 'relative' 
+                  }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6 }}
+                >
+                  <img 
+                    src="/rehab_tools.jpg" 
+                    alt="Clinical Rehabilitation Tools and Equipment" 
+                    style={{ 
+                      width: '100%', 
+                      height: '100%', 
+                      objectFit: 'cover', 
+                      borderRadius: '12px' 
+                    }} 
+                  />
+                </motion.div>
               </div>
 
             </div>
