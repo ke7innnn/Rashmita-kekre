@@ -21,7 +21,7 @@ export default function ScrollReveal({
       <motion.span
         initial={{ y: '105%', skewY: skewAmount }}
         whileInView={{ y: '0%', skewY: 0 }}
-        viewport={{ once: true, margin: '-50px' }}
+        viewport={{ once: true, margin: '-10px' }}
         transition={{
           duration,
           delay,

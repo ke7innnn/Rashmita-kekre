@@ -5,7 +5,11 @@ import Header from '../components/Header';
 import Hero from '../components/Hero';
 import Intro from '../components/Intro';
 import ScrollyServices from '../components/ScrollyServices';
+import WhyChooseUs from '../components/WhyChooseUs';
+import ConditionsGrid from '../components/ConditionsGrid';
+import HowItWorks from '../components/HowItWorks';
 import TestimonialsSection from '../components/TestimonialsSection';
+import CTABanner from '../components/CTABanner';
 import OurServices from '../components/OurServices';
 import TreatmentMethods from '../components/TreatmentMethods';
 import InteractiveBodyDiagram from '../components/InteractiveBodyDiagram';
@@ -99,8 +103,12 @@ export default function Home() {
         <main>
           <Hero />
           <Intro />
+          <WhyChooseUs />
+          <ConditionsGrid />
           <ScrollyServices />
+          <HowItWorks />
           <TestimonialsSection />
+          <CTABanner />
           <BrandBanner />
         </main>
       ) : currentPage === 'booking' ? (

@@ -67,9 +67,36 @@ export default function AboutPage() {
             <h1 
               style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', lineHeight: 1.1, letterSpacing: '-0.03em' }}
             >
-              <ScrollReveal>Empowering Movement.</ScrollReveal>
-              <ScrollReveal delay={0.1}>Restoring Balance.</ScrollReveal>
-              <ScrollReveal delay={0.2}>Enhancing Life.</ScrollReveal>
+              <span style={{ display: 'block', overflow: 'hidden' }}>
+                <motion.span
+                  style={{ display: 'block', transformOrigin: 'left top' }}
+                  initial={{ y: '105%', skewY: 2.5 }}
+                  animate={{ y: '0%', skewY: 0 }}
+                  transition={{ duration: 0.9, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Empowering Movement.
+                </motion.span>
+              </span>
+              <span style={{ display: 'block', overflow: 'hidden' }}>
+                <motion.span
+                  style={{ display: 'block', transformOrigin: 'left top' }}
+                  initial={{ y: '105%', skewY: 2.5 }}
+                  animate={{ y: '0%', skewY: 0 }}
+                  transition={{ duration: 0.9, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Restoring Balance.
+                </motion.span>
+              </span>
+              <span style={{ display: 'block', overflow: 'hidden' }}>
+                <motion.span
+                  style={{ display: 'block', transformOrigin: 'left top' }}
+                  initial={{ y: '105%', skewY: 2.5 }}
+                  animate={{ y: '0%', skewY: 0 }}
+                  transition={{ duration: 0.9, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  Enhancing Life.
+                </motion.span>
+              </span>
             </h1>
             <motion.p 
               style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', lineHeight: 1.6 }}
