@@ -1,0 +1,111 @@
+.whatsapp-fab-container {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+.whatsapp-fab {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0e6f5c 0%, #009fc7 100%);
+  color: #ffffff;
+  position: relative;
+  box-shadow: 0 12px 30px -8px rgba(14, 111, 92, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  text-decoration: none;
+  transition: box-shadow 0.3s ease;
+}
+
+.whatsapp-fab:hover {
+  box-shadow: 0 16px 36px -6px rgba(0, 159, 199, 0.45);
+}
+
+.whatsapp-svg {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  z-index: 2;
+}
+
+/* Pulsing outer glow ring to complement modern aesthetic */
+.whatsapp-glow-ring {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  border: 1.5px dashed rgba(0, 159, 199, 0.25);
+  animation: rotateGlow 25s linear infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+@keyframes rotateGlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Tooltip tag */
+.whatsapp-tooltip {
+  position: absolute;
+  right: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(250, 247, 236, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 159, 199, 0.1);
+  color: #141414; /* var(--foreground) equivalent */
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.825rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 8px 20px -6px rgba(0, 0, 0, 0.08);
+  transform-origin: right center;
+  z-index: 3;
+}
+
+@media (max-width: 768px) {
+  .whatsapp-fab-container {
+    bottom: 1.5rem;
+    right: 1.5rem;
+  }
+  
+  .whatsapp-fab {
+    width: 50px;
+    height: 50px;
+  }
+
+  .whatsapp-svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .whatsapp-glow-ring {
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+  }
+
+  /* Hide tooltip on mobile to avoid screen crowding */
+  .whatsapp-tooltip {
+    display: none;
+  }
+}

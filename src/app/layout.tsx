@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '../index.css';
 import SmoothScrollProvider from '../components/SmoothScrollProvider';
+import WhatsAppWidget from '../components/WhatsAppWidget';
 
 export const metadata: Metadata = {
   title: 'HEALTH 360 - Comprehensive Movement Analysis & Physiotherapy',
@@ -17,6 +18,7 @@ export default function RootLayout({
       <body>
         <SmoothScrollProvider>
           {children}
+          <WhatsAppWidget />
         </SmoothScrollProvider>
       </body>
     </html>
