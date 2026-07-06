@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Menu, ArrowRight, X } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Magnetic from './Magnetic';
 import './Header.css';
 
@@ -42,44 +43,60 @@ export default function Header() {
             </a>
           </Magnetic>
           <button 
-            className="mobile-menu-btn" 
+            className={`mobile-menu-btn ${mobileMenuOpen ? 'open' : ''}`}
             aria-label="Toggle menu"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', padding: '6px' }}
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            <span className="hamburger-box">
+              <span className="hamburger-inner"></span>
+            </span>
           </button>
         </div>
       </div>
 
       {/* Mobile Menu Dropdown */}
-      {mobileMenuOpen && (
-        <nav className="mobile-nav glass" style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          background: 'rgba(250, 247, 236, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderBottom: '1px solid rgba(0,0,0,0.06)',
-          padding: '2rem 1.5rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '1.5rem',
-          zIndex: 100
-        }}>
-          <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <li><a href="/" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--foreground)' }}>Home</a></li>
-            <li><a href="/about" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--foreground)' }}>About us</a></li>
-            <li><a href="/#our-services" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--foreground)' }}>Services</a></li>
-            <li><a href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--foreground)' }}>Contact</a></li>
-            <li><a href="/careers" onClick={() => setMobileMenuOpen(false)} style={{ fontSize: '1.1rem', fontWeight: 500, color: 'var(--foreground)' }}>Careers</a></li>
-          </ul>
-          <a href="/#book" onClick={() => setMobileMenuOpen(false)} className="btn-primary" style={{ width: '100%', textAlign: 'center', justifyContent: 'center', marginTop: '0.5rem' }}>
-            Book Appointment <ArrowRight size={20} />
-          </a>
-        </nav>
-      )}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <motion.nav 
+            className="mobile-nav-menu"
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <ul className="mobile-nav-links">
+              {[
+                { name: 'Home', href: '/' },
+                { name: 'About us', href: '/about' },
+                { name: 'Services', href: '/#our-services' },
+                { name: 'Contact', href: '/contact' },
+                { name: 'Careers', href: '/careers' }
+              ].map((item, idx) => (
+                <motion.li 
+                  key={item.name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: idx * 0.04 + 0.1, duration: 0.3 }}
+                >
+                  <a href={item.href} onClick={() => setMobileMenuOpen(false)}>
+                    {item.name}
+                  </a>
+                </motion.li>
+              ))}
+            </ul>
+            <motion.div 
+              className="mobile-nav-action"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.3 }}
+            >
+              <a href="/#book" onClick={() => setMobileMenuOpen(false)} className="btn-primary">
+                Book Appointment <ArrowRight size={20} />
+              </a>
+            </motion.div>
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </header>
   );
 }
