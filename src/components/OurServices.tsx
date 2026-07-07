@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Dumbbell, Brain, Baby, Accessibility, Heart, MonitorSmartphone, ArrowRight, ArrowLeft, Hand } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Dumbbell, ArrowRight, ArrowLeft, Hand, Zap, Home, Search, ShieldAlert } from 'lucide-react';
+import { treatmentMethods, treatmentCategories } from '../data/treatmentsData';
 import './OurServices.css';
 
 interface OurServicesProps {
@@ -8,73 +9,58 @@ interface OurServicesProps {
 }
 
 export default function OurServices({ onClose }: OurServicesProps) {
-  const [expandedCards, setExpandedCards] = useState<Record<number, boolean>>({});
+  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState<string>('');
 
-  const toggleExpand = (idx: number) => {
+  const toggleExpand = (title: string) => {
     setExpandedCards(prev => ({
       ...prev,
-      [idx]: !prev[idx]
+      [title]: !prev[title]
     }));
   };
 
-  const servicesList = [
-    {
-      title: "Musculoskeletal Physiotherapy",
-      description: "Focused on orthopedic and sports-related dysfunctions. Includes manual therapy, joint mobilization, soft-tissue manipulation, and customized exercise programs to improve strength, flexibility, and motor control. Post-operative rehabilitation and pain modulation (TENS, ultrasound, cryotherapy, kinesio-taping) help restore full function and posture.",
-      oneLineDescription: "Targeted joint mobilization, manual therapy, and corrective exercise to recover strength and movement.",
-      category: "musculo",
-      badgeLabel: "Muscle & Joint",
-      icon: <Dumbbell className="service-icon" size={20} strokeWidth={1.5} />
-    },
-    {
-      title: "Neurological Physiotherapy",
-      description: "Specialized care for conditions like stroke, spinal cord injuries, Parkinson’s disease, cerebral palsy, and neuropathies. Treatment includes neuro-facilitation (PNF, NDT), gait training, tone management, and sensory re-education to enhance balance, coordination, and functional independence.",
-      oneLineDescription: "Neuro-facilitation and balance training to restore mobility and independence for nerve-related conditions.",
-      category: "neuro",
-      badgeLabel: "Nervous System",
-      icon: <Brain className="service-icon" size={20} strokeWidth={1.5} />
-    },
-    {
-      title: "Biodynamic Craniosacral Therapy",
-      description: "A gentle, non-invasive hands-on treatment that helps release deep-seated physical and emotional tension. By sensing and supporting the body's natural healing rhythms, this therapy works directly with the nervous system to relieve chronic pain, ease stress, resolve trauma, and restore complete structural and energetic balance.",
-      oneLineDescription: "A gentle, hands-on nervous system therapy that releases deep physical and emotional tension.",
-      category: "craniosacral",
-      badgeLabel: "Holistic Care",
-      icon: <Hand className="service-icon" size={20} strokeWidth={1.5} />
-    },
-    {
-      title: "Pediatric Physiotherapy",
-      description: "Dedicated programs for children with developmental delays, hypotonia, cerebral palsy, or congenital deformities. Focused on developmental milestones, balance and coordination training, play-based motor learning, orthotic support, and gait re-education for improved mobility and confidence.",
-      oneLineDescription: "Dedicated milestones-focused motor learning and physical training tailored for developing children.",
-      category: "pediatric",
-      badgeLabel: "Children's Health",
-      icon: <Baby className="service-icon" size={20} strokeWidth={1.5} />
-    },
-    {
-      title: "Geriatric Physiotherapy",
-      description: "Comprehensive care for seniors to manage arthritis, balance issues, and post-fracture recovery. Includes fall-prevention programs, strength and mobility training, assistive-device education, and pain management strategies to maintain independence and enhance quality of life.",
-      oneLineDescription: "Gentle strength, balance, and fall-prevention programs to support senior mobility and quality of life.",
-      category: "geriatric",
-      badgeLabel: "Elderly Care",
-      icon: <Accessibility className="service-icon" size={20} strokeWidth={1.5} />
-    },
-    {
-      title: "Women’s Health Physiotherapy",
-      description: "Focused on pelvic floor health, post-partum recovery, incontinence, and menopause-related changes. Therapy includes pelvic floor strengthening, diastasis recti correction, post-natal rehabilitation, and prenatal exercise guidance for long-term musculoskeletal well-being.",
-      oneLineDescription: "Specialized postpartum, prenatal, and pelvic floor strengthening for long-term musculoskeletal wellness.",
-      category: "womens",
-      badgeLabel: "Women's Health",
-      icon: <Heart className="service-icon" size={20} strokeWidth={1.5} />
-    },
-    {
-      title: "Community-based & Tele-Physiotherapy",
-      description: "Accessible physiotherapy through home visits and online consultations. Includes guided exercise demonstrations, self-management education, and remote follow-up monitoring to ensure consistent recovery and continued care beyond the clinic.",
-      oneLineDescription: "At-home therapist visits and secure online video consultations to keep your recovery consistent anywhere.",
-      category: "tele",
-      badgeLabel: "Remote & Home",
-      icon: <MonitorSmartphone className="service-icon" size={20} strokeWidth={1.5} />
+  const getServiceStyleClass = (category: string) => {
+    switch (category) {
+      case 'exercise': return 'musculo';
+      case 'electro': return 'neuro';
+      case 'manual': return 'craniosacral';
+      case 'care': return 'tele';
+      default: return 'tele';
     }
-  ];
+  };
+
+  const getServiceIcon = (category: string) => {
+    switch (category) {
+      case 'exercise':
+        return <Dumbbell className="service-icon" size={20} strokeWidth={1.5} />;
+      case 'electro':
+        return <Zap className="service-icon" size={20} strokeWidth={1.5} />;
+      case 'manual':
+        return <Hand className="service-icon" size={20} strokeWidth={1.5} />;
+      case 'care':
+        return <Home className="service-icon" size={20} strokeWidth={1.5} />;
+      default:
+        return null;
+    }
+  };
+
+  // Filter based on tab category and search input query by title/description
+  const filteredList = treatmentMethods
+    .filter((method) => {
+      const matchesCategory = selectedCategory === 'all' || method.category === selectedCategory;
+      const matchesSearch = method.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            method.description.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchesCategory && matchesSearch;
+    })
+    .map((method) => ({
+      title: method.title,
+      description: method.description,
+      oneLineDescription: method.oneLineDescription,
+      category: getServiceStyleClass(method.category),
+      badgeLabel: method.categoryLabel,
+      icon: getServiceIcon(method.category)
+    }));
 
   // Container variants for stagger reveal
   const containerVariants = {
@@ -82,7 +68,7 @@ export default function OurServices({ onClose }: OurServicesProps) {
     show: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05
       }
     }
   };
@@ -117,69 +103,125 @@ export default function OurServices({ onClose }: OurServicesProps) {
             </p>
           </div>
 
-          <motion.div 
-            className="services-grid"
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-          >
-            {servicesList.map((service, index) => {
-              const isExpanded = expandedCards[index] || false;
+          {/* Controls: Search and Filter Tabs */}
+          <div className="services-controls">
+            
+            {/* Search Bar */}
+            <div className="services-search-box rounded-m">
+              <Search size={18} className="search-icon" />
+              <input 
+                type="text" 
+                placeholder="Search services..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="search-input"
+              />
+              {searchQuery && (
+                <button className="search-clear-btn" onClick={() => setSearchQuery('')}>
+                  Clear
+                </button>
+              )}
+            </div>
 
-              return (
-                <motion.div 
-                  key={index}
-                  className={`service-card glass rounded-l srv-${service.category}`}
-                  variants={cardVariants}
-                  whileHover={{ 
-                    y: -8,
-                    scale: 1.02
-                  }}
-                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            {/* Filter Categories */}
+            <div className="services-tabs">
+              {treatmentCategories.map((category) => (
+                <button
+                  key={category.id}
+                  className={`service-tab-btn tab-cat-${category.id} ${selectedCategory === category.id ? 'active' : ''}`}
+                  onClick={() => setSelectedCategory(category.id)}
                 >
-                  <div className="service-card-top">
-                    <div className="service-icon-wrapper">
-                      {service.icon}
-                    </div>
-                    <span className="service-badge rounded-s uppercase">
-                      {service.badgeLabel}
-                    </span>
-                  </div>
-                  
-                  <div className="service-card-content">
-                    <h3 className="service-card-title">{service.title}</h3>
-                    <p className="service-card-one-line">{service.oneLineDescription}</p>
-                    
-                    {isExpanded && (
-                      <motion.p 
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: "auto" }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="service-card-full-desc"
-                      >
-                        {service.description}
-                      </motion.p>
-                    )}
-                  </div>
+                  {category.label}
+                </button>
+              ))}
+            </div>
 
-                  <div className="service-card-actions">
-                    <button 
-                      className="learn-more-link" 
-                      onClick={(e) => { e.preventDefault(); toggleExpand(index); }}
-                      aria-expanded={isExpanded}
+          </div>
+
+          {/* Grid Layout wrapped with AnimatePresence */}
+          <AnimatePresence mode="wait">
+            {filteredList.length > 0 ? (
+              <motion.div 
+                key={selectedCategory + searchQuery} 
+                className="services-grid"
+                variants={containerVariants}
+                initial="hidden"
+                animate="show"
+              >
+                {filteredList.map((service) => {
+                  const isExpanded = expandedCards[service.title] || false;
+
+                  return (
+                    <motion.div 
+                      key={service.title}
+                      className={`service-card glass rounded-l srv-${service.category}`}
+                      variants={cardVariants}
+                      whileHover={{ 
+                        y: -8,
+                        scale: 1.02
+                      }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
                     >
-                      {isExpanded ? "Read less" : "Read more"}
-                    </button>
+                      <div className="service-card-top">
+                        <div className="service-icon-wrapper">
+                          {service.icon}
+                        </div>
+                        <span className="service-badge rounded-s uppercase">
+                          {service.badgeLabel}
+                        </span>
+                      </div>
+                      
+                      <div className="service-card-content">
+                        <h3 className="service-card-title">{service.title}</h3>
+                        <p className="service-card-one-line">{service.oneLineDescription}</p>
+                        
+                        {isExpanded && (
+                          <motion.p 
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="service-card-full-desc"
+                          >
+                            {service.description}
+                          </motion.p>
+                        )}
+                      </div>
 
-                    <a href="#book" className="service-card-book-btn">
-                      Request slot <ArrowRight size={14} />
-                    </a>
-                  </div>
-                </motion.div>
-              );
-            })}
-          </motion.div>
+                      <div className="service-card-actions">
+                        <button 
+                          className="learn-more-link" 
+                          onClick={(e) => { e.preventDefault(); toggleExpand(service.title); }}
+                          aria-expanded={isExpanded}
+                        >
+                          {isExpanded ? "Read less" : "Read more"}
+                        </button>
+
+                        <a href="#book" className="service-card-book-btn">
+                          Request slot <ArrowRight size={14} />
+                        </a>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            ) : (
+              <motion.div 
+                key="empty"
+                className="services-empty-state glass rounded-l"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <ShieldAlert size={36} className="text-brand mb-3" />
+                <h4>No services found</h4>
+                <p>Try searching for a different term or clear the filter query.</p>
+                <button className="btn-primary mt-3" onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}>
+                  Reset Filters
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Adjunct Services & Outcome Goals */}
           <div style={{

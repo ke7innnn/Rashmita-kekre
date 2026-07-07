@@ -7,8 +7,8 @@ export default function Footer() {
         
         {/* Brand & Address */}
         <div className="footer-brand" style={{ maxWidth: '350px' }}>
-          <a href="/" className="logo" style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--foreground)' }}>
-            HEALTH<span className="logo-accent" style={{ color: 'var(--brand)' }}>360</span>
+          <a href="/" className="logo" style={{ display: 'inline-flex', alignItems: 'center' }}>
+            <img src="/logo.png" alt="Health 360 Logo" style={{ height: '80px', width: 'auto', objectFit: 'contain' }} />
           </a>
           <p className="footer-description" style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)', marginTop: '0.5rem', lineHeight: 1.5 }}>
             Health 360 Physiotherapy & Craniosacral Therapy Clinic

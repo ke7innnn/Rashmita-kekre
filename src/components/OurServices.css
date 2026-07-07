@@ -333,3 +333,159 @@
   outline: 2px solid var(--brand) !important;
   outline-offset: 4px !important;
 }
+
+/* Controls - Search & Tabs with wrapping support */
+.services-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2.5rem;
+  width: 100%;
+}
+
+@media (min-width: 980px) {
+  .services-controls {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+}
+
+.services-search-box {
+  display: flex;
+  align-items: center;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  padding: 0.75rem 1.25rem;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+}
+
+.services-search-box .search-icon {
+  color: var(--muted-foreground);
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+}
+
+.services-search-box .search-input {
+  border: none;
+  outline: none;
+  font-size: 0.95rem;
+  color: var(--foreground);
+  width: 100%;
+  background: transparent;
+}
+
+.services-search-box .search-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.6;
+}
+
+.services-search-box .search-clear-btn {
+  background: none;
+  border: none;
+  color: var(--brand);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Chips Filter buttons wrapping */
+.services-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  width: 100%;
+}
+
+@media (min-width: 980px) {
+  .services-tabs {
+    width: auto;
+    justify-content: flex-end;
+  }
+}
+
+.service-tab-btn {
+  white-space: nowrap;
+  padding: 0.6rem 1.2rem;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.5);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.service-tab-btn:hover {
+  background: #ffffff;
+  color: var(--brand);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.02);
+}
+
+.service-tab-btn.tab-cat-all.active {
+  background-color: var(--foreground);
+  border-color: var(--foreground);
+  color: #ffffff;
+}
+
+.service-tab-btn.tab-cat-exercise.active {
+  background-color: #5d7052;
+  border-color: #5d7052;
+  color: #ffffff;
+}
+
+.service-tab-btn.tab-cat-electro.active {
+  background-color: #b45309;
+  border-color: #b45309;
+  color: #ffffff;
+}
+
+.service-tab-btn.tab-cat-manual.active {
+  background-color: #009fc7;
+  border-color: #009fc7;
+  color: #ffffff;
+}
+
+.service-tab-btn.tab-cat-care.active {
+  background-color: #475569;
+  border-color: #475569;
+  color: #ffffff;
+}
+
+.service-tab-btn:focus-visible {
+  outline: 2px solid var(--brand) !important;
+  outline-offset: 4px !important;
+}
+
+/* Empty State */
+.services-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  padding: 5rem 3rem;
+  border: 1px dashed rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.services-empty-state h4 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.services-empty-state p {
+  font-size: 1rem;
+  color: var(--muted-foreground);
+  max-width: 320px;
+  margin-top: 0.5rem;
+  line-height: 1.5;
+}

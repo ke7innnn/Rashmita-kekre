@@ -80,11 +80,11 @@ const testimonials = [
 export default function TestimonialsSection() {
   const [groupIndex, setGroupIndex] = useState(0);
 
-  // Automatically cycle through sets of 4 reviews every 3 seconds
+  // Automatically cycle through sets of 4 reviews every 7 seconds
   useEffect(() => {
     const timer = setInterval(() => {
       setGroupIndex((prev) => (prev + 1) % 3); // 3 distinct groups of 4 (wrapping around)
-    }, 3000);
+    }, 7000);
     return () => clearInterval(timer);
   }, []);
 

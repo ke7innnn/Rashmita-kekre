@@ -79,14 +79,14 @@ export const treatmentMethods: TreatmentMethod[] = [
     categoryLabel: "Hands-on & Specialized"
   },
   {
-    title: "Biodynamic Craniosacral Therapy",
-    description: "Biodynamic Craniosacral Therapy is a gentle, non-invasive hands-on treatment that helps release deep-seated physical and emotional tension. By sensing and supporting the body's natural healing rhythms, this therapy works directly with the nervous system to relieve chronic pain, ease stress, resolve trauma, and restore complete structural and energetic balance.",
-    oneLineDescription: "A gentle, hands-on nervous system therapy that releases deep physical and emotional tension.",
-    category: "manual",
-    categoryLabel: "Hands-on & Specialized"
+    title: "Aroleap",
+    description: "Aroleap is an advanced robotic-assisted rehabilitation and strength training technology. By utilizing precise electronic resistance and real-time biofeedback, it allows for highly targeted muscle loading, objective strength assessment, and guided movement patterns. This modern technology helps accelerate muscle recovery, correct imbalances, and track rehabilitation progress with clinical precision.",
+    oneLineDescription: "Robotic-assisted strength and rehabilitation technology with real-time biofeedback.",
+    category: "exercise",
+    categoryLabel: "Exercise & Sports"
   },
   {
-    title: "Treadmill Rehabilitation",
+    title: "Treadmill",
     description: "Treadmill-based rehabilitation is used to retrain walking patterns, build cardiovascular endurance, and safely progress patients back to normal gait and activity levels. Under the guidance of our therapists, treadmill sessions are adjusted for speed, incline, and support, making them suitable for post-injury recovery, neurological rehabilitation, and general fitness conditioning.",
     oneLineDescription: "Guided gait and endurance retraining on a controlled, therapist-supervised treadmill.",
     category: "exercise",

@@ -70,12 +70,7 @@ export default function Intro() {
           <motion.p className="intro-lead" variants={itemVariants}>
             <strong>Health 360 Physiotherapy & Craniosacral Therapy Clinic</strong>, founded by <strong>Dr. Rashmita Karvir-Kekre (PT)</strong>, is a holistic center dedicated to healing through movement and mindful rehabilitation. With over 13 years of professional experience, Dr. Rashmita offers an integrated approach that focuses on complete physical and emotional wellbeing.
           </motion.p>
-          <motion.p variants={itemVariants}>
-            Our philosophy is simple — treat the root cause, not just the symptoms. Through evidence-based physiotherapy and gentle craniosacral therapy, we help individuals recover from pain, regain functional strength, and restore their natural body balance.
-          </motion.p>
-          <motion.p variants={itemVariants}>
-            Whether it’s chronic pain, post-surgical rehab, women’s health concerns, or pediatric development challenges, we design customized therapy programs that promote long-term recovery and improved quality of life.
-          </motion.p>
+
           <motion.a 
             href="/about#body-diagram" 
             className="btn-primary" 
