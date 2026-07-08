@@ -16,7 +16,7 @@ export default function HomeBodyDiagram() {
         
         <div className="diagram-page-header" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
           <p className="subtitle uppercase">Interactive Condition Map</p>
-          <h2 className="diagram-page-title text-balance" style={{ fontSize: '2.8rem', fontWeight: 500 }}>Common Conditions We Treat</h2>
+          <h2 className="diagram-page-title text-balance" style={{ fontSize: '2.8rem', fontWeight: 500 }}>Identify the Reason for Your Pain</h2>
           <p className="diagram-page-intro text-balance" style={{ maxWidth: '700px', margin: '1rem auto 0', color: 'var(--muted-foreground)' }}>
             Hover or tap the points on the body diagram to explore specific pain areas, injuries, and joint disorders that can be resolved through professional physiotherapy.
           </p>
