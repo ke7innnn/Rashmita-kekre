@@ -4,7 +4,7 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { motion } from 'framer-motion';
 import { useState } from 'react';
-import { Mail, Phone, MapPin, Clock, Send, Check, ChevronDown, MessageSquare, ShieldCheck } from 'lucide-react';
+import { Mail, Phone, MapPin, Clock, Send, Check, ChevronDown, MessageSquare, ShieldCheck, HelpCircle } from 'lucide-react';
 
 const FAQS = [
   { q: 'How long does a HEALTH 360 assessment take?', a: 'The screening itself takes around 45 minutes, followed by a 15-minute consultation with a senior physiotherapist to walk you through your dashboard readings and custom plan.' },
@@ -32,40 +32,94 @@ export default function ContactPage() {
       <Header />
       <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
         <section style={{ padding: '4rem 0 6rem', background: 'radial-gradient(circle at bottom left, rgba(0, 159, 199, 0.04), transparent 50%)' }}>
-          <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+          <div className="xpad" style={{ maxWidth: '1200px', margin: '0 auto' }}>
             
-            {/* Header */}
-            <div style={{ textAlign: 'center', marginBottom: '4.5rem' }}>
-              <motion.p 
-                className="subtitle uppercase"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
+            {/* Header / Hero Grid */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+              gap: '3rem',
+              alignItems: 'center',
+              marginBottom: '5rem'
+            }}>
+              <div style={{ textAlign: 'left' }}>
+                <motion.p 
+                  className="subtitle uppercase"
+                  style={{ 
+                    fontSize: '0.85rem', 
+                    fontWeight: 600, 
+                    color: 'var(--brand)', 
+                    letterSpacing: '0.1em',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    background: 'rgba(0, 159, 199, 0.08)',
+                    padding: '6px 14px',
+                    borderRadius: '9999px',
+                    marginBottom: '1rem'
+                  }}
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--brand)' }} />
+                  Clinical Intake Open
+                </motion.p>
+                <motion.h1 
+                  style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 500, margin: '1rem 0 1.5rem', letterSpacing: '-0.03em', lineHeight: 1.15 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.1 }}
+                >
+                  Let's start your recovery journey
+                </motion.h1>
+                <motion.p 
+                  style={{ fontSize: '1.15rem', color: 'var(--muted-foreground)', lineHeight: 1.6 }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                >
+                  Have questions about our biometrics tracking, posture screens, or treatment schedules? Fill out our secure intake form or connect directly with our Vasai clinical team.
+                </motion.p>
+              </div>
+              
+              <motion.div 
+                style={{ position: 'relative' }}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.7 }}
               >
-                Get in Touch
-              </motion.p>
-              <motion.h1 
-                style={{ fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontWeight: 500, margin: '1rem 0 1.5rem', letterSpacing: '-0.03em' }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                Connect with our clinic
-              </motion.h1>
-              <motion.p 
-                style={{ fontSize: '1.25rem', color: 'var(--muted-foreground)', maxWidth: '650px', margin: '0 auto', lineHeight: 1.5 }}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                Have questions about our biometrics tracking, schedules, or recovery programs? Fill out our secure form or contact us directly.
-              </motion.p>
+                <div className="glass rounded-l" style={{ padding: '12px', overflow: 'hidden', position: 'relative', aspectRatio: '1.6', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
+                  <img 
+                    src="/physio_consultation.jpg" 
+                    alt="Clinical assessment and consultation scene" 
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} 
+                  />
+                  <div style={{
+                    position: 'absolute',
+                    bottom: '24px',
+                    left: '24px',
+                    backgroundColor: 'rgba(255,255,255,0.92)',
+                    backdropFilter: 'blur(8px)',
+                    padding: '8px 16px',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(255,255,255,0.6)',
+                    boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937' }}>Average response: &lt; 12 hours</span>
+                  </div>
+                </div>
+              </motion.div>
             </div>
 
             {/* Grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
               gap: '3rem',
               alignItems: 'start'
             }}>
@@ -82,7 +136,14 @@ export default function ContactPage() {
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 500, borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '1rem' }}>Clinic Details</h3>
                   
                   <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><MapPin size={20} /></div>
+                    <div style={{ 
+                      color: 'var(--brand)', 
+                      marginTop: '2px', 
+                      padding: '10px', 
+                      background: 'rgba(0,159,199,0.06)', 
+                      border: '1px solid rgba(0,159,199,0.12)', 
+                      borderRadius: '10px' 
+                    }}><MapPin size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Address</p>
                       <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.5 }}>
@@ -93,14 +154,21 @@ export default function ContactPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Phone size={20} /></div>
+                    <div style={{ 
+                      color: '#ef4444', 
+                      marginTop: '2px', 
+                      padding: '10px', 
+                      background: 'rgba(239,68,68,0.06)', 
+                      border: '1px solid rgba(239,68,68,0.12)', 
+                      borderRadius: '10px' 
+                    }}><Phone size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Phone</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <a href="tel:+919834848956" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
+                        <a href="tel:+919834848956" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500 }}>
                           +91 98348 48956
                         </a>
-                        <a href="tel:+918482812859" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
+                        <a href="tel:+918482812859" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500 }}>
                           +91 84828 12859
                         </a>
                       </div>
@@ -108,17 +176,31 @@ export default function ContactPage() {
                   </div>
 
                   <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Mail size={20} /></div>
+                    <div style={{ 
+                      color: '#8b5cf6', 
+                      marginTop: '2px', 
+                      padding: '10px', 
+                      background: 'rgba(139,92,246,0.06)', 
+                      border: '1px solid rgba(139,92,246,0.12)', 
+                      borderRadius: '10px' 
+                    }}><Mail size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Email</p>
-                      <a href="mailto:hello@health360.clinic" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem' }}>
+                      <a href="mailto:hello@health360.clinic" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500 }}>
                         hello@health360.clinic
                       </a>
                     </div>
                   </div>
 
                   <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                    <div style={{ color: 'var(--brand)', marginTop: '2px', padding: '8px', background: 'rgba(0,159,199,0.06)', borderRadius: '8px' }}><Clock size={20} /></div>
+                    <div style={{ 
+                      color: '#f59e0b', 
+                      marginTop: '2px', 
+                      padding: '10px', 
+                      background: 'rgba(245,158,11,0.06)', 
+                      border: '1px solid rgba(245,158,11,0.12)', 
+                      borderRadius: '10px' 
+                    }}><Clock size={20} /></div>
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Clinic Hours</p>
                       <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', lineHeight: 1.4 }}>
@@ -126,6 +208,21 @@ export default function ContactPage() {
                         Sun: Closed
                       </p>
                     </div>
+                  </div>
+                </div>
+
+                {/* Biometrics Image Card */}
+                <div className="glass rounded-m" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <img 
+                    src="/rehab_tools.jpg" 
+                    alt="Clinical Biometrics and Assessment equipment" 
+                    style={{ width: '100%', aspectRatio: '1.8', objectFit: 'cover', borderRadius: '12px' }} 
+                  />
+                  <div style={{ padding: '4px 8px' }}>
+                    <h4 style={{ fontSize: '1.05rem', fontWeight: 600 }}>Biometrics Tracking Hub</h4>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginTop: '4px', lineHeight: 1.45 }}>
+                      Vasai West clinic features state-of-the-art posture scanners and digital mobility testing equipment for high-precision diagnostic insights.
+                    </p>
                   </div>
                 </div>
 
@@ -165,7 +262,8 @@ export default function ContactPage() {
                           style={{ 
                             transition: 'transform 0.2s', 
                             transform: openFaq === idx ? 'rotate(180deg)' : 'rotate(0deg)',
-                            color: 'var(--brand)'
+                            color: 'var(--brand)',
+                            flexShrink: 0
                           }} 
                         />
                       </button>
@@ -183,136 +281,119 @@ export default function ContactPage() {
                 </div>
               </motion.div>
 
-              {/* Right Side: Contact Form */}
+              {/* Right Side: Contact Form styled as a unified Glass Card */}
               <motion.div
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
               >
                 <div className="glass rounded-l" style={{ padding: '2.5rem' }}>
+                  
                   {submitted ? (
                     <motion.div 
-                      style={{ textAlign: 'center', padding: '4rem 0' }}
+                      style={{ textAlign: 'center', padding: '3rem 0', display: 'flex', flexDirection: 'column', gap: '1.25rem', height: '100%', justifyContent: 'center' }}
                       initial={{ scale: 0.9, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                     >
                       <div style={{ 
-                        width: '72px', 
-                        height: '72px', 
+                        width: '64px', 
+                        height: '64px', 
                         borderRadius: '50%', 
                         background: 'var(--brand)', 
                         color: 'white', 
                         display: 'flex', 
                         alignItems: 'center', 
                         justifyContent: 'center', 
-                        margin: '0 auto 1.5rem',
+                        margin: '0 auto',
                         boxShadow: '0 8px 24px rgba(0, 159, 199, 0.2)'
                       }}>
-                        <Check size={36} />
+                        <Check size={32} />
                       </div>
-                      <h3 style={{ fontSize: '1.65rem', fontWeight: 500, marginBottom: '0.5rem' }}>Message Received!</h3>
-                      <p style={{ color: 'var(--muted-foreground)', lineHeight: 1.5 }}>
-                        Thank you for contacting HEALTH 360, {name}. A clinic specialist will respond at your phone or email details within 12 hours.
+                      <h3 style={{ fontSize: '1.5rem', fontWeight: 500, color: '#141414' }}>Message Received!</h3>
+                      <p style={{ color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.5 }}>
+                        Thank you for contacting HEALTH 360, {name}. A specialist will reach out to you within 12 hours.
                       </p>
                     </motion.div>
                   ) : (
-                    <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                      <h3 style={{ fontSize: '1.5rem', fontWeight: 500 }}>Send a secure message</h3>
-                      
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="name" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Name *</label>
-                        <input 
-                          type="text" 
-                          id="name"
-                          required
-                          value={name}
-                          onChange={(e) => setName(e.target.value)}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            fontFamily: 'inherit'
-                          }}
-                        />
+                    <>
+                      <div className="split-card-right-header" style={{ marginBottom: '1.75rem' }}>
+                        {/* Sunburst SVG */}
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="split-card-icon" style={{ marginBottom: '1rem' }}>
+                          <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                          <circle cx="12" cy="12" r="4.5" fill="var(--brand)" style={{ fillOpacity: 0.15 }} />
+                        </svg>
+                        <h2 style={{ fontSize: '2rem', fontWeight: 500, color: '#141414', marginTop: '0.5rem' }}>Get Started</h2>
+                        <p style={{ fontSize: '0.95rem', color: 'var(--muted-foreground)', marginTop: '0.35rem' }}>Welcome to HEALTH 360 — Let's align your plan</p>
+                        <div style={{ height: '1px', backgroundColor: 'rgba(0,0,0,0.06)', width: '100%', marginTop: '1.25rem' }} />
                       </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="email" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Email *</label>
-                        <input 
-                          type="email" 
-                          id="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            fontFamily: 'inherit'
-                          }}
-                        />
-                      </div>
+                      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                        <div className="split-form-group">
+                          <label className="split-form-label" htmlFor="name">Your name</label>
+                          <input 
+                            type="text" 
+                            id="name"
+                            required
+                            placeholder="John Doe"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            className="split-form-input"
+                          />
+                        </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="phone" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Phone Number *</label>
-                        <input 
-                          type="tel" 
-                          id="phone"
-                          required
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            fontFamily: 'inherit'
-                          }}
-                        />
-                      </div>
+                        <div className="split-form-group">
+                          <label className="split-form-label" htmlFor="phone">Your phone</label>
+                          <input 
+                            type="tel" 
+                            id="phone"
+                            required
+                            placeholder="+91 XXXXX XXXXX"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            className="split-form-input"
+                          />
+                        </div>
 
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                        <label htmlFor="message" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--muted-foreground)' }}>Concern / Message</label>
-                        <textarea 
-                          id="message"
-                          rows={4}
-                          value={message}
-                          onChange={(e) => setMessage(e.target.value)}
-                          style={{
-                            padding: '12px 16px',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(0, 0, 0, 0.1)',
-                            background: 'rgba(255, 255, 255, 0.6)',
-                            fontSize: '1rem',
-                            outline: 'none',
-                            fontFamily: 'inherit',
-                            resize: 'vertical'
-                          }}
-                        />
-                      </div>
+                        <div className="split-form-group">
+                          <label className="split-form-label" htmlFor="email">Your email address</label>
+                          <input 
+                            type="email" 
+                            id="email"
+                            required
+                            placeholder="hi@health360.clinic"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            className="split-form-input"
+                          />
+                        </div>
 
-                      <div style={{ display: 'flex', gap: '8px', alignItems: 'center', background: 'rgba(0,0,0,0.01)', padding: '10px 14px', borderRadius: '10px', border: '1px solid rgba(0,0,0,0.03)' }}>
-                        <ShieldCheck size={16} style={{ color: 'var(--brand)', flexShrink: 0 }} />
-                        <span style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)' }}>Clinical grade security. Your message is encrypted.</span>
-                      </div>
+                        <div className="split-form-group">
+                          <label className="split-form-label" htmlFor="message">Clinical concerns</label>
+                          <textarea 
+                            id="message"
+                            rows={3}
+                            placeholder="Explain any back pain, injuries, or recovery goals..."
+                            value={message}
+                            onChange={(e) => setMessage(e.target.value)}
+                            className="split-form-textarea"
+                          />
+                        </div>
 
-                      <button 
-                        type="submit" 
-                        className="btn-primary" 
-                        style={{ width: '100%', marginTop: '0.5rem', gap: '8px' }}
-                      >
-                        Send message <Send size={16} />
-                      </button>
-                    </form>
+                        <button 
+                          type="submit" 
+                          className="btn-primary" 
+                          style={{ width: '100%', marginTop: '0.25rem', gap: '8px', padding: '12px 24px', borderRadius: '12px', fontSize: '1rem' }}
+                        >
+                          Send Secure Message <Send size={16} />
+                        </button>
+                      </form>
+
+                      <div className="split-card-link-btn" style={{ marginTop: '1.25rem' }}>
+                        Need urgent booking? <a href="tel:+919834848956">Call Us Now</a>
+                      </div>
+                    </>
                   )}
+
                 </div>
               </motion.div>
             </div>
@@ -388,8 +469,8 @@ export default function ContactPage() {
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
-                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
-                      <ShieldCheck size={20} />
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)', flexShrink: 0 }}>
+                      <HelpCircle size={20} />
                     </div>
                     <div>
                       <h4 style={{ fontWeight: 600, fontSize: '1.15rem', color: 'var(--foreground)' }}>Preparation for First Visit</h4>
@@ -418,7 +499,7 @@ export default function ContactPage() {
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
-                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)', flexShrink: 0 }}>
                       <MapPin size={20} />
                     </div>
                     <div>
@@ -448,7 +529,7 @@ export default function ContactPage() {
                     }}
                     transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                   >
-                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)' }}>
+                    <div style={{ color: 'var(--brand)', marginTop: '3px', background: 'rgba(0,159,199,0.06)', padding: '10px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(0,159,199,0.08)', flexShrink: 0 }}>
                       <Clock size={20} />
                     </div>
                     <div>
