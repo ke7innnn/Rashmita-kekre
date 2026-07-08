@@ -9,16 +9,16 @@ interface OurServicesProps {
 }
 
 export default function OurServices({ onClose }: OurServicesProps) {
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
-
-  const toggleExpand = (title: string) => {
-    setExpandedCards(prev => ({
-      ...prev,
-      [title]: !prev[title]
-    }));
-  };
+  const [selectedService, setSelectedService] = useState<{
+    title: string;
+    description: string;
+    oneLineDescription: string;
+    category: string;
+    badgeLabel: string;
+    icon: React.ReactNode;
+  } | null>(null);
 
   const getServiceStyleClass = (category: string) => {
     switch (category) {
@@ -149,8 +149,6 @@ export default function OurServices({ onClose }: OurServicesProps) {
                 animate="show"
               >
                 {filteredList.map((service) => {
-                  const isExpanded = expandedCards[service.title] || false;
-
                   return (
                     <motion.div 
                       key={service.title}
@@ -166,7 +164,7 @@ export default function OurServices({ onClose }: OurServicesProps) {
                         <div className="service-icon-wrapper">
                           {service.icon}
                         </div>
-                        <span className="service-badge rounded-s uppercase">
+                        <span className="service-badge uppercase">
                           {service.badgeLabel}
                         </span>
                       </div>
@@ -174,27 +172,14 @@ export default function OurServices({ onClose }: OurServicesProps) {
                       <div className="service-card-content">
                         <h3 className="service-card-title">{service.title}</h3>
                         <p className="service-card-one-line">{service.oneLineDescription}</p>
-                        
-                        {isExpanded && (
-                          <motion.p 
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="service-card-full-desc"
-                          >
-                            {service.description}
-                          </motion.p>
-                        )}
                       </div>
 
                       <div className="service-card-actions">
                         <button 
                           className="learn-more-link" 
-                          onClick={(e) => { e.preventDefault(); toggleExpand(service.title); }}
-                          aria-expanded={isExpanded}
+                          onClick={(e) => { e.preventDefault(); setSelectedService(service); }}
                         >
-                          {isExpanded ? "Read less" : "Read more"}
+                          Read details
                         </button>
 
                         <a href="#book" className="service-card-book-btn">
@@ -220,6 +205,48 @@ export default function OurServices({ onClose }: OurServicesProps) {
                   Reset Filters
                 </button>
               </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Service Details Modal */}
+          <AnimatePresence>
+            {selectedService && (
+              <div className="service-modal-overlay" onClick={() => setSelectedService(null)}>
+                <motion.div 
+                  className={`service-modal-content glass srv-${selectedService.category}`}
+                  initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                  transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button className="service-modal-close" onClick={() => setSelectedService(null)} aria-label="Close modal">
+                    &times;
+                  </button>
+                  
+                  <div className="service-modal-header">
+                    <div className="service-icon-wrapper">
+                      {selectedService.icon}
+                    </div>
+                    <span className="service-badge uppercase">
+                      {selectedService.badgeLabel}
+                    </span>
+                  </div>
+                  
+                  <h3 className="service-modal-title">{selectedService.title}</h3>
+                  <p className="service-modal-one-line">{selectedService.oneLineDescription}</p>
+                  
+                  <div className="service-modal-body">
+                    <p className="service-modal-desc">{selectedService.description}</p>
+                  </div>
+                  
+                  <div className="service-modal-actions">
+                    <a href="#book" className="service-card-book-btn" onClick={() => setSelectedService(null)}>
+                      Request slot <ArrowRight size={14} />
+                    </a>
+                  </div>
+                </motion.div>
+              </div>
             )}
           </AnimatePresence>
 
