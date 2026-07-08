@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, ShieldAlert } from 'lucide-react';
-import { bodyConditions, SILHOUETTE_IMAGE_PATH } from '../data/bodyData';
-import type { BodyCondition } from '../data/bodyData';
+import { useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { ArrowLeft } from 'lucide-react';
 import './InteractiveBodyDiagram.css';
 
 interface InteractiveBodyDiagramProps {
@@ -13,7 +11,6 @@ interface InteractiveBodyDiagramProps {
 }
 
 export default function InteractiveBodyDiagram({ onClose, onBookClick }: InteractiveBodyDiagramProps) {
-  const [selectedCondition, setSelectedCondition] = useState<BodyCondition | null>(null);
 
   // Auto-focus on escape key closure helper
   useEffect(() => {
@@ -136,114 +133,7 @@ export default function InteractiveBodyDiagram({ onClose, onBookClick }: Interac
               <p className="stat-card-desc">A testament to our long-term patient relationships and continuous support throughout their wellness journey.</p>
             </div>
           </div>
-        </div>
-
-        <div className="diagram-section-divider" />
-
-        <div className="diagram-page-header">
-          <p className="subtitle uppercase">Interactive Condition Map</p>
-          <h2 className="diagram-page-title text-balance">Common Conditions We Treat</h2>
-          <p className="diagram-page-intro text-balance">
-            Hover or tap the points on the body diagram to explore specific pain areas, injuries, and joint disorders that can be resolved through professional physiotherapy.
-          </p>
-        </div>
-
-        <div className="diagram-main-layout">
-          
-          {/* Left Column: Interactive Silhouette */}
-          <div className="diagram-visual-column">
-            <div className="silhouette-outer-container">
-              <div className="silhouette-wrapper">
-                <img 
-                  src={SILHOUETTE_IMAGE_PATH} 
-                  alt="Body Silhouette Diagram" 
-                  className="silhouette-img" 
-                />
-                {bodyConditions.map((condition) => {
-                  const isSelected = selectedCondition?.id === condition.id;
-                  return (
-                    <button
-                      key={condition.id}
-                      className={`body-point ${isSelected ? 'active' : ''}`}
-                      style={{ 
-                        top: `${condition.yPercent}%`, 
-                        left: `${condition.xPercent}%` 
-                      }}
-                      onMouseEnter={() => setSelectedCondition(condition)}
-                      onClick={() => setSelectedCondition(condition)}
-                      tabIndex={0}
-                      aria-label={`${condition.name} (${condition.region})`}
-                    >
-                      {/* Pulse effect for selected/active dots */}
-                      {isSelected && <span className="point-pulse" />}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Dynamic Detail Card (Reserved space) */}
-          <div className="diagram-detail-column">
-            <div className="detail-card-space-holder">
-              <AnimatePresence mode="wait">
-                {selectedCondition ? (
-                  <motion.div
-                    key={selectedCondition.id}
-                    className="condition-detail-card glass rounded-l"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.25, ease: "easeOut" }}
-                  >
-                    <div className="condition-card-header">
-                      <span className="condition-region-tag uppercase">
-                        {selectedCondition.region}
-                      </span>
-                      <h3 className="condition-name">{selectedCondition.name}</h3>
-                    </div>
-
-                    <p className="condition-description">
-                      {selectedCondition.description}
-                    </p>
-
-                    <div className="condition-cta-wrapper">
-                      <button 
-                        className="btn-primary w-full" 
-                        onClick={onBookClick}
-                      >
-                        Book Appointment
-                      </button>
-                      <p className="condition-cta-disclaimer">
-                        Get a detailed personalized assessment with Dr. Rashmita Karvir-Kekre.
-                      </p>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="placeholder"
-                    className="condition-detail-card placeholder-card glass rounded-l"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <div className="placeholder-icon-wrapper rounded-m">
-                      <ShieldAlert size={32} className="text-brand" />
-                    </div>
-                    <h4>Explore Pain Regions</h4>
-                    <p>
-                      Hover over any circular marker (desktop) or tap directly on the body map (mobile) to inspect conditions, symptoms, and targeted therapies.
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-
-        </div>
-
-      </div>
+        </div>      </div>
     </section>
   );
 }
