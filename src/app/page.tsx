@@ -8,7 +8,7 @@ import ScrollyServices from '../components/ScrollyServices';
 import WhyChooseUs from '../components/WhyChooseUs';
 import HowItWorks from '../components/HowItWorks';
 import TestimonialsSection from '../components/TestimonialsSection';
-import CTABanner from '../components/CTABanner';
+import HomeBodyDiagram from '../components/HomeBodyDiagram';
 import OurServices from '../components/OurServices';
 import TreatmentMethods from '../components/TreatmentMethods';
 import InteractiveBodyDiagram from '../components/InteractiveBodyDiagram';
@@ -106,7 +106,7 @@ export default function Home() {
           <ScrollyServices />
           <HowItWorks />
           <TestimonialsSection />
-          <CTABanner />
+          <HomeBodyDiagram />
           <BrandBanner />
         </main>
       ) : currentPage === 'booking' ? (
