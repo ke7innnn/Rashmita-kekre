@@ -5,7 +5,6 @@ import Header from '../../components/Header';
 import Footer from '../../components/Footer';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { Award, BookOpen, Briefcase, Heart, User, CheckCircle, ShieldCheck, Smile } from 'lucide-react';
-import ScrollReveal from '../../components/ScrollReveal';
 import '../../components/InteractiveBodyDiagram.css';
 
 const STATS = [
@@ -159,9 +158,15 @@ export default function AboutPage() {
                 {/* Bio Column */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   <span className="subtitle uppercase" style={{ fontSize: '0.8rem' }}>Our Specialist</span>
-                  <h2 style={{ fontSize: '2.5rem', fontWeight: 500, margin: 0, letterSpacing: '-0.02em' }}>
-                    <ScrollReveal>Dr. Rashmita Karvir-Kekre (PT)</ScrollReveal>
-                  </h2>
+                  <motion.h2 
+                    style={{ fontSize: '2.5rem', fontWeight: 500, margin: 0, letterSpacing: '-0.02em' }}
+                    initial={{ opacity: 0, y: 15 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.6 }}
+                  >
+                    Dr. Rashmita Karvir-Kekre (PT)
+                  </motion.h2>
                   <p style={{ color: 'var(--muted-foreground)', fontSize: '1.1rem', lineHeight: 1.6 }}>
                     Health 360 Physiotherapy & Craniosacral Therapy Clinic, founded by Dr. Rashmita Karvir-Kekre, is a holistic center dedicated to healing through movement and mindful rehabilitation. With over 13 years of professional experience, Dr. Rashmita offers an integrated approach that focuses on complete physical and emotional wellbeing.
                   </p>
