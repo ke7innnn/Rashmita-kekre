@@ -120,6 +120,19 @@ export default function BookingModal({ onClose }: BookingPageProps) {
     }
   };
 
+  const getAllSlotsForDay = () => {
+    if (!dayInfo) return [];
+    const slots: number[] = [];
+    dayInfo.windows.forEach(win => {
+      const startMin = toMinutes(win.start);
+      const endMin = toMinutes(win.end);
+      for (let t = startMin; t < endMin; t += 30) {
+        slots.push(t);
+      }
+    });
+    return slots;
+  };
+
   return (
     <section className="booking-page-section h360-booking">
       <div className="xpad booking-page-wrapper">
@@ -130,204 +143,222 @@ export default function BookingModal({ onClose }: BookingPageProps) {
         </a>
 
         <div className="booking-page-container">
-          {!isConfirmed ? (
-            <div className="h360-form-wrap">
-              <div className="h360-banner">
-                <div className="h360-banner-icon">
-                  <Calendar size={20} />
-                </div>
-                <h2>Book your assessment</h2>
-                <p>Select a day and time that works best for you.</p>
-              </div>
+          
+          {/* Left Column: Premium Clinical Image */}
+          <div className="booking-visual-column">
+            <img 
+              src="/physio_consultation.jpg" 
+              alt="Clinical consultation and assessment session at HEALTH 360" 
+              className="booking-visual-img"
+            />
+          </div>
 
-              <div className="h360-body">
-                <div className="h360-left">
-                  <div className="h360-block-head">
-                    <h3>Date</h3>
-                    <span className="h360-date-label">
-                      {selectedDate
-                        ? `${selectedDate.getTime() === new Date().setHours(0,0,0,0) ? "Today, " : ""}${selectedDate.toLocaleDateString("en-IN", { month: "long", day: "numeric" })}`
-                        : ""}
-                    </span>
+          {/* Right Column: Title and Card */}
+          <div className="booking-form-column">
+            
+            {!isConfirmed ? (
+              <>
+                {/* Section Header */}
+                <div className="booking-section-header">
+                  <p className="subtitle uppercase">Book a consultation with our Vasai clinical team today.</p>
+                  <h2 className="booking-section-title">Let's start your recovery journey</h2>
+                  <p className="booking-section-desc">
+                    Ready to reclaim your strength? Choose a date and time slot below to schedule your personalized physiotherapy assessment.
+                  </p>
+                </div>
+
+                {/* Single Booking Card */}
+                <div className="booking-card glass">
+                  <h3 className="booking-card-title">Book an appointment</h3>
+                  <div className="booking-card-divider" />
+
+                  {/* Date Selector */}
+                  <div className="booking-card-section">
+                    <div className="booking-card-section-header">
+                      <span className="section-label">Select Date</span>
+                      <span className="section-value">
+                        {selectedDate
+                          ? selectedDate.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })
+                          : ""}
+                      </span>
+                    </div>
+
+                    <div className="booking-days-strip">
+                      {days.map((d, index) => {
+                        const isClosed = HOURS[d.getDay()].closed;
+                        const isSelected = selectedDate && dateKey(selectedDate) === dateKey(d);
+                        const isToday = index === 0;
+                        const weekday = HOURS[d.getDay()].name;
+                        const subtext = isToday ? "Today" : d.getDate();
+
+                        return (
+                          <button
+                            key={index}
+                            type="button"
+                            className={`booking-day-chip ${isClosed ? 'closed' : ''} ${isSelected ? 'selected' : ''}`}
+                            disabled={isClosed}
+                            onClick={() => handleDaySelect(d)}
+                          >
+                            <span className="chip-weekday">{weekday}</span>
+                            <span className="chip-daynum">{subtext}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
+
+                  {/* Time Selector */}
+                  <div className="booking-card-section">
+                    <div className="booking-card-section-header">
+                      <span className="section-label">Select Time</span>
+                      <span className="section-value">
+                        {selectedTime ? fmtTime(toMinutes(selectedTime)) : "Choose a slot"}
+                      </span>
+                    </div>
+
+                    <div className="booking-slots-grid">
+                      {getAllSlotsForDay().map((t, idx) => {
+                        const timeStr = pad(Math.floor(t / 60)) + ":" + pad(t % 60);
+                        const displayTime = fmtTime(t);
+                        const isBooked = bookedSlots.includes(timeStr);
+                        const isSelected = selectedTime === timeStr;
+
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`booking-slot-chip ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
+                            disabled={isBooked}
+                            onClick={() => setSelectedTime(timeStr)}
+                          >
+                            {displayTime}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Patient Details Unlock Form */}
+                  <div className="booking-card-divider" />
                   
-                  <div className="h360-days">
-                    {days.map((d, index) => {
-                      const isClosed = HOURS[d.getDay()].closed;
-                      const isSelected = selectedDate && dateKey(selectedDate) === dateKey(d);
-                      const isToday = index === 0;
-                      
-                      return (
-                        <button
-                          key={index}
-                          type="button"
-                          className={`h360-day ${isClosed ? 'h360-day-closed' : ''} ${isSelected ? 'h360-day-selected' : ''}`}
-                          disabled={isClosed}
-                          onClick={() => handleDaySelect(d)}
-                        >
-                          {isToday ? "Today" : HOURS[d.getDay()].name}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <h3 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 14px' }}>Time slot</h3>
-                  <div className="h360-slot-groups">
-                    {dayInfo && dayInfo.windows.map((win, winIdx) => {
-                      const slots = [];
-                      const startMin = toMinutes(win.start);
-                      const endMin = toMinutes(win.end);
-                      
-                      for (let t = startMin; t < endMin; t += 30) {
-                        slots.push(t);
-                      }
-
-                      return (
-                        <div key={winIdx} className="h360-slot-group">
-                          <p className="h360-slot-group-label">{win.label}</p>
-                          <div className="h360-slots">
-                            {slots.map((t, slotIdx) => {
-                              const timeStr = pad(Math.floor(t / 60)) + ":" + pad(t % 60);
-                              const displayTime = fmtTime(t);
-                              const isBooked = bookedSlots.includes(timeStr);
-                              const isSelected = selectedTime === timeStr;
-
-                              return (
-                                <div
-                                  key={slotIdx}
-                                  className={`h360-slot ${isBooked ? 'h360-slot-booked' : ''} ${isSelected ? 'h360-slot-selected' : ''}`}
-                                  onClick={() => !isBooked && setSelectedTime(timeStr)}
-                                >
-                                  {displayTime}
-                                </div>
-                              );
-                            })}
-                          </div>
+                  <div className="booking-patient-form">
+                    {!selectedTime ? (
+                      <p className="booking-select-prompt">
+                        Please select a date and time slot above to unlock booking details.
+                      </p>
+                    ) : (
+                      <div className="booking-inputs-container">
+                        
+                        <div className={`booking-field-group ${nameError ? 'error' : ''}`}>
+                          <label className="booking-field-label" htmlFor="h360Name">Full Name</label>
+                          <input
+                            type="text"
+                            id="h360Name"
+                            placeholder="John Doe"
+                            value={name}
+                            onChange={(e) => {
+                              setName(e.target.value);
+                              if (e.target.value.trim().length > 1) setNameError(false);
+                            }}
+                            className="booking-pill-input"
+                            autoComplete="name"
+                          />
+                          <p className="booking-field-error-text">Enter your full name.</p>
                         </div>
-                      );
-                    })}
+
+                        <div className={`booking-field-group ${phoneError ? 'error' : ''}`}>
+                          <label className="booking-field-label" htmlFor="h360Phone">Phone Number</label>
+                          <input
+                            type="tel"
+                            id="h360Phone"
+                            placeholder="+91 XXXXX XXXXX"
+                            value={phone}
+                            onChange={(e) => {
+                              setPhone(e.target.value);
+                              const phoneDigits = e.target.value.replace(/\D/g, "");
+                              if (phoneDigits.length >= 10) setPhoneError(false);
+                            }}
+                            className="booking-pill-input"
+                            autoComplete="tel"
+                          />
+                          <p className="booking-field-error-text">Enter a valid 10-digit phone number.</p>
+                        </div>
+
+                        <div className="booking-field-group">
+                          <label className="booking-field-label" htmlFor="h360Concern">Reason for visit</label>
+                          <select
+                            id="h360Concern"
+                            value={concern}
+                            onChange={(e) => setConcern(e.target.value)}
+                            className="booking-pill-select"
+                          >
+                            <option value="">Select concern type</option>
+                            <option>Back pain</option>
+                            <option>Neck and shoulder</option>
+                            <option>Knee or joint</option>
+                            <option>Sports injury</option>
+                            <option>Post-surgery recovery</option>
+                            <option>Other</option>
+                          </select>
+                        </div>
+
+                        <button className="booking-submit-black" type="button" onClick={handleSubmit}>
+                          Submit Booking Request
+                        </button>
+                        
+                        <p className="booking-disclaimer">
+                          By booking, you agree to HEALTH 360 clinic guidelines.
+                        </p>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="h360-legend">
-                    <span className="h360-legend-item">
-                      <span className="h360-legend-dot h360-dot-available"></span>Available
-                    </span>
-                    <span className="h360-legend-item">
-                      <span className="h360-legend-dot h360-dot-selected"></span>Selected
-                    </span>
-                    <span className="h360-legend-item">
-                      <span className="h360-legend-dot h360-dot-booked"></span>Booked
-                    </span>
-                  </div>
                 </div>
-
-                {/* Right Panel Patient Details */}
-                <div className={`h360-right ${!selectedTime ? 'h360-locked' : ''}`}>
-                  <h3>Patient details</h3>
-                  <div className="h360-right-fields">
-                    <div className={`h360-field ${nameError ? 'h360-field-error' : ''}`}>
-                      <label htmlFor="h360Name">Full name</label>
-                      <input
-                        type="text"
-                        id="h360Name"
-                        placeholder="John Doe"
-                        value={name}
-                        onChange={(e) => {
-                          setName(e.target.value);
-                          if (e.target.value.trim().length > 1) setNameError(false);
-                        }}
-                        autoComplete="name"
-                      />
-                      <p className="h360-error-text">Enter your name.</p>
-                    </div>
-
-                    <div className={`h360-field ${phoneError ? 'h360-field-error' : ''}`}>
-                      <label htmlFor="h360Phone">Phone number</label>
-                      <input
-                        type="tel"
-                        id="h360Phone"
-                        placeholder="+91 98765 43210"
-                        value={phone}
-                        onChange={(e) => {
-                          setPhone(e.target.value);
-                          const phoneDigits = e.target.value.replace(/\D/g, "");
-                          if (phoneDigits.length >= 10) setPhoneError(false);
-                        }}
-                        autoComplete="tel"
-                      />
-                      <p className="h360-error-text">Enter a valid phone number.</p>
-                    </div>
-
-                    <div className="h360-field">
-                      <label htmlFor="h360Concern">Reason for visit</label>
-                      <select
-                        id="h360Concern"
-                        value={concern}
-                        onChange={(e) => setConcern(e.target.value)}
-                      >
-                        <option value="">Select one</option>
-                        <option>Back pain</option>
-                        <option>Neck and shoulder</option>
-                        <option>Knee or joint</option>
-                        <option>Sports injury</option>
-                        <option>Post-surgery recovery</option>
-                        <option>Other</option>
-                      </select>
-                    </div>
-
-                    <button className="h360-submit" type="button" onClick={handleSubmit}>
-                      Confirm booking
-                    </button>
-                    <p className="h360-disclaimer">By booking, you agree to our cancellation policy.</p>
+              </>
+            ) : (
+              /* Confirmation Box */
+              <div className="booking-confirm-card glass rounded-l">
+                <div className="booking-confirm-icon">
+                  <Check size={28} />
+                </div>
+                <h3>Assessment Requested</h3>
+                <p>We've received your request! A clinical specialist will reach out to confirm your appointment within 12 hours.</p>
+                
+                <div className="booking-confirm-details">
+                  <div className="confirm-detail-row">
+                    <span className="row-title">Date</span>
+                    <span className="row-value">
+                      {selectedDate?.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
+                    </span>
                   </div>
-                  {!selectedTime && (
-                    <p className="h360-lock-message">
-                      Please select a time slot to continue with your booking.
-                    </p>
+                  <div className="confirm-detail-row">
+                    <span className="row-title">Time</span>
+                    <span className="row-value">{selectedTime ? fmtTime(toMinutes(selectedTime)) : ""}</span>
+                  </div>
+                  <div className="confirm-detail-row">
+                    <span className="row-title">Patient</span>
+                    <span className="row-value">{name}</span>
+                  </div>
+                  <div className="confirm-detail-row">
+                    <span className="row-title">Contact</span>
+                    <span className="row-value">{phone}</span>
+                  </div>
+                  {concern && (
+                    <div className="confirm-detail-row">
+                      <span className="row-title">Reason</span>
+                      <span className="row-value">{concern}</span>
+                    </div>
                   )}
                 </div>
+                
+                <button className="booking-submit-black" type="button" onClick={handleBookAnother}>
+                  Book Another Assessment
+                </button>
               </div>
-            </div>
-          ) : (
-            <div className="h360-confirm h360-visible">
-              <div className="h360-confirm-icon">
-                <Check size={24} />
-              </div>
-              <h3>Assessment requested</h3>
-              <p>Thanks — we've received your request. Our team will confirm your slot shortly.</p>
-              
-              <div className="h360-confirm-detail">
-                <div>
-                  <span>Date</span>
-                  <span>
-                    {selectedDate?.toLocaleDateString("en-IN", { weekday: "long", day: "numeric", month: "long" })}
-                  </span>
-                </div>
-                <div>
-                  <span>Time</span>
-                  <span>{selectedTime ? fmtTime(toMinutes(selectedTime)) : ""}</span>
-                </div>
-                <div>
-                  <span>Name</span>
-                  <span>{name}</span>
-                </div>
-                <div>
-                  <span>Phone</span>
-                  <span>{phone}</span>
-                </div>
-                {concern && (
-                  <div>
-                    <span>Reason</span>
-                    <span>{concern}</span>
-                  </div>
-                )}
-              </div>
-              
-              <button className="h360-submit" type="button" onClick={handleBookAnother}>
-                Book another assessment
-              </button>
-            </div>
-          )}
+            )}
+
+          </div>
+
         </div>
 
       </div>
