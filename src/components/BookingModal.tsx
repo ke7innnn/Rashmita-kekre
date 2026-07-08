@@ -144,11 +144,11 @@ export default function BookingModal({ onClose }: BookingPageProps) {
 
         <div className="booking-page-container">
           
-          {/* Left Column: Premium Clinical Image */}
+          {/* Left Column: Serene Tropical Leaves Image */}
           <div className="booking-visual-column">
             <img 
-              src="/physio_consultation.jpg" 
-              alt="Clinical consultation and assessment session at HEALTH 360" 
+              src="/booking_leaves.jpg" 
+              alt="Serene tropical leaves wellness background at HEALTH 360" 
               className="booking-visual-img"
             />
           </div>
