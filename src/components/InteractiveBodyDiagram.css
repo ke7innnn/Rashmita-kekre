@@ -531,3 +531,24 @@
     min-height: auto;
   }
 }
+
+/* About Page Timeline Grid */
+.about-timeline-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  position: relative;
+}
+
+@media (min-width: 600px) {
+  .about-timeline-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .about-timeline-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+

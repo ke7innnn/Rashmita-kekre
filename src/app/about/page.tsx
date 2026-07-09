@@ -330,12 +330,7 @@ export default function AboutPage() {
               </p>
             </div>
 
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-              gap: '2rem',
-              position: 'relative'
-            }}>
+            <div className="about-timeline-grid">
               {[
                 { year: '2013', img: '/milestone_2013.jpg', title: 'Clinical Foundation', desc: 'Dr. Rashmita established specialized orthopedic physical therapy support, focusing on manual skeletal treatment and musculoskeletal adjustments.' },
                 { year: '2017', img: '/milestone_2017.jpg', title: 'Craniosacral Integration', desc: 'Integrated Biodynamic Craniosacral Therapy (BCST) into standard recovery, merging neurological wellness with manual rehabilitation.' },
