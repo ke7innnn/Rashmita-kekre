@@ -1,80 +1,156 @@
+import { Phone, ExternalLink, Activity } from 'lucide-react';
 import './Footer.css';
 
 export default function Footer() {
   return (
-    <footer id="footer" className="site-footer xpad" style={{ background: '#FAF7EC', borderTop: '1px solid rgba(0,0,0,0.06)' }}>
-      <div className="footer-top" style={{ display: 'flex', flexWrap: 'wrap', gap: '3rem', justifyContent: 'space-between' }}>
+    <footer id="footer" className="site-footer">
+      <div className="xpad footer-content-wrapper">
         
-        {/* Brand & Address */}
-        <div className="footer-brand" style={{ maxWidth: '350px' }}>
-          <a href="/" className="logo" style={{ display: 'inline-flex', alignItems: 'center' }}>
-            <img src="/logo.png" alt="Health 360 Logo" style={{ height: '80px', width: 'auto', objectFit: 'contain' }} />
+        {/* Top Header Row */}
+        <div className="footer-top-header">
+          <h2 className="footer-main-title">
+            Your trusted partner<br />
+            in movement & recovery
+          </h2>
+          <a href="/contact" className="footer-contact-pill">
+            Contact <ExternalLink size={16} />
           </a>
-          <p className="footer-description" style={{ fontSize: '0.9rem', color: 'var(--muted-foreground)', marginTop: '0.5rem', lineHeight: 1.5 }}>
-            Health 360 Physiotherapy & Craniosacral Therapy Clinic
-          </p>
-          <div style={{ marginTop: '1rem', fontSize: '0.85rem', color: 'var(--muted-foreground)', display: 'flex', flexDirection: 'column', gap: '8px', lineHeight: 1.4 }}>
-            <p>
-              Shop no. 1 & 2, Amardeep Society, Om Nagar,<br />
-              Vasai West, Palghar - 401202
-            </p>
-            <p>
-              Phone: <a href="tel:+918482812859" style={{ textDecoration: 'underline' }}>+91 84828 12859</a> / <a href="tel:+919834848956" style={{ textDecoration: 'underline' }}>+91 98348 48956</a>
-            </p>
-          </div>
         </div>
-        
-        {/* Links Grid */}
-        <div className="footer-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '2.5rem', flex: 1, marginLeft: 'auto' }}>
+
+        {/* Four Column Navigation Links Grid */}
+        <div className="footer-nav-grid">
           
-          <div className="footer-column">
-            <h4 className="footer-heading" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)' }}>Useful Links</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><a href="/" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Home</a></li>
-              <li><a href="/about" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>About us</a></li>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Services</a></li>
-              <li><a href="/contact" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Contact</a></li>
-              <li><a href="/careers" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Careers</a></li>
-              <li><a href="/press" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Press</a></li>
+          {/* Column 1: Services */}
+          <div className="footer-nav-column">
+            <h4 className="footer-nav-heading">Services</h4>
+            <ul className="footer-nav-list">
+              <li><a href="/#our-services">Musculoskeletal Physio</a></li>
+              <li><a href="/#our-services">Neurological Physio</a></li>
+              <li><a href="/#our-services">Pediatric Physio</a></li>
+              <li><a href="/#our-services">Geriatric Physio</a></li>
+              <li><a href="/#our-services">Women's Health</a></li>
             </ul>
           </div>
-          
-          <div className="footer-column">
-            <h4 className="footer-heading" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)' }}>Our Services</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Musculoskeletal Physiotherapy</a></li>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Neurological Physiotherapy</a></li>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Pediatric Physiotherapy</a></li>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Geriatric Physiotherapy</a></li>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Women’s Health Physiotherapy</a></li>
-              <li><a href="/#our-services" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Community-based & Tele-Physiotherapy</a></li>
+
+          {/* Column 2: Explore */}
+          <div className="footer-nav-column">
+            <h4 className="footer-nav-heading">Explore</h4>
+            <ul className="footer-nav-list">
+              <li><a href="/">Home</a></li>
+              <li><a href="/about">About us</a></li>
+              <li><a href="/careers">Careers</a></li>
+              <li><a href="/press">Press</a></li>
             </ul>
           </div>
-          
-          <div className="footer-column">
-            <h4 className="footer-heading" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)' }}>Legal</h4>
-            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <li><a href="/terms" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Terms & Conditions</a></li>
-              <li><a href="/privacy" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Privacy Policy</a></li>
-              <li><a href="/cookies" style={{ fontSize: '0.875rem', color: 'var(--foreground)' }}>Cookie Policy</a></li>
-            </ul>
-            
-            <h4 className="footer-heading" style={{ fontSize: '0.8rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--muted-foreground)', marginTop: '1.5rem' }}>Follow Us</h4>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <a href="https://www.facebook.com/profile.php?id=100090143185713" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--foreground)', opacity: 0.8 }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+
+          {/* Column 3: Say hello! */}
+          <div className="footer-nav-column">
+            <h4 className="footer-nav-heading">Say hello!</h4>
+            <div className="footer-contact-pills">
+              <a href="tel:+918482812859" className="phone-pill-link">
+                <Phone size={14} /> +91 84828 12859
               </a>
-              <a href="https://www.instagram.com/health360physiotherapy_clinic?utm_source=ig_web_button_share_sheet&igsh=ZDN" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--foreground)', opacity: 0.8 }} onMouseEnter={(e) => e.currentTarget.style.opacity = '1'} onMouseLeave={(e) => e.currentTarget.style.opacity = '0.8'}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
+              <a href="tel:+919834848956" className="phone-pill-link">
+                <Phone size={14} /> +91 98348 48956
+              </a>
+            </div>
+            <div className="footer-social-circles">
+              <a href="https://www.facebook.com/profile.php?id=100090143185713" target="_blank" rel="noopener noreferrer" className="social-circle-btn" aria-label="Facebook">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              </a>
+              <a href="https://www.instagram.com/health360physiotherapy_clinic?utm_source=ig_web_button_share_sheet&igsh=ZDN" target="_blank" rel="noopener noreferrer" className="social-circle-btn" aria-label="Instagram">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
               </a>
             </div>
           </div>
-          
+
+          {/* Column 4: Clinic hours */}
+          <div className="footer-nav-column">
+            <h4 className="footer-nav-heading">Clinic hours ↗</h4>
+            <div className="hours-table">
+              <div className="hours-row">
+                <span className="day-lbl">Mon – Fri</span>
+                <span className="time-val">9:00 – 19:00</span>
+              </div>
+              <div className="hours-row">
+                <span className="day-lbl">Saturday</span>
+                <span className="time-val">9:00 – 17:00</span>
+              </div>
+              <div className="hours-row">
+                <span className="day-lbl">Sunday</span>
+                <span className="time-val closed">Closed</span>
+              </div>
+            </div>
+            {/* Cardiogram post-it graphic */}
+            <div className="cardiogram-graphic-card">
+              <Activity className="cardio-svg" size={24} />
+              <div className="cardio-bg-lines" />
+            </div>
+          </div>
+
         </div>
-      </div>
-      
-      <div className="footer-bottom" style={{ borderTop: '1px solid rgba(0, 0, 0, 0.05)', paddingTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem', color: 'var(--muted-foreground)', fontSize: '0.875rem', marginTop: '3rem' }}>
-        <p>&copy; {new Date().getFullYear()} Health 360 Physiotherapy & Craniosacral Therapy Clinic. All Rights Reserved.</p>
+
+        {/* Map and Address Column Section */}
+        <div className="footer-map-address-section">
+          <h4 className="find-us-label">Find us</h4>
+          
+          <div className="map-address-layout">
+            
+            {/* Map Frame Container */}
+            <div className="footer-map-container">
+              <iframe
+                title="Google Maps Location for HEALTH 360"
+                src="https://maps.google.com/maps?q=Amardeep%20Society,%20Om%20Nagar,%20Vasai%20West,%20Palghar%20-%20401202&t=&z=15&ie=UTF8&iwloc=&output=embed"
+                width="100%"
+                height="100%"
+                style={{ border: 0 }}
+                allowFullScreen={false}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+              />
+              <a 
+                href="https://maps.google.com/?q=Amardeep%20Society,%20Om%20Nagar,%20Vasai%20West,%20Palghar%20-%20401202" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="open-in-maps-overlay-btn"
+              >
+                Open in Maps <ExternalLink size={12} />
+              </a>
+            </div>
+
+            {/* Address Card */}
+            <div className="footer-address-card glass">
+              <p className="footer-address-text">
+                Shop no. 1 & 2, Amardeep Society, Om Nagar,<br />
+                Vasai West, Palghar – 401202
+              </p>
+              <a 
+                href="https://maps.google.com/?q=Amardeep%20Society,%20Om%20Nagar,%20Vasai%20West,%20Palghar%20-%20401202"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="get-directions-link"
+              >
+                Get directions <ExternalLink size={14} />
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Copyright and Huge Branding Outlined Footer logo */}
+        <div className="footer-bottom-branding">
+          <div className="footer-bottom-meta">
+            <span className="copyright-text">
+              © {new Date().getFullYear()} Health 360 - Physiotherapy & Craniosacral Clinic
+            </span>
+          </div>
+
+          <div className="giant-logo-typography">
+            <span className="logo-text-solid">Health</span>
+            <span className="logo-text-outline">360</span>
+          </div>
+        </div>
+
       </div>
     </footer>
   );
