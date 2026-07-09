@@ -5,9 +5,8 @@
 .site-footer {
   background: linear-gradient(135deg, rgba(64, 224, 208, 0.22) 0%, rgba(0, 159, 199, 0.08) 50%, rgba(250, 247, 236, 1) 100%);
   border-top: 1px solid rgba(0, 0, 0, 0.05);
-  padding-top: 6rem;
-  padding-bottom: 0; /* Let outline typography sit at bottom */
-  overflow: hidden;
+  padding-top: 4rem;
+  padding-bottom: 3.5rem; /* Give space for outline typography and prevent clipping */
   color: var(--foreground);
 }
 
@@ -17,7 +16,7 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 4rem;
+  gap: 2.25rem;
 }
 
 /* Top Header */
@@ -43,19 +42,22 @@
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.7rem 1.85rem;
+  padding: 0.65rem 1.65rem;
   border-radius: 9999px;
   border: 1.5px solid var(--foreground);
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: var(--foreground);
   text-decoration: none;
+  background: transparent;
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .footer-contact-pill:hover {
   background-color: var(--foreground);
   color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
 }
 
 /* Nav Grid */
@@ -86,11 +88,13 @@
 }
 
 .footer-nav-heading {
-  font-size: 0.95rem;
+  font-size: 0.82rem;
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
   color: var(--foreground);
   margin: 0;
-  letter-spacing: 0.02em;
+  opacity: 0.9;
 }
 
 .footer-nav-list {
@@ -141,10 +145,19 @@
   transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.phone-pill-link svg {
+  transition: transform 0.25s ease;
+}
+
 .phone-pill-link:hover {
   border-color: var(--brand);
   box-shadow: 0 6px 16px rgba(0, 159, 199, 0.06);
-  transform: translateY(-1px);
+  transform: translateY(-2px);
+}
+
+.phone-pill-link:hover svg {
+  transform: rotate(15deg) scale(1.15);
+  color: var(--brand);
 }
 
 .footer-social-circles {
@@ -206,7 +219,11 @@
   width: 72px;
   height: 48px;
   background-color: #ffffff;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background-image: 
+    linear-gradient(rgba(239, 68, 68, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(239, 68, 68, 0.04) 1px, transparent 1px);
+  background-size: 6px 6px;
+  border: 1px solid rgba(239, 68, 68, 0.08);
   border-radius: 10px;
   box-shadow: 
     0 8px 20px -6px rgba(0, 0, 0, 0.06),
@@ -244,8 +261,8 @@
 .footer-map-address-section {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-top: 1.5rem;
+  gap: 1.25rem;
+  margin-top: 0;
   width: 100%;
 }
 
@@ -356,13 +373,13 @@
 .footer-bottom-branding {
   display: flex;
   flex-direction: column;
-  gap: 3rem;
-  margin-top: 1rem;
+  gap: 1.5rem;
+  margin-top: 0;
 }
 
 .footer-bottom-meta {
   border-top: 1px solid rgba(0, 0, 0, 0.06);
-  padding-top: 1.5rem;
+  padding-top: 1rem;
   display: flex;
   justify-content: flex-end;
 }
@@ -378,10 +395,10 @@
   align-items: baseline;
   font-size: clamp(3.5rem, 14vw, 11rem);
   font-weight: 800;
-  line-height: 0.8;
+  line-height: 1.0;
   letter-spacing: -0.04em;
-  margin-top: -1.5rem;
-  margin-bottom: -1rem;
+  margin-top: 1rem;
+  margin-bottom: 0;
   pointer-events: none;
   user-select: none;
 }
