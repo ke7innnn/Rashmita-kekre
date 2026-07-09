@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import { motion, useScroll, useTransform } from 'framer-motion';
+import { motion, useScroll, useTransform, useInView } from 'framer-motion';
 import { Award, BookOpen, Briefcase, Heart, User, CheckCircle, ShieldCheck, Smile } from 'lucide-react';
 import '../../components/InteractiveBodyDiagram.css';
 
@@ -34,6 +34,56 @@ const ROLES = [
   'Clinical Director, Health 360 Physiotherapy & Craniosacral Therapy Clinic',
   'Consultant Senior Physiotherapist, Divine Hospital'
 ];
+
+function AnimatedCounter({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  
+  const numVal = parseInt(value.replace(/\D/g, ""), 10);
+  const suffix = value.replace(/\d/g, "");
+  
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    
+    let start = 0;
+    const end = numVal;
+    if (start === end) return;
+    
+    const duration = 1.5; // seconds
+    const startTime = performance.now();
+
+    let animationFrameId: number;
+
+    const updateCount = (now: number) => {
+      const elapsed = (now - startTime) / 1000;
+      const progress = Math.min(elapsed / duration, 1);
+      
+      const easeOutQuad = progress * (2 - progress);
+      const current = Math.floor(easeOutQuad * end);
+      
+      setCount(current);
+
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(updateCount);
+      }
+    };
+
+    animationFrameId = requestAnimationFrame(updateCount);
+
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isInView, numVal]);
+
+  return (
+    <span ref={ref}>
+      {count}
+      {suffix}
+    </span>
+  );
+}
 
 export default function AboutPage() {
   const bioSectionRef = useRef<HTMLElement>(null);
@@ -186,16 +236,7 @@ export default function AboutPage() {
         <section style={{ padding: '4rem 0' }}>
           <div className="xpad">
             <motion.div 
-              className="glass rounded-l" 
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: '2.5rem',
-                padding: '3rem 2rem',
-                maxWidth: '1100px',
-                margin: '0 auto',
-                textAlign: 'center'
-              }}
+              className="glass rounded-l about-stats-grid" 
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
@@ -203,7 +244,9 @@ export default function AboutPage() {
             >
               {STATS.map((stat, idx) => (
                 <div key={idx}>
-                  <h4 style={{ fontSize: '3rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>{stat.value}</h4>
+                  <h4 style={{ fontSize: '3rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>
+                    <AnimatedCounter value={stat.value} />
+                  </h4>
                   <p style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500, marginTop: '0.5rem' }}>{stat.label}</p>
                 </div>
               ))}
