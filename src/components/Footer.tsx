@@ -137,17 +137,12 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Copyright and Huge Branding Outlined Footer logo */}
+        {/* Copyright Footer meta */}
         <div className="footer-bottom-branding">
           <div className="footer-bottom-meta">
             <span className="copyright-text">
               © {new Date().getFullYear()} Health 360 - Physiotherapy & Craniosacral Clinic
             </span>
-          </div>
-
-          <div className="giant-logo-typography">
-            <span className="logo-text-solid">Health</span>
-            <span className="logo-text-outline">360</span>
           </div>
         </div>
 
