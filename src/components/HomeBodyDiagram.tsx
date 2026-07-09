@@ -12,7 +12,7 @@ export default function HomeBodyDiagram() {
 
   return (
     <section id="body-diagram" style={{ padding: '6rem 0', background: 'rgba(0, 159, 199, 0.01)', borderTop: '1px solid rgba(0,0,0,0.03)' }}>
-      <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
+      <div className="xpad" style={{ maxWidth: '1250px', margin: '0 auto' }}>
         
         <div className="diagram-page-header" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
           <p className="subtitle uppercase">Interactive Condition Map</p>

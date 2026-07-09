@@ -333,7 +333,7 @@
 
 @media (min-width: 980px) {
   .diagram-main-layout {
-    grid-template-columns: 1.45fr 1.05fr; /* Visual column wider to make silhouette larger */
+    grid-template-columns: 1.6fr 0.9fr; /* Visual column wider to make silhouette larger */
     gap: 4rem;
   }
 }
@@ -354,14 +354,14 @@
   justify-content: center;
   align-items: center;
   width: 100%;
-  max-width: 650px;
+  max-width: 750px;
   box-shadow: none;
 }
 
 .silhouette-wrapper {
   position: relative;
   width: 95%; /* Increased to 95% of parent column width */
-  max-width: 600px;
+  max-width: 700px;
   aspect-ratio: 1 / 1; /* Exact square image aspect-ratio */
   margin: 0 auto;
 }
