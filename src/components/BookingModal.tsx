@@ -142,6 +142,16 @@ export default function BookingModal({ onClose }: BookingPageProps) {
           <ArrowLeft size={16} /> Back to home
         </a>
 
+        {!isConfirmed && (
+          <div className="booking-section-header">
+            <p className="subtitle uppercase">Book a consultation with our Vasai clinical team today.</p>
+            <h2 className="booking-section-title">Let's start your recovery journey</h2>
+            <p className="booking-section-desc">
+              Ready to reclaim your strength? Choose a date and time slot below to schedule your personalized physiotherapy assessment.
+            </p>
+          </div>
+        )}
+
         <div className="booking-page-container">
           
           {/* Left Column: Serene Tropical Leaves Image */}
@@ -158,15 +168,6 @@ export default function BookingModal({ onClose }: BookingPageProps) {
             
             {!isConfirmed ? (
               <>
-                {/* Section Header */}
-                <div className="booking-section-header">
-                  <p className="subtitle uppercase">Book a consultation with our Vasai clinical team today.</p>
-                  <h2 className="booking-section-title">Let's start your recovery journey</h2>
-                  <p className="booking-section-desc">
-                    Ready to reclaim your strength? Choose a date and time slot below to schedule your personalized physiotherapy assessment.
-                  </p>
-                </div>
-
                 {/* Single Booking Card */}
                 <div className="booking-card glass">
                   <h3 className="booking-card-title">Book an appointment</h3>

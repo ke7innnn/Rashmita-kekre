@@ -92,6 +92,8 @@
 
 .booking-section-header {
   text-align: left;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
 }
 
 .booking-section-title {
