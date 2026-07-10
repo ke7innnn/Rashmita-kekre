@@ -22,7 +22,7 @@ export default function Header() {
     <header className={`site-header glass-nav ${scrolled ? 'scrolled' : ''}`}>
       <div className="header-container xpad">
         <a href="/" className="logo" style={{ display: 'flex', alignItems: 'center' }}>
-          <img src="/logo-new.png" alt="Health 360 Logo" style={{ height: scrolled ? '58px' : '72px', width: 'auto', objectFit: 'contain', transition: 'height 0.3s ease' }} />
+          <img src="/logo-new.png" alt="Health 360 Logo" style={{ height: scrolled ? '68px' : '90px', width: 'auto', objectFit: 'contain', transition: 'height 0.3s ease' }} />
         </a>
         
         {/* Desktop Navigation */}
