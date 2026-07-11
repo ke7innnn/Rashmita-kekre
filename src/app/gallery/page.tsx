@@ -51,7 +51,7 @@ const BASE_PHOTOS = Array.from({ length: 24 }, (_, i) => {
     sizeType,
     isFlagship: false
   };
-});
+}).filter(photo => photo.id !== 'p_5' && photo.id !== 'p_8' && photo.id !== 'p_11');
 
 const GALLERY_PHOTOS = [
   {
@@ -164,11 +164,6 @@ export default function GalleryPage() {
                   transition={{ duration: 0.5, delay: (index % 4) * 0.08 }}
                 >
                   <div className="gallery-card-img-wrapper">
-                    {photo.isFlagship && (
-                      <span className="gallery-flagship-badge">
-                        Flagship
-                      </span>
-                    )}
                     <img 
                       src={photo.src} 
                       alt={photo.title} 
