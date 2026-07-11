@@ -58,7 +58,7 @@ const GALLERY_PHOTOS = [
     id: 'f_1',
     src: '/gallery/flagship_1.jpg',
     title: 'Flagship Entrance & Consultation Lounge',
-    sizeType: 'wide',
+    sizeType: 'square',
     isFlagship: true
   },
   {
@@ -168,6 +168,7 @@ export default function GalleryPage() {
                       src={photo.src} 
                       alt={photo.title} 
                       className="gallery-card-img"
+                      style={photo.id === 'f_1' ? { objectPosition: '20% center' } : undefined}
                       loading="lazy"
                     />
                     <div className="gallery-card-overlay">
