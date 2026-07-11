@@ -8,7 +8,7 @@ import Footer from '../../components/Footer';
 import './gallery.css';
 
 // 24 clinic images
-const GALLERY_PHOTOS = Array.from({ length: 24 }, (_, i) => {
+const BASE_PHOTOS = Array.from({ length: 24 }, (_, i) => {
   const id = i + 1;
   
   // Custom sizes to form a gorgeous asymmetrical gallery collage
@@ -45,12 +45,38 @@ const GALLERY_PHOTOS = Array.from({ length: 24 }, (_, i) => {
   ];
 
   return {
-    id,
+    id: `p_${id}`,
     src: `/gallery/photo_${id}.jpg`,
     title: titles[i] || `Clinic Area ${id}`,
-    sizeType
+    sizeType,
+    isFlagship: false
   };
 });
+
+const GALLERY_PHOTOS = [
+  {
+    id: 'f_1',
+    src: '/gallery/flagship_1.jpg',
+    title: 'Flagship Entrance & Consultation Lounge',
+    sizeType: 'wide',
+    isFlagship: true
+  },
+  {
+    id: 'f_2',
+    src: '/gallery/flagship_2.jpg',
+    title: 'Advanced Physiotherapy Gym & Movement Lab',
+    sizeType: 'tall',
+    isFlagship: true
+  },
+  {
+    id: 'f_3',
+    src: '/gallery/flagship_3.jpg',
+    title: 'Aroleap Robotic Rehabilitation Station',
+    sizeType: 'wide',
+    isFlagship: true
+  },
+  ...BASE_PHOTOS
+];
 
 export default function GalleryPage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
@@ -138,6 +164,11 @@ export default function GalleryPage() {
                   transition={{ duration: 0.5, delay: (index % 4) * 0.08 }}
                 >
                   <div className="gallery-card-img-wrapper">
+                    {photo.isFlagship && (
+                      <span className="gallery-flagship-badge">
+                        Flagship
+                      </span>
+                    )}
                     <img 
                       src={photo.src} 
                       alt={photo.title} 

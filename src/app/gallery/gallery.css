@@ -73,7 +73,8 @@
   height: 100%;
   object-fit: cover;
   object-position: center;
-  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: saturate(1.06) contrast(1.03) brightness(1.01);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Gradient Overlay overlaying bottom of cards */
@@ -108,7 +109,8 @@
 }
 
 .gallery-card:hover .gallery-card-img {
-  transform: scale(1.04);
+  transform: scale(1.05);
+  filter: saturate(1.09) contrast(1.05) brightness(1.02);
 }
 
 .gallery-card:hover .gallery-card-overlay {
@@ -261,3 +263,23 @@
   font-size: 0.85rem;
   opacity: 0.6;
 }
+
+/* Flagship badge on cards */
+.gallery-flagship-badge {
+  position: absolute;
+  top: 1.25rem;
+  left: 1.25rem;
+  background: var(--brand);
+  color: var(--brand-foreground);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px rgba(0, 159, 199, 0.2);
+  z-index: 2;
+  font-family: 'Outfit', sans-serif;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
