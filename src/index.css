@@ -90,10 +90,13 @@ button {
   gap: 12px;
   background-color: var(--brand);
   color: var(--brand-foreground);
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 9999px;
-  font-weight: 500;
-  font-size: 1.125rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   transition: all 0.2s ease;
 }
 
@@ -109,10 +112,13 @@ button {
   gap: 12px;
   background-color: var(--secondary);
   color: var(--secondary-foreground);
-  padding: 12px 24px;
+  padding: 14px 28px;
   border-radius: 9999px;
-  font-weight: 500;
-  font-size: 1.125rem;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 600;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
   transition: all 0.2s ease;
   border: 1px solid rgba(0, 0, 0, 0.1);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);

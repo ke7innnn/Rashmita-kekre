@@ -38,6 +38,7 @@ export default function Footer() {
             <ul className="footer-nav-list">
               <li><a href="/">Home</a></li>
               <li><a href="/about">About us</a></li>
+              <li><a href="/gallery">Gallery</a></li>
               <li><a href="/careers">Careers</a></li>
               <li><a href="/press">Press</a></li>
             </ul>

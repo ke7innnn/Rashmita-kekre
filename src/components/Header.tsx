@@ -31,6 +31,7 @@ export default function Header() {
             <li><a href="/">Home</a></li>
             <li><a href="/about">About us</a></li>
             <li><a href="/#our-services">Services</a></li>
+            <li><a href="/gallery">Gallery</a></li>
             <li><a href="/contact">Contact</a></li>
             <li><a href="/careers">Careers</a></li>
           </ul>
@@ -69,6 +70,7 @@ export default function Header() {
                 { name: 'Home', href: '/' },
                 { name: 'About us', href: '/about' },
                 { name: 'Services', href: '/#our-services' },
+                { name: 'Gallery', href: '/gallery' },
                 { name: 'Contact', href: '/contact' },
                 { name: 'Careers', href: '/careers' }
               ].map((item, idx) => (
