@@ -34,86 +34,53 @@ export default function ContactPage() {
         <section style={{ padding: '4rem 0 6rem', background: 'radial-gradient(circle at bottom left, rgba(0, 159, 199, 0.04), transparent 50%)' }}>
           <div className="xpad" style={{ maxWidth: '1200px', margin: '0 auto' }}>
             
-            {/* Header / Hero Grid */}
+            {/* Header / Hero Section (Centered) */}
             <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-              gap: '3rem',
+              display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              marginBottom: '5rem'
+              textAlign: 'center',
+              maxWidth: '800px',
+              margin: '0 auto 4rem'
             }}>
-              <div style={{ textAlign: 'left' }}>
-                <motion.p 
-                  className="subtitle uppercase"
-                  style={{ 
-                    fontSize: '0.85rem', 
-                    fontWeight: 600, 
-                    color: 'var(--brand)', 
-                    letterSpacing: '0.1em',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    background: 'rgba(0, 159, 199, 0.08)',
-                    padding: '6px 14px',
-                    borderRadius: '9999px',
-                    marginBottom: '1rem'
-                  }}
-                  initial={{ opacity: 0, y: 15 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                >
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--brand)' }} />
-                  Clinical Intake Open
-                </motion.p>
-                <motion.h1 
-                  style={{ fontSize: 'clamp(2.5rem, 5vw, 3.5rem)', fontWeight: 500, margin: '1rem 0 1.5rem', letterSpacing: '-0.03em', lineHeight: 1.15 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.1 }}
-                >
-                  Let's start your recovery journey
-                </motion.h1>
-                <motion.p 
-                  style={{ fontSize: '1.15rem', color: 'var(--muted-foreground)', lineHeight: 1.6 }}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                >
-                  Have questions about our biometrics tracking, posture screens, or treatment schedules? Fill out our secure intake form or connect directly with our Vasai clinical team.
-                </motion.p>
-              </div>
-              
-              <motion.div 
-                style={{ position: 'relative' }}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.7 }}
+              <motion.p 
+                className="subtitle uppercase"
+                style={{ 
+                  fontSize: '0.85rem', 
+                  fontWeight: 600, 
+                  color: 'var(--brand)', 
+                  letterSpacing: '0.1em',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(0, 159, 199, 0.08)',
+                  padding: '6px 14px',
+                  borderRadius: '9999px',
+                  marginBottom: '1rem'
+                }}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
               >
-                <div className="glass rounded-l" style={{ padding: '12px', overflow: 'hidden', position: 'relative', aspectRatio: '1.6', boxShadow: '0 20px 40px rgba(0,0,0,0.06)' }}>
-                  <img 
-                    src="/physio_consultation.jpg" 
-                    alt="Clinical assessment and consultation scene" 
-                    style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '16px' }} 
-                  />
-                  <div style={{
-                    position: 'absolute',
-                    bottom: '24px',
-                    left: '24px',
-                    backgroundColor: 'rgba(255,255,255,0.92)',
-                    backdropFilter: 'blur(8px)',
-                    padding: '8px 16px',
-                    borderRadius: '12px',
-                    border: '1px solid rgba(255,255,255,0.6)',
-                    boxShadow: '0 8px 20px rgba(0,0,0,0.08)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px'
-                  }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#22c55e' }} />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 600, color: '#1f2937' }}>Average response: &lt; 12 hours</span>
-                  </div>
-                </div>
-              </motion.div>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--brand)' }} />
+                Clinical Intake Open
+              </motion.p>
+              <motion.h1 
+                style={{ fontSize: 'clamp(2.5rem, 5vw, 3.8rem)', fontWeight: 500, margin: '1rem 0 1.5rem', letterSpacing: '-0.03em', lineHeight: 1.1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.1 }}
+              >
+                Let's start your recovery journey
+              </motion.h1>
+              <motion.p 
+                style={{ fontSize: '1.2rem', color: 'var(--muted-foreground)', lineHeight: 1.6, maxWidth: '680px', margin: '0 auto' }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+              >
+                Have questions about our biometrics tracking, posture screens, or treatment schedules? Fill out our secure intake form or connect directly with our Vasai clinical team.
+              </motion.p>
             </div>
 
             {/* Grid */}
