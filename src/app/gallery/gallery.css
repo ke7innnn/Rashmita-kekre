@@ -21,36 +21,36 @@
   line-height: 1.6;
 }
 
-/* Asymmetric CSS Grid / Masonry Layout */
+/* Natural Masonry Column Layout (Uncropped & Frictionless) */
 .gallery-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-auto-rows: 280px;
-  gap: 1.75rem;
+  column-count: 1;
+  column-gap: 1.75rem;
+  width: 100%;
   padding-bottom: 5rem;
 }
 
 @media (min-width: 580px) {
   .gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
+    column-count: 2;
   }
 }
 
 @media (min-width: 900px) {
   .gallery-grid {
-    grid-template-columns: repeat(3, 1fr);
+    column-count: 3;
   }
 }
 
 @media (min-width: 1100px) {
   .gallery-grid {
-    grid-template-columns: repeat(4, 1fr);
-    grid-auto-rows: 240px;
+    column-count: 4;
   }
 }
 
 /* Individual Card Styling */
 .gallery-card {
+  break-inside: avoid;
+  margin-bottom: 1.75rem;
   position: relative;
   overflow: hidden;
   border-radius: 20px;
@@ -59,22 +59,25 @@
   cursor: pointer;
   background: #e5e2d5;
   transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform, box-shadow;
+  display: block;
 }
 
 .gallery-card-img-wrapper {
   width: 100%;
-  height: 100%;
+  height: auto;
   position: relative;
   overflow: hidden;
+  display: block;
 }
-
 .gallery-card-img {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
+  height: auto;
+  display: block;
+  object-fit: contain;
   filter: saturate(1.06) contrast(1.03) brightness(1.01);
   transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), filter 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
 
 /* Gradient Overlay overlaying bottom of cards */
@@ -121,16 +124,6 @@
   transform: translateY(0);
 }
 
-/* Asymmetric Grid Modifiers (Desktop only) */
-@media (min-width: 900px) {
-  .gallery-card.size-wide {
-    grid-column: span 2;
-  }
-  
-  .gallery-card.size-tall {
-    grid-row: span 2;
-  }
-}
 
 /* Fullscreen Lightbox Modal */
 .lightbox-modal {
