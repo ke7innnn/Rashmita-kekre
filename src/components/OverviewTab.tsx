@@ -8,7 +8,8 @@ import {
   ArrowRight, ShieldCheck, HeartPulse, UserCheck, ChevronRight,
   Clock, Sparkles, Plus, Check, Trash2, ArrowUpRight, Share2, Send
 } from 'lucide-react';
-import { AppointmentStatus } from '@prisma/client';
+const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
+type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 interface Props {
   onVoiceAgentClick?: () => void;

@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Save } from 'lucide-react';
-import { AppointmentStatus } from '@prisma/client';
+const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
+type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 const schema = z.object({
   status: z.nativeEnum(AppointmentStatus),

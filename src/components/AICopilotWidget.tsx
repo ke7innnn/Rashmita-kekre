@@ -4,7 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, MessageSquare, X, Send, Bot, RefreshCw, BarChart2 } from 'lucide-react';
-import { AppointmentStatus } from '@prisma/client';
+const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
+type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 interface Message {
   id: string;

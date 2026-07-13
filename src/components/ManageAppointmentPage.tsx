@@ -11,7 +11,8 @@ import {
   FileText, CheckCircle, AlertCircle, X, ShieldAlert, ArrowRight, 
   Phone, Mail, FileDigit, CalendarCheck
 } from 'lucide-react';
-import { AppointmentStatus } from '@prisma/client';
+const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
+type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
 const schema = z.object({
   status: z.nativeEnum(AppointmentStatus),

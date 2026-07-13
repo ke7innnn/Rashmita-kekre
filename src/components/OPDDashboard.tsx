@@ -11,7 +11,23 @@ import {
 import QuickActionModal from './QuickActionModal';
 import AddAppointmentModal from './AddAppointmentModal';
 import SegmentedControl from './SegmentedControl';
-import { AppointmentStatus, AppointmentSource } from '@prisma/client';
+// Replicated from @prisma/client to avoid bundling Prisma in the browser
+const AppointmentStatus = {
+  WAITING: 'WAITING',
+  IN_PROGRESS: 'IN_PROGRESS',
+  COMPLETED: 'COMPLETED',
+  SCHEDULED: 'SCHEDULED',
+  NO_SHOW: 'NO_SHOW',
+  CANCELLED: 'CANCELLED',
+} as const;
+type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
+
+const AppointmentSource = {
+  MANUAL: 'MANUAL',
+  WEBSITE: 'WEBSITE',
+  PHONE_AI_AGENT: 'PHONE_AI_AGENT',
+} as const;
+type AppointmentSource = typeof AppointmentSource[keyof typeof AppointmentSource];
 
 interface OPDDashboardProps {
   onManageAppointment?: (id: string) => void;

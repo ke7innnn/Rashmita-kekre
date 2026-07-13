@@ -1,15 +1,9 @@
-import { getServerSession } from 'next-auth/next';
-import { redirect } from 'next/navigation';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import DashboardShell from '@/components/DashboardShell';
 
 export default async function DashboardPage() {
-  const session = await getServerSession(authOptions);
-
-  if (!session) {
-    redirect('/login');
-  }
+  // Auth bypassed — show dashboard directly
+  const mockUser = { name: 'Dr. Rashmita Kekre', role: 'admin' };
 
   // Pre-fetch some initial data server-side
   const settings = await prisma.clinicSettings.findUnique({
@@ -18,7 +12,7 @@ export default async function DashboardPage() {
 
   return (
     <DashboardShell 
-      user={session.user as any} 
+      user={mockUser} 
       initialSettings={settings || undefined}
     />
   );

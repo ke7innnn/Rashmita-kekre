@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { signOut } from 'next-auth/react';
+// Auth bypassed — signOut is a no-op
+const signOut = (_opts?: { callbackUrl?: string }) => { window.location.href = '/'; };
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 

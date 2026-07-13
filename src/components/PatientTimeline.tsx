@@ -10,7 +10,10 @@ import {
   Plus, Check, Camera, Image, ShieldAlert, Award, X,
   Dumbbell, Share2, Send, CheckSquare, Folder, FolderPlus
 } from 'lucide-react';
-import { AppointmentStatus, CallOutcome } from '@prisma/client';
+const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
+type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
+const CallOutcome = { BOOKED: 'BOOKED', CANCELLED: 'CANCELLED', INFO_ONLY: 'INFO_ONLY', NO_ANSWER: 'NO_ANSWER', RESCHEDULED: 'RESCHEDULED' } as const;
+type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
 
 interface Props {
   patientId: string;

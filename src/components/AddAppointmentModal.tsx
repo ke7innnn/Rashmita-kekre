@@ -7,7 +7,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Save, Search, Plus } from 'lucide-react';
-import { AppointmentSource } from '@prisma/client';
+const AppointmentSource = { MANUAL: 'MANUAL', WEBSITE: 'WEBSITE', PHONE_AI_AGENT: 'PHONE_AI_AGENT' } as const;
+type AppointmentSource = typeof AppointmentSource[keyof typeof AppointmentSource];
 
 const schema = z.object({
   patientId: z.string().min(1, 'Please select or add a patient'),

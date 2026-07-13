@@ -9,7 +9,10 @@ import {
   ChevronDown, ChevronUp, Loader2, Play, Activity, Mic,
   UserCheck, AlertTriangle
 } from 'lucide-react';
-import { CallDirection, CallOutcome } from '@prisma/client';
+const CallDirection = { INBOUND: 'INBOUND', OUTBOUND: 'OUTBOUND' } as const;
+type CallDirection = typeof CallDirection[keyof typeof CallDirection];
+const CallOutcome = { BOOKED: 'BOOKED', CANCELLED: 'CANCELLED', INFO_ONLY: 'INFO_ONLY', NO_ANSWER: 'NO_ANSWER', RESCHEDULED: 'RESCHEDULED' } as const;
+type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
 import SegmentedControl from './SegmentedControl';
 
 export default function VoiceAgentTab() {
