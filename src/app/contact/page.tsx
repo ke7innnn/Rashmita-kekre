@@ -173,63 +173,10 @@ export default function ContactPage() {
                   </div>
                 </div>
 
-                {/* FAQ Sub-Section */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                  <h3 style={{ fontSize: '1.35rem', fontWeight: 500, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <MessageSquare size={20} style={{ color: 'var(--brand)' }} /> Booking FAQs
-                  </h3>
-                  
-                  {FAQS.map((faq, idx) => (
-                    <div 
-                      key={idx} 
-                      className="glass rounded-m" 
-                      style={{ overflow: 'hidden', border: '1px solid rgba(0,0,0,0.04)' }}
-                    >
-                      <button 
-                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
-                        style={{
-                          width: '100%',
-                          padding: '1.25rem 1.5rem',
-                          display: 'flex',
-                          justifyContent: 'space-between',
-                          alignItems: 'center',
-                          textAlign: 'left',
-                          fontWeight: 500,
-                          fontSize: '1rem',
-                          background: 'none',
-                          border: 'none',
-                          color: 'inherit',
-                          cursor: 'pointer',
-                          fontFamily: 'inherit'
-                        }}
-                      >
-                        <span>{faq.q}</span>
-                        <ChevronDown 
-                          size={18} 
-                          style={{ 
-                            transition: 'transform 0.2s', 
-                            transform: openFaq === idx ? 'rotate(180deg)' : 'rotate(0deg)',
-                            color: 'var(--brand)',
-                            flexShrink: 0
-                          }} 
-                        />
-                      </button>
-                      {openFaq === idx && (
-                        <motion.div 
-                          style={{ padding: '0 1.5rem 1.25rem', color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.5 }}
-                          initial={{ opacity: 0, y: -5 }}
-                          animate={{ opacity: 1, y: 0 }}
-                        >
-                          {faq.a}
-                        </motion.div>
-                      )}
-                    </div>
-                  ))}
-                </div>
               </motion.div>
 
-              {/* Right Side: Contact Form styled as a unified Glass Card */}
               <motion.div
+                style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}
                 initial={{ opacity: 0, x: 30 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
@@ -341,6 +288,60 @@ export default function ContactPage() {
                     </>
                   )}
 
+                </div>
+
+                {/* FAQ Sub-Section */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <h3 style={{ fontSize: '1.35rem', fontWeight: 500, marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <MessageSquare size={20} style={{ color: 'var(--brand)' }} /> Booking FAQs
+                  </h3>
+                  
+                  {FAQS.map((faq, idx) => (
+                    <div 
+                      key={idx} 
+                      className="glass rounded-m" 
+                      style={{ overflow: 'hidden', border: '1px solid rgba(0,0,0,0.04)' }}
+                    >
+                      <button 
+                        onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                        style={{
+                          width: '100%',
+                          padding: '1.25rem 1.5rem',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          textAlign: 'left',
+                          fontWeight: 500,
+                          fontSize: '1rem',
+                          background: 'none',
+                          border: 'none',
+                          color: 'inherit',
+                          cursor: 'pointer',
+                          fontFamily: 'inherit'
+                        }}
+                      >
+                        <span>{faq.q}</span>
+                        <ChevronDown 
+                          size={18} 
+                          style={{ 
+                            transition: 'transform 0.2s', 
+                            transform: openFaq === idx ? 'rotate(180deg)' : 'rotate(0deg)',
+                            color: 'var(--brand)',
+                            flexShrink: 0
+                          }} 
+                        />
+                      </button>
+                      {openFaq === idx && (
+                        <motion.div 
+                          style={{ padding: '0 1.5rem 1.25rem', color: 'var(--muted-foreground)', fontSize: '0.925rem', lineHeight: 1.5 }}
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                        >
+                          {faq.a}
+                        </motion.div>
+                      )}
+                    </div>
+                  ))}
                 </div>
               </motion.div>
             </div>
