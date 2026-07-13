@@ -84,12 +84,7 @@ export default function ContactPage() {
             </div>
 
             {/* Grid */}
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))',
-              gap: '3rem',
-              alignItems: 'start'
-            }}>
+            <div className="contact-main-grid">
               
               {/* Left Side: Contact Information & FAQs */}
               <motion.div 
@@ -175,21 +170,6 @@ export default function ContactPage() {
                         Sun: Closed
                       </p>
                     </div>
-                  </div>
-                </div>
-
-                {/* Biometrics Image Card */}
-                <div className="glass rounded-m" style={{ padding: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <img 
-                    src="/rehab_tools.jpg" 
-                    alt="Clinical Biometrics and Assessment equipment" 
-                    style={{ width: '100%', aspectRatio: '1.8', objectFit: 'cover', borderRadius: '12px' }} 
-                  />
-                  <div style={{ padding: '4px 8px' }}>
-                    <h4 style={{ fontSize: '1.05rem', fontWeight: 600 }}>Biometrics Tracking Hub</h4>
-                    <p style={{ fontSize: '0.875rem', color: 'var(--muted-foreground)', marginTop: '4px', lineHeight: 1.45 }}>
-                      Vasai West clinic features state-of-the-art posture scanners and digital mobility testing equipment for high-precision diagnostic insights.
-                    </p>
                   </div>
                 </div>
 

@@ -327,3 +327,17 @@ button {
   }
 }
 
+.contact-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .contact-main-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+
