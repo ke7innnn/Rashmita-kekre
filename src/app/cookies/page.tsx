@@ -9,7 +9,7 @@ export default function CookiesPage() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+      <main style={{ paddingTop: '130px', minHeight: '80vh' }}>
         <section style={{ padding: '4rem 0 6rem' }}>
           <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
             
@@ -47,7 +47,7 @@ export default function CookiesPage() {
               {/* Sticky Sidebar */}
               <div style={{
                 position: 'sticky',
-                top: 'calc(var(--site-header-height) + 2rem)',
+                top: '130px',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '1rem'

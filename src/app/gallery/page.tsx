@@ -112,7 +112,7 @@ export default function GalleryPage() {
     <>
       <Header />
       
-      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '90vh' }}>
+      <main style={{ paddingTop: '130px', minHeight: '90vh' }}>
         
         {/* Banner Section */}
         <section style={{ padding: '5rem 0 3.5rem', background: 'radial-gradient(circle at top right, rgba(0, 159, 199, 0.05), transparent 60%)' }}>

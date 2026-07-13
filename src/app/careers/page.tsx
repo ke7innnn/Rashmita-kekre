@@ -58,7 +58,7 @@ export default function CareersPage() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+      <main style={{ paddingTop: '130px', minHeight: '80vh' }}>
         
         {/* Hero Section */}
         <section style={{ padding: '5rem 0 3rem', background: 'radial-gradient(circle at top right, rgba(0, 159, 199, 0.05), transparent 60%)' }}>

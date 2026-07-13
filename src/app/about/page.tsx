@@ -97,7 +97,7 @@ export default function AboutPage() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+      <main style={{ paddingTop: '130px', minHeight: '80vh' }}>
         
         {/* About Hero */}
         <section style={{ padding: '5rem 0 2rem', background: 'radial-gradient(circle at top right, rgba(0, 159, 199, 0.04), transparent 60%)' }}>

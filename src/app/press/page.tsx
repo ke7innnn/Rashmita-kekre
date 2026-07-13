@@ -24,7 +24,7 @@ export default function PressPage() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+      <main style={{ paddingTop: '130px', minHeight: '80vh' }}>
         <section style={{ padding: '4rem 0 6rem', background: 'radial-gradient(circle at bottom right, rgba(0, 159, 199, 0.03), transparent 60%)' }}>
           <div className="xpad" style={{ maxWidth: '1100px', margin: '0 auto' }}>
             

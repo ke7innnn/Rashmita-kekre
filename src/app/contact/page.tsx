@@ -30,7 +30,7 @@ export default function ContactPage() {
   return (
     <>
       <Header />
-      <main style={{ paddingTop: 'calc(var(--site-header-height) + 2rem)', minHeight: '80vh' }}>
+      <main style={{ paddingTop: '140px', minHeight: '80vh' }}>
         <section style={{ padding: '4rem 0 6rem', background: 'radial-gradient(circle at bottom left, rgba(0, 159, 199, 0.04), transparent 50%)' }}>
           <div className="xpad" style={{ maxWidth: '1200px', margin: '0 auto' }}>
             
