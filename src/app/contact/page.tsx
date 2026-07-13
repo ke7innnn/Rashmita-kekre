@@ -375,8 +375,8 @@ export default function ContactPage() {
                   transition={{ duration: 0.6 }}
                 >
                   <img 
-                    src="/clinic_location_visual.png" 
-                    alt="HEALTH 360 Clinic Building Frontage Watercolor Rendering" 
+                    src="/clinic_location_visual.jpg" 
+                    alt="HEALTH 360 Clinic Corridor and Rehabilitation Equipment Area" 
                     style={{ 
                       width: '100%', 
                       height: '100%', 
