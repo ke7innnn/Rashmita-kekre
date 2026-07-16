@@ -56,11 +56,11 @@ export default function ScrollyServices() {
       zIndex: 2
     },
     {
-      id: 'specialized',
-      label: 'SPECIALIZED CARE',
-      title: "Women's Health & Pediatric Rehab",
-      description: 'Tailored clinical conditioning for prenatal/postnatal recovery, pelvic floor rehabilitation, and child milestone development programs.',
-      image: '/strength_test.png',
+      id: 'wellness',
+      label: 'HEALTH & WELLNESS',
+      title: 'Health and Wellness',
+      description: 'Transform your health with customized wellness programs that focus on movement, strength, recovery, and prevention.',
+      image: '/banner_stretching_pose.jpg',
       y: y3,
       zIndex: 3
     }
