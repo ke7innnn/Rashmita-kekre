@@ -35,7 +35,7 @@ export default function LoginPage() {
 
     // Store session in localStorage (works on Vercel, no DB needed)
     localStorage.setItem('h360_session', JSON.stringify({ name: user.name, role: user.role, username: user.username }));
-    router.push('/');
+    router.push('/crm360');
     router.refresh();
   };
 

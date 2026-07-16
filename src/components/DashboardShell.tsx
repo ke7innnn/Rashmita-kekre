@@ -41,7 +41,7 @@ export default function DashboardShell({ user: defaultUser, initialSettings }: P
   useEffect(() => {
     const session = localStorage.getItem('h360_session');
     if (!session) {
-      router.replace('/login');
+      router.replace('/crm360/login');
       setIsAuthenticated(false);
     } else {
       try {
@@ -50,7 +50,7 @@ export default function DashboardShell({ user: defaultUser, initialSettings }: P
         setIsAuthenticated(true);
       } catch (e) {
         localStorage.removeItem('h360_session');
-        router.replace('/login');
+        router.replace('/crm360/login');
         setIsAuthenticated(false);
       }
     }
@@ -78,7 +78,7 @@ export default function DashboardShell({ user: defaultUser, initialSettings }: P
 
   const handleSignOut = () => {
     localStorage.removeItem('h360_session');
-    router.replace('/login');
+    router.replace('/crm360/login');
   };
 
   if (isAuthenticated === null) {
