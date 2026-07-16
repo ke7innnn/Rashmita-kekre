@@ -17,7 +17,13 @@
   --soft-yellow: #FAF7EC;
   
   --spacing-xpad: max(1.25rem, calc((100% - min(1200px, 100% - 2.5rem)) / 2));
-  --site-header-height: 100px;
+  --site-header-height: 72px;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --site-header-height: 100px;
+  }
 }
 
 * {
