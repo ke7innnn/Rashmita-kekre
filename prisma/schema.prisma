@@ -1,0 +1,240 @@
+datasource db {
+  provider = "sqlite"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  WAITING
+  IN_PROGRESS
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+enum AppointmentSource {
+  WEBSITE
+  PHONE_AI_AGENT
+  WALK_IN
+  MANUAL_ADMIN
+}
+
+enum CallDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CallOutcome {
+  BOOKED
+  RESCHEDULED
+  CANCELLED
+  INQUIRY_ONLY
+  FOLLOW_UP_NEEDED
+  MISSED
+}
+
+model Patient {
+  id                        String           @id @default(cuid())
+  fullName                  String
+  gender                    String
+  dateOfBirth               DateTime
+  phone                     String
+  secondaryPhone            String?
+  address                   String?
+  referringDoctor           String?
+  presentingComplaint       String?
+  treatmentModalityAssigned String?
+  intakeDate                DateTime         @default(now())
+  tags                      String           @default("") // Comma-separated list for SQLite compatibility
+  notes                     String?
+  expectedCadence           String           @default("weekly") // "weekly" or "biweekly"
+  assignedProtocolId        String?
+  currentProtocolStep       Int              @default(0)
+  attachments               Attachment[]
+  appointments              Appointment[]
+  callLogs                  CallLog[]
+  sessionPackages           SessionPackage[]
+  feedback                  Feedback[]
+  waitlists                 Waitlist[]
+  sentHandouts              SentHandout[]
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+}
+
+model Attachment {
+  id         String   @id @default(cuid())
+  patientId  String
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  name       String
+  url        String
+  fileType   String
+  uploadedAt DateTime @default(now())
+}
+
+model Appointment {
+  id                   String             @id @default(cuid())
+  patientId            String
+  patient              Patient            @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date                 DateTime
+  startTime            String
+  endTime              String
+  status               AppointmentStatus  @default(SCHEDULED)
+  treatmentType        String
+  assignedSlotDuration Int                @default(30)
+  source               AppointmentSource  @default(MANUAL_ADMIN)
+  notes                String?
+  checkInTime          DateTime?
+  seenTime             DateTime?
+  feedback             Feedback?
+  assignedExercises    AssignedExercise[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+model CallLog {
+  id               String        @id @default(cuid())
+  patientId        String?
+  patient          Patient?      @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  direction        CallDirection
+  phoneNumber      String
+  timestamp        DateTime      @default(now())
+  duration         Int
+  transcript       String?
+  summary          String?
+  outcome          CallOutcome
+  recordingUrl     String?
+  followUpActioned Boolean       @default(false)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+}
+
+model TreatmentModality {
+  id              String  @id @default(cuid())
+  name            String
+  description     String?
+  defaultDuration Int     @default(30)
+  category        String
+}
+
+model ClinicSettings {
+  id                  String   @id @default("clinic_settings")
+  name                String   @default("Health 360 Physiotherapy Clinic")
+  phone               String   @default("+919876543210")
+  email               String   @default("info@health360.com")
+  address             String   @default("123 Clinic Street, Mumbai, India")
+  primaryDoctor       String   @default("Dr. Rashmita Karvir Kekre")
+  workingHoursStart   String   @default("09:00")
+  workingHoursEnd     String   @default("18:00")
+  slotDuration        Int      @default(30)
+  holidays            String   @default("") // Comma-separated list for SQLite compatibility
+  isPubliclyVisible   Boolean  @default(true)
+  reminder24hTemplate String   @default("Hi {patient}, this is a reminder for your session tomorrow at {time}.")
+  reminder2hTemplate  String   @default("Hi {patient}, you have an appointment in 2 hours at {time}.")
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model User {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  password  String
+  role      String   @default("receptionist") // "admin" (Dr. Rashmita) or "receptionist"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SessionPackage {
+  id            String   @id @default(cuid())
+  patientId     String
+  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  packageName   String
+  totalSessions Int
+  sessionsUsed  Int      @default(0)
+  purchaseDate  DateTime @default(now())
+  expiryDate    DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model TreatmentProtocol {
+  id                     String   @id @default(cuid())
+  name                   String
+  associatedDiagnosisTag String
+  steps                  String   // Comma-separated list of modalities for SQLite compatibility
+  description            String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+}
+
+model Feedback {
+  id            String      @id @default(cuid())
+  appointmentId String      @unique
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  patientId     String
+  patient       Patient     @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  rating        Int
+  comment       String?
+  submittedAt   DateTime    @default(now())
+}
+
+model Waitlist {
+  id                   String   @id @default(cuid())
+  patientId            String
+  patient              Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  desiredTreatmentType String
+  preferredTimeWindow  String   // "MORNING", "AFTERNOON", "EVENING"
+  status               String   @default("WAITING") // "WAITING", "FILLED", "EXPIRED"
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  title     String
+  message   String
+  type      String   // "BOOKING", "CANCELLATION", "CALL_FOLLOWUP"
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+model ExerciseTemplate {
+  id               String @id @default(cuid())
+  name             String
+  defaultSets      String @default("3")
+  defaultReps      String @default("10")
+  defaultHoldTime  String @default("5s")
+  defaultFrequency String @default("Once daily")
+}
+
+model AssignedExercise {
+  id            String      @id @default(cuid())
+  appointmentId String
+  appointment   Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  name          String
+  sets          String
+  reps          String
+  holdTime      String
+  frequency     String
+}
+
+model Handout {
+  id           String        @id @default(cuid())
+  title        String
+  url          String
+  fileType     String
+  category     String
+  sentHandouts SentHandout[]
+}
+
+model SentHandout {
+  id        String   @id @default(cuid())
+  patientId String
+  patient   Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  handoutId String
+  handout   Handout  @relation(fields: [handoutId], references: [id], onDelete: Cascade)
+  sentAt    DateTime @default(now())
+  sentVia   String
+}

@@ -2,12 +2,18 @@
 
 import { motion } from 'framer-motion';
 import { MessageCircle } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 import './WhatsAppWidget.css';
 
 export default function WhatsAppWidget() {
+  const pathname = usePathname();
   const whatsappNumber = '918482812859';
   const message = encodeURIComponent("Hi HEALTH 360, I'd like to inquire about booking a physiotherapy assessment.");
   const url = `https://wa.me/${whatsappNumber}?text=${message}`;
+
+  if (pathname?.startsWith('/crm360')) {
+    return null;
+  }
 
   return (
     <div className="whatsapp-fab-container">
