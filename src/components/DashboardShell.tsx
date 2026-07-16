@@ -99,7 +99,7 @@ export default function DashboardShell({ user: defaultUser, initialSettings }: P
           {/* Logo Branding */}
           <div className="flex items-center gap-3.5 border-b border-[#EADFCA]/45 pb-3">
             <img 
-              src="/logo/rklogo.png" 
+              src="/crm360/logo/rklogo.png" 
               alt="Health 360 Icon" 
               className="h-16 w-16 object-contain shrink-0"
             />
@@ -182,7 +182,7 @@ export default function DashboardShell({ user: defaultUser, initialSettings }: P
         <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[#FFFCF6]/90 backdrop-blur-md border-b border-[#EADFCA] shadow-xs">
           <div className="flex items-center gap-2.5">
             <img 
-              src="/logo/rklogo.png" 
+              src="/crm360/logo/rklogo.png" 
               alt="Health 360 Icon" 
               className="h-14 w-14 object-contain shrink-0"
             />

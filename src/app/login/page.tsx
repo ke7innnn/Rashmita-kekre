@@ -44,7 +44,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 bg-card p-10 rounded-2xl shadow-sm border border-border">
         <div className="flex flex-col items-center justify-center text-center">
           <img
-            src="/logo/rklogo.png"
+            src="/crm360/logo/rklogo.png"
             alt="Health 360 Logo"
             className="h-16 object-contain mb-2"
           />
