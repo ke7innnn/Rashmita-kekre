@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Calendar, Check, ArrowLeft } from 'lucide-react';
+import { Calendar, Check, ArrowLeft, Loader2 } from 'lucide-react';
 import './BookingModal.css';
 
 interface BookingPageProps {
@@ -18,6 +18,8 @@ const HOURS: Record<number, { name: string; closed: boolean; windows: Array<{ la
   6: { name: "Sat", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] }
 };
 
+const CRM_API_URL = process.env.NEXT_PUBLIC_CRM_API_URL || 'http://localhost:3002';
+
 export default function BookingModal({ onClose }: BookingPageProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
@@ -28,6 +30,12 @@ export default function BookingModal({ onClose }: BookingPageProps) {
   const [nameError, setNameError] = useState(false);
   const [phoneError, setPhoneError] = useState(false);
   const [isConfirmed, setIsConfirmed] = useState(false);
+
+  // CRM Integration States
+  const [bookedSlots, setBookedSlots] = useState<string[]>([]);
+  const [isLoadingSlots, setIsLoadingSlots] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const getDaysStrip = () => {
     const daysList = [];
@@ -76,14 +84,36 @@ export default function BookingModal({ onClose }: BookingPageProps) {
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
   };
 
-  const getBookedSlots = (dateKeyStr: string) => {
-    const day = new Date(dateKeyStr).getDay();
-    return day !== 0 ? ["09:30", "11:00", "12:00", "18:30"] : [];
-  };
+  // Fetch booked slots from CRM when selected date changes
+  useEffect(() => {
+    if (!selectedDate) return;
+
+    const fetchBookedSlots = async () => {
+      setIsLoadingSlots(true);
+      try {
+        const formattedDate = dateKey(selectedDate);
+        const res = await fetch(`${CRM_API_URL}/api/public/book?date=${formattedDate}`);
+        if (!res.ok) throw new Error('Failed to fetch booked slots');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.bookedSlots)) {
+          setBookedSlots(data.bookedSlots);
+        } else {
+          setBookedSlots([]);
+        }
+      } catch (err) {
+        console.error('Error fetching booked slots:', err);
+        // Fallback to empty booked slots if the CRM server is offline or fails
+        setBookedSlots([]);
+      } finally {
+        setIsLoadingSlots(false);
+      }
+    };
+
+    fetchBookedSlots();
+  }, [selectedDate]);
 
   const activeDayIndex = selectedDate ? selectedDate.getDay() : null;
   const dayInfo = activeDayIndex !== null ? HOURS[activeDayIndex] : null;
-  const bookedSlots = selectedDate ? getBookedSlots(dateKey(selectedDate)) : [];
 
   const handleDaySelect = (d: Date) => {
     setSelectedDate(d);
@@ -101,9 +131,49 @@ export default function BookingModal({ onClose }: BookingPageProps) {
     return nameOk && phoneOk && !!selectedTime;
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validate()) return;
-    setIsConfirmed(true);
+    if (!selectedDate || !selectedTime) return;
+
+    setIsSubmitting(true);
+    setApiError(null);
+
+    try {
+      const payload = {
+        fullName: name,
+        phone: phone,
+        gender: 'Female', // Default expected by schema
+        date: dateKey(selectedDate),
+        startTime: selectedTime,
+        treatmentType: concern || 'Physiotherapy Consultation',
+        notes: `Inbound online booking request. Reason/concern: ${concern || 'Not specified'}`
+      };
+
+      const res = await fetch(`${CRM_API_URL}/api/public/book`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to submit booking request. Please try again.');
+      }
+
+      if (data.success) {
+        setIsConfirmed(true);
+      } else {
+        throw new Error(data.error || 'Failed to confirm booking.');
+      }
+    } catch (err: any) {
+      console.error('Booking submission error:', err);
+      setApiError(err.message || 'Server connection failed. Please check if CRM app is running.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBookAnother = () => {
@@ -114,6 +184,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
     setNameError(false);
     setPhoneError(false);
     setIsConfirmed(false);
+    setApiError(null);
     const firstOpen = days.find(d => !HOURS[d.getDay()].closed);
     if (firstOpen) {
       setSelectedDate(firstOpen);
@@ -218,7 +289,11 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                     </div>
 
                     <div className="booking-slots-grid">
-                      {getAllSlotsForDay().map((t, idx) => {
+                      {isLoadingSlots ? (
+                        <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '16px 0', color: 'var(--h360-ink-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                          <Loader2 className="animate-spin" size={16} /> Loading available slots...
+                        </div>
+                      ) : getAllSlotsForDay().map((t, idx) => {
                         const timeStr = pad(Math.floor(t / 60)) + ":" + pad(t % 60);
                         const displayTime = fmtTime(t);
                         const isBooked = bookedSlots.includes(timeStr);
@@ -263,6 +338,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                             }}
                             className="booking-pill-input"
                             autoComplete="name"
+                            disabled={isSubmitting}
                           />
                           <p className="booking-field-error-text">Enter your full name.</p>
                         </div>
@@ -281,6 +357,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                             }}
                             className="booking-pill-input"
                             autoComplete="tel"
+                            disabled={isSubmitting}
                           />
                           <p className="booking-field-error-text">Enter a valid 10-digit phone number.</p>
                         </div>
@@ -292,6 +369,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                             value={concern}
                             onChange={(e) => setConcern(e.target.value)}
                             className="booking-pill-select"
+                            disabled={isSubmitting}
                           >
                             <option value="">Select concern type</option>
                             <option>Back pain</option>
@@ -303,9 +381,27 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                           </select>
                         </div>
 
-                        <button className="booking-submit-black" type="button" onClick={handleSubmit}>
-                          Submit Booking Request
+                        <button 
+                          className="booking-submit-black" 
+                          type="button" 
+                          onClick={handleSubmit}
+                          disabled={isSubmitting}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Loader2 className="animate-spin" size={16} style={{ marginRight: '8px', display: 'inline' }} />
+                              Submitting Request...
+                            </>
+                          ) : (
+                            'Submit Booking Request'
+                          )}
                         </button>
+                        
+                        {apiError && (
+                          <p className="booking-field-error-text" style={{ display: 'block', textAlign: 'center', marginTop: '10px' }}>
+                            {apiError}
+                          </p>
+                        )}
                         
                         <p className="booking-disclaimer">
                           By booking, you agree to HEALTH 360 clinic guidelines.
