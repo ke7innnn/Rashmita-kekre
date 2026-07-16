@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Save, Search, Plus } from 'lucide-react';
-const AppointmentSource = { MANUAL: 'MANUAL', WEBSITE: 'WEBSITE', PHONE_AI_AGENT: 'PHONE_AI_AGENT' } as const;
+const AppointmentSource = { MANUAL_ADMIN: 'MANUAL_ADMIN', WEBSITE: 'WEBSITE', PHONE_AI_AGENT: 'PHONE_AI_AGENT' } as const;
 type AppointmentSource = typeof AppointmentSource[keyof typeof AppointmentSource];
 
 const schema = z.object({

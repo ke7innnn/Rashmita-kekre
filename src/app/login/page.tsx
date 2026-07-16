@@ -1,9 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { Activity } from 'lucide-react';
+
+// Hardcoded credentials — no database needed
+const USERS = [
+  { username: 'rashmita', password: 'rashmita123', name: 'Dr. Rashmita', role: 'admin' },
+  { username: 'receptionist', password: 'receptionist123', name: 'Receptionist', role: 'receptionist' },
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,36 +21,35 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    try {
-      const res = await signIn('credentials', {
-        username,
-        password,
-        redirect: false,
-      });
+    await new Promise((r) => setTimeout(r, 400)); // small delay for UX
 
-      if (res?.error) {
-        setError('Invalid username or password');
-        setLoading(false);
-      } else {
-        router.push('/');
-        router.refresh();
-      }
-    } catch (err) {
-      setError('An unexpected error occurred. Please try again.');
+    const user = USERS.find(
+      (u) => u.username === username.trim() && u.password === password
+    );
+
+    if (!user) {
+      setError('Invalid username or password. Please try again.');
       setLoading(false);
+      return;
     }
+
+    // Store session in localStorage (works on Vercel, no DB needed)
+    localStorage.setItem('h360_session', JSON.stringify({ name: user.name, role: user.role, username: user.username }));
+    router.push('/');
+    router.refresh();
   };
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
       <div className="w-full max-w-md space-y-8 bg-card p-10 rounded-2xl shadow-sm border border-border">
         <div className="flex flex-col items-center justify-center text-center">
-          <img 
-            src="/logo/rklogo.png" 
-            alt="Health 360 Logo" 
+          <img
+            src="/logo/rklogo.png"
+            alt="Health 360 Logo"
             className="h-16 object-contain mb-2"
           />
-          <p className="mt-2 text-sm text-foreground/60">
+          <h1 className="text-2xl font-serif font-bold text-[#2B2620] mt-2">Health 360</h1>
+          <p className="mt-1 text-sm text-foreground/60">
             Sign in to manage patient records and clinical appointments.
           </p>
         </div>
@@ -71,7 +74,7 @@ export default function LoginPage() {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="block w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder-foreground/30 focus:border-primary focus:ring-1 focus:ring-primary focus:outline-hidden sm:text-sm transition-all"
-                placeholder="Username (e.g. rashmita)"
+                placeholder="e.g. rashmita"
               />
             </div>
             <div>

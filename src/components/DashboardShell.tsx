@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-// Auth bypassed — signOut is a no-op
-const signOut = (_opts?: { callbackUrl?: string }) => { window.location.href = '/'; };
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
@@ -29,12 +28,33 @@ interface Props {
 
 type TabType = 'overview' | 'dashboard' | 'patients' | 'calls' | 'treatments' | 'analytics' | 'referrals' | 'settings' | 'manage-appointment';
 
-export default function DashboardShell({ user }: Props) {
+export default function DashboardShell({ user: defaultUser, initialSettings }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('overview');
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [user, setUser] = useState<any>(defaultUser);
+  const router = useRouter();
+
+  useEffect(() => {
+    const session = localStorage.getItem('h360_session');
+    if (!session) {
+      router.replace('/login');
+      setIsAuthenticated(false);
+    } else {
+      try {
+        const parsed = JSON.parse(session);
+        setUser(parsed);
+        setIsAuthenticated(true);
+      } catch (e) {
+        localStorage.removeItem('h360_session');
+        router.replace('/login');
+        setIsAuthenticated(false);
+      }
+    }
+  }, [router]);
 
   const handleConfirmRedirect = () => {
     setShowRedirectModal(false);
@@ -57,8 +77,19 @@ export default function DashboardShell({ user }: Props) {
   ];
 
   const handleSignOut = () => {
-    signOut({ callbackUrl: '/login' });
+    localStorage.removeItem('h360_session');
+    router.replace('/login');
   };
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex min-h-screen bg-[#FAF6EF] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
 
   return (
     <div className="flex min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/10">
@@ -123,7 +154,7 @@ export default function DashboardShell({ user }: Props) {
         <div className="border-t border-[#EADFCA] pt-3 space-y-3">
           <div className="flex flex-col items-center text-center gap-1.5 p-3 bg-[#FAF6EF]/60 border border-[#EADFCA] rounded-xl shadow-xxs">
             <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center font-serif text-primary font-bold text-base">
-              {user.name.split(' ').map(n => n[0]).join('').toUpperCase()}
+              {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
             </div>
             <div className="truncate w-full">
               <p className="text-xs font-bold text-[#2B2620] truncate capitalize">{user.name}</p>

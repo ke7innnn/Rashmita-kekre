@@ -11,7 +11,16 @@ import {
 } from 'lucide-react';
 const CallDirection = { INBOUND: 'INBOUND', OUTBOUND: 'OUTBOUND' } as const;
 type CallDirection = typeof CallDirection[keyof typeof CallDirection];
-const CallOutcome = { BOOKED: 'BOOKED', CANCELLED: 'CANCELLED', INFO_ONLY: 'INFO_ONLY', NO_ANSWER: 'NO_ANSWER', RESCHEDULED: 'RESCHEDULED' } as const;
+const CallOutcome = {
+  BOOKED: 'BOOKED',
+  RESCHEDULED: 'RESCHEDULED',
+  CANCELLED: 'CANCELLED',
+  INQUIRY_ONLY: 'INQUIRY_ONLY',
+  FOLLOW_UP_NEEDED: 'FOLLOW_UP_NEEDED',
+  MISSED: 'MISSED',
+  INFO_ONLY: 'INFO_ONLY',
+  NO_ANSWER: 'NO_ANSWER'
+} as const;
 type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
 import SegmentedControl from './SegmentedControl';
 

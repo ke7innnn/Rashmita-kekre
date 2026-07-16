@@ -24,6 +24,7 @@ type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus
 
 const AppointmentSource = {
   MANUAL: 'MANUAL',
+  MANUAL_ADMIN: 'MANUAL_ADMIN',
   WEBSITE: 'WEBSITE',
   PHONE_AI_AGENT: 'PHONE_AI_AGENT',
 } as const;

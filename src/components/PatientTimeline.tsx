@@ -12,7 +12,16 @@ import {
 } from 'lucide-react';
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
-const CallOutcome = { BOOKED: 'BOOKED', CANCELLED: 'CANCELLED', INFO_ONLY: 'INFO_ONLY', NO_ANSWER: 'NO_ANSWER', RESCHEDULED: 'RESCHEDULED' } as const;
+const CallOutcome = {
+  BOOKED: 'BOOKED',
+  RESCHEDULED: 'RESCHEDULED',
+  CANCELLED: 'CANCELLED',
+  INQUIRY_ONLY: 'INQUIRY_ONLY',
+  FOLLOW_UP_NEEDED: 'FOLLOW_UP_NEEDED',
+  MISSED: 'MISSED',
+  INFO_ONLY: 'INFO_ONLY',
+  NO_ANSWER: 'NO_ANSWER'
+} as const;
 type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
 
 interface Props {
