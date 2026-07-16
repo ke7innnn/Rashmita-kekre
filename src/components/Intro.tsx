@@ -68,7 +68,7 @@ export default function Intro() {
           viewport={{ once: true, margin: "-100px" }}
         >
           <motion.p className="intro-lead" variants={itemVariants}>
-            <strong>Health 360 Physiotherapy & Craniosacral Therapy Clinic</strong>, founded by <strong>Dr. Rashmita Karvir-Kekre (PT)</strong>, is a holistic center dedicated to healing through movement and mindful rehabilitation. With over 13 years of professional experience, Dr. Rashmita offers an integrated approach that focuses on complete physical and emotional wellbeing.
+            <strong>Health 360 Physiotherapy & Craniosacral Therapy Clinic</strong>, founded by <strong>Dr. Rashmita Karvir-Kekre (PT)</strong>, is a holistic center dedicated to healing through movement and mindful rehabilitation. With over 15 years of professional experience, Dr. Rashmita offers an integrated approach that focuses on complete physical and emotional wellbeing.
           </motion.p>
 
           <motion.a 

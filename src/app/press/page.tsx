@@ -76,7 +76,7 @@ export default function PressPage() {
                 <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Founded</p>
               </div>
               <div>
-                <h4 style={{ fontSize: '2.5rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>13+</h4>
+                <h4 style={{ fontSize: '2.5rem', fontWeight: 500, color: 'var(--brand)', margin: 0 }}>15+</h4>
                 <p style={{ color: 'var(--muted-foreground)', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: '0.25rem' }}>Expert Years</p>
               </div>
               <div>
