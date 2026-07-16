@@ -10,12 +10,12 @@ interface BookingPageProps {
 
 const HOURS: Record<number, { name: string; closed: boolean; windows: Array<{ label: string; start: string; end: string }> }> = {
   0: { name: "Sun", closed: true,  windows: [] },
-  1: { name: "Mon", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "19:00", end: "21:00" } ] },
-  2: { name: "Tue", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
-  3: { name: "Wed", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
-  4: { name: "Thu", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
-  5: { name: "Fri", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
-  6: { name: "Sat", closed: false, windows: [ { label: "Morning", start: "09:00", end: "13:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] }
+  1: { name: "Mon", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
+  2: { name: "Tue", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
+  3: { name: "Wed", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
+  4: { name: "Thu", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
+  5: { name: "Fri", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] },
+  6: { name: "Sat", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] }
 };
 
 export default function BookingModal({ onClose }: BookingPageProps) {

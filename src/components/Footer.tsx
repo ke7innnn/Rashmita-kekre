@@ -70,12 +70,12 @@ export default function Footer() {
             <h4 className="footer-nav-heading">Clinic hours ↗</h4>
             <div className="hours-table">
               <div className="hours-row">
-                <span className="day-lbl">Mon – Fri</span>
-                <span className="time-val">9:00 – 19:00</span>
+                <span className="day-lbl">Mon – Sat</span>
+                <span className="time-val">10:00 AM – 2:00 PM</span>
               </div>
               <div className="hours-row">
-                <span className="day-lbl">Saturday</span>
-                <span className="time-val">9:00 – 17:00</span>
+                <span className="day-lbl">Mon – Sat</span>
+                <span className="time-val">5:00 PM – 9:00 PM</span>
               </div>
               <div className="hours-row">
                 <span className="day-lbl">Sunday</span>
