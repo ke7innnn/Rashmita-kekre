@@ -18,7 +18,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   title: "Health 360 — Physiotherapy Patient CRM & Reception Dashboard",
-  description: "Connected clinical management, scheduling, and AI voice agent control panel for Dr. Rashmita Karvir Kekre's practice.",
+  description: "Connected clinical management, scheduling, and AI voice agent control panel.",
 };
 
 export default function CrmLayout({
@@ -27,7 +27,10 @@ export default function CrmLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className={`${instrumentSerif.variable} ${plusJakartaSans.variable} crm-layout-wrapper min-h-screen flex flex-col bg-background text-foreground`}>
+    <div
+      className={`crm-root ${instrumentSerif.variable} ${plusJakartaSans.variable} antialiased`}
+      suppressHydrationWarning
+    >
       <Providers>{children}</Providers>
     </div>
   );
