@@ -93,9 +93,13 @@ export default function PatientsTab({
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['patients', search],
     queryFn: async () => {
-      const res = await fetch(`/api/patients?q=${search}`);
-      if (!res.ok) throw new Error('Failed to fetch patients');
-      return res.json();
+      // Dummy data for instant loading
+      return [
+        { id: 'p1', name: 'James Doe', phone: '+91 98765 43210', dateOfBirth: '1985-06-15', gender: 'Male', registrationDate: '2023-11-01', referringDoctor: 'Self', createdAt: '2023-11-01T10:00:00Z', appointments: [1,2,3] },
+        { id: 'p2', name: 'Sarah Connor', phone: '+91 99887 76655', dateOfBirth: '1990-02-28', gender: 'Female', registrationDate: '2024-01-10', referringDoctor: 'Dr. Smith', createdAt: '2024-01-10T11:00:00Z', appointments: [] },
+        { id: 'p3', name: 'Robert Bruce', phone: '+91 98765 43211', dateOfBirth: '1970-11-20', gender: 'Male', registrationDate: '2024-02-15', referringDoctor: 'City Hospital', createdAt: '2024-02-15T09:30:00Z', appointments: [1] },
+        { id: 'p4', name: 'Emily Davis', phone: '+91 98765 43212', dateOfBirth: '1995-08-05', gender: 'Female', registrationDate: '2024-03-20', referringDoctor: 'Self', createdAt: '2024-03-20T14:15:00Z', appointments: [1,2] }
+      ];
     },
   });
 
@@ -103,8 +107,11 @@ export default function PatientsTab({
   const { data: modalities = [] } = useQuery({
     queryKey: ['modalities'],
     queryFn: async () => {
-      const res = await fetch('/api/modalities');
-      return res.json();
+      return [
+        { id: 'm1', name: 'Manual Therapy' },
+        { id: 'm2', name: 'Electrotherapy' },
+        { id: 'm3', name: 'Sports Rehabilitation' }
+      ];
     },
   });
 
