@@ -1,0 +1,584 @@
+/* ============================================================
+  Health 360 Physiotherapy — Interactive Body Diagram CSS
+  ============================================================ */
+
+.diagram-page-section {
+  background-color: var(--background);
+  min-height: 100vh;
+  padding-top: calc(var(--site-header-height) + 3rem);
+  padding-bottom: 5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.diagram-page-wrapper {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.diagram-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: all 0.2s ease;
+  align-self: flex-start;
+}
+
+.diagram-back-link:hover {
+  color: var(--brand);
+  transform: translateX(-4px);
+}
+
+/* Doctor Profile Styling */
+.doctor-profile-section {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.doctor-profile-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  align-items: flex-start;
+}
+
+@media (min-width: 980px) {
+  .doctor-profile-grid {
+    grid-template-columns: 0.85fr 1.15fr;
+    gap: 4rem;
+  }
+}
+
+.doctor-photo-column {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.doctor-photo-frame {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 0.72 / 1;
+  border-radius: 28px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.03);
+  background: #e5e2d5;
+}
+
+.doctor-photo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.doctor-photo-frame:hover .doctor-photo-img {
+  transform: scale(1.03);
+}
+
+/* Floating Badge */
+.experience-tag-floating {
+  position: absolute;
+  bottom: 2rem;
+  right: 2rem;
+  background: var(--foreground); /* deep charcoal */
+  color: #ffffff;
+  padding: 1rem 1.25rem;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  line-height: 1;
+  z-index: 10;
+}
+
+.exp-num {
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--brand);
+}
+
+.exp-lbl {
+  font-size: 0.75rem;
+  font-weight: 600;
+  opacity: 0.8;
+  margin-top: 0.25rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* Doctor Info column */
+.doctor-info-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+.doctor-name {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.15;
+  color: var(--foreground);
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.doctor-title-desc {
+  font-size: 1.15rem;
+  font-weight: 500;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.profile-details-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.profile-detail-card {
+  padding: 2.25rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.5) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 8px 24px -10px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.4s ease, border-color 0.4s ease, box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.profile-detail-card:hover {
+  transform: translateY(-4px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.75) 100%);
+  border-color: rgba(0, 159, 199, 0.25);
+  box-shadow: 
+    0 20px 40px -15px rgba(0, 159, 199, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.detail-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--brand);
+  margin: 0;
+  border-left: 3px solid var(--brand);
+  padding-left: 0.75rem;
+}
+
+.detail-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.detail-list.cols-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+}
+
+@media (min-width: 600px) {
+  .detail-list.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.detail-list li {
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+  line-height: 1.45;
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.detail-list li::before {
+  content: "•";
+  color: var(--brand);
+  font-weight: bold;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.diagram-page-header {
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+  margin: 0 auto 1.5rem auto;
+}
+
+.diagram-page-title {
+  font-size: clamp(2.5rem, 5vw, 4.25rem);
+  font-weight: 500;
+  line-height: 1.1;
+  color: var(--foreground);
+  margin-bottom: 1rem;
+}
+
+.diagram-page-intro {
+  font-size: 1.125rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* Stats Section on About Us page */
+.diagram-stats-section {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  margin-top: 1rem;
+}
+
+.diagram-stats-header {
+  max-width: 800px;
+}
+
+.diagram-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+@media (min-width: 768px) {
+  .diagram-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2.5rem;
+  }
+}
+
+.stat-card {
+  padding: 2.5rem;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.5) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 8px 30px -10px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.stat-card:hover {
+  transform: translateY(-8px);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.75) 100%);
+  border-color: rgba(0, 159, 199, 0.25);
+  box-shadow: 
+    0 24px 48px -15px rgba(0, 159, 199, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.stat-card-number {
+  font-size: 3rem;
+  font-weight: 700;
+  color: var(--brand);
+  line-height: 1;
+}
+
+.stat-card-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.stat-card-desc {
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.diagram-section-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.05);
+  margin-top: 4rem;
+  margin-bottom: 4rem;
+}
+
+/* Layout */
+.diagram-main-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3rem;
+  margin-top: 2rem;
+  align-items: center;
+}
+
+@media (min-width: 980px) {
+  .diagram-main-layout {
+    grid-template-columns: 1.6fr 0.9fr; /* Visual column wider to make silhouette larger */
+    gap: 4rem;
+  }
+}
+
+/* Left Column - Silhouette */
+.diagram-visual-column {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.silhouette-outer-container {
+  background: transparent;
+  border: none;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  max-width: 750px;
+  box-shadow: none;
+}
+
+.silhouette-wrapper {
+  position: relative;
+  width: 95%; /* Increased to 95% of parent column width */
+  max-width: 700px;
+  aspect-ratio: 1 / 1; /* Exact square image aspect-ratio */
+  margin: 0 auto;
+}
+
+.silhouette-img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: fill; /* Ensures image fills the wrapper exactly, leaving zero letterbox space */
+  pointer-events: none;
+}
+
+/* Markers styling */
+.body-point {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background-color: var(--brand); /* cyan-blue */
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  outline: none;
+  transition: transform 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.2s, box-shadow 0.2s;
+  z-index: 100;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.body-point:hover,
+.body-point:focus,
+.body-point.active {
+  transform: translate(-50%, -50%) scale(1.4);
+  background-color: var(--foreground); /* deep charcoal active state */
+  box-shadow: 0 0 14px 4px rgba(0, 159, 199, 0.3);
+}
+
+/* Pulsing effect for active selection */
+.point-pulse {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  right: -6px;
+  bottom: -6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--brand);
+  animation: markerPulse 1.6s infinite ease-out;
+  pointer-events: none;
+}
+
+@keyframes markerPulse {
+  0% { transform: scale(0.85); opacity: 0.9; }
+  100% { transform: scale(2); opacity: 0; }
+}
+
+/* Right Column - Detail Card Space Holder */
+.diagram-detail-column {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.detail-card-space-holder {
+  min-height: 380px; /* Reserves exact height to prevent page layout shifting */
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.condition-detail-card {
+  padding: 3rem 2.5rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  box-shadow: 
+    0 24px 48px -15px rgba(0, 159, 199, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(255, 255, 255, 0.6) 100%);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  height: 100%;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.condition-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.condition-region-tag {
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--brand);
+}
+
+.condition-name {
+  font-size: 1.85rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--foreground);
+}
+
+.condition-description {
+  font-size: 1.125rem;
+  line-height: 1.65;
+  color: var(--muted-foreground);
+}
+
+.condition-cta-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.condition-cta-disclaimer {
+  font-size: 0.8125rem;
+  color: var(--muted-foreground);
+  text-align: center;
+  line-height: 1.4;
+}
+
+/* Placeholder card style */
+.placeholder-card {
+  align-items: center;
+  text-align: center;
+  justify-content: center;
+  border-style: dashed;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.placeholder-icon-wrapper {
+  background: rgba(0, 159, 199, 0.06);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.placeholder-card h4 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin-bottom: 0.5rem;
+}
+
+.placeholder-card p {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  max-width: 320px;
+}
+
+@media (max-width: 767px) {
+  .silhouette-outer-container {
+    padding: 1.5rem 1rem;
+  }
+  .condition-detail-card {
+    padding: 2.25rem 1.75rem;
+  }
+  .detail-card-space-holder {
+    min-height: auto;
+  }
+}
+
+/* About Page Timeline Grid */
+.about-timeline-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  position: relative;
+}
+
+@media (min-width: 600px) {
+  .about-timeline-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 900px) {
+  .about-timeline-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* About Page Stats Grid */
+.about-stats-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  padding: 3rem 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+@media (min-width: 480px) {
+  .about-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .about-stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 980px) {
+  .about-stats-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+

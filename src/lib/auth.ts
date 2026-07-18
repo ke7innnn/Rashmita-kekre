@@ -1,6 +1,6 @@
 import { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { prisma } from './db';
+import { supabase } from './supabase';
 import { verifyPassword } from './password';
 
 export const authOptions: NextAuthOptions = {
@@ -20,9 +20,11 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await prisma.user.findUnique({
-            where: { username: credentials.username },
-          });
+          const { data: user } = await supabase
+            .from('User')
+            .select('*')
+            .eq('username', credentials.username)
+            .single();
 
           if (!user) {
             throw new Error('Invalid username or password.');

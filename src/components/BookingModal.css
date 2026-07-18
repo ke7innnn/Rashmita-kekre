@@ -1,0 +1,486 @@
+/* ============================================================
+   HEALTH 360 Physiotherapy — Premium Booking Modal Redesign
+   ============================================================ */
+
+.booking-page-section {
+  background-color: var(--background); /* warm cream #faf7ec */
+  min-height: 100vh;
+  padding-top: calc(var(--site-header-height) + 2rem);
+  padding-bottom: 6rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.booking-page-wrapper {
+  max-width: 1200px;
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.booking-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--foreground);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  transition: all 0.25s ease;
+  align-self: flex-start;
+  border-radius: 4px;
+}
+
+.booking-back-link:hover {
+  color: var(--brand);
+  transform: translateX(-4px);
+}
+
+/* Split-screen Page Container */
+.booking-page-container {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 3.5rem;
+  width: 100%;
+  align-items: stretch;
+  margin-top: 1rem;
+}
+
+@media (min-width: 900px) {
+  .booking-page-container {
+    grid-template-columns: 1fr 1.15fr;
+  }
+}
+
+/* Left Column: Visual Portrait */
+.booking-visual-column {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  border-radius: 32px;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.booking-visual-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.booking-visual-column:hover .booking-visual-img {
+  transform: scale(1.03);
+}
+
+@media (max-width: 900px) {
+  .booking-visual-column {
+    display: none; /* Hide visual column on mobile to keep focus on form */
+  }
+}
+
+/* Right Column Content */
+.booking-form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  width: 100%;
+}
+
+.booking-section-header {
+  text-align: left;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
+}
+
+.booking-section-title {
+  font-size: clamp(2rem, 4vw, 2.75rem);
+  font-weight: 500;
+  line-height: 1.15;
+  color: var(--foreground);
+  margin-top: 0.5rem;
+  margin-bottom: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.booking-section-desc {
+  font-size: 1.1rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+/* Booking Card (White, Clean, Rounded) */
+.booking-card {
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 32px;
+  padding: 3rem 2.5rem;
+  box-shadow: 
+    0 30px 60px -15px rgba(0, 0, 0, 0.04),
+    0 0 1px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.booking-card-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.booking-card-divider {
+  height: 1px;
+  background-color: rgba(0, 0, 0, 0.06);
+  width: 100%;
+}
+
+.booking-card-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.booking-card-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.section-label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--foreground);
+}
+
+.section-value {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--brand);
+}
+
+/* Date Strip Capsules */
+.booking-days-strip {
+  display: flex;
+  gap: 0.6rem;
+  overflow-x: auto;
+  padding-bottom: 0.5rem;
+  scrollbar-width: thin;
+}
+
+.booking-days-strip::-webkit-scrollbar {
+  height: 4px;
+}
+
+.booking-days-strip::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.08);
+  border-radius: 2px;
+}
+
+.booking-day-chip {
+  flex: 0 0 76px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 0.9rem 0;
+  background-color: #f3f0e2; /* light, warm gray */
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.booking-day-chip .chip-weekday {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 700;
+  opacity: 0.6;
+}
+
+.booking-day-chip .chip-daynum {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.booking-day-chip:hover:not(.selected) {
+  background-color: #e5e2d5;
+}
+
+.booking-day-chip.selected {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.booking-day-chip.selected .chip-weekday {
+  opacity: 0.8;
+}
+
+.booking-day-chip.closed {
+  opacity: 0.35;
+  background-color: #eaeaea;
+  cursor: not-allowed;
+}
+
+/* Time slots grid */
+.booking-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.6rem;
+}
+
+@media (min-width: 480px) {
+  .booking-slots-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (min-width: 600px) {
+  .booking-slots-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
+
+.booking-slot-chip {
+  padding: 0.75rem 0.5rem;
+  background-color: #f3f0e2;
+  border: none;
+  border-radius: 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--foreground);
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.booking-slot-chip:hover:not(.selected):not(.booked) {
+  background-color: #e5e2d5;
+}
+
+.booking-slot-chip.selected {
+  background-color: #000000;
+  color: #ffffff;
+}
+
+.booking-slot-chip.booked {
+  background-color: #eaeaea;
+  color: #a1a1a1;
+  text-decoration: line-through;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Patient Form Unlock Section */
+.booking-patient-form {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.booking-select-prompt {
+  font-size: 0.95rem;
+  color: var(--muted-foreground);
+  text-align: center;
+  padding: 1rem 0;
+  line-height: 1.5;
+}
+
+.booking-inputs-container {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  animation: formSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes formSlideUp {
+  from { opacity: 0; transform: translateY(15px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.booking-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.booking-field-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  text-transform: capitalize;
+  padding-left: 0.25rem;
+}
+
+.booking-pill-input,
+.booking-pill-select {
+  width: 100%;
+  border: none;
+  background-color: #f3f0e2;
+  padding: 0.85rem 1.35rem;
+  border-radius: 9999px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--foreground);
+  outline: none;
+  transition: all 0.25s ease;
+}
+
+.booking-pill-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 0.55;
+}
+
+.booking-pill-input:focus,
+.booking-pill-select:focus {
+  background-color: #ffffff;
+  box-shadow: 0 0 0 2px #000000;
+}
+
+.booking-field-error-text {
+  font-size: 0.75rem;
+  color: #c53030;
+  display: none;
+  padding-left: 0.5rem;
+}
+
+.booking-field-group.error .booking-pill-input {
+  box-shadow: 0 0 0 2px #c53030;
+}
+
+.booking-field-group.error .booking-field-error-text {
+  display: block;
+}
+
+/* Submit Black Capsule Button */
+.booking-submit-black {
+  width: 100%;
+  border: none;
+  background-color: #000000;
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  padding: 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  text-align: center;
+  margin-top: 0.5rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+}
+
+.booking-submit-black:hover {
+  background-color: #1a1a1a;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
+}
+
+.booking-submit-black:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 4px;
+}
+
+.booking-disclaimer {
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+  text-align: center;
+  margin-top: 0.5rem;
+  line-height: 1.4;
+}
+
+/* Confirmation Card */
+.booking-confirm-card {
+  background: #ffffff;
+  border-radius: 32px;
+  padding: 3rem 2.5rem;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.04);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.booking-confirm-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background-color: rgba(34, 197, 94, 0.1);
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.booking-confirm-card h3 {
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--foreground);
+  margin: 0;
+}
+
+.booking-confirm-card p {
+  font-size: 1.05rem;
+  color: var(--muted-foreground);
+  line-height: 1.6;
+  max-width: 420px;
+  margin: 0;
+}
+
+.booking-confirm-details {
+  width: 100%;
+  max-width: 440px;
+  background-color: #f3f0e2;
+  border-radius: 20px;
+  padding: 1.5rem 1.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.confirm-detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.confirm-detail-row:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.confirm-detail-row .row-title {
+  font-size: 0.85rem;
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.confirm-detail-row .row-value {
+  font-size: 0.95rem;
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* Visibility states & keyboard styling focus */
+.booking-day-chip:focus-visible,
+.booking-slot-chip:focus-visible,
+.booking-pill-input:focus-visible,
+.booking-pill-select:focus-visible,
+.booking-submit-black:focus-visible,
+.booking-back-link:focus-visible {
+  outline: 2px solid #000000 !important;
+  outline-offset: 4px !important;
+}

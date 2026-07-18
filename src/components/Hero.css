@@ -1,0 +1,156 @@
+.hero {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background);
+  overflow-x: hidden;
+}
+
+.hero-scroll-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  /* Allow the wrapper to stay fixed while scaling, or let it scroll with the page?
+     Usually, Neko Health's hero stays fixed or moves at a different parallax speed.
+     We will use a fixed position trick or just let it scroll normally while scaling. */
+}
+
+.hero-background-wrapper {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  /* transform-origin determines how it scales */
+  transform-origin: center top;
+  will-change: transform, border-radius;
+}
+
+.hero-bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.hero-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, var(--background) 0%, rgba(250, 247, 236, 0.4) 50%, rgba(250, 247, 236, 0.1) 100%);
+  z-index: 1;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: var(--site-header-height);
+  padding-bottom: 12vh;
+  /* Pointer events none here so it doesn't block the background if we want the bg interactive, but usually we don't. */
+}
+
+.hero-text-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 1000px;
+  width: 100%;
+}
+
+.hero-title {
+  font-size: clamp(3rem, 8vw, 6.25rem);
+  font-weight: 400;
+  line-height: 1;
+  margin-bottom: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .hero-title {
+    max-width: 22ch;
+  }
+}
+
+/* ── Vasai-Only USP Badge ───────────────────────────── */
+.hero-usp-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(10, 12, 16, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 100px;
+  padding: 10px 18px 10px 14px;
+  margin-bottom: 1.6rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255,255,255,0.04) inset;
+  cursor: default;
+}
+
+/* Pulsing green live dot */
+.hero-usp-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5);
+  animation: usp-pulse 2.2s ease-in-out infinite;
+  flex-shrink: 0;
+}
+
+@keyframes usp-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
+  50%       { box-shadow: 0 0 0 5px rgba(74, 222, 128, 0); }
+}
+
+/* Star icon */
+.hero-usp-star {
+  color: #f6c90e;
+  flex-shrink: 0;
+}
+
+/* Main label */
+.hero-usp-text {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.82);
+  letter-spacing: 0.01em;
+  white-space: nowrap;
+}
+
+.hero-usp-text strong {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+/* "Exclusive" accent pill */
+.hero-usp-pill {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #f6c90e;
+  background: rgba(246, 201, 14, 0.12);
+  border: 1px solid rgba(246, 201, 14, 0.25);
+  border-radius: 100px;
+  padding: 2px 9px;
+  flex-shrink: 0;
+}
+

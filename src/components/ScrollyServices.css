@@ -1,0 +1,203 @@
+.scrolly-section {
+  position: relative;
+  height: 300vh; /* 3 sections */
+  background-color: var(--background);
+}
+
+.scrolly-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+}
+
+.scrolly-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  width: 100%;
+  height: 100vh;
+}
+
+@media (min-width: 768px) {
+  .scrolly-grid {
+    grid-template-columns: 1.1fr 1fr; /* Left visual is slightly wider */
+  }
+}
+
+/* Left Column: Visuals */
+.scrolly-visual-column {
+  height: 100vh;
+  position: relative;
+  display: none; /* Hide on mobile/portrait */
+}
+
+@media (min-width: 768px) {
+  .scrolly-visual-column {
+    display: block;
+  }
+}
+
+.scrolly-image-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.scrolly-image-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  border-radius: 0 40px 40px 0; /* Rounded right corners like Neko Health */
+  box-shadow: 0 -20px 40px -10px rgba(0, 0, 0, 0.06);
+}
+
+.scrolly-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.feature-icon-wrapper {
+  background: rgba(0, 159, 199, 0.06);
+  display: inline-flex;
+  padding: 16px;
+  margin-bottom: 1.5rem;
+  align-self: flex-start;
+}
+
+/* Right Column: Content */
+.scrolly-content-column {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  z-index: 10;
+  background-color: var(--background);
+}
+
+@media (min-width: 768px) {
+  .scrolly-content-column {
+    padding-left: 10%;
+    justify-content: flex-start;
+  }
+}
+
+.scrolly-content-wrapper {
+  max-width: 540px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+}
+
+/* Tab Navigation */
+.scrolly-tabs {
+  display: flex;
+  gap: 2rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  padding-bottom: 1rem;
+}
+
+.scrolly-tab-btn {
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--muted-foreground);
+  transition: all 0.3s ease;
+  padding: 0;
+  border: none;
+  background: none;
+}
+
+.scrolly-tab-btn:hover {
+  color: var(--foreground);
+}
+
+.scrolly-tab-btn.active {
+  color: var(--foreground);
+  font-weight: 700;
+  position: relative;
+}
+
+/* Active Text Content */
+.scrolly-text-content {
+  min-height: 350px; /* Prevent layout shifting */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.scrolly-title {
+  font-size: clamp(2.25rem, 4vw, 3.75rem);
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--foreground);
+  margin-bottom: 1.5rem;
+  letter-spacing: -0.01em;
+}
+
+.scrolly-description {
+  font-size: 1.125rem;
+  line-height: 1.6;
+  color: var(--muted-foreground);
+  margin-bottom: 2.5rem;
+}
+
+/* Learn More Button */
+.scrolly-learn-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 1rem;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: opacity 0.2s ease;
+}
+
+.scrolly-learn-more:hover {
+  opacity: 0.85;
+}
+
+.arrow-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: var(--foreground);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.scrolly-learn-more:hover .arrow-circle {
+  transform: scale(1.05);
+}
+
+.learn-more-text {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+/* Mobile Fallback styles (when visual column is hidden) */
+@media (max-width: 767px) {
+  .scrolly-content-column {
+    padding: 2rem;
+  }
+  
+  .scrolly-title {
+    font-size: 2.25rem;
+  }
+  
+  .scrolly-text-content {
+    min-height: auto;
+  }
+}
