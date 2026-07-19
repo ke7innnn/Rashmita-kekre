@@ -1,9 +1,12 @@
 import 'dotenv/config';
 import { PrismaClient, AppointmentStatus, AppointmentSource, CallDirection, CallOutcome } from '@prisma/client';
 import crypto from 'crypto';
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 
-const adapter = new PrismaBetterSqlite3({ url: './dev.db' });
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 function hashPassword(password: string): string {
