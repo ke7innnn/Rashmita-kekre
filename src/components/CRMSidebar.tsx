@@ -23,9 +23,10 @@ export default function CRMSidebar({ children }: Props) {
   const [user, setUser] = useState<any>({ name: 'Loading', role: 'Staff' });
 
   useEffect(() => {
+    if (pathname === '/crm360/login') return;
     const session = localStorage.getItem('h360_session');
     if (!session) {
-      router.replace('/login');
+      router.replace('/crm360/login');
       setIsAuthenticated(false);
     } else {
       try {
@@ -34,15 +35,15 @@ export default function CRMSidebar({ children }: Props) {
         setIsAuthenticated(true);
       } catch (e) {
         localStorage.removeItem('h360_session');
-        router.replace('/login');
+        router.replace('/crm360/login');
         setIsAuthenticated(false);
       }
     }
-  }, [router]);
+  }, [router, pathname]);
 
   const handleSignOut = () => {
     localStorage.removeItem('h360_session');
-    router.replace('/login');
+    router.replace('/crm360/login');
   };
 
   const handleConfirmRedirect = () => {
@@ -61,6 +62,10 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/referrals', name: 'Referral Network', icon: Network },
     { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings },
   ];
+
+  if (pathname === '/crm360/login') {
+    return <>{children}</>;
+  }
 
   if (isAuthenticated === null) {
     return (

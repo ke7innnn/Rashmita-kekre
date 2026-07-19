@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 
 // Hardcoded credentials — no database needed
 const USERS = [
@@ -21,21 +22,24 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    await new Promise((r) => setTimeout(r, 400)); // small delay for UX
+    const result = await signIn('credentials', {
+      username: username.trim(),
+      password: password,
+      redirect: false,
+    });
 
-    const user = USERS.find(
-      (u) => u.username === username.trim() && u.password === password
-    );
-
-    if (!user) {
+    if (result?.error) {
       setError('Invalid username or password. Please try again.');
       setLoading(false);
       return;
     }
 
-    // Store session in localStorage (works on Vercel, no DB needed)
-    localStorage.setItem('h360_session', JSON.stringify({ name: user.name, role: user.role, username: user.username }));
-    router.push('/');
+    // Keep localStorage just in case some other client components read it
+    const name = username.trim() === 'rashmita' ? 'Dr. Rashmita' : 'Receptionist';
+    const role = username.trim() === 'rashmita' ? 'admin' : 'receptionist';
+    localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
+    
+    router.push('/crm360');
     router.refresh();
   };
 
@@ -44,7 +48,7 @@ export default function LoginPage() {
       <div className="w-full max-w-md space-y-8 bg-card p-10 rounded-2xl shadow-sm border border-border">
         <div className="flex flex-col items-center justify-center text-center">
           <img
-            src="/crm360/logo/rklogo.png"
+            src="/logo/rklogo.png"
             alt="Health 360 Logo"
             className="h-16 object-contain mb-2"
           />
