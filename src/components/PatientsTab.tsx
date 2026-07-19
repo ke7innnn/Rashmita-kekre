@@ -58,16 +58,9 @@ const createPatientSchema = z.object({
   phoneCountryCode: z.string().default('+91'),
   phoneLocal: z.string().min(10, 'Valid 10-digit mobile number is required'),
   email: z.string().optional(),
-  thirdPartyUid: z.string().optional(),
-  parentSpouseCaretakerName: z.string().optional(),
-  bloodGroup: z.string().optional(),
-  dateOfMarriage: z.string().optional().nullable(),
   language: z.string().default('English'),
   address: z.string().optional(),
   ageYears: z.any().optional(),
-  ageMonths: z.any().optional(),
-  marriedYears: z.any().optional(),
-  marriedMonths: z.any().optional(),
 });
 
 interface PatientsTabProps {
@@ -93,13 +86,9 @@ export default function PatientsTab({
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['patients', search],
     queryFn: async () => {
-      // Dummy data for instant loading
-      return [
-        { id: 'p1', fullName: 'James Doe', phone: '+91 98765 43210', dateOfBirth: '1985-06-15', gender: 'Male', registrationDate: '2023-11-01', referringDoctor: 'Self', createdAt: '2023-11-01T10:00:00Z', appointments: [1,2,3] },
-        { id: 'p2', fullName: 'Sarah Connor', phone: '+91 99887 76655', dateOfBirth: '1990-02-28', gender: 'Female', registrationDate: '2024-01-10', referringDoctor: 'Dr. Smith', createdAt: '2024-01-10T11:00:00Z', appointments: [] },
-        { id: 'p3', fullName: 'Robert Bruce', phone: '+91 98765 43211', dateOfBirth: '1970-11-20', gender: 'Male', registrationDate: '2024-02-15', referringDoctor: 'City Hospital', createdAt: '2024-02-15T09:30:00Z', appointments: [1] },
-        { id: 'p4', fullName: 'Emily Davis', phone: '+91 98765 43212', dateOfBirth: '1995-08-05', gender: 'Female', registrationDate: '2024-03-20', referringDoctor: 'Self', createdAt: '2024-03-20T14:15:00Z', appointments: [1,2] }
-      ];
+      const res = await fetch(`/api/patients?q=${search}`);
+      if (!res.ok) throw new Error('Failed to fetch patients');
+      return res.json();
     },
   });
 
@@ -158,38 +147,13 @@ export default function PatientsTab({
     }
   };
 
-  const handleAgeChange = () => {
-    const years = parseInt(getValues('ageYears') || '0', 10);
-    const months = parseInt(getValues('ageMonths') || '0', 10);
-    if (years > 0 || months > 0) {
-      const calculatedDob = calculateDobFromAge(years, months);
+  const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const years = parseInt(e.target.value || '0', 10);
+    if (years > 0) {
+      const calculatedDob = calculateDobFromAge(years, 0);
       setValue('dateOfBirth', calculatedDob);
     } else {
       setValue('dateOfBirth', '');
-    }
-  };
-
-  const handleDomChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const domVal = e.target.value;
-    setValue('dateOfMarriage', domVal);
-    if (domVal) {
-      const { years, months } = calculateAgeFromDob(domVal);
-      setValue('marriedYears', years);
-      setValue('marriedMonths', months);
-    } else {
-      setValue('marriedYears', '');
-      setValue('marriedMonths', '');
-    }
-  };
-
-  const handleMarriedSinceChange = () => {
-    const years = parseInt(getValues('marriedYears') || '0', 10);
-    const months = parseInt(getValues('marriedMonths') || '0', 10);
-    if (years > 0 || months > 0) {
-      const calculatedDom = calculateDobFromAge(years, months);
-      setValue('dateOfMarriage', calculatedDom);
-    } else {
-      setValue('dateOfMarriage', '');
     }
   };
 
@@ -207,10 +171,6 @@ export default function PatientsTab({
       notes: '',
       // Frontend-only payload fields for preparing future database/supabase migration
       email: data.email || '',
-      thirdPartyUid: data.thirdPartyUid || '',
-      parentSpouseCaretakerName: data.parentSpouseCaretakerName || '',
-      bloodGroup: data.bloodGroup || '',
-      dateOfMarriage: data.dateOfMarriage ? new Date(data.dateOfMarriage) : null,
       language: data.language || 'English',
     };
     createPatientMutation.mutate(payload);
@@ -417,42 +377,16 @@ export default function PatientsTab({
                       />
                     </div>
 
-                    {/* Third Party UID */}
+                    {/* Age */}
                     <div className="space-y-1">
                       <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Third Party UID
+                        Age
                       </label>
                       <input
-                        type="text"
-                        {...register('thirdPartyUid')}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                      />
-                    </div>
-
-                    {/* Patient Name */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Patient Name
-                      </label>
-                      <input
-                        type="text"
-                        {...register('fullName')}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                      />
-                      {errors.fullName?.message && (
-                        <p className="text-[10px] text-red-500 mt-0.5">{errors.fullName.message as string}</p>
-                      )}
-                    </div>
-
-                    {/* Date of Birth */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Date of Birth
-                      </label>
-                      <input
-                        type="date"
-                        {...register('dateOfBirth')}
-                        onChange={handleDobChange}
+                        type="number"
+                        placeholder="E.g., 35"
+                        {...register('ageYears')}
+                        onChange={handleAgeChange}
                         className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
                       />
                       {errors.dateOfBirth?.message && (
@@ -460,73 +394,11 @@ export default function PatientsTab({
                       )}
                     </div>
 
-                    {/* Age */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Age
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <input
-                            type="number"
-                            placeholder="YY"
-                            {...register('ageYears')}
-                            onChange={handleAgeChange}
-                            className="w-full text-center text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                          />
-                          <span className="text-xxs font-bold text-[#2B2620]/50 uppercase tracking-wider">Years</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <input
-                            type="number"
-                            placeholder="MM"
-                            {...register('ageMonths')}
-                            onChange={handleAgeChange}
-                            className="w-full text-center text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                          />
-                          <span className="text-xxs font-bold text-[#2B2620]/50 uppercase tracking-wider">Months</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Parent/Spouse/Caretaker Name */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 leading-tight">
-                        Parent/Spouse/Caretaker Name
-                      </label>
-                      <input
-                        type="text"
-                        {...register('parentSpouseCaretakerName')}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                      />
-                    </div>
-
                   </div>
 
                   {/* Right Column */}
                   <div className="space-y-4">
                     
-                    {/* Blood Group */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Blood Group
-                      </label>
-                      <select
-                        {...register('bloodGroup')}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs cursor-pointer"
-                      >
-                        <option value="">Select</option>
-                        <option value="A+">A+</option>
-                        <option value="A-">A-</option>
-                        <option value="B+">B+</option>
-                        <option value="B-">B-</option>
-                        <option value="AB+">AB+</option>
-                        <option value="AB-">AB-</option>
-                        <option value="O+">O+</option>
-                        <option value="O-">O-</option>
-                      </select>
-                    </div>
-
                     {/* Gender */}
                     <div className="space-y-1">
                       <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
@@ -540,48 +412,6 @@ export default function PatientsTab({
                         <option value="Male">Male</option>
                         <option value="Other">Other</option>
                       </select>
-                    </div>
-
-                    {/* Date of Marriage */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Date of Marriage
-                      </label>
-                      <input
-                        type="date"
-                        {...register('dateOfMarriage')}
-                        onChange={handleDomChange}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                      />
-                    </div>
-
-                    {/* Married since */}
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Married since
-                      </label>
-                      <div className="flex items-center gap-3">
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <input
-                            type="number"
-                            placeholder="YY"
-                            {...register('marriedYears')}
-                            onChange={handleMarriedSinceChange}
-                            className="w-full text-center text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                          />
-                          <span className="text-xxs font-bold text-[#2B2620]/50 uppercase tracking-wider">Years</span>
-                        </div>
-                        <div className="flex items-center gap-1.5 flex-1">
-                          <input
-                            type="number"
-                            placeholder="MM"
-                            {...register('marriedMonths')}
-                            onChange={handleMarriedSinceChange}
-                            className="w-full text-center text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                          />
-                          <span className="text-xxs font-bold text-[#2B2620]/50 uppercase tracking-wider">Months</span>
-                        </div>
-                      </div>
                     </div>
 
                     {/* Language */}

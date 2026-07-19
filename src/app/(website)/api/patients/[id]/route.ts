@@ -72,6 +72,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (json.assignedProtocolId !== undefined) dataToUpdate.assignedProtocolId = json.assignedProtocolId;
     if (json.currentProtocolStep !== undefined) dataToUpdate.currentProtocolStep = json.currentProtocolStep;
     if (json.treatmentModalityAssigned !== undefined) dataToUpdate.treatmentModalityAssigned = json.treatmentModalityAssigned;
+    if (json.referringDoctor !== undefined) dataToUpdate.referringDoctor = json.referringDoctor;
 
     // Attachments simulation support
     if (json.attachment) {

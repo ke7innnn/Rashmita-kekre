@@ -47,14 +47,9 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   const { data: patients = [], isLoading } = useQuery({
     queryKey: ['patients-all'],
     queryFn: async () => {
-      // Dummy data for instant loading
-      return [
-        { id: 'p1', fullName: 'James Doe', phone: '+919876543210', referringDoctor: 'Self', createdAt: '2023-11-01T10:00:00Z' },
-        { id: 'p2', fullName: 'Sarah Connor', phone: '+919988776655', referringDoctor: 'Dr. Smith', createdAt: '2024-01-10T11:00:00Z' },
-        { id: 'p3', fullName: 'Robert Bruce', phone: '+919876543211', referringDoctor: 'City Hospital', createdAt: '2024-02-15T09:30:00Z' },
-        { id: 'p4', fullName: 'Emily Davis', phone: '+919876543212', referringDoctor: 'Self', createdAt: '2024-03-20T14:15:00Z' },
-        { id: 'p5', fullName: 'Michael Chang', phone: '+919876543213', referringDoctor: 'Dr. Smith', createdAt: '2024-04-10T10:00:00Z' }
-      ];
+      const res = await fetch('/api/patients');
+      if (!res.ok) throw new Error('Failed to fetch patients');
+      return res.json();
     }
   });
 

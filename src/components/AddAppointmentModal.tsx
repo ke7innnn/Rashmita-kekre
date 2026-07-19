@@ -125,6 +125,7 @@ export default function AddAppointmentModal({ onClose, modalities }: Props) {
 
         {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
+          <input type="hidden" {...register('patientId')} />
           {/* Patient Selection Search */}
           <div className="space-y-2">
             <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 mb-1">
@@ -216,17 +217,12 @@ export default function AddAppointmentModal({ onClose, modalities }: Props) {
               <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 mb-1">
                 Modality
               </label>
-              <select
+              <input
+                type="text"
+                placeholder="E.g., Laser Therapy"
                 {...register('treatmentType')}
-                className="block w-full text-sm rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
-              >
-                <option value="">Select Treatment</option>
-                {modalities.map((m: any) => (
-                  <option key={m.id} value={m.name}>
-                    {m.name}
-                  </option>
-                ))}
-              </select>
+                className="block w-full text-sm rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+              />
               {errors.treatmentType?.message && <p className="text-xs text-red-500 mt-1">{errors.treatmentType.message as string}</p>}
             </div>
 
