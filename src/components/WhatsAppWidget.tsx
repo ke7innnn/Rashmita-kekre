@@ -9,7 +9,19 @@ export default function WhatsAppWidget() {
   const pathname = usePathname();
   const whatsappNumber = '918482812859';
   const message = encodeURIComponent("Hi HEALTH 360, I'd like to inquire about booking a physiotherapy assessment.");
-  const url = `https://wa.me/${whatsappNumber}?text=${message}`;
+  
+  // Fallback URL for SEO or right-click
+  const fallbackUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const targetUrl = isMobile 
+      ? `whatsapp://send?phone=${whatsappNumber}&text=${message}`
+      : `https://web.whatsapp.com/send?phone=${whatsappNumber}&text=${message}`;
+      
+    window.open(targetUrl, '_blank');
+  };
 
   if (pathname?.startsWith('/crm360')) {
     return null;
@@ -18,8 +30,8 @@ export default function WhatsAppWidget() {
   return (
     <div className="whatsapp-fab-container">
       <motion.a
-        href={url}
-        target="_blank"
+        href={fallbackUrl}
+        onClick={handleClick}
         rel="noopener noreferrer"
         className="whatsapp-fab"
         initial={{ opacity: 0, scale: 0.8, y: 20 }}
