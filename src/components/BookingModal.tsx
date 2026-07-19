@@ -95,7 +95,13 @@ export default function BookingModal({ onClose }: BookingPageProps) {
         const res = await fetch(`${CRM_API_URL}/api/public/book?date=${formattedDate}`);
         if (!res.ok) throw new Error('Failed to fetch booked slots');
         const data = await res.json();
-        if (data.success && Array.isArray(data.bookedSlots)) {
+        
+        if (data.isHoliday) {
+          // If the CRM says it's a holiday, block all slots by returning a dummy array that matches nothing or everything
+          // The easiest way to block all is to set bookedSlots to all possible time strings
+          const allSlots = getAllSlotsForDay().map(t => pad(Math.floor(t / 60)) + ":" + pad(t % 60));
+          setBookedSlots(allSlots);
+        } else if (Array.isArray(data.bookedSlots)) {
           setBookedSlots(data.bookedSlots);
         } else {
           setBookedSlots([]);

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { z } from 'zod';
-import { AppointmentStatus, AppointmentSource } from '../../appointments/route';
+import { prisma } from '@/lib/db';
+import { AppointmentStatus, AppointmentSource } from '@prisma/client';
 
 const publicBookingSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
-  gender: z.string().default('Female'), // Default gender if not provided
+  gender: z.string().default('Female'),
   dateOfBirth: z.string().optional().transform((val) => (val ? new Date(val) : new Date('1990-01-01'))),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
@@ -14,17 +14,80 @@ const publicBookingSchema = z.object({
   notes: z.string().optional(),
 });
 
+// GET: Fetch booked slots and blocked dates for a specific date
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const dateStr = searchParams.get('date');
+
+    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return NextResponse.json({ error: 'Valid date parameter (YYYY-MM-DD) is required' }, { status: 400 });
+    }
+
+    // Load Clinic Settings from local Prisma DB
+    const settings = await prisma.clinicSettings.findUnique({
+      where: { id: 'clinic_settings' }
+    });
+
+    if (!settings) {
+      return NextResponse.json({ error: 'Clinic configurations not found.' }, { status: 500 });
+    }
+
+    if (!settings.isPubliclyVisible) {
+      return NextResponse.json({ error: 'The clinic is temporarily offline for public bookings.' }, { status: 403 });
+    }
+
+    // Check holidays
+    const holidaysList = settings.holidays
+      ? settings.holidays.split(',').map((h: string) => h.trim()).filter(Boolean)
+      : [];
+    
+    if (holidaysList.includes(dateStr)) {
+      // Date is fully blocked
+      return NextResponse.json({
+        bookedSlots: [],
+        isHoliday: true,
+      });
+    }
+
+    // Fetch all active appointments for this date
+    const targetDate = new Date(dateStr);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        date: targetDate,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS]
+        }
+      },
+      select: {
+        startTime: true,
+      }
+    });
+
+    const bookedSlots = appointments.map(app => app.startTime);
+
+    return NextResponse.json({
+      bookedSlots,
+      isHoliday: false,
+    });
+  } catch (error) {
+    console.error('Error fetching booked slots:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+  }
+}
+
+// POST: Create a new booking from the website
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
     const body = publicBookingSchema.parse(json);
 
     // 1. Fetch Clinic Settings
-    const { data: settings } = await supabase
-      .from('ClinicSettings')
-      .select('*')
-      .eq('id', 'clinic_settings')
-      .single();
+    const settings = await prisma.clinicSettings.findUnique({
+      where: { id: 'clinic_settings' }
+    });
 
     if (!settings) {
       return NextResponse.json({ error: 'Clinic configurations not found.' }, { status: 500 });
@@ -61,42 +124,36 @@ export async function POST(req: NextRequest) {
     }
 
     // 4. Double booking check
-    const { data: existingAppointment } = await supabase
-      .from('Appointment')
-      .select('id')
-      .eq('date', bookingDate.toISOString())
-      .eq('startTime', startTime)
-      .in('status', [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS])
-      .limit(1)
-      .maybeSingle();
+    const existingAppointment = await prisma.appointment.findFirst({
+      where: {
+        date: bookingDate,
+        startTime: startTime,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS]
+        }
+      }
+    });
 
     if (existingAppointment) {
       return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 400 });
     }
 
     // 5. Patient Lookup or Create
-    let { data: patient } = await supabase
-      .from('Patient')
-      .select('*')
-      .eq('phone', body.phone)
-      .limit(1)
-      .maybeSingle();
+    let patient = await prisma.patient.findFirst({
+      where: { phone: body.phone }
+    });
 
     if (!patient) {
-      const { data: newPatient } = await supabase
-        .from('Patient')
-        .insert({
+      patient = await prisma.patient.create({
+        data: {
           fullName: body.fullName,
           phone: body.phone,
           gender: body.gender,
-          dateOfBirth: body.dateOfBirth?.toISOString(),
+          dateOfBirth: body.dateOfBirth,
           presentingComplaint: 'Booked via Website. Modality assigned at intake.',
           tags: 'website-lead',
-        })
-        .select()
-        .single();
-        
-      patient = newPatient;
+        }
+      });
     }
 
     // Calculate end time based on settings or default 30 mins
@@ -107,30 +164,17 @@ export async function POST(req: NextRequest) {
     const endTime = `${String(endHours).padStart(2, '0')}:${String(finalMinutes).padStart(2, '0')}`;
 
     // 6. Create the Appointment
-    const { data: appointment, error: appointmentError } = await supabase
-      .from('Appointment')
-      .insert({
+    const appointment = await prisma.appointment.create({
+      data: {
         patientId: patient.id,
-        date: bookingDate.toISOString(),
+        date: bookingDate,
         startTime,
         endTime,
         treatmentType: body.treatmentType,
         assignedSlotDuration: settings.slotDuration,
         source: AppointmentSource.WEBSITE,
         notes: body.notes || 'Inbound online web booking.',
-      })
-      .select()
-      .single();
-      
-    if (appointmentError || !appointment) {
-        throw appointmentError;
-    }
-
-    // Create Notification
-    await supabase.from('Notification').insert({
-      title: 'New Web Booking',
-      message: `${patient.fullName} booked ${body.treatmentType} on ${body.date} @ ${startTime}.`,
-      type: 'BOOKING',
+      }
     });
 
     return NextResponse.json({
