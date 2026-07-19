@@ -238,3 +238,11 @@ model SentHandout {
   sentAt    DateTime @default(now())
   sentVia   String
 }
+
+model OtpRequest {
+  id        String   @id @default(cuid())
+  phone     String
+  otp       String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}

@@ -12,6 +12,7 @@ const publicBookingSchema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
   treatmentType: z.string().min(1, 'Treatment type is required'),
   notes: z.string().optional(),
+  otp: z.string().length(6, 'Valid 6-digit OTP is required'),
 });
 
 // GET: Fetch booked slots and blocked dates for a specific date
@@ -123,7 +124,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot book appointments in the past.' }, { status: 400 });
     }
 
-    // 4. Double booking check
+    // 4. Validate OTP
+    const cleanPhone = body.phone.replace(/\D/g, '').slice(-10);
+    const otpRecord = await prisma.otpRequest.findFirst({
+      where: {
+        phone: cleanPhone,
+        otp: body.otp,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!otpRecord) {
+      return NextResponse.json({ error: 'Invalid OTP code. Please check and try again.' }, { status: 400 });
+    }
+
+    if (otpRecord.expiresAt < new Date()) {
+      return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 400 });
+    }
+
+    // OTP is valid! Delete it so it can't be reused
+    await prisma.otpRequest.delete({ where: { id: otpRecord.id } });
+
+    // 5. Double booking check
     const existingAppointment = await prisma.appointment.findFirst({
       where: {
         date: bookingDate,

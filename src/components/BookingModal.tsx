@@ -37,6 +37,10 @@ export default function BookingModal({ onClose }: BookingPageProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
+  // OTP States
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+
   const getDaysStrip = () => {
     const daysList = [];
     const today = new Date();
@@ -145,38 +149,55 @@ export default function BookingModal({ onClose }: BookingPageProps) {
     setApiError(null);
 
     try {
-      const payload = {
-        fullName: name,
-        phone: phone,
-        gender: 'Female', // Default expected by schema
-        date: dateKey(selectedDate),
-        startTime: selectedTime,
-        treatmentType: concern || 'Physiotherapy Consultation',
-        notes: `Inbound online booking request. Reason/concern: ${concern || 'Not specified'}`
-      };
+      if (!otpSent) {
+        // Step 1: Request OTP
+        const res = await fetch(`${CRM_API_URL}/api/public/book/otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone }),
+        });
 
-      const res = await fetch(`${CRM_API_URL}/api/public/book`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Failed to submit booking request. Please try again.');
-      }
-
-      if (data.success) {
-        setIsConfirmed(true);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Failed to send OTP.');
+        
+        setOtpSent(true);
       } else {
-        throw new Error(data.error || 'Failed to confirm booking.');
+        // Step 2: Confirm Booking with OTP
+        if (otp.length !== 6) {
+          throw new Error('Please enter a valid 6-digit OTP.');
+        }
+
+        const payload = {
+          fullName: name,
+          phone: phone,
+          gender: 'Female', // Default expected by schema
+          date: dateKey(selectedDate),
+          startTime: selectedTime,
+          treatmentType: concern || 'Physiotherapy Consultation',
+          notes: `Inbound online booking request. Reason/concern: ${concern || 'Not specified'}`,
+          otp: otp
+        };
+
+        const res = await fetch(`${CRM_API_URL}/api/public/book`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || 'Failed to submit booking request.');
+        }
+
+        if (data.success) {
+          setIsConfirmed(true);
+        } else {
+          throw new Error(data.error || 'Failed to confirm booking.');
+        }
       }
-    } catch (err: any) {
-      console.error('Booking submission error:', err);
-      setApiError(err.message || 'Server connection failed. Please check if CRM app is running.');
+    } catch (error: any) {
+      setApiError(error.message || 'An error occurred.');
     } finally {
       setIsSubmitting(false);
     }
@@ -387,19 +408,40 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                           </select>
                         </div>
 
+                        {otpSent && (
+                          <div className="booking-field-group" style={{ marginTop: '16px' }}>
+                            <label className="booking-field-label" htmlFor="h360Otp">Enter 6-digit OTP</label>
+                            <input
+                              type="text"
+                              id="h360Otp"
+                              value={otp}
+                              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                              className="booking-pill-input"
+                              placeholder="123456"
+                              autoComplete="one-time-code"
+                              disabled={isSubmitting}
+                              maxLength={6}
+                            />
+                            <p className="booking-field-error-text" style={{ display: otp.length > 0 && otp.length < 6 ? 'block' : 'none' }}>
+                              OTP must be 6 digits.
+                            </p>
+                          </div>
+                        )}
+
                         <button 
                           className="booking-submit-black" 
                           type="button" 
                           onClick={handleSubmit}
-                          disabled={isSubmitting}
+                          disabled={isSubmitting || (otpSent && otp.length !== 6)}
+                          style={{ marginTop: otpSent ? '24px' : '32px' }}
                         >
                           {isSubmitting ? (
                             <>
                               <Loader2 className="animate-spin" size={16} style={{ marginRight: '8px', display: 'inline' }} />
-                              Submitting Request...
+                              {otpSent ? 'Confirming...' : 'Sending OTP...'}
                             </>
                           ) : (
-                            'Submit Booking Request'
+                            otpSent ? 'Verify & Confirm Booking' : 'Send OTP'
                           )}
                         </button>
                         
