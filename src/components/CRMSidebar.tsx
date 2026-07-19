@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 
@@ -55,6 +55,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity },
     { href: '/crm360/patients', name: 'Patients Directory', icon: Users },
     { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall },
+    { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail },
     { href: '/crm360/treatments', name: 'Modalities Reference', icon: Library },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3 },
     { href: '/crm360/referrals', name: 'Referral Network', icon: Network },

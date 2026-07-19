@@ -36,10 +36,17 @@ export default function ReferralForm() {
     setError('');
     setSubmitting(true);
     try {
-      const res = await fetch(`${CRM_API_URL}/api/public/referral`, {
+      const res = await fetch(`/api/public/inbox`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          type: 'REFERRAL',
+          name: form.referringPerson,
+          email: '', // Not collected in this form
+          phone: form.referringDrContact || '',
+          message: form.cOf,
+          metadata: JSON.stringify(form)
+        }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data.success) {

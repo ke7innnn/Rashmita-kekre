@@ -7,6 +7,7 @@ import { Upload, FileText, CheckCircle, X, ArrowLeft, Briefcase } from 'lucide-r
 import Link from 'next/link';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { supabase } from '@/lib/supabase';
 import './apply.css';
 
 function ApplyForm() {
@@ -51,11 +52,51 @@ function ApplyForm() {
     e.preventDefault();
     if (!file) { setError('Please upload your CV before submitting.'); return; }
     if (!name.trim() || !email.trim()) { setError('Please fill in all fields.'); return; }
+    
     setSubmitting(true);
-    // Simulate async upload
-    await new Promise(r => setTimeout(r, 1800));
-    setSubmitting(false);
-    setSubmitted(true);
+    setError('');
+
+    try {
+      // 1. Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${name.replace(/\s+/g, '_')}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('health360_documents')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw new Error('Failed to upload CV. Please try again.');
+      }
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('health360_documents')
+        .getPublicUrl(filePath);
+
+      // 3. Submit to Inbox
+      const res = await fetch('/api/public/inbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'CAREERS',
+          name,
+          email,
+          phone: '',
+          message: `Applying for: ${role}`,
+          metadata: JSON.stringify({ role }),
+          attachmentUrl: publicUrl
+        })
+      });
+
+      if (!res.ok) throw new Error('Failed to submit application.');
+      setSubmitted(true);
+    } catch (err: any) {
+      setError(err.message || 'An error occurred. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (

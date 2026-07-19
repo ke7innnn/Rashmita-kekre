@@ -246,3 +246,16 @@ model OtpRequest {
   expiresAt DateTime
   createdAt DateTime @default(now())
 }
+
+model InboxMessage {
+  id             String   @id @default(cuid())
+  type           String   // "CONTACT", "REFERRAL", "CAREERS"
+  name           String
+  email          String
+  phone          String
+  message        String?
+  metadata       String?  // JSON string for extra fields like role or referral details
+  attachmentUrl  String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+}

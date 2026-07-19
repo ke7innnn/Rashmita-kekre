@@ -20,10 +20,38 @@ export default function ContactPage() {
   const [message, setMessage] = useState('');
   const [openFaq, setOpenFaq] = useState<number | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name && email && phone) {
+    if (!name || !email || !phone) {
+      setError('Please fill in all required fields.');
+      return;
+    }
+    
+    setIsSubmitting(true);
+    setError('');
+    
+    try {
+      const res = await fetch('/api/public/inbox', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'CONTACT',
+          name,
+          email,
+          phone,
+          message
+        })
+      });
+      
+      if (!res.ok) throw new Error('Failed to send message.');
       setSubmitted(true);
+    } catch (err: any) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -276,10 +304,16 @@ export default function ContactPage() {
                         <button 
                           type="submit" 
                           className="btn-primary" 
-                          style={{ width: '100%', marginTop: '0.25rem', gap: '8px', padding: '12px 24px', borderRadius: '12px', fontSize: '1rem' }}
+                          disabled={isSubmitting}
+                          style={{ width: '100%', marginTop: '0.25rem', gap: '8px', padding: '12px 24px', borderRadius: '12px', fontSize: '1rem', opacity: isSubmitting ? 0.7 : 1 }}
                         >
-                          Send Secure Message <Send size={16} />
+                          {isSubmitting ? 'Sending...' : (
+                            <>Send Secure Message <Send size={16} /></>
+                          )}
                         </button>
+                        {error && (
+                          <p style={{ color: 'red', fontSize: '0.9rem', textAlign: 'center', margin: '0' }}>{error}</p>
+                        )}
                       </form>
 
                       <div className="split-card-link-btn" style={{ marginTop: '1.25rem' }}>
