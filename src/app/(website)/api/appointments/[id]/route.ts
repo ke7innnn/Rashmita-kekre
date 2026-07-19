@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { AppointmentStatus } from '../route';
+import { AppointmentStatus } from '@prisma/client';
 
 const patchSchema = z.object({
   status: z.nativeEnum(AppointmentStatus).optional(),
@@ -17,7 +17,7 @@ const patchSchema = z.object({
 });
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -25,14 +25,19 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   const { id } = await params;
 
   try {
-    const { data: appointment, error } = await supabase
-      .from('Appointment')
-      .select('*, patient:Patient(*, sessionPackages:SessionPackage(*)), assignedExercises:AssignedExercise(*)')
-      .eq('id', id)
-      .single();
+    const appointment = await prisma.appointment.findUnique({
+      where: { id },
+      include: {
+        patient: {
+          include: {
+            sessionPackages: true,
+          }
+        },
+        assignedExercises: true,
+      },
+    });
 
-    if (error || !appointment) {
-      console.error('Supabase error fetching appointment:', error);
+    if (!appointment) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
@@ -44,7 +49,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -55,20 +60,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const json = await req.json();
     const body = patchSchema.parse(json);
 
-    const { data: existing, error: existingError } = await supabase
-      .from('Appointment')
-      .select('*')
-      .eq('id', id)
-      .single();
+    const existing = await prisma.appointment.findUnique({
+      where: { id },
+    });
 
-    if (existingError || !existing) {
+    if (!existing) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
     const dataToUpdate: any = {};
     if (body.notes !== undefined) dataToUpdate.notes = body.notes;
     if (body.treatmentType !== undefined) dataToUpdate.treatmentType = body.treatmentType;
-    if (body.date !== undefined) dataToUpdate.date = body.date?.toISOString();
+    if (body.date !== undefined) dataToUpdate.date = body.date;
     if (body.startTime !== undefined) dataToUpdate.startTime = body.startTime;
     if (body.endTime !== undefined) dataToUpdate.endTime = body.endTime;
     
@@ -77,68 +80,62 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
       // Handle check-in and seen time tracking for Wait Time calculation
       if (body.status === AppointmentStatus.WAITING && !existing.checkInTime) {
-        dataToUpdate.checkInTime = new Date().toISOString();
+        dataToUpdate.checkInTime = new Date();
       } else if (body.status === AppointmentStatus.IN_PROGRESS && !existing.seenTime) {
-        dataToUpdate.seenTime = new Date().toISOString();
+        dataToUpdate.seenTime = new Date();
       }
 
       // Track session package usage
       if (body.status === AppointmentStatus.COMPLETED && existing.status !== AppointmentStatus.COMPLETED) {
-        const { data: activePkg } = await supabase
-          .from('SessionPackage')
-          .select('*')
-          .eq('patientId', existing.patientId)
-          .lt('sessionsUsed', 100)
-          .limit(1)
-          .maybeSingle();
-          
+        const activePkg = await prisma.sessionPackage.findFirst({
+          where: { patientId: existing.patientId, sessionsUsed: { lt: 100 } }, // simple threshold limit
+        });
         if (activePkg && activePkg.sessionsUsed < activePkg.totalSessions) {
-          await supabase
-            .from('SessionPackage')
-            .update({ sessionsUsed: activePkg.sessionsUsed + 1 })
-            .eq('id', activePkg.id);
+          await prisma.sessionPackage.update({
+            where: { id: activePkg.id },
+            data: { sessionsUsed: activePkg.sessionsUsed + 1 },
+          });
         }
       } else if (existing.status === AppointmentStatus.COMPLETED && body.status !== AppointmentStatus.COMPLETED) {
-        const { data: activePkg } = await supabase
-          .from('SessionPackage')
-          .select('*')
-          .eq('patientId', existing.patientId)
-          .gt('sessionsUsed', 0)
-          .limit(1)
-          .maybeSingle();
-          
+        const activePkg = await prisma.sessionPackage.findFirst({
+          where: { patientId: existing.patientId, sessionsUsed: { gt: 0 } },
+        });
         if (activePkg) {
-          await supabase
-            .from('SessionPackage')
-            .update({ sessionsUsed: Math.max(0, activePkg.sessionsUsed - 1) })
-            .eq('id', activePkg.id);
+          await prisma.sessionPackage.update({
+            where: { id: activePkg.id },
+            data: { sessionsUsed: Math.max(0, activePkg.sessionsUsed - 1) },
+          });
         }
       }
 
       // Log Cancellation Notification
       if (body.status === AppointmentStatus.CANCELLED && existing.status !== AppointmentStatus.CANCELLED) {
-        const { data: p } = await supabase.from('Patient').select('fullName').eq('id', existing.patientId).single();
-        await supabase.from('Notification').insert({
-          title: 'Appointment Cancelled',
-          message: `${p?.fullName || 'Patient'} cancelled their ${existing.treatmentType} session.`,
-          type: 'CANCELLATION',
+        const p = await prisma.patient.findUnique({ where: { id: existing.patientId } });
+        await prisma.notification.create({
+          data: {
+            title: 'Appointment Cancelled',
+            message: `${p?.fullName || 'Patient'} cancelled their ${existing.treatmentType} session.`,
+            type: 'CANCELLATION',
+          },
         });
       }
     }
 
-    if (body.checkInTime !== undefined) dataToUpdate.checkInTime = body.checkInTime?.toISOString();
-    if (body.seenTime !== undefined) dataToUpdate.seenTime = body.seenTime?.toISOString();
+    if (body.checkInTime !== undefined) dataToUpdate.checkInTime = body.checkInTime;
+    if (body.seenTime !== undefined) dataToUpdate.seenTime = body.seenTime;
 
-    const { data: updated, error: updateError } = await supabase
-      .from('Appointment')
-      .update(dataToUpdate)
-      .eq('id', id)
-      .select('*, patient:Patient(*, sessionPackages:SessionPackage(*)), assignedExercises:AssignedExercise(*)')
-      .single();
-
-    if (updateError) {
-      throw updateError;
-    }
+    const updated = await prisma.appointment.update({
+      where: { id },
+      data: dataToUpdate,
+      include: {
+        patient: {
+          include: {
+            sessionPackages: true,
+          }
+        },
+        assignedExercises: true,
+      },
+    });
 
     return NextResponse.json(updated);
   } catch (error: any) {
@@ -151,7 +148,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -159,24 +156,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
 
   try {
-    const { data: existing, error } = await supabase
-      .from('Appointment')
-      .select('id')
-      .eq('id', id)
-      .single();
+    const existing = await prisma.appointment.findUnique({
+      where: { id },
+    });
 
-    if (error || !existing) {
+    if (!existing) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
-    const { error: deleteError } = await supabase
-      .from('Appointment')
-      .delete()
-      .eq('id', id);
-      
-    if (deleteError) {
-      throw deleteError;
-    }
+    await prisma.appointment.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

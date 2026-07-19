@@ -1,26 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { data: patients, error } = await supabase
-      .from('Patient')
-      .select('referringDoctor');
-
-    if (error) {
-      throw error;
-    }
+    const patients = await prisma.patient.findMany({
+      select: {
+        referringDoctor: true,
+      },
+    });
 
     const referralCounts: { [source: string]: number } = {};
 
-    (patients || []).forEach((p) => {
+    patients.forEach((p) => {
       const source = p.referringDoctor?.trim() || 'Self / Direct';
       referralCounts[source] = (referralCounts[source] || 0) + 1;
     });

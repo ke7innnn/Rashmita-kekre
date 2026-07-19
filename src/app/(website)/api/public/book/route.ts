@@ -1,85 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { prisma } from '@/lib/db';
+import { z } from 'zod';
 import { AppointmentStatus, AppointmentSource } from '@prisma/client';
 
 const publicBookingSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
-  gender: z.string().default('Female'),
+  gender: z.string().default('Female'), // Default gender if not provided
   dateOfBirth: z.string().optional().transform((val) => (val ? new Date(val) : new Date('1990-01-01'))),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
   treatmentType: z.string().min(1, 'Treatment type is required'),
   notes: z.string().optional(),
-  otp: z.string().length(6, 'Valid 6-digit OTP is required'),
 });
 
-// GET: Fetch booked slots and blocked dates for a specific date
-export async function GET(req: NextRequest) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const dateStr = searchParams.get('date');
-
-    if (!dateStr || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-      return NextResponse.json({ error: 'Valid date parameter (YYYY-MM-DD) is required' }, { status: 400 });
-    }
-
-    // Load Clinic Settings from local Prisma DB
-    const settings = await prisma.clinicSettings.findUnique({
-      where: { id: 'clinic_settings' }
-    });
-
-    if (!settings) {
-      return NextResponse.json({ error: 'Clinic configurations not found.' }, { status: 500 });
-    }
-
-    if (!settings.isPubliclyVisible) {
-      return NextResponse.json({ error: 'The clinic is temporarily offline for public bookings.' }, { status: 403 });
-    }
-
-    // Check holidays
-    const holidaysList = settings.holidays
-      ? settings.holidays.split(',').map((h: string) => h.trim()).filter(Boolean)
-      : [];
-    
-    if (holidaysList.includes(dateStr)) {
-      // Date is fully blocked
-      return NextResponse.json({
-        bookedSlots: [],
-        isHoliday: true,
-      });
-    }
-
-    // Fetch all active appointments for this date
-    const targetDate = new Date(dateStr);
-    targetDate.setHours(0, 0, 0, 0);
-
-    const appointments = await prisma.appointment.findMany({
-      where: {
-        date: targetDate,
-        status: {
-          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS]
-        }
-      },
-      select: {
-        startTime: true,
-      }
-    });
-
-    const bookedSlots = appointments.map(app => app.startTime);
-
-    return NextResponse.json({
-      bookedSlots,
-      isHoliday: false,
-    });
-  } catch (error) {
-    console.error('Error fetching booked slots:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
-// POST: Create a new booking from the website
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
@@ -87,7 +21,7 @@ export async function POST(req: NextRequest) {
 
     // 1. Fetch Clinic Settings
     const settings = await prisma.clinicSettings.findUnique({
-      where: { id: 'clinic_settings' }
+      where: { id: 'clinic_settings' },
     });
 
     if (!settings) {
@@ -100,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Validate against blockdates/holidays
     const holidaysList = settings.holidays 
-      ? settings.holidays.split(',').map((h: string) => h.trim()).filter(Boolean) 
+      ? settings.holidays.split(',').map((h) => h.trim()).filter(Boolean) 
       : [];
 
     if (holidaysList.includes(body.date)) {
@@ -124,36 +58,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot book appointments in the past.' }, { status: 400 });
     }
 
-    // 4. Validate OTP
-    const cleanPhone = body.phone.replace(/\D/g, '').slice(-10);
-    const otpRecord = await prisma.otpRequest.findFirst({
-      where: {
-        phone: cleanPhone,
-        otp: body.otp,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    if (!otpRecord) {
-      return NextResponse.json({ error: 'Invalid OTP code. Please check and try again.' }, { status: 400 });
-    }
-
-    if (otpRecord.expiresAt < new Date()) {
-      return NextResponse.json({ error: 'OTP has expired. Please request a new one.' }, { status: 400 });
-    }
-
-    // OTP is valid! Delete it so it can't be reused
-    await prisma.otpRequest.delete({ where: { id: otpRecord.id } });
-
-    // 5. Double booking check
+    // 4. Double booking check
     const existingAppointment = await prisma.appointment.findFirst({
       where: {
         date: bookingDate,
-        startTime: startTime,
+        startTime,
         status: {
-          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS]
-        }
-      }
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS],
+        },
+      },
     });
 
     if (existingAppointment) {
@@ -162,7 +75,7 @@ export async function POST(req: NextRequest) {
 
     // 5. Patient Lookup or Create
     let patient = await prisma.patient.findFirst({
-      where: { phone: body.phone }
+      where: { phone: body.phone },
     });
 
     if (!patient) {
@@ -174,7 +87,7 @@ export async function POST(req: NextRequest) {
           dateOfBirth: body.dateOfBirth,
           presentingComplaint: 'Booked via Website. Modality assigned at intake.',
           tags: 'website-lead',
-        }
+        },
       });
     }
 
@@ -196,7 +109,16 @@ export async function POST(req: NextRequest) {
         assignedSlotDuration: settings.slotDuration,
         source: AppointmentSource.WEBSITE,
         notes: body.notes || 'Inbound online web booking.',
-      }
+      },
+    });
+
+    // Create Notification
+    await prisma.notification.create({
+      data: {
+        title: 'New Web Booking',
+        message: `${patient.fullName} booked ${body.treatmentType} on ${body.date} @ ${startTime}.`,
+        type: 'BOOKING',
+      },
     });
 
     return NextResponse.json({

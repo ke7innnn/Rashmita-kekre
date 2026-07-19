@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const settingsSchema = z.object({
@@ -20,32 +20,28 @@ const settingsSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    let { data: settings } = await supabase
-      .from('ClinicSettings')
-      .select('*')
-      .eq('id', 'clinic_settings')
-      .maybeSingle();
+    let settings = await prisma.clinicSettings.findUnique({
+      where: { id: 'clinic_settings' },
+    });
 
     // If somehow deleted, create default
     if (!settings) {
-      const { data: newSettings, error } = await supabase
-        .from('ClinicSettings')
-        .insert({ id: 'clinic_settings' })
-        .select()
-        .single();
-      if (error) throw error;
-      settings = newSettings;
+      settings = await prisma.clinicSettings.create({
+        data: {
+          id: 'clinic_settings',
+        },
+      });
     }
 
     const parsedSettings = {
       ...settings,
-      holidays: settings.holidays ? settings.holidays.split(',').map((h: string) => h.trim()).filter(Boolean) : [],
+      holidays: settings.holidays ? settings.holidays.split(',').map((h) => h.trim()).filter(Boolean) : [],
     };
 
     return NextResponse.json(parsedSettings);
@@ -56,7 +52,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -76,22 +72,18 @@ export async function PUT(req: NextRequest) {
       holidays: body.holidays.join(', '),
     };
 
-    const { data: updated, error: upsertError } = await supabase
-      .from('ClinicSettings')
-      .upsert({
+    const updated = await prisma.clinicSettings.upsert({
+      where: { id: 'clinic_settings' },
+      update: dbPayload,
+      create: {
         id: 'clinic_settings',
         ...dbPayload,
-      })
-      .select()
-      .single();
-
-    if (upsertError) {
-      throw upsertError;
-    }
+      },
+    });
 
     const parsedUpdated = {
       ...updated,
-      holidays: updated.holidays ? updated.holidays.split(',').map((h: string) => h.trim()).filter(Boolean) : [],
+      holidays: updated.holidays ? updated.holidays.split(',').map((h) => h.trim()).filter(Boolean) : [],
     };
 
     return NextResponse.json(parsedUpdated);

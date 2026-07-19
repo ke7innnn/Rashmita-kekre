@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const waitlistSchema = z.object({
@@ -11,21 +11,20 @@ const waitlistSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { data: waitlist, error } = await supabase
-      .from('Waitlist')
-      .select('*, patient:Patient(*)')
-      .order('createdAt', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
-
+    const waitlist = await prisma.waitlist.findMany({
+      include: {
+        patient: true,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
     return NextResponse.json(waitlist);
   } catch (error: any) {
     console.error('Error fetching waitlist:', error);
@@ -34,7 +33,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -43,20 +42,17 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     const body = waitlistSchema.parse(json);
 
-    const { data: waitlistEntry, error } = await supabase
-      .from('Waitlist')
-      .insert({
+    const waitlistEntry = await prisma.waitlist.create({
+      data: {
         patientId: body.patientId,
         desiredTreatmentType: body.desiredTreatmentType,
         preferredTimeWindow: body.preferredTimeWindow,
         status: 'WAITING',
-      })
-      .select('*, patient:Patient(*)')
-      .single();
-
-    if (error) {
-      throw error;
-    }
+      },
+      include: {
+        patient: true,
+      },
+    });
 
     return NextResponse.json(waitlistEntry, { status: 201 });
   } catch (error: any) {

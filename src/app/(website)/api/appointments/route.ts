@@ -1,24 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
-
-export enum AppointmentStatus {
-  SCHEDULED = "SCHEDULED",
-  WAITING = "WAITING",
-  IN_PROGRESS = "IN_PROGRESS",
-  COMPLETED = "COMPLETED",
-  CANCELLED = "CANCELLED",
-  NO_SHOW = "NO_SHOW"
-}
-
-export enum AppointmentSource {
-  MANUAL_ADMIN = "MANUAL_ADMIN",
-  WEBSITE = "WEBSITE",
-  PHONE_AI_AGENT = "PHONE_AI_AGENT",
-  WHATSAPP = "WHATSAPP"
-}
+import { AppointmentStatus, AppointmentSource } from '@prisma/client';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -37,7 +22,7 @@ const createSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -54,26 +39,32 @@ export async function GET(req: NextRequest) {
   targetDate.setHours(0, 0, 0, 0);
 
   try {
-    let { data: appointments, error } = await supabase
-      .from('Appointment')
-      .select('*, patient:Patient(*, sessionPackages:SessionPackage(*)), assignedExercises:AssignedExercise(*)')
-      .eq('date', targetDate.toISOString())
-      .order('startTime', { ascending: true });
+    let appointments = await prisma.appointment.findMany({
+      where: {
+        date: targetDate,
+      },
+      include: {
+        patient: {
+          include: {
+            sessionPackages: true,
+          }
+        },
+        assignedExercises: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+    });
 
-    if (error) {
-      console.error('Supabase error fetching appointments:', error);
-      throw error;
-    }
-
-    if (!appointments || appointments.length === 0) {
+    if (appointments.length === 0) {
       // Auto-generate high-fidelity dummy appointments for the requested date if empty
-      const { data: patients } = await supabase.from('Patient').select('id').limit(6);
-      if (patients && patients.length >= 4) {
+      const patients = await prisma.patient.findMany({ take: 6 });
+      if (patients.length >= 4) {
         const todayTime = targetDate.getTime();
-        const dummyAppointments: any[] = [
+        const dummyAppointments = [
           {
             patientId: patients[0].id,
-            date: targetDate.toISOString(),
+            date: targetDate,
             startTime: '09:00',
             endTime: '09:30',
             status: AppointmentStatus.COMPLETED,
@@ -81,12 +72,12 @@ export async function GET(req: NextRequest) {
             assignedSlotDuration: 30,
             source: AppointmentSource.MANUAL_ADMIN,
             notes: 'Laser therapy session completed. Left knee flexion improved. Range of motion is increasing.',
-            checkInTime: new Date(todayTime + 8 * 60 * 60 * 1000 + 45 * 60 * 1000).toISOString(),
-            seenTime: new Date(todayTime + 9 * 60 * 60 * 1000).toISOString()
+            checkInTime: new Date(todayTime + 8 * 60 * 60 * 1000 + 45 * 60 * 1000), // 8:45 AM
+            seenTime: new Date(todayTime + 9 * 60 * 60 * 1000) // 9:00 AM
           },
           {
             patientId: patients[1].id,
-            date: targetDate.toISOString(),
+            date: targetDate,
             startTime: '09:30',
             endTime: '10:00',
             status: AppointmentStatus.IN_PROGRESS,
@@ -94,12 +85,12 @@ export async function GET(req: NextRequest) {
             assignedSlotDuration: 30,
             source: AppointmentSource.WEBSITE,
             notes: 'Slightly delayed. Patient showing excellent response to deep tissue mobilization.',
-            checkInTime: new Date(todayTime + 9 * 60 * 60 * 1000 + 35 * 60 * 1000).toISOString(),
-            seenTime: new Date(todayTime + 9 * 60 * 60 * 1000 + 50 * 60 * 1000).toISOString()
+            checkInTime: new Date(todayTime + 9 * 60 * 60 * 1000 + 35 * 60 * 1000), // 9:35 AM
+            seenTime: new Date(todayTime + 9 * 60 * 60 * 1000 + 50 * 60 * 1000) // 9:50 AM
           },
           {
             patientId: patients[2].id,
-            date: targetDate.toISOString(),
+            date: targetDate,
             startTime: '10:30',
             endTime: '11:00',
             status: AppointmentStatus.WAITING,
@@ -107,11 +98,11 @@ export async function GET(req: NextRequest) {
             assignedSlotDuration: 30,
             source: AppointmentSource.PHONE_AI_AGENT,
             notes: 'Arrived early. Awaiting consultation in the lobby.',
-            checkInTime: new Date(todayTime + 10 * 60 * 60 * 1000 + 15 * 60 * 1000).toISOString()
+            checkInTime: new Date(todayTime + 10 * 60 * 60 * 1000 + 15 * 60 * 1000) // 10:15 AM
           },
           {
             patientId: patients[3].id,
-            date: targetDate.toISOString(),
+            date: targetDate,
             startTime: '11:30',
             endTime: '12:15',
             status: AppointmentStatus.SCHEDULED,
@@ -123,22 +114,30 @@ export async function GET(req: NextRequest) {
         ];
 
         for (const app of dummyAppointments) {
-          await supabase.from('Appointment').insert(app);
+          await prisma.appointment.create({ data: app });
         }
 
         // Fetch again with generated items
-        const { data: refetchedAppointments, error: refetchError } = await supabase
-          .from('Appointment')
-          .select('*, patient:Patient(*, sessionPackages:SessionPackage(*)), assignedExercises:AssignedExercise(*)')
-          .eq('date', targetDate.toISOString())
-          .order('startTime', { ascending: true });
-          
-        if (refetchError) throw refetchError;
-        appointments = refetchedAppointments;
+        appointments = await prisma.appointment.findMany({
+          where: {
+            date: targetDate,
+          },
+          include: {
+            patient: {
+              include: {
+                sessionPackages: true,
+              }
+            },
+            assignedExercises: true,
+          },
+          orderBy: {
+            startTime: 'asc',
+          },
+        });
       }
     }
 
-    return NextResponse.json(appointments || []);
+    return NextResponse.json(appointments);
   } catch (error: any) {
     console.error('Error fetching appointments:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
@@ -146,7 +145,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -156,24 +155,24 @@ export async function POST(req: NextRequest) {
     const body = createSchema.parse(json);
 
     // Double-booking check
-    const { data: existing } = await supabase
-      .from('Appointment')
-      .select('id')
-      .eq('date', body.date.toISOString())
-      .eq('startTime', body.startTime)
-      .in('status', [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS])
-      .limit(1)
-      .maybeSingle();
+    const existing = await prisma.appointment.findFirst({
+      where: {
+        date: body.date,
+        startTime: body.startTime,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS],
+        },
+      },
+    });
 
     if (existing) {
       return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 400 });
     }
 
-    const { data: appointment, error: insertError } = await supabase
-      .from('Appointment')
-      .insert({
+    const appointment = await prisma.appointment.create({
+      data: {
         patientId: body.patientId,
-        date: body.date.toISOString(),
+        date: body.date,
         startTime: body.startTime,
         endTime: body.endTime,
         treatmentType: body.treatmentType,
@@ -181,13 +180,12 @@ export async function POST(req: NextRequest) {
         source: body.source,
         notes: body.notes,
         status: body.status || AppointmentStatus.SCHEDULED,
-      })
-      .select('*, patient:Patient(*), assignedExercises:AssignedExercise(*)')
-      .single();
-
-    if (insertError) {
-      throw insertError;
-    }
+      },
+      include: {
+        patient: true,
+        assignedExercises: true,
+      },
+    });
 
     return NextResponse.json(appointment, { status: 201 });
   } catch (error: any) {

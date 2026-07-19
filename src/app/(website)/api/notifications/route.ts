@@ -1,23 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { data: notifications, error } = await supabase
-      .from('Notification')
-      .select('*')
-      .order('createdAt', { ascending: false });
-
-    if (error) {
-      throw error;
-    }
+    const notifications = await prisma.notification.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
     return NextResponse.json(notifications);
   } catch (error: any) {
     console.error('Error fetching notifications:', error);
@@ -26,7 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -36,11 +33,10 @@ export async function PATCH(req: NextRequest) {
     const { id, isRead, dismissAll } = json;
 
     if (dismissAll) {
-      const { error } = await supabase
-        .from('Notification')
-        .update({ isRead: true })
-        .eq('isRead', false);
-      if (error) throw error;
+      await prisma.notification.updateMany({
+        where: { isRead: false },
+        data: { isRead: true },
+      });
       return NextResponse.json({ success: true });
     }
 
@@ -48,14 +44,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
     }
 
-    const { data: updated, error } = await supabase
-      .from('Notification')
-      .update({ isRead: isRead ?? true })
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) throw error;
+    const updated = await prisma.notification.update({
+      where: { id },
+      data: { isRead: isRead ?? true },
+    });
 
     return NextResponse.json(updated);
   } catch (error: any) {
@@ -65,7 +57,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -78,12 +70,9 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: 'Notification ID is required' }, { status: 400 });
     }
 
-    const { error } = await supabase
-      .from('Notification')
-      .delete()
-      .eq('id', id);
-
-    if (error) throw error;
+    await prisma.notification.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

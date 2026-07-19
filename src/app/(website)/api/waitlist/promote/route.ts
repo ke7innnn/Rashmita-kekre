@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { AppointmentStatus, AppointmentSource } from '../../appointments/route';
+import { AppointmentSource, AppointmentStatus } from '@prisma/client';
 
 const promoteSchema = z.object({
   waitlistId: z.string(),
@@ -15,7 +15,7 @@ const promoteSchema = z.object({
 });
 
 export async function POST(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -25,22 +25,20 @@ export async function POST(req: NextRequest) {
     const body = promoteSchema.parse(json);
 
     // 1. Get waitlist entry
-    const { data: entry } = await supabase
-      .from('Waitlist')
-      .select('*, patient:Patient(*)')
-      .eq('id', body.waitlistId)
-      .single();
+    const entry = await prisma.waitlist.findUnique({
+      where: { id: body.waitlistId },
+      include: { patient: true },
+    });
 
     if (!entry) {
       return NextResponse.json({ error: 'Waitlist entry not found' }, { status: 404 });
     }
 
     // 2. Create appointment for the patient
-    const { data: appointment, error: appointmentError } = await supabase
-      .from('Appointment')
-      .insert({
+    const appointment = await prisma.appointment.create({
+      data: {
         patientId: entry.patientId,
-        date: body.date.toISOString(),
+        date: body.date,
         startTime: body.startTime,
         endTime: body.endTime,
         treatmentType: body.treatmentType,
@@ -48,17 +46,14 @@ export async function POST(req: NextRequest) {
         status: AppointmentStatus.SCHEDULED,
         source: AppointmentSource.MANUAL_ADMIN,
         notes: `Auto-promoted from Waitlist. Entry ID: ${entry.id}`,
-      })
-      .select()
-      .single();
-      
-    if (appointmentError) throw appointmentError;
+      },
+    });
 
     // 3. Mark waitlist entry as FILLED
-    await supabase
-      .from('Waitlist')
-      .update({ status: 'FILLED' })
-      .eq('id', body.waitlistId);
+    await prisma.waitlist.update({
+      where: { id: body.waitlistId },
+      data: { status: 'FILLED' },
+    });
 
     return NextResponse.json({ success: true, appointment });
   } catch (error: any) {

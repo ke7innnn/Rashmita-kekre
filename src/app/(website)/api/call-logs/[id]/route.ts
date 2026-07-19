@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { CallDirection, CallOutcome } from '../route';
+
+import { CallDirection, CallOutcome } from '@prisma/client';
 
 const patchCallLogSchema = z.object({
   direction: z.nativeEnum(CallDirection).optional(),
@@ -17,7 +18,7 @@ const patchCallLogSchema = z.object({
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -28,11 +29,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const json = await req.json();
     const body = patchCallLogSchema.parse(json);
 
-    const { data: existing } = await supabase
-      .from('CallLog')
-      .select('id')
-      .eq('id', id)
-      .single();
+    const existing = await prisma.callLog.findUnique({
+      where: { id },
+    });
 
     if (!existing) {
       return NextResponse.json({ error: 'Call log not found' }, { status: 404 });
@@ -48,16 +47,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (body.timestamp !== undefined) dataToUpdate.timestamp = body.timestamp;
     if (body.followUpActioned !== undefined) dataToUpdate.followUpActioned = body.followUpActioned;
 
-    const { data: callLog, error } = await supabase
-      .from('CallLog')
-      .update(dataToUpdate)
-      .eq('id', id)
-      .select()
-      .single();
-
-    if (error) {
-      throw error;
-    }
+    const callLog = await prisma.callLog.update({
+      where: { id },
+      data: dataToUpdate,
+    });
 
     return NextResponse.json(callLog);
   } catch (error: any) {
@@ -70,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -78,24 +71,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ i
   const { id } = await params;
 
   try {
-    const { data: existing } = await supabase
-      .from('CallLog')
-      .select('id')
-      .eq('id', id)
-      .single();
+    const existing = await prisma.callLog.findUnique({
+      where: { id },
+    });
 
     if (!existing) {
       return NextResponse.json({ error: 'Call log not found' }, { status: 404 });
     }
 
-    const { error } = await supabase
-      .from('CallLog')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      throw error;
-    }
+    await prisma.callLog.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

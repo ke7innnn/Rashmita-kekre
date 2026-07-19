@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const assignSchema = z.object({
@@ -14,20 +14,15 @@ const assignSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { data: templates, error } = await supabase
-      .from('ExerciseTemplate')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
+    const templates = await prisma.exerciseTemplate.findMany({
+      orderBy: { name: 'asc' },
+    });
     return NextResponse.json(templates);
   } catch (error: any) {
     console.error('Error fetching exercise templates:', error);
@@ -36,7 +31,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -47,20 +42,16 @@ export async function POST(req: NextRequest) {
     // Check if we are assigning to an appointment or creating a template
     if (json.appointmentId) {
       const body = assignSchema.parse(json);
-      const { data: assigned, error: assignError } = await supabase
-        .from('AssignedExercise')
-        .insert({
+      const assigned = await prisma.assignedExercise.create({
+        data: {
           appointmentId: body.appointmentId,
           name: body.name,
           sets: body.sets,
           reps: body.reps,
           holdTime: body.holdTime,
           frequency: body.frequency,
-        })
-        .select()
-        .single();
-
-      if (assignError) throw assignError;
+        },
+      });
       return NextResponse.json(assigned, { status: 201 });
     }
 
@@ -74,19 +65,15 @@ export async function POST(req: NextRequest) {
     });
 
     const body = templateSchema.parse(json);
-    const { data: template, error: templateError } = await supabase
-      .from('ExerciseTemplate')
-      .insert({
+    const template = await prisma.exerciseTemplate.create({
+      data: {
         name: body.name,
         defaultSets: body.defaultSets || '3',
         defaultReps: body.defaultReps || '10',
         defaultHoldTime: body.defaultHoldTime || '5s',
         defaultFrequency: body.defaultFrequency || 'Once daily',
-      })
-      .select()
-      .single();
-
-    if (templateError) throw templateError;
+      },
+    });
 
     return NextResponse.json(template, { status: 201 });
   } catch (error: any) {

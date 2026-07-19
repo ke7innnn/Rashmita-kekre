@@ -1,23 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
-    const { data: protocols, error } = await supabase
-      .from('TreatmentProtocol')
-      .select('*')
-      .order('name', { ascending: true });
-
-    if (error) {
-      throw error;
-    }
+    const protocols = await prisma.treatmentProtocol.findMany({
+      orderBy: { name: 'asc' },
+    });
     return NextResponse.json(protocols);
   } catch (error: any) {
     console.error('Error fetching protocols:', error);

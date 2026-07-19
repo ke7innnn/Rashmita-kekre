@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const createPatientSchema = z.object({
@@ -19,7 +19,7 @@ const createPatientSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -28,27 +28,30 @@ export async function GET(req: NextRequest) {
   const search = searchParams.get('q') || '';
 
   try {
-    let query = supabase
-      .from('Patient')
-      .select('*, appointments:Appointment(*), sessionPackages:SessionPackage(*)')
-      .order('fullName', { ascending: true })
-      .limit(50);
+    const patients = await prisma.patient.findMany({
+      where: search
+        ? {
+            OR: [
+              { fullName: { contains: search } }, // Case insensitive by default in SQLite
+              { phone: { contains: search } },
+            ],
+          }
+        : {},
+      include: {
+        appointments: {
+          orderBy: { date: 'desc' },
+        },
+        sessionPackages: true,
+      },
+      orderBy: {
+        fullName: 'asc',
+      },
+      take: 50,
+    });
 
-    if (search) {
-      query = query.or(`fullName.ilike.%${search}%,phone.ilike.%${search}%`);
-    }
-
-    const { data: patients, error } = await query;
-
-    if (error) {
-      console.error('Supabase error fetching patients:', error);
-      throw error;
-    }
-
-    const parsedPatients = (patients || []).map((p: any) => ({
+    const parsedPatients = patients.map((p) => ({
       ...p,
-      appointments: p.appointments?.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime()) || [],
-      tags: p.tags ? p.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+      tags: p.tags ? p.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     }));
 
     return NextResponse.json(parsedPatients);
@@ -59,7 +62,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -68,9 +71,8 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     const body = createPatientSchema.parse(json);
 
-    const { data: patient, error: supabaseError } = await supabase
-      .from('Patient')
-      .insert({
+    const patient = await prisma.patient.create({
+      data: {
         fullName: body.fullName,
         gender: body.gender,
         dateOfBirth: body.dateOfBirth,
@@ -82,18 +84,12 @@ export async function POST(req: NextRequest) {
         treatmentModalityAssigned: body.treatmentModalityAssigned,
         tags: body.tags.join(', '),
         notes: body.notes,
-      })
-      .select()
-      .single();
-
-    if (supabaseError) {
-      console.error('Supabase error creating patient:', supabaseError);
-      throw supabaseError;
-    }
+      },
+    });
 
     const parsedPatient = {
       ...patient,
-      tags: patient.tags ? patient.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+      tags: patient.tags ? patient.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
     };
 
     return NextResponse.json(parsedPatient, { status: 201 });

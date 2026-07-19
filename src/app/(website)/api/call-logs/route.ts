@@ -1,24 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { AppointmentStatus, AppointmentSource } from '../appointments/route';
-
-export enum CallDirection {
-  INBOUND = "INBOUND",
-  OUTBOUND = "OUTBOUND"
-}
-
-export enum CallOutcome {
-  BOOKED = "BOOKED",
-  RESCHEDULED = "RESCHEDULED",
-  CANCELLED = "CANCELLED",
-  QUERY_RESOLVED = "QUERY_RESOLVED",
-  FOLLOW_UP_NEEDED = "FOLLOW_UP_NEEDED",
-  VOICEMAIL = "VOICEMAIL",
-  NO_ANSWER = "NO_ANSWER"
-}
+import { CallDirection, CallOutcome, AppointmentStatus, AppointmentSource } from '@prisma/client';
 
 const webhookSchema = z.object({
   patientId: z.string().optional(),
@@ -39,7 +24,7 @@ const webhookSchema = z.object({
 });
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -49,17 +34,33 @@ export async function GET(req: NextRequest) {
   const followUpOnly = searchParams.get('followUpOnly') === 'true';
 
   try {
-    let query = supabase.from('CallLog').select('*, patient:Patient(*)').order('timestamp', { ascending: false });
-
+    const whereClause: any = {};
     if (followUpOnly) {
-      query = query.eq('outcome', CallOutcome.FOLLOW_UP_NEEDED).eq('followUpActioned', false);
+      whereClause.outcome = CallOutcome.FOLLOW_UP_NEEDED;
+      whereClause.followUpActioned = false;
     }
     if (q) {
-      query = query.or(`phoneNumber.ilike.%${q}%,summary.ilike.%${q}%,transcript.ilike.%${q}%`);
+      whereClause.OR = [
+        { phoneNumber: { contains: q } },
+        { summary: { contains: q } }, // Case insensitive by default in SQLite
+        { transcript: { contains: q } },
+        {
+          patient: {
+            fullName: { contains: q },
+          },
+        },
+      ];
     }
 
-    const { data: callLogs, error } = await query;
-    if (error) throw error;
+    const callLogs = await prisma.callLog.findMany({
+      where: whereClause,
+      include: {
+        patient: true,
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
 
     const parsedLogs = callLogs.map((log) => {
       if (log.patient) {
@@ -67,7 +68,7 @@ export async function GET(req: NextRequest) {
           ...log,
           patient: {
             ...log.patient,
-            tags: log.patient.tags ? log.patient.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : [],
+            tags: log.patient.tags ? log.patient.tags.split(',').map((t) => t.trim()).filter(Boolean) : [],
           },
         };
       }
@@ -82,7 +83,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   let isWebhook = false;
   
   if (!session) {
@@ -101,46 +102,51 @@ export async function POST(req: NextRequest) {
     // 1. Resolve Patient
     let patient = null;
     if (body.patientId) {
-      const { data: p } = await supabase.from('Patient').select('*').eq('id', body.patientId).single();
-      patient = p;
+      patient = await prisma.patient.findUnique({
+        where: { id: body.patientId },
+      });
     } else {
-      const { data: p } = await supabase.from('Patient').select('*').eq('phone', body.phoneNumber).limit(1).maybeSingle();
-      patient = p;
+      patient = await prisma.patient.findFirst({
+        where: { phone: body.phoneNumber },
+      });
     }
 
     // If new caller and agent has details, register patient
     if (!patient && body.actionDetails?.fullName) {
-      const { data: p } = await supabase.from('Patient').insert({
-        fullName: body.actionDetails.fullName,
-        phone: body.phoneNumber,
-        gender: 'Female', // Default placeholder
-        dateOfBirth: new Date('1990-01-01').toISOString(),
-        presentingComplaint: 'Created via AI Phone Agent Call.',
-        tags: 'ai-agent-lead',
-      }).select().single();
-      patient = p;
+      patient = await prisma.patient.create({
+        data: {
+          fullName: body.actionDetails.fullName,
+          phone: body.phoneNumber,
+          gender: 'Female', // Default placeholder
+          dateOfBirth: new Date('1990-01-01'),
+          presentingComplaint: 'Created via AI Phone Agent Call.',
+          tags: 'ai-agent-lead',
+        },
+      });
     }
 
     // 2. Log Call
-    const { data: callLog, error: callLogError } = await supabase.from('CallLog').insert({
-      patientId: patient ? patient.id : null,
-      direction: body.direction,
-      phoneNumber: body.phoneNumber,
-      duration: body.duration,
-      transcript: body.transcript,
-      summary: body.summary,
-      outcome: body.outcome,
-      recordingUrl: body.recordingUrl,
-      timestamp: (body.timestamp || new Date()).toISOString(),
-    }).select('id').single();
-
-    if (callLogError || !callLog) throw callLogError;
+    const callLog = await prisma.callLog.create({
+      data: {
+        patientId: patient ? patient.id : null,
+        direction: body.direction,
+        phoneNumber: body.phoneNumber,
+        duration: body.duration,
+        transcript: body.transcript,
+        summary: body.summary,
+        outcome: body.outcome,
+        recordingUrl: body.recordingUrl,
+        timestamp: body.timestamp || new Date(),
+      },
+    });
 
     if (body.outcome === CallOutcome.FOLLOW_UP_NEEDED) {
-      await supabase.from('Notification').insert({
-        title: 'Rebooking Call Alert',
-        message: `${patient ? patient.fullName : body.phoneNumber} flagged for outbound follow-up.`,
-        type: 'CALL_FOLLOWUP',
+      await prisma.notification.create({
+        data: {
+          title: 'Rebooking Call Alert',
+          message: `${patient ? patient.fullName : body.phoneNumber} flagged for outbound follow-up.`,
+          type: 'CALL_FOLLOWUP',
+        },
       });
     }
 
@@ -150,7 +156,9 @@ export async function POST(req: NextRequest) {
       const targetDate = new Date(date);
       targetDate.setHours(0, 0, 0, 0);
 
-      const { data: settings } = await supabase.from('ClinicSettings').select('*').eq('id', 'clinic_settings').single();
+      const settings = await prisma.clinicSettings.findUnique({
+        where: { id: 'clinic_settings' },
+      });
       const slotDuration = settings?.slotDuration || 30;
 
       // Calculate end time
@@ -162,43 +170,55 @@ export async function POST(req: NextRequest) {
 
       if (body.outcome === CallOutcome.BOOKED) {
         // Book appointment
-        await supabase.from('Appointment').insert({
-          patientId: patient.id,
-          date: targetDate.toISOString(),
-          startTime,
-          endTime,
-          treatmentType: treatmentType || 'Physiotherapy Evaluation',
-          assignedSlotDuration: slotDuration,
-          source: AppointmentSource.PHONE_AI_AGENT,
-          notes: body.summary || 'Booked via AI Voice Agent.',
+        await prisma.appointment.create({
+          data: {
+            patientId: patient.id,
+            date: targetDate,
+            startTime,
+            endTime,
+            treatmentType: treatmentType || 'Physiotherapy Evaluation',
+            assignedSlotDuration: slotDuration,
+            source: AppointmentSource.PHONE_AI_AGENT,
+            notes: body.summary || 'Booked via AI Voice Agent.',
+          },
         });
       } else if (body.outcome === CallOutcome.CANCELLED) {
         // Cancel existing appointments on that day/time
-        await supabase.from('Appointment').update({
-          status: AppointmentStatus.CANCELLED,
-          notes: `Cancelled via AI Voice Agent: ${body.summary}`,
-        })
-        .eq('patientId', patient.id)
-        .eq('date', targetDate.toISOString())
-        .eq('startTime', startTime);
+        await prisma.appointment.updateMany({
+          where: {
+            patientId: patient.id,
+            date: targetDate,
+            startTime,
+          },
+          data: {
+            status: AppointmentStatus.CANCELLED,
+            notes: `Cancelled via AI Voice Agent: ${body.summary}`,
+          },
+        });
       } else if (body.outcome === CallOutcome.RESCHEDULED) {
         // Cancel outstanding on that day, and schedule new one
-        await supabase.from('Appointment').update({
-          status: AppointmentStatus.CANCELLED,
-          notes: `Cancelled for rescheduling via AI Voice Agent: ${body.summary}`,
-        })
-        .eq('patientId', patient.id)
-        .in('status', [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING]);
+        await prisma.appointment.updateMany({
+          where: {
+            patientId: patient.id,
+            status: { in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING] },
+          },
+          data: {
+            status: AppointmentStatus.CANCELLED,
+            notes: `Cancelled for rescheduling via AI Voice Agent: ${body.summary}`,
+          },
+        });
 
-        await supabase.from('Appointment').insert({
-          patientId: patient.id,
-          date: targetDate.toISOString(),
-          startTime,
-          endTime,
-          treatmentType: treatmentType || 'Physiotherapy Evaluation',
-          assignedSlotDuration: slotDuration,
-          source: AppointmentSource.PHONE_AI_AGENT,
-          notes: body.summary || 'Rescheduled via AI Voice Agent.',
+        await prisma.appointment.create({
+          data: {
+            patientId: patient.id,
+            date: targetDate,
+            startTime,
+            endTime,
+            treatmentType: treatmentType || 'Physiotherapy Evaluation',
+            assignedSlotDuration: slotDuration,
+            source: AppointmentSource.PHONE_AI_AGENT,
+            notes: body.summary || 'Rescheduled via AI Voice Agent.',
+          },
         });
       }
     }

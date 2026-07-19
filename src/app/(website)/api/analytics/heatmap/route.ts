@@ -1,23 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
     // Retrieve all appointments to group in memory (due to SQLite limitation)
-    const { data: appointments, error } = await supabase
-      .from('Appointment')
-      .select('date, startTime');
-      
-    if (error) {
-      throw error;
-    }
+    const appointments = await prisma.appointment.findMany({
+      select: {
+        date: true,
+        startTime: true,
+      },
+    });
 
     // Weekdays index (0: Sunday, 1: Monday, ..., 6: Saturday)
     const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -32,7 +31,7 @@ export async function GET(req: NextRequest) {
       };
     }
 
-    (appointments || []).forEach((app) => {
+    appointments.forEach((app) => {
       const appDate = new Date(app.date);
       const dayName = days[appDate.getDay()];
       

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const feedbackSchema = z.object({
@@ -15,29 +15,23 @@ export async function POST(req: NextRequest) {
     const body = feedbackSchema.parse(json);
 
     // Verify appointment exists
-    const { data: app } = await supabase
-      .from('Appointment')
-      .select('id')
-      .eq('id', body.appointmentId)
-      .single();
+    const app = await prisma.appointment.findUnique({
+      where: { id: body.appointmentId },
+    });
 
     if (!app) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
     // Save feedback
-    const { data: feedback, error } = await supabase
-      .from('Feedback')
-      .insert({
+    const feedback = await prisma.feedback.create({
+      data: {
         appointmentId: body.appointmentId,
         patientId: body.patientId,
         rating: body.rating,
         comment: body.comment,
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
+      },
+    });
 
     return NextResponse.json(feedback, { status: 201 });
   } catch (error: any) {

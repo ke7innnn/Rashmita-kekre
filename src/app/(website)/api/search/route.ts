@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export async function GET(req: NextRequest) {
-  const session = { user: { name: 'Dr. Rashmita', role: 'admin' } };
+  const session = await getServerSession(authOptions);
   if (!session) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
@@ -18,35 +18,38 @@ export async function GET(req: NextRequest) {
 
   try {
     // Sub-search patient records containing clinical complaint or notes
-    const { data: patients, error: pError } = await supabase
-      .from('Patient')
-      .select('*, appointments:Appointment(*)')
-      .or(`fullName.ilike.%${q}%,presentingComplaint.ilike.%${q}%,notes.ilike.%${q}%`)
-      .limit(20);
-
-    if (pError) throw pError;
-
-    // Sorting appointments
-    patients?.forEach((p: any) => {
-      if (p.appointments) {
-        p.appointments.sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        p.appointments = p.appointments.slice(0, 5);
-      }
+    const patients = await prisma.patient.findMany({
+      where: {
+        OR: [
+          { fullName: { contains: q } },
+          { presentingComplaint: { contains: q } },
+          { notes: { contains: q } },
+        ],
+      },
+      include: {
+        appointments: {
+          orderBy: { date: 'desc' },
+          take: 5,
+        },
+      },
+      take: 20,
     });
 
     // Also look for appointments with clinical notes matching query
-    const { data: appointments, error: aError } = await supabase
-      .from('Appointment')
-      .select('*, patient:Patient(*)')
-      .ilike('notes', `%${q}%`)
-      .limit(20);
-
-    if (aError) throw aError;
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        notes: { contains: q },
+      },
+      include: {
+        patient: true,
+      },
+      take: 20,
+    });
 
     // Merge & format results cleanly
     const results: any[] = [];
 
-    (patients || []).forEach((p: any) => {
+    patients.forEach((p) => {
       results.push({
         type: 'PATIENT_PROFILE',
         id: p.id,
@@ -57,7 +60,7 @@ export async function GET(req: NextRequest) {
       });
     });
 
-    (appointments || []).forEach((app: any) => {
+    appointments.forEach((app) => {
       // Avoid duplicate profiles in results if notes match
       if (results.some((r) => r.id === app.patientId && r.type === 'PATIENT_PROFILE')) return;
       
