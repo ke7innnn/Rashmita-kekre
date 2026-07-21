@@ -9,6 +9,9 @@ const updatePackageSchema = z.object({
   subSessionNotes: z.string().optional(),
   price: z.number().optional(),
   paidAmount: z.number().optional(),
+  packageName: z.string().optional(),
+  totalSessions: z.number().int().positive().optional(),
+  subSessionNames: z.string().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -39,6 +42,9 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       data: {
         sessionsUsed: body.sessionsUsed !== undefined ? body.sessionsUsed : currentPkg.sessionsUsed,
         subSessionNotes: body.subSessionNotes !== undefined ? body.subSessionNotes : currentPkg.subSessionNotes,
+        packageName: body.packageName !== undefined ? body.packageName : currentPkg.packageName,
+        totalSessions: body.totalSessions !== undefined ? body.totalSessions : currentPkg.totalSessions,
+        subSessionNames: body.subSessionNames !== undefined ? body.subSessionNames : currentPkg.subSessionNames,
         price,
         paidAmount,
         paymentStatus,

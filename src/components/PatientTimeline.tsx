@@ -79,6 +79,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [packagePaid, setPackagePaid] = useState('');
   const [editingNotesSessionIdx, setEditingNotesSessionIdx] = useState<{ pkgId: string; idx: number } | null>(null);
   const [currentSessionNotesText, setCurrentSessionNotesText] = useState('');
+  const [isEditingPackage, setIsEditingPackage] = useState(false);
+  const [editingPackageId, setEditingPackageId] = useState('');
+  const [editPackageName, setEditPackageName] = useState('');
+  const [editTotalSessions, setEditTotalSessions] = useState(10);
+  const [editSubNamesInput, setEditSubNamesInput] = useState<string[]>([]);
+  const [editPackagePrice, setEditPackagePrice] = useState('');
+  const [editPackagePaid, setEditPackagePaid] = useState('');
   const [viewingDoc, setViewingDoc] = useState<any | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{
     isOpen: boolean;
@@ -95,6 +102,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const handleTotalSessionsChange = (val: number) => {
     setTotalSessions(val);
     setSubNamesInput(prev => {
+      const next = [...prev];
+      if (val > prev.length) {
+        return next.concat(Array(val - prev.length).fill(''));
+      } else {
+        return next.slice(0, val);
+      }
+    });
+  };
+
+  const handleEditTotalSessionsChange = (val: number) => {
+    setEditTotalSessions(val);
+    setEditSubNamesInput(prev => {
       const next = [...prev];
       if (val > prev.length) {
         return next.concat(Array(val - prev.length).fill(''));
@@ -1663,6 +1682,21 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           </span>
                           <button
                             onClick={() => {
+                              setEditingPackageId(pkg.id);
+                              setEditPackageName(pkg.packageName);
+                              setEditTotalSessions(pkg.totalSessions);
+                              setEditSubNamesInput(subSessionsList);
+                              setEditPackagePrice(pkg.price ? pkg.price.toString() : '');
+                              setEditPackagePaid(pkg.paidAmount ? pkg.paidAmount.toString() : '');
+                              setIsEditingPackage(true);
+                            }}
+                            className="p-1 text-[#2B2620]/60 hover:text-primary hover:bg-[#FAF6EF] rounded-lg transition-colors cursor-pointer"
+                            title="Edit Package Details"
+                          >
+                            <Edit2 className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
                               setConfirmDelete({
                                 isOpen: true,
                                 title: 'Delete Session Package',
@@ -1932,6 +1966,132 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Save Package
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Existing Package Modal */}
+      <AnimatePresence>
+        {isEditingPackage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsEditingPackage(false)} />
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-md flex flex-col z-10 max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-serif font-bold text-primary mb-2">Edit Session Package</h3>
+              <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">Modify the package details or session focus names.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Package Main Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 10 Class IV Laser Sessions"
+                    value={editPackageName}
+                    onChange={(e) => setEditPackageName(e.target.value)}
+                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Price (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      value={editPackagePrice}
+                      onChange={(e) => setEditPackagePrice(e.target.value)}
+                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Amount Paid (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      value={editPackagePaid}
+                      onChange={(e) => setEditPackagePaid(e.target.value)}
+                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Sessions</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={editTotalSessions}
+                    onChange={(e) => handleEditTotalSessionsChange(parseInt(e.target.value) || 1)}
+                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                  />
+                </div>
+                
+                <div className="space-y-2 border-t border-[#EADFCA]/60 pt-3">
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 block">Individual Session Names (Sub-names)</label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {Array.from({ length: editTotalSessions }).map((_, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-[#2B2620]/50 w-6">#{idx + 1}</span>
+                        <input
+                          type="text"
+                          placeholder={`Session ${idx + 1} specific focus`}
+                          value={editSubNamesInput[idx] || ''}
+                          onChange={(e) => {
+                            const next = [...editSubNamesInput];
+                            next[idx] = e.target.value;
+                            setEditSubNamesInput(next);
+                          }}
+                          className="block flex-1 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-1.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                  <button
+                    onClick={() => setIsEditingPackage(false)}
+                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!editPackageName.trim()) return alert('Please enter package name');
+                      const priceVal = parseFloat(editPackagePrice) || 0;
+                      const paidVal = parseFloat(editPackagePaid) || 0;
+                      
+                      const res = await fetch(`/api/packages/${editingPackageId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          packageName: editPackageName,
+                          totalSessions: editTotalSessions,
+                          price: priceVal,
+                          paidAmount: paidVal,
+                          subSessionNames: JSON.stringify(editSubNamesInput),
+                        })
+                      });
+                      if (res.ok) {
+                        refetchPackages();
+                        setIsEditingPackage(false);
+                      } else {
+                        alert('Failed to update package');
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Save Changes
                   </button>
                 </div>
               </div>
