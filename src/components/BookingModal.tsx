@@ -153,15 +153,17 @@ export default function BookingModal({ onClose }: BookingPageProps) {
 
     try {
       if (!otpSent) {
-        // Step 1: Request OTP
+        // Step 1: Request OTP — normalize phone first (strip +91, 91 prefix etc)
+        const cleanPhone = phone.replace(/\D/g, '').slice(-10);
         const res = await fetch(`${CRM_API_URL}/api/public/book/otp`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone }),
+          body: JSON.stringify({ phone: cleanPhone }),
         });
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Failed to send OTP.');
+        if (!data.smsSent) throw new Error(data.message || 'OTP could not be delivered. Please try again.');
         
         setOtpSent(true);
       } else {
@@ -172,7 +174,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
 
         const payload = {
           fullName: name,
-          phone: phone,
+          phone: phone.replace(/\D/g, '').slice(-10), // normalize to 10 digits
           gender: 'Female', // Default expected by schema
           date: dateKey(selectedDate),
           startTime: selectedTime,

@@ -62,6 +62,9 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     const body = publicBookingSchema.parse(json);
 
+    // Normalize phone to last 10 digits (strip +91, 91, spaces etc)
+    body.phone = body.phone.replace(/\D/g, '').slice(-10);
+
     // 1. Fetch Clinic Settings
     const settings = await prisma.clinicSettings.findUnique({
       where: { id: 'clinic_settings' },
