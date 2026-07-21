@@ -19,14 +19,34 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing file, patientId, or fileName' }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    // Upload using backend service role supabase client (bypasses RLS)
-    const { error: uploadError } = await supabase.storage
-      .from('health360_documents')
-      .upload(fileName, arrayBuffer, {
-        contentType: file.type
+    // Bypass buggy Node 18 fetch (which causes 'fetch failed' on Vercel)
+    // by using native Node.js https to upload directly to Supabase Storage REST API
+    const https = require('https');
+    
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    
+    const uploadPath = `/storage/v1/object/health360_documents/${encodeURI(fileName)}`;
+    
+    const uploadError = await new Promise<any>((resolve) => {
+      const reqConfig = https.request(supabaseUrl + uploadPath, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'apikey': supabaseKey,
+          'Content-Type': file.type || 'application/octet-stream',
+          'Content-Length': buffer.length
+        }
+      }, (res: any) => {
+        if (res.statusCode >= 200 && res.statusCode < 300) resolve(null);
+        else resolve(new Error(`HTTP ${res.statusCode}`));
       });
+      reqConfig.on('error', (err: any) => resolve(err));
+      reqConfig.write(buffer);
+      reqConfig.end();
+    });
 
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
