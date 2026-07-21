@@ -154,6 +154,10 @@ model SessionPackage {
   totalSessions   Int
   sessionsUsed    Int      @default(0)
   subSessionNames String?  // Comma-separated or JSON list of sub-session names
+  subSessionNotes String?  // JSON list of notes for each session
+  price           Float?
+  paidAmount      Float?   @default(0)
+  paymentStatus   String   @default("PENDING") // PENDING, PAID, PARTIAL
   purchaseDate    DateTime @default(now())
   expiryDate      DateTime?
   createdAt       DateTime @default(now())

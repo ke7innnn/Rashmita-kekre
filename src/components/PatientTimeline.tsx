@@ -75,6 +75,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [packageName, setPackageName] = useState('');
   const [totalSessions, setTotalSessions] = useState(10);
   const [subNamesInput, setSubNamesInput] = useState<string[]>(Array(10).fill(''));
+  const [packagePrice, setPackagePrice] = useState('');
+  const [packagePaid, setPackagePaid] = useState('');
+  const [editingNotesSessionIdx, setEditingNotesSessionIdx] = useState<{ pkgId: string; idx: number } | null>(null);
+  const [currentSessionNotesText, setCurrentSessionNotesText] = useState('');
   const [viewingDoc, setViewingDoc] = useState<any | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{
     isOpen: boolean;
@@ -2255,14 +2259,35 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   subSessionsList = pkg.subSessionNames ? pkg.subSessionNames.split(',') : [];
                 }
 
+                let subSessionsNotesList: string[] = [];
+                try {
+                  if (pkg.subSessionNotes) {
+                    subSessionsNotesList = JSON.parse(pkg.subSessionNotes);
+                  }
+                } catch (e) {
+                  subSessionsNotesList = [];
+                }
+                while (subSessionsNotesList.length < subSessionsList.length) {
+                  subSessionsNotesList.push('');
+                }
+
+                const price = pkg.price || 0;
+                const paid = pkg.paidAmount || 0;
+                const balance = price - paid;
+
                 return (
                   <div key={pkg.id} className="bg-[#FFFCF6] border border-[#EADFCA] rounded-2xl p-5 shadow-xxs flex flex-col justify-between">
                     <div>
+                      {/* Package Title and Delete */}
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="text-sm font-bold text-[#2B2620]">{pkg.packageName}</h4>
                         <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-lg uppercase tracking-wider">
-                            {pkg.totalSessions - pkg.sessionsUsed} Left
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border uppercase tracking-wider ${
+                            pkg.paymentStatus === 'PAID' ? 'bg-primary/10 text-primary border-primary/20' :
+                            pkg.paymentStatus === 'PARTIAL' ? 'bg-orange-500/10 text-orange-700 border-orange-500/20' :
+                            'bg-red-500/10 text-red-700 border-red-500/20'
+                          }`}>
+                            {pkg.paymentStatus}
                           </span>
                           <button
                             onClick={() => {
@@ -2288,7 +2313,43 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           </button>
                         </div>
                       </div>
-                      <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">
+
+                      {/* Pricing Info */}
+                      <div className="grid grid-cols-3 gap-2 bg-[#FAF6EF]/50 border border-[#EADFCA]/40 p-2.5 rounded-xl text-[10px] font-bold text-[#2B2620]/75 mb-3">
+                        <div>
+                          <span className="text-[#2B2620]/45 block text-[8px] uppercase tracking-wider">Total Price</span>
+                          <span>₹{price.toLocaleString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-[#2B2620]/45 block text-[8px] uppercase tracking-wider">Paid</span>
+                          <span className="flex items-center gap-1">
+                            ₹{paid.toLocaleString()}
+                            <button 
+                              onClick={async () => {
+                                const newVal = prompt(`Update Paid Amount (Current: ₹${paid}):`, paid.toString());
+                                if (newVal === null) return;
+                                const parsed = parseFloat(newVal);
+                                if (isNaN(parsed)) return alert('Invalid number');
+                                const res = await fetch(`/api/packages/${pkg.id}`, {
+                                  method: 'PATCH',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ paidAmount: parsed })
+                                });
+                                if (res.ok) refetchPackages();
+                              }}
+                              className="text-primary hover:underline font-semibold"
+                            >
+                              (Edit)
+                            </button>
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[#2B2620]/45 block text-[8px] uppercase tracking-wider">Balance</span>
+                          <span className={balance > 0 ? 'text-orange-600' : 'text-primary'}>₹{balance.toLocaleString()}</span>
+                        </div>
+                      </div>
+
+                      <p className="text-xs text-[#2B2620]/60 font-semibold mb-3">
                         {pkg.sessionsUsed} of {pkg.totalSessions} sessions completed.
                       </p>
                       
@@ -2302,30 +2363,50 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
                       {/* Sub-sessions checklist */}
                       {subSessionsList.length > 0 && (
-                        <div className="mt-3 border-t border-[#EADFCA]/40 pt-3 max-h-36 overflow-y-auto space-y-1.5">
-                          <p className="text-[9px] font-bold text-[#2B2620]/50 uppercase tracking-wider mb-1">Session Checklist</p>
+                        <div className="mt-3 border-t border-[#EADFCA]/40 pt-3 max-h-48 overflow-y-auto space-y-1 bg-[#FAF6EF]/20 rounded-xl p-2 border border-[#EADFCA]/30">
+                          <p className="text-[9px] font-bold text-[#2B2620]/50 uppercase tracking-wider mb-1 px-1">Session Checklist & SOAP Notes</p>
                           {subSessionsList.map((name: string, idx: number) => {
                             const isCompleted = idx < pkg.sessionsUsed;
                             return (
-                              <label key={idx} className="flex items-center gap-2 text-xs text-[#2B2620] font-semibold cursor-pointer">
-                                <input 
-                                  type="checkbox" 
-                                  checked={isCompleted}
-                                  onChange={async () => {
-                                    const newUsed = isCompleted ? idx : idx + 1;
-                                    const res = await fetch(`/api/packages/${pkg.id}`, {
-                                      method: 'PATCH',
-                                      headers: { 'Content-Type': 'application/json' },
-                                      body: JSON.stringify({ sessionsUsed: newUsed })
-                                    });
-                                    if (res.ok) refetchPackages();
-                                  }}
-                                  className="accent-primary h-3.5 w-3.5"
-                                />
-                                <span className={isCompleted ? 'line-through text-[#2B2620]/45' : ''}>
-                                  {name || `Session ${idx + 1}`}
-                                </span>
-                              </label>
+                              <div key={idx} className="flex items-center justify-between py-1 px-1 hover:bg-[#FAF6EF]/50 rounded-lg group/item transition-colors">
+                                <label className="flex items-center gap-2 text-xs text-[#2B2620] font-semibold cursor-pointer select-none">
+                                  <input 
+                                    type="checkbox" 
+                                    checked={isCompleted}
+                                    onChange={async () => {
+                                      const newUsed = isCompleted ? idx : idx + 1;
+                                      const res = await fetch(`/api/packages/${pkg.id}`, {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ sessionsUsed: newUsed })
+                                      });
+                                      if (res.ok) refetchPackages();
+                                    }}
+                                    className="accent-primary h-3.5 w-3.5 cursor-pointer"
+                                  />
+                                  <span className={isCompleted ? 'line-through text-[#2B2620]/45 font-medium' : ''}>
+                                    {name || `Session ${idx + 1}`}
+                                  </span>
+                                </label>
+                                
+                                <div className="flex items-center gap-1.5 shrink-0">
+                                  {subSessionsNotesList[idx] && (
+                                    <span className="text-[8px] bg-primary/10 text-primary border border-primary/20 font-bold px-1.5 py-0.5 rounded-md">
+                                      Has Notes
+                                    </span>
+                                  )}
+                                  <button
+                                    onClick={() => {
+                                      setCurrentSessionNotesText(subSessionsNotesList[idx] || '');
+                                      setEditingNotesSessionIdx({ pkgId: pkg.id, idx });
+                                    }}
+                                    className="p-1 rounded-md text-[#2B2620]/40 hover:text-primary hover:bg-[#FAF6EF] opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all cursor-pointer"
+                                    title="Add/Edit Session Notes"
+                                  >
+                                    <Edit2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              </div>
                             );
                           })}
                         </div>
@@ -2382,6 +2463,30 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
                   />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Price (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      value={packagePrice}
+                      onChange={(e) => setPackagePrice(e.target.value)}
+                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Amount Paid (₹)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 15000"
+                      value={packagePaid}
+                      onChange={(e) => setPackagePaid(e.target.value)}
+                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    />
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Sessions</label>
                   <input
@@ -2426,6 +2531,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   <button
                     onClick={async () => {
                       if (!packageName.trim()) return alert('Please enter package name');
+                      const priceVal = parseFloat(packagePrice) || 0;
+                      const paidVal = parseFloat(packagePaid) || 0;
+                      
                       const res = await fetch('/api/packages', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -2433,6 +2541,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           patientId,
                           packageName,
                           totalSessions,
+                          price: priceVal,
+                          paidAmount: paidVal,
                           subSessionNames: JSON.stringify(subNamesInput),
                         })
                       });
@@ -2440,6 +2550,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                         refetchPackages();
                         setIsAddingPackage(false);
                         setPackageName('');
+                        setPackagePrice('');
+                        setPackagePaid('');
                         handleTotalSessionsChange(10);
                       } else {
                         alert('Failed to create package');
@@ -2448,6 +2560,88 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Save Package
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Session Notes Modal */}
+      <AnimatePresence>
+        {editingNotesSessionIdx && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setEditingNotesSessionIdx(null)} />
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-lg flex flex-col z-10"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-serif font-bold text-primary mb-1">Session SOAP & Treatment Note</h3>
+              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mb-4">
+                Session #{editingNotesSessionIdx.idx + 1} specific documentation
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Clinical Notes</label>
+                  <textarea
+                    rows={6}
+                    placeholder="Enter visit details, SOAP notes, pain levels, or range of motion outcomes for this session..."
+                    value={currentSessionNotesText}
+                    onChange={(e) => setCurrentSessionNotesText(e.target.value)}
+                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] p-3 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold leading-relaxed"
+                  />
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                  <button
+                    onClick={() => setEditingNotesSessionIdx(null)}
+                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const { pkgId, idx } = editingNotesSessionIdx;
+                      const pkg = packages.find((p: any) => p.id === pkgId);
+                      if (!pkg) return;
+
+                      let subNotes: string[] = [];
+                      try {
+                        if (pkg.subSessionNotes) {
+                          subNotes = JSON.parse(pkg.subSessionNotes);
+                        }
+                      } catch (e) {}
+
+                      while (subNotes.length < pkg.totalSessions) {
+                        subNotes.push('');
+                      }
+
+                      subNotes[idx] = currentSessionNotesText;
+
+                      const res = await fetch(`/api/packages/${pkgId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          subSessionNotes: JSON.stringify(subNotes)
+                        })
+                      });
+
+                      if (res.ok) {
+                        refetchPackages();
+                        setEditingNotesSessionIdx(null);
+                        setCurrentSessionNotesText('');
+                      } else {
+                        alert('Failed to save session notes');
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Save Notes
                   </button>
                 </div>
               </div>

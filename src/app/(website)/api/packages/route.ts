@@ -9,6 +9,9 @@ const packageSchema = z.object({
   packageName: z.string(),
   totalSessions: z.number().int().positive(),
   subSessionNames: z.string().optional(),
+  subSessionNotes: z.string().optional(),
+  price: z.number().optional(),
+  paidAmount: z.number().optional(),
   expiryDate: z.string().optional(),
 });
 
@@ -48,6 +51,10 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     const body = packageSchema.parse(json);
 
+    const price = body.price || 0;
+    const paidAmount = body.paidAmount || 0;
+    const paymentStatus = paidAmount >= price && price > 0 ? 'PAID' : (paidAmount > 0 ? 'PARTIAL' : 'PENDING');
+
     const newPackage = await prisma.sessionPackage.create({
       data: {
         patientId: body.patientId,
@@ -55,6 +62,10 @@ export async function POST(req: NextRequest) {
         totalSessions: body.totalSessions,
         sessionsUsed: 0,
         subSessionNames: body.subSessionNames || null,
+        subSessionNotes: body.subSessionNotes || null,
+        price,
+        paidAmount,
+        paymentStatus,
         expiryDate: body.expiryDate ? new Date(body.expiryDate) : null,
       },
       include: {

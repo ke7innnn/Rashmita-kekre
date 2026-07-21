@@ -5,7 +5,10 @@ import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const updatePackageSchema = z.object({
-  sessionsUsed: z.number().int().min(0),
+  sessionsUsed: z.number().int().min(0).optional(),
+  subSessionNotes: z.string().optional(),
+  price: z.number().optional(),
+  paidAmount: z.number().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
@@ -19,10 +22,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const json = await req.json();
     const body = updatePackageSchema.parse(json);
 
+    const currentPkg = await prisma.sessionPackage.findUnique({
+      where: { id }
+    });
+
+    if (!currentPkg) {
+      return NextResponse.json({ error: 'Package not found' }, { status: 404 });
+    }
+
+    const price = body.price !== undefined ? body.price : currentPkg.price || 0;
+    const paidAmount = body.paidAmount !== undefined ? body.paidAmount : currentPkg.paidAmount || 0;
+    const paymentStatus = paidAmount >= price && price > 0 ? 'PAID' : (paidAmount > 0 ? 'PARTIAL' : 'PENDING');
+
     const updatedPackage = await prisma.sessionPackage.update({
       where: { id },
       data: {
-        sessionsUsed: body.sessionsUsed,
+        sessionsUsed: body.sessionsUsed !== undefined ? body.sessionsUsed : currentPkg.sessionsUsed,
+        subSessionNotes: body.subSessionNotes !== undefined ? body.subSessionNotes : currentPkg.subSessionNotes,
+        price,
+        paidAmount,
+        paymentStatus,
       },
     });
 
