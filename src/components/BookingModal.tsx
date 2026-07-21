@@ -18,7 +18,7 @@ const HOURS: Record<number, { name: string; closed: boolean; windows: Array<{ la
   6: { name: "Sat", closed: false, windows: [ { label: "Morning", start: "10:00", end: "14:00" }, { label: "Evening", start: "17:00", end: "21:00" } ] }
 };
 
-const CRM_API_URL = process.env.NEXT_PUBLIC_CRM_API_URL || 'http://localhost:3002';
+const CRM_API_URL = process.env.NEXT_PUBLIC_CRM_API_URL || '';
 
 export default function BookingModal({ onClose }: BookingPageProps) {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);

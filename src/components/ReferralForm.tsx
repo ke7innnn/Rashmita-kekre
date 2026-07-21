@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import './ReferralForm.css';
 
-const CRM_API_URL = process.env.NEXT_PUBLIC_CRM_API_URL || 'http://localhost:3002';
+const CRM_API_URL = process.env.NEXT_PUBLIC_CRM_API_URL || '';
 
 const initialState = {
   date: '',
