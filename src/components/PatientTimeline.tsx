@@ -497,6 +497,44 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     });
   };
 
+  const compressImage = async (file: File): Promise<Blob> => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) return resolve(file);
+      
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new window.Image();
+        img.src = event.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let { width, height } = img;
+          const MAX_SIZE = 800;
+          
+          if (width > height && width > MAX_SIZE) {
+            height = Math.round(height * (MAX_SIZE / width));
+            width = MAX_SIZE;
+          } else if (height > MAX_SIZE) {
+            width = Math.round(width * (MAX_SIZE / height));
+            height = MAX_SIZE;
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return resolve(file);
+          
+          ctx.drawImage(img, 0, 0, width, height);
+          canvas.toBlob((blob) => {
+            resolve(blob || file);
+          }, 'image/jpeg', 0.85);
+        };
+        img.onerror = () => resolve(file);
+      };
+      reader.onerror = () => resolve(file);
+    });
+  };
+
   const handleUploadFile = async () => {
     if (!uploadFileName.trim() || !uploadFileObj) return;
     setIsUploadingToSupabase(true);
@@ -505,6 +543,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       const fileExt = uploadFileObj.name.split('.').pop();
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
+      
+      const compressedBlob = await compressImage(uploadFileObj);
+
       // Upload via Next.js Edge Rewrite Proxy! 
       // This brilliantly bypasses Vercel's 4.5MB Serverless limit AND Supabase's CORS restrictions!
       const proxyUrl = `/supabase-proxy/storage/v1/object/health360_documents/${filePath}`;
@@ -515,7 +556,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
           'Content-Type': uploadFileObj.type || 'application/octet-stream',
         },
-        body: uploadFileObj,
+        body: compressedBlob,
       });
 
       if (!uploadRes.ok) {
