@@ -8,6 +8,7 @@ import {
   Search, FileText, CheckCircle, Mail, MapPin, Building2, CheckSquare,
   Plus, X, UserPlus, ArrowLeftRight
 } from 'lucide-react';
+import CreatePatientModal from './CreatePatientModal';
 
 interface Props {
   onViewPatient: (patientId: string) => void;
@@ -28,6 +29,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   // Manual Patient Assignment States
   const [isAssigningPatientToDoc, setIsAssigningPatientToDoc] = useState<string | null>(null); // doctor name
   const [patientSearch, setPatientSearch] = useState('');
+  const [isCreatePatientModalOpen, setIsCreatePatientModalOpen] = useState(false);
 
   // State to hold manually added doctors from localStorage
   const [customDoctors, setCustomDoctors] = useState<any[]>([]);
@@ -441,6 +443,16 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                               </button>
                             ))
                           )}
+                          
+                          {patientSearch.trim().length > 0 && !assignablePatients.some((p: any) => p.fullName.toLowerCase() === patientSearch.trim().toLowerCase()) && (
+                            <button
+                              onClick={() => setIsCreatePatientModalOpen(true)}
+                              className="w-full text-left p-2 mt-1 border border-primary/20 bg-primary/5 hover:bg-primary/10 rounded-lg flex items-center gap-2 text-xxs font-bold text-primary transition-colors cursor-pointer"
+                            >
+                              <Plus className="h-3.5 w-3.5 shrink-0" />
+                              <span className="truncate">Create new patient "{patientSearch.trim()}"</span>
+                            </button>
+                          )}
                         </div>
                       </motion.div>
                     )}
@@ -597,6 +609,17 @@ export default function ReferralsTab({ onViewPatient }: Props) {
           </div>
         )}
       </AnimatePresence>
+
+      <CreatePatientModal 
+        isOpen={isCreatePatientModalOpen} 
+        onClose={() => setIsCreatePatientModalOpen(false)} 
+        prefilledName={patientSearch.trim()}
+        prefilledReferringDoctor={isAssigningPatientToDoc || ''}
+        onSuccess={() => {
+          setIsAssigningPatientToDoc(null);
+          setPatientSearch('');
+        }}
+      />
     </div>
   );
 }
