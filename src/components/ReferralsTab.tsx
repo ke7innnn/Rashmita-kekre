@@ -406,10 +406,11 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                         initial={{ height: 0 }}
                         animate={{ height: 'auto' }}
                         exit={{ height: 0 }}
-                        className="border-t border-[#EADFCA] bg-[#FAF6EF]/60 p-4 space-y-3"
+                        className="overflow-hidden"
                       >
-                        <div className="flex justify-between items-center">
-                          <h5 className="text-[10px] font-bold uppercase tracking-wider text-primary">Assign Patient to {ref.name}</h5>
+                        <div className="border-t border-[#EADFCA] bg-[#FAF6EF]/60 p-4 space-y-3">
+                          <div className="flex justify-between items-center">
+                            <h5 className="text-[10px] font-bold uppercase tracking-wider text-primary">Assign Patient to {ref.name}</h5>
                           <button onClick={() => setIsAssigningPatientToDoc(null)} className="text-[#2B2620]/45 hover:text-[#2B2620]">
                             <X className="h-4 w-4" />
                           </button>
@@ -454,6 +455,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                             </button>
                           )}
                         </div>
+                      </div>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -465,10 +467,11 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                         initial={{ height: 0 }}
                         animate={{ height: 'auto' }}
                         exit={{ height: 0 }}
-                        className="border-t border-[#EADFCA] bg-[#FAF6EF]/30"
+                        className="overflow-hidden"
                       >
-                        <div className="p-4 space-y-2">
-                          <h5 className="text-[10px] font-bold uppercase tracking-wider text-[#2B2620]/45 mb-2 px-1">Referred Patient List</h5>
+                        <div className="border-t border-[#EADFCA] bg-[#FAF6EF]/30">
+                          <div className="p-4 space-y-2">
+                            <h5 className="text-[10px] font-bold uppercase tracking-wider text-[#2B2620]/45 mb-2 px-1">Referred Patient List</h5>
                           {ref.referredPatients.length === 0 ? (
                             <p className="text-xxs text-foreground/45 italic font-medium p-2">No patients assigned under this referrer.</p>
                           ) : (
@@ -505,6 +508,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                             ))
                           )}
                         </div>
+                      </div>
                       </motion.div>
                     )}
                   </AnimatePresence>

@@ -109,8 +109,7 @@ export default function CreatePatientModal({
   // Compile list of unique referring doctors
   const doctorOptions = Array.from(new Set([
     ...customDoctors.map(d => d.name),
-    ...patients.map((p: any) => p.referringDoctor).filter(Boolean),
-    'Dr. Amit Sharma', 'Dr. Rajesh Patel', 'Dr. Priya Nair', 'Dr. Vikram Malhotra' // Defaults
+    ...patients.map((p: any) => p.referringDoctor).filter(Boolean)
   ])).sort();
 
   const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<any>({
