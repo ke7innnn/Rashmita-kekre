@@ -540,32 +540,29 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     setIsUploadingToSupabase(true);
     
     try {
-      // Temporary debug alert to inspect the Supabase URL on the client-side
-      const testUrl = supabase.storage.from('health360_documents').getPublicUrl('test').data.publicUrl;
-      alert(`DEBUG INFO:\nURL: ${testUrl}\nAnon Key length: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length}`);
-
       const fileExt = uploadFileObj.name.split('.').pop();
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
       
       const compressedBlob = await compressImage(uploadFileObj);
 
-      // Upload directly from the browser to Supabase Storage (matching UKA Management System)
-      const { error: uploadError } = await supabase.storage
-        .from('health360_documents')
-        .upload(filePath, compressedBlob, {
-          cacheControl: '3600',
-          upsert: true,
-          contentType: uploadFileObj.type || 'application/octet-stream'
-        });
+      // Upload via our own backend API to bypass CORS & browser AdBlockers entirely!
+      const formData = new FormData();
+      formData.append('file', compressedBlob, uploadFileObj.name);
+      formData.append('patientId', patientId);
+      formData.append('fileName', filePath);
 
-      if (uploadError) {
-        throw new Error(uploadError.message || 'Supabase upload failed');
+      const uploadRes = await fetch('/api/patients/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Backend upload failed');
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('health360_documents')
-        .getPublicUrl(filePath);
+      const { publicUrl } = await uploadRes.json();
       const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
       updatePatientMutation.mutate({
         attachment: {
