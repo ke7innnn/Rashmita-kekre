@@ -32,6 +32,18 @@ interface Props {
   onBack?: () => void;
 }
 
+const getDisplayUrl = (url: string) => {
+  if (!url) return '';
+  const cleanUrl = url.replace(/['"]/g, '');
+  const searchStr = '/storage/v1/object/public/health360_documents/';
+  const index = cleanUrl.indexOf(searchStr);
+  if (index !== -1) {
+    const filePath = cleanUrl.substring(index + searchStr.length);
+    return `/api/patients/view?path=${encodeURIComponent(filePath)}`;
+  }
+  return cleanUrl;
+};
+
 export default function PatientTimeline({ patientId, onBack }: Props) {
   const queryClient = useQueryClient();
   const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
@@ -465,7 +477,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         if (fileName !== '.folder') {
           files.push({
             id: a.id,
-            url: a.url,
+            url: getDisplayUrl(a.url),
             fileType: a.fileType,
             displayName: fileName,
             name: a.name
@@ -1477,7 +1489,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   const isBefore = file.name.toLowerCase().includes('before');
                   return (
                     <div key={file.id} className="relative rounded-2xl overflow-hidden border border-[#EADFCA] bg-[#FAF6EF] shadow-xxs">
-                      <img src={file.url} alt={file.name} className="w-full h-32 object-cover" />
+                      <img src={getDisplayUrl(file.url)} alt={file.name} className="w-full h-32 object-cover" />
                       <div className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 flex items-center justify-between text-[10px] font-bold text-white">
                         <span className="truncate max-w-[70%]">{file.name.split('_')[1] || 'Joint'}</span>
                         <span className={`px-2 py-0.5 rounded-md ${isBefore ? 'bg-orange-500' : 'bg-emerald-500'}`}>
