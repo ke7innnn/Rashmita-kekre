@@ -487,22 +487,21 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
 
-      const formData = new FormData();
-      formData.append('file', uploadFileObj);
-      formData.append('patientId', patientId);
-      formData.append('fileName', filePath);
+      // Upload directly from the browser to Supabase Storage (bypasses server payload limits)
+      const { error: uploadError } = await supabase.storage
+        .from('health360_documents')
+        .upload(filePath, uploadFileObj, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      const uploadRes = await fetch('/api/patients/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errorData = await uploadRes.json();
-        throw new Error(errorData.error || 'Upload failed');
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Supabase upload failed');
       }
 
-      const { publicUrl } = await uploadRes.json();
+      const { data: { publicUrl } } = supabase.storage
+        .from('health360_documents')
+        .getPublicUrl(filePath);
 
       const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
       updatePatientMutation.mutate({
@@ -1773,7 +1772,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                                       setCurrentSessionNotesText(subSessionsNotesList[idx] || '');
                                       setEditingNotesSessionIdx({ pkgId: pkg.id, idx });
                                     }}
-                                    className="p-1 rounded-md text-[#2B2620]/40 hover:text-primary hover:bg-[#FAF6EF] opacity-100 sm:opacity-0 sm:group-hover/item:opacity-100 transition-all cursor-pointer"
+                                    className="p-1.5 rounded-lg border border-[#EADFCA] bg-[#FAF6EF]/60 hover:bg-[#EADFCA]/40 text-[#2B2620]/60 hover:text-primary transition-all cursor-pointer"
                                     title="Add/Edit Session Notes"
                                   >
                                     <Edit2 className="h-3 w-3" />
