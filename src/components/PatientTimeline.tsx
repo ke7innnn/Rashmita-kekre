@@ -546,26 +546,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       
       const compressedBlob = await compressImage(uploadFileObj);
 
-      // Upload via Next.js Edge Rewrite Proxy! 
-      // This brilliantly bypasses Vercel's 4.5MB Serverless limit AND Supabase's CORS restrictions!
-      const proxyUrl = `/supabase-proxy/storage/v1/object/health360_documents/${filePath}`;
-      const uploadRes = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
-          'Content-Type': uploadFileObj.type || 'application/octet-stream',
-        },
-        body: compressedBlob,
-      });
+      // Upload directly from the browser to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('health360_documents')
+        .upload(filePath, compressedBlob, {
+          cacheControl: '3600',
+          upsert: false
+        });
 
-      if (!uploadRes.ok) {
-        let errorMsg = 'Proxy upload failed';
-        try {
-          const errorData = await uploadRes.json();
-          errorMsg = errorData.message || errorData.error || errorMsg;
-        } catch (e) {}
-        throw new Error(errorMsg);
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Supabase upload failed');
       }
 
       const { data: { publicUrl } } = supabase.storage
