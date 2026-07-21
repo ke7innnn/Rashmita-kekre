@@ -539,10 +539,11 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     if (!uploadFileName.trim() || !uploadFileObj) return;
     setIsUploadingToSupabase(true);
     
+    let filePath = '';
     try {
       const fileExt = uploadFileObj.name.split('.').pop();
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
-      const filePath = `${patientId}/${fileName}`;
+      filePath = `${patientId}/${fileName}`;
       
       const compressedBlob = await compressImage(uploadFileObj);
 
@@ -583,7 +584,23 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     } catch (err: any) {
       console.error('File upload failed:', err);
       setIsUploadingToSupabase(false);
-      alert('Failed to upload file: ' + (err.message || 'Please try again.'));
+      
+      // Detailed diagnostics for debugging
+      const supabaseUrlVal = process.env.NEXT_PUBLIC_SUPABASE_URL || 'undefined';
+      const cleanUrlVal = supabaseUrlVal.replace(/['"]/g, '');
+      const anonKeyVal = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'undefined';
+      
+      alert(
+        `Failed to upload file!\n\n` +
+        `Error Message: ${err.message || 'Unknown'}\n` +
+        `Error Name: ${err.name || 'Unknown'}\n\n` +
+        `Diagnostics:\n` +
+        `- Original Env URL: ${supabaseUrlVal}\n` +
+        `- Sanitized URL: ${cleanUrlVal}\n` +
+        `- Anon Key Length: ${anonKeyVal.length} (Starts with: ${anonKeyVal.substring(0, 10)}...)\n` +
+        `- Upload Path: health360_documents/${filePath}\n\n` +
+        `Please take a screenshot of this alert!`
+      );
     }
   };
 
