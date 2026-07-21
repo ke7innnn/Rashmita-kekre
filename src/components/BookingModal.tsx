@@ -36,6 +36,8 @@ export default function BookingModal({ onClose }: BookingPageProps) {
   const [isLoadingSlots, setIsLoadingSlots] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
+  const [isDateClosed, setIsDateClosed] = useState(false);
+  const [dateClosedReason, setDateClosedReason] = useState<string>('');
 
   // OTP States
   const [otpSent, setOtpSent] = useState(false);
@@ -94,6 +96,8 @@ export default function BookingModal({ onClose }: BookingPageProps) {
 
     const fetchBookedSlots = async () => {
       setIsLoadingSlots(true);
+      setIsDateClosed(false);
+      setDateClosedReason('');
       try {
         const formattedDate = dateKey(selectedDate);
         const res = await fetch(`${CRM_API_URL}/api/public/book?date=${formattedDate}`);
@@ -101,8 +105,8 @@ export default function BookingModal({ onClose }: BookingPageProps) {
         const data = await res.json();
         
         if (data.isHoliday) {
-          // If the CRM says it's a holiday, block all slots by returning a dummy array that matches nothing or everything
-          // The easiest way to block all is to set bookedSlots to all possible time strings
+          setIsDateClosed(true);
+          setDateClosedReason(data.isSunday ? 'The clinic is closed on Sundays.' : 'The clinic is closed on this date.');
           const allSlots = getAllSlotsForDay().map(t => pad(Math.floor(t / 60)) + ":" + pad(t % 60));
           setBookedSlots(allSlots);
         } else if (Array.isArray(data.bookedSlots)) {
@@ -112,7 +116,6 @@ export default function BookingModal({ onClose }: BookingPageProps) {
         }
       } catch (err) {
         console.error('Error fetching booked slots:', err);
-        // Fallback to empty booked slots if the CRM server is offline or fails
         setBookedSlots([]);
       } finally {
         setIsLoadingSlots(false);
@@ -319,6 +322,14 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                       {isLoadingSlots ? (
                         <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '16px 0', color: 'var(--h360-ink-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                           <Loader2 className="animate-spin" size={16} /> Loading available slots...
+                        </div>
+                      ) : isDateClosed ? (
+                        <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '20px 0', color: 'var(--h360-ink-soft)' }}>
+                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: '#fff0f0', border: '1px solid #ffcccc', borderRadius: '12px', padding: '16px 24px' }}>
+                            <span style={{ fontSize: '22px' }}>🚫</span>
+                            <span style={{ fontWeight: 700, fontSize: '13px', color: '#cc3333' }}>{dateClosedReason}</span>
+                            <span style={{ fontSize: '11px', color: '#888' }}>Please choose a different date above.</span>
+                          </div>
                         </div>
                       ) : getAllSlotsForDay().map((t, idx) => {
                         const timeStr = pad(Math.floor(t / 60)) + ":" + pad(t % 60);

@@ -33,7 +33,8 @@ export async function GET(req: NextRequest) {
       ? settings.holidays.split(',').map((h) => h.trim()).filter(Boolean) 
       : [];
 
-    const isHoliday = holidaysList.includes(dateStr);
+    const isSunday = targetDate.getDay() === 0;
+    const isHoliday = isSunday || holidaysList.includes(dateStr);
 
     const appointments = await prisma.appointment.findMany({
       where: {
@@ -49,10 +50,10 @@ export async function GET(req: NextRequest) {
 
     const bookedSlots = appointments.map((a) => a.startTime);
 
-    return NextResponse.json({ bookedSlots, isHoliday });
+    return NextResponse.json({ bookedSlots, isHoliday, isSunday });
   } catch (error) {
     console.error('Error fetching booked slots:', error);
-    return NextResponse.json({ bookedSlots: [], isHoliday: false });
+    return NextResponse.json({ bookedSlots: [], isHoliday: false, isSunday: false });
   }
 }
 

@@ -1,12 +1,12 @@
 'use client';
  
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare } from 'lucide-react';
+import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare, X, CalendarX } from 'lucide-react';
  
 const settingsSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -17,7 +17,6 @@ const settingsSchema = z.object({
   workingHoursStart: z.string().regex(/^\d{2}:\d{2}$/, 'HH:MM format'),
   workingHoursEnd: z.string().regex(/^\d{2}:\d{2}$/, 'HH:MM format'),
   slotDuration: z.number().int().positive().default(30),
-  holidaysString: z.string().optional(),
   isPubliclyVisible: z.boolean().default(true),
   reminder24hTemplate: z.string().optional(),
   reminder2hTemplate: z.string().optional(),
@@ -33,6 +32,8 @@ interface Props {
 export default function SettingsTab({ user }: Props) {
   const queryClient = useQueryClient();
   const isAdmin = user.role === 'admin';
+  const [holidayDates, setHolidayDates] = useState<string[]>([]);
+  const [newHolidayDate, setNewHolidayDate] = useState('');
  
   // 1. Fetch settings
   const { data: settings, isLoading } = useQuery({
@@ -59,24 +60,37 @@ export default function SettingsTab({ user }: Props) {
         workingHoursStart: settings.workingHoursStart,
         workingHoursEnd: settings.workingHoursEnd,
         slotDuration: settings.slotDuration,
-        holidaysString: settings.holidays.join(', '),
         isPubliclyVisible: settings.isPubliclyVisible,
         reminder24hTemplate: settings.reminder24hTemplate || '',
         reminder2hTemplate: settings.reminder2hTemplate || '',
       });
+      setHolidayDates(settings.holidays || []);
     }
   }, [settings, reset]);
+
+  const addHolidayDate = () => {
+    if (!newHolidayDate) return;
+    if (holidayDates.includes(newHolidayDate)) return;
+    setHolidayDates(prev => [...prev, newHolidayDate].sort());
+    setNewHolidayDate('');
+  };
+
+  const removeHolidayDate = (date: string) => {
+    setHolidayDates(prev => prev.filter(d => d !== date));
+  };
+
+  const formatDateDisplay = (dateStr: string) => {
+    const d = new Date(dateStr + 'T00:00:00');
+    return d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+  };
  
   // 2. Update settings mutation
   const mutation = useMutation({
     mutationFn: async (data: any) => {
       const payload = {
         ...data,
-        holidays: data.holidaysString 
-          ? data.holidaysString.split(',').map((d: any) => d.trim()).filter(Boolean)
-          : [],
+        holidays: holidayDates,
       };
-      delete (payload as any).holidaysString;
  
       const res = await fetch('/api/settings', {
         method: 'PUT',
@@ -322,20 +336,54 @@ export default function SettingsTab({ user }: Props) {
                   <option value={30}>30 Minutes</option>
                   <option value={45}>45 Minutes</option>
                   <option value={60}>60 Minutes</option>
-                </select>
+              </select>
               </div>
  
               <div>
                 <label className="block text-[10px] font-bold uppercase tracking-wider text-[#2B2620]/65 mb-1.5">
-                  Holidays & Blocked Dates
+                  Holidays & Blocked Dates <span className="text-primary/60 lowercase normal-case">(Sundays are always closed)</span>
                 </label>
-                <input
-                  type="text"
-                  disabled={!isAdmin}
-                  {...register('holidaysString')}
-                  placeholder="YYYY-MM-DD, comma separated"
-                  className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3.5 py-2.5 text-[#2B2620] focus:border-primary focus:outline-hidden disabled:opacity-60 font-semibold shadow-xxs"
-                />
+                
+                {/* Current holiday list */}
+                {holidayDates.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-3">
+                    {holidayDates.map(date => (
+                      <span key={date} className="inline-flex items-center gap-1.5 bg-[#FAF6EF] border border-[#EADFCA] text-[#2B2620] text-[10px] font-bold px-2.5 py-1 rounded-lg">
+                        <CalendarX className="h-3 w-3 text-primary shrink-0" />
+                        {formatDateDisplay(date)}
+                        {isAdmin && (
+                          <button
+                            type="button"
+                            onClick={() => removeHolidayDate(date)}
+                            className="ml-0.5 text-[#2B2620]/40 hover:text-red-500 cursor-pointer"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Add new holiday date */}
+                {isAdmin && (
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      value={newHolidayDate}
+                      onChange={(e) => setNewHolidayDate(e.target.value)}
+                      className="block flex-1 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3.5 py-2.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs cursor-pointer"
+                    />
+                    <button
+                      type="button"
+                      onClick={addHolidayDate}
+                      disabled={!newHolidayDate}
+                      className="px-3.5 py-2 bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-40 focus:outline-hidden whitespace-nowrap"
+                    >
+                      + Add Date
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
