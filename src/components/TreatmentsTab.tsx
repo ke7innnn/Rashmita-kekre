@@ -14,14 +14,9 @@ export default function TreatmentsTab() {
   const { data: modalities = [], isLoading } = useQuery({
     queryKey: ['modalities'],
     queryFn: async () => {
-      // Dummy data for instant loading
-      return [
-        { id: 'm1', name: 'Manual Therapy', category: 'Physiotherapy', description: 'Hands-on techniques to improve mobility.', baseDurationMin: 45, basePrice: 1500, status: 'ACTIVE' },
-        { id: 'm2', name: 'Electrotherapy', category: 'Therapy', description: 'Pain relief through electrical stimulation.', baseDurationMin: 30, basePrice: 1000, status: 'ACTIVE' },
-        { id: 'm3', name: 'Sports Rehabilitation', category: 'Rehabilitation', description: 'Advanced exercises for athletes.', baseDurationMin: 60, basePrice: 2000, status: 'ACTIVE' },
-        { id: 'm4', name: 'Post-operative Care', category: 'Rehabilitation', description: 'Recovery after orthopedic surgery.', baseDurationMin: 45, basePrice: 1800, status: 'ACTIVE' },
-        { id: 'm5', name: 'Acupuncture', category: 'Wellness', description: 'Traditional dry needling for pain.', baseDurationMin: 30, basePrice: 1200, status: 'ACTIVE' }
-      ];
+      const res = await fetch('/api/modalities');
+      if (!res.ok) throw new Error('Failed to fetch modalities');
+      return res.json();
     },
   });
  

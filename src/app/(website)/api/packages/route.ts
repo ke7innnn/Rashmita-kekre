@@ -18,7 +18,11 @@ export async function GET(req: NextRequest) {
   }
 
   try {
+    const { searchParams } = new URL(req.url);
+    const patientId = searchParams.get('patientId');
+    
     const packages = await prisma.sessionPackage.findMany({
+      where: patientId ? { patientId } : undefined,
       include: {
         patient: true,
       },

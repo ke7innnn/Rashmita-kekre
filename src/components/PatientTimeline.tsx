@@ -7,9 +7,12 @@ import {
   User, Phone, MapPin, Tag, FileText, Calendar, 
   Clock, PhoneCall, ChevronLeft, Loader2, ArrowLeft, 
   MessageSquare, FileDown, Activity, Mic, Sparkles, 
-  Plus, Check, Camera, Image, ShieldAlert, Award, X,
-  Dumbbell, Share2, Send, CheckSquare, Folder, FolderPlus
+  Plus, Check, Camera, Image, AlertTriangle, Download, 
+  Trash2, Edit2, PlayCircle, Folder, File, FolderPlus,
+  ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare
 } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 const CallOutcome = {
@@ -61,9 +64,11 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [uploadFileName, setUploadFileName] = useState('');
   const [uploadFileType, setUploadFileType] = useState('PDF');
+  const [uploadFileObj, setUploadFileObj] = useState<File | null>(null);
+  const [isUploadingToSupabase, setIsUploadingToSupabase] = useState(false);
 
   // Sub-tab navigation state
-  const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'rom'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'rom' | 'billing'>('timeline');
 
   // Manual Add/Edit Timeline states
   const [isAddingSession, setIsAddingSession] = useState(false);
@@ -124,6 +129,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       const res = await fetch('/api/handouts');
       if (res.ok) return res.json();
       return [];
+    },
+  });
+
+  // Fetch patient packages
+  const { data: packages = [], refetch: refetchPackages } = useQuery({
+    queryKey: ['packages', patientId],
+    queryFn: async () => {
+      const res = await fetch(`/api/packages?patientId=${patientId}`);
+      if (!res.ok) throw new Error('Failed to fetch packages');
+      return res.json();
     },
   });
 
@@ -429,21 +444,48 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     });
   };
 
-  const handleUploadFile = () => {
-    if (!uploadFileName.trim()) return;
-    const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
-    updatePatientMutation.mutate({
-      attachment: {
-        name: fullFileName,
-        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-        fileType: uploadFileType
-      }
-    }, {
-      onSuccess: () => {
-        setIsUploadingFile(false);
-        setUploadFileName('');
-      }
-    });
+  const handleUploadFile = async () => {
+    if (!uploadFileName.trim() || !uploadFileObj) return;
+    setIsUploadingToSupabase(true);
+    
+    try {
+      const fileExt = uploadFileObj.name.split('.').pop();
+      const fileName = `${Date.now()}_${uploadFileName.replace(/\\s+/g, '_')}.${fileExt}`;
+      const filePath = `${patientId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('health360_documents')
+        .upload(filePath, uploadFileObj);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('health360_documents')
+        .getPublicUrl(filePath);
+
+      const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
+      updatePatientMutation.mutate({
+        attachment: {
+          name: fullFileName,
+          url: publicUrl,
+          fileType: uploadFileType
+        }
+      }, {
+        onSuccess: () => {
+          setIsUploadingFile(false);
+          setUploadFileName('');
+          setUploadFileObj(null);
+          setIsUploadingToSupabase(false);
+        },
+        onError: () => {
+          setIsUploadingToSupabase(false);
+        }
+      });
+    } catch (err) {
+      console.error('File upload failed:', err);
+      setIsUploadingToSupabase(false);
+      alert('Failed to upload file. Please try again.');
+    }
   };
 
   // Referral Onboarding Checklist handlers
@@ -843,6 +885,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           }`}
         >
           Clinical ROM & Referrals
+        </button>
+        <button
+          onClick={() => setActiveTab('billing')}
+          className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'billing'
+              ? 'bg-primary text-background shadow-xs'
+              : 'text-[#2B2620]/60 hover:bg-[#FAF6EF]'
+          }`}
+        >
+          Session Packages & Billing
         </button>
       </div>
 
@@ -1681,12 +1733,22 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   </select>
                 </div>
               </div>
+              <div>
+                <label className="text-[10px] font-bold text-[#2B2620]/50 block mb-1 uppercase tracking-wider">Select File</label>
+                <input 
+                  type="file" 
+                  onChange={(e) => setUploadFileObj(e.target.files?.[0] || null)}
+                  className="text-xs w-full text-[#2B2620] font-semibold file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors"
+                />
+              </div>
               <div className="flex justify-end gap-2 pt-2 border-t border-[#EADFCA]/40">
                 <button 
                   onClick={handleUploadFile}
-                  className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer transition-colors shadow-xxs"
+                  disabled={!uploadFileObj || !uploadFileName.trim() || isUploadingToSupabase}
+                  className="px-4 py-2 bg-primary hover:bg-[#3C5040] disabled:opacity-50 text-background text-xs font-bold rounded-xl cursor-pointer transition-colors shadow-xxs flex items-center gap-1.5"
                 >
-                  Upload & Scan File
+                  {isUploadingToSupabase && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {isUploadingToSupabase ? 'Uploading...' : 'Upload & Scan File'}
                 </button>
               </div>
             </div>
@@ -2235,6 +2297,94 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Billing & Packages Tab */}
+      {activeTab === 'billing' && (
+        <div className="p-6 space-y-6 max-w-4xl mx-auto w-full animate-fadeIn">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-4 border-b border-[#EADFCA] pb-4">
+            <div>
+              <h3 className="text-xl font-serif font-bold text-primary">Session Packages</h3>
+              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mt-0.5">Manage prepaid treatments and deduct visits</p>
+            </div>
+            <button
+              onClick={async () => {
+                const pkgName = prompt('Enter Package Name (e.g. 10 Class IV Laser Sessions):');
+                if (!pkgName) return;
+                const total = parseInt(prompt('Total number of sessions:') || '0');
+                if (!total || isNaN(total)) return;
+
+                const res = await fetch('/api/packages', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                    patientId,
+                    packageName: pkgName,
+                    totalSessions: total,
+                  })
+                });
+                if (res.ok) {
+                  refetchPackages();
+                } else {
+                  alert('Failed to create package');
+                }
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              Add New Package
+            </button>
+          </div>
+
+          {packages.length === 0 ? (
+             <div className="p-16 text-center text-foreground/45 border border-dashed border-[#EADFCA] rounded-2xl font-bold bg-[#FFFCF6]">
+               No active session packages for this patient.
+             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {packages.map((pkg: any) => (
+                <div key={pkg.id} className="bg-[#FFFCF6] border border-[#EADFCA] rounded-2xl p-5 shadow-xxs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-bold text-[#2B2620]">{pkg.packageName}</h4>
+                      <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-lg uppercase tracking-wider">
+                        {pkg.totalSessions - pkg.sessionsUsed} Left
+                      </span>
+                    </div>
+                    <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">
+                      {pkg.sessionsUsed} of {pkg.totalSessions} sessions completed.
+                    </p>
+                    
+                    {/* Progress Bar */}
+                    <div className="w-full bg-[#EADFCA]/40 rounded-full h-2 mb-4">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all" 
+                        style={{ width: `${(pkg.sessionsUsed / pkg.totalSessions) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <button
+                    disabled={pkg.sessionsUsed >= pkg.totalSessions}
+                    onClick={async () => {
+                      const res = await fetch(`/api/packages/${pkg.id}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ sessionsUsed: pkg.sessionsUsed + 1 })
+                      });
+                      if (res.ok) {
+                        refetchPackages();
+                      }
+                    }}
+                    className="w-full py-2 bg-[#FAF6EF] hover:bg-[#EADFCA] text-[#2B2620] text-xs font-bold rounded-xl border border-[#EADFCA] transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {pkg.sessionsUsed >= pkg.totalSessions ? 'Package Completed' : 'Deduct Session'}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
