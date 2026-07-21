@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     // by using native Node.js https to upload directly to Supabase Storage REST API
     const https = require('https');
     
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/['"]/g, '');
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
     
     const uploadPath = `/storage/v1/object/health360_documents/${encodeURI(fileName)}`;
