@@ -147,16 +147,17 @@ model User {
 }
 
 model SessionPackage {
-  id            String   @id @default(cuid())
-  patientId     String
-  patient       Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  packageName   String
-  totalSessions Int
-  sessionsUsed  Int      @default(0)
-  purchaseDate  DateTime @default(now())
-  expiryDate    DateTime?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id              String   @id @default(cuid())
+  patientId       String
+  patient         Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  packageName     String
+  totalSessions   Int
+  sessionsUsed    Int      @default(0)
+  subSessionNames String?  // Comma-separated or JSON list of sub-session names
+  purchaseDate    DateTime @default(now())
+  expiryDate      DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 }
 
 model TreatmentProtocol {

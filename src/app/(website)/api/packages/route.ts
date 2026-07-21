@@ -8,6 +8,7 @@ const packageSchema = z.object({
   patientId: z.string(),
   packageName: z.string(),
   totalSessions: z.number().int().positive(),
+  subSessionNames: z.string().optional(),
   expiryDate: z.string().optional(),
 });
 
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
         packageName: body.packageName,
         totalSessions: body.totalSessions,
         sessionsUsed: 0,
+        subSessionNames: body.subSessionNames || null,
         expiryDate: body.expiryDate ? new Date(body.expiryDate) : null,
       },
       include: {

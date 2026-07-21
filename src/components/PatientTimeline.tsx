@@ -70,6 +70,36 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Sub-tab navigation state
   const [activeTab, setActiveTab] = useState<'timeline' | 'documents' | 'rom' | 'billing'>('timeline');
 
+  // Custom modal states for Session Packages, Document Previewer, and Custom Confirm
+  const [isAddingPackage, setIsAddingPackage] = useState(false);
+  const [packageName, setPackageName] = useState('');
+  const [totalSessions, setTotalSessions] = useState(10);
+  const [subNamesInput, setSubNamesInput] = useState<string[]>(Array(10).fill(''));
+  const [viewingDoc, setViewingDoc] = useState<any | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const handleTotalSessionsChange = (val: number) => {
+    setTotalSessions(val);
+    setSubNamesInput(prev => {
+      const next = [...prev];
+      if (val > prev.length) {
+        return next.concat(Array(val - prev.length).fill(''));
+      } else {
+        return next.slice(0, val);
+      }
+    });
+  };
+
   // Manual Add/Edit Timeline states
   const [isAddingSession, setIsAddingSession] = useState(false);
   const [isAddingCall, setIsAddingCall] = useState(false);
@@ -1468,13 +1498,19 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           </button>
                           <button
                             onClick={() => {
-                              if (confirm('Are you sure you want to delete this timeline entry?')) {
-                                if (item.type === 'APPOINTMENT') {
-                                  deleteSessionMutation.mutate(item.id);
-                                } else {
-                                  deleteCallLogMutation.mutate(item.id);
+                              setConfirmDelete({
+                                isOpen: true,
+                                title: 'Delete Timeline Entry',
+                                message: 'Are you sure you want to permanently delete this timeline entry? This action cannot be undone.',
+                                onConfirm: () => {
+                                  if (item.type === 'APPOINTMENT') {
+                                    deleteSessionMutation.mutate(item.id);
+                                  } else {
+                                    deleteCallLogMutation.mutate(item.id);
+                                  }
+                                  setConfirmDelete(prev => ({ ...prev, isOpen: false }));
                                 }
-                              }
+                              });
                             }}
                             className="p-1 hover:bg-red-50 border border-red-100 text-red-500 hover:text-red-700 rounded-lg transition-colors cursor-pointer"
                             title="Delete entry"
@@ -1818,11 +1854,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
                 {/* Render files (Huge Document Cards) */}
                 {files.map((file) => (
-                  <motion.a
+                  <motion.div
                     key={file.id}
-                    href={file.url}
-                    target="_blank"
-                    rel="noreferrer"
+                    onClick={() => setViewingDoc(file)}
                     whileHover={{ y: -3 }}
                     whileTap={{ scale: 0.98 }}
                     className="group bg-[#FFFCF6] border border-[#EADFCA] hover:border-primary rounded-2xl p-6 flex flex-col items-center justify-center gap-3.5 cursor-pointer transition-all shadow-sm hover:shadow-md relative overflow-hidden"
@@ -1832,10 +1866,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        if (confirm(`Are you sure you want to remove the document "${file.displayName}"?`)) {
-                          const updatedAttachments = patient.attachments.filter((a: any) => a.id !== file.id);
-                          updatePatientMutation.mutate({ attachments: updatedAttachments });
-                        }
+                        setConfirmDelete({
+                          isOpen: true,
+                          title: 'Remove Document',
+                          message: `Are you sure you want to permanently remove "${file.displayName}" from this patient's records?`,
+                          onConfirm: () => {
+                            const updatedAttachments = patient.attachments.filter((a: any) => a.id !== file.id);
+                            updatePatientMutation.mutate({ attachments: updatedAttachments });
+                            setConfirmDelete(prev => ({ ...prev, isOpen: false }));
+                          }
+                        });
                       }}
                       className="absolute top-3 right-3 p-1 rounded-lg hover:bg-red-50 text-[#2B2620]/40 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                       title="Delete document"
@@ -1868,9 +1908,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     </div>
                     <div className="flex items-center gap-1 text-[10px] font-bold text-primary tracking-wider uppercase mt-2">
                       <FileDown className="h-4 w-4" />
-                      Download File
+                      View File
                     </div>
-                  </motion.a>
+                  </motion.div>
                 ))}
               </div>
             )}
@@ -2314,26 +2354,11 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mt-0.5">Manage prepaid treatments and deduct visits</p>
             </div>
             <button
-              onClick={async () => {
-                const pkgName = prompt('Enter Package Name (e.g. 10 Class IV Laser Sessions):');
-                if (!pkgName) return;
-                const total = parseInt(prompt('Total number of sessions:') || '0');
-                if (!total || isNaN(total)) return;
-
-                const res = await fetch('/api/packages', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({
-                    patientId,
-                    packageName: pkgName,
-                    totalSessions: total,
-                  })
-                });
-                if (res.ok) {
-                  refetchPackages();
-                } else {
-                  alert('Failed to create package');
-                }
+              onClick={() => {
+                setPackageName('');
+                setTotalSessions(10);
+                setSubNamesInput(Array(10).fill(''));
+                setIsAddingPackage(true);
               }}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
             >
@@ -2348,50 +2373,311 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
              </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {packages.map((pkg: any) => (
-                <div key={pkg.id} className="bg-[#FFFCF6] border border-[#EADFCA] rounded-2xl p-5 shadow-xxs flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="text-sm font-bold text-[#2B2620]">{pkg.packageName}</h4>
-                      <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-lg uppercase tracking-wider">
-                        {pkg.totalSessions - pkg.sessionsUsed} Left
-                      </span>
+              {packages.map((pkg: any) => {
+                let subSessionsList: string[] = [];
+                try {
+                  if (pkg.subSessionNames) {
+                    subSessionsList = JSON.parse(pkg.subSessionNames);
+                  }
+                } catch (e) {
+                  subSessionsList = pkg.subSessionNames ? pkg.subSessionNames.split(',') : [];
+                }
+
+                return (
+                  <div key={pkg.id} className="bg-[#FFFCF6] border border-[#EADFCA] rounded-2xl p-5 shadow-xxs flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-sm font-bold text-[#2B2620]">{pkg.packageName}</h4>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold px-2 py-1 bg-primary/10 text-primary rounded-lg uppercase tracking-wider">
+                            {pkg.totalSessions - pkg.sessionsUsed} Left
+                          </span>
+                          <button
+                            onClick={() => {
+                              setConfirmDelete({
+                                isOpen: true,
+                                title: 'Delete Session Package',
+                                message: `Are you sure you want to permanently delete "${pkg.packageName}"? This action cannot be undone.`,
+                                onConfirm: async () => {
+                                  const res = await fetch(`/api/packages/${pkg.id}`, {
+                                    method: 'DELETE'
+                                  });
+                                  if (res.ok) {
+                                    refetchPackages();
+                                  }
+                                  setConfirmDelete(prev => ({ ...prev, isOpen: false }));
+                                }
+                              });
+                            }}
+                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Delete Package"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                      <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">
+                        {pkg.sessionsUsed} of {pkg.totalSessions} sessions completed.
+                      </p>
+                      
+                      {/* Progress Bar */}
+                      <div className="w-full bg-[#EADFCA]/40 rounded-full h-2 mb-4">
+                        <div 
+                          className="bg-primary h-2 rounded-full transition-all" 
+                          style={{ width: `${(pkg.sessionsUsed / pkg.totalSessions) * 100}%` }}
+                        ></div>
+                      </div>
+
+                      {/* Sub-sessions checklist */}
+                      {subSessionsList.length > 0 && (
+                        <div className="mt-3 border-t border-[#EADFCA]/40 pt-3 max-h-36 overflow-y-auto space-y-1.5">
+                          <p className="text-[9px] font-bold text-[#2B2620]/50 uppercase tracking-wider mb-1">Session Checklist</p>
+                          {subSessionsList.map((name: string, idx: number) => {
+                            const isCompleted = idx < pkg.sessionsUsed;
+                            return (
+                              <label key={idx} className="flex items-center gap-2 text-xs text-[#2B2620] font-semibold cursor-pointer">
+                                <input 
+                                  type="checkbox" 
+                                  checked={isCompleted}
+                                  onChange={async () => {
+                                    const newUsed = isCompleted ? idx : idx + 1;
+                                    const res = await fetch(`/api/packages/${pkg.id}`, {
+                                      method: 'PATCH',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ sessionsUsed: newUsed })
+                                    });
+                                    if (res.ok) refetchPackages();
+                                  }}
+                                  className="accent-primary h-3.5 w-3.5"
+                                />
+                                <span className={isCompleted ? 'line-through text-[#2B2620]/45' : ''}>
+                                  {name || `Session ${idx + 1}`}
+                                </span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">
-                      {pkg.sessionsUsed} of {pkg.totalSessions} sessions completed.
-                    </p>
                     
-                    {/* Progress Bar */}
-                    <div className="w-full bg-[#EADFCA]/40 rounded-full h-2 mb-4">
-                      <div 
-                        className="bg-primary h-2 rounded-full transition-all" 
-                        style={{ width: `${(pkg.sessionsUsed / pkg.totalSessions) * 100}%` }}
-                      ></div>
-                    </div>
+                    <button
+                      disabled={pkg.sessionsUsed >= pkg.totalSessions}
+                      onClick={async () => {
+                        const res = await fetch(`/api/packages/${pkg.id}`, {
+                          method: 'PATCH',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ sessionsUsed: pkg.sessionsUsed + 1 })
+                        });
+                        if (res.ok) {
+                          refetchPackages();
+                        }
+                      }}
+                      className="w-full mt-4 py-2 bg-[#FAF6EF] hover:bg-[#EADFCA] text-[#2B2620] text-xs font-bold rounded-xl border border-[#EADFCA] transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {pkg.sessionsUsed >= pkg.totalSessions ? 'Package Completed' : 'Deduct Session'}
+                    </button>
                   </div>
-                  
-                  <button
-                    disabled={pkg.sessionsUsed >= pkg.totalSessions}
-                    onClick={async () => {
-                      const res = await fetch(`/api/packages/${pkg.id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ sessionsUsed: pkg.sessionsUsed + 1 })
-                      });
-                      if (res.ok) {
-                        refetchPackages();
-                      }
-                    }}
-                    className="w-full py-2 bg-[#FAF6EF] hover:bg-[#EADFCA] text-[#2B2620] text-xs font-bold rounded-xl border border-[#EADFCA] transition-colors disabled:opacity-50 cursor-pointer"
-                  >
-                    {pkg.sessionsUsed >= pkg.totalSessions ? 'Package Completed' : 'Deduct Session'}
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
       )}
+
+      {/* Add New Package Modal */}
+      <AnimatePresence>
+        {isAddingPackage && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsAddingPackage(false)} />
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-md flex flex-col z-10 max-h-[85vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h3 className="text-lg font-serif font-bold text-primary mb-2">Create Session Package</h3>
+              <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">Set up prepaid treatment session plans for the patient.</p>
+              
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Package Main Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 10 Class IV Laser Sessions"
+                    value={packageName}
+                    onChange={(e) => setPackageName(e.target.value)}
+                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Sessions</label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={50}
+                    value={totalSessions}
+                    onChange={(e) => handleTotalSessionsChange(parseInt(e.target.value) || 1)}
+                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                  />
+                </div>
+                
+                <div className="space-y-2 border-t border-[#EADFCA]/60 pt-3">
+                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 block">Individual Session Names (Sub-names)</label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                    {Array.from({ length: totalSessions }).map((_, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono text-[#2B2620]/50 w-6">#{idx + 1}</span>
+                        <input
+                          type="text"
+                          placeholder={`Session ${idx + 1} specific focus`}
+                          value={subNamesInput[idx] || ''}
+                          onChange={(e) => {
+                            const next = [...subNamesInput];
+                            next[idx] = e.target.value;
+                            setSubNamesInput(next);
+                          }}
+                          className="block flex-1 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-1.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                  <button
+                    onClick={() => setIsAddingPackage(false)}
+                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!packageName.trim()) return alert('Please enter package name');
+                      const res = await fetch('/api/packages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          patientId,
+                          packageName,
+                          totalSessions,
+                          subSessionNames: JSON.stringify(subNamesInput),
+                        })
+                      });
+                      if (res.ok) {
+                        refetchPackages();
+                        setIsAddingPackage(false);
+                        setPackageName('');
+                        handleTotalSessionsChange(10);
+                      } else {
+                        alert('Failed to create package');
+                      }
+                    }}
+                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
+                  >
+                    Save Package
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Document Viewer Modal */}
+      <AnimatePresence>
+        {viewingDoc && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setViewingDoc(null)} />
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-3xl flex flex-col z-10 max-h-[85vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-center pb-4 border-b border-[#EADFCA]/60 mb-4">
+                <div>
+                  <h3 className="text-lg font-serif font-bold text-[#2B2620]">{viewingDoc.displayName}</h3>
+                  <p className="text-[10px] text-[#2B2620]/50 font-bold uppercase tracking-wider">{viewingDoc.fileType}</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <a 
+                    href={viewingDoc.url} 
+                    download 
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2 rounded-xl border border-[#EADFCA] hover:bg-[#FAF6EF] text-[#2B2620] cursor-pointer"
+                  >
+                    <Download className="h-4 w-4" />
+                  </a>
+                  <button onClick={() => setViewingDoc(null)} className="p-2 rounded-xl border border-[#EADFCA] hover:bg-[#FAF6EF] text-[#2B2620] cursor-pointer">
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto flex items-center justify-center min-h-[350px] bg-[#FAF6EF]/40 rounded-2xl border border-[#EADFCA]/60 p-4">
+                {viewingDoc.url.toLowerCase().endsWith('.pdf') || viewingDoc.fileType === 'PDF' ? (
+                  <iframe src={viewingDoc.url} className="w-full h-[55vh] rounded-xl border-0" />
+                ) : viewingDoc.url.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/) || ['X-Ray', 'MRI'].includes(viewingDoc.fileType) ? (
+                  <img src={viewingDoc.url} alt={viewingDoc.displayName} className="max-w-full max-h-[55vh] object-contain rounded-xl shadow-xs" />
+                ) : (
+                  <div className="text-center py-10 space-y-3">
+                    <File className="h-12 w-12 text-[#2B2620]/30 mx-auto" />
+                    <p className="text-xs text-[#2B2620]/60 font-semibold">Preview not supported for this file type.</p>
+                    <a 
+                      href={viewingDoc.url} 
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-block px-4 py-2 bg-primary text-background text-xs font-bold rounded-xl"
+                    >
+                      Open in New Tab
+                    </a>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Custom Confirm Delete Modal */}
+      <AnimatePresence>
+        {confirmDelete.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setConfirmDelete(prev => ({ ...prev, isOpen: false }))} />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-sm flex flex-col z-10 text-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-3">
+                <AlertTriangle className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-serif font-bold text-[#2B2620] mb-2">{confirmDelete.title}</h3>
+              <p className="text-xs text-[#2B2620]/60 font-semibold mb-6">{confirmDelete.message}</p>
+              
+              <div className="flex gap-3 justify-center">
+                <button
+                  onClick={() => setConfirmDelete(prev => ({ ...prev, isOpen: false }))}
+                  className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer flex-1"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete.onConfirm}
+                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl cursor-pointer flex-1"
+                >
+                  Confirm Delete
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
