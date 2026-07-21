@@ -505,23 +505,28 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       const fileExt = uploadFileObj.name.split('.').pop();
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
-
-      // Upload directly from the browser to Supabase Storage (bypasses server payload limits)
-      const { error: uploadError } = await supabase.storage
-        .from('health360_documents')
-        .upload(filePath, uploadFileObj, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (uploadError) {
-        throw new Error(uploadError.message || 'Supabase upload failed');
+      if (uploadFileObj.size > 4.5 * 1024 * 1024) {
+        alert("File is too large! Please select a file under 4.5MB. (Vercel Server Limit)");
+        setIsUploadingToSupabase(false);
+        return;
       }
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('health360_documents')
-        .getPublicUrl(filePath);
+      const formData = new FormData();
+      formData.append('file', uploadFileObj);
+      formData.append('patientId', patientId);
+      formData.append('fileName', filePath);
 
+      const uploadRes = await fetch('/api/patients/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const { publicUrl } = await uploadRes.json();
       const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
       updatePatientMutation.mutate({
         attachment: {

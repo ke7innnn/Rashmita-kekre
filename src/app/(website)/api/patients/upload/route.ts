@@ -25,9 +25,8 @@ export async function POST(req: NextRequest) {
     const { error: uploadError } = await supabase.storage
       .from('health360_documents')
       .upload(fileName, buffer, {
-        contentType: file.type,
-        duplex: 'half'
-      } as any);
+        contentType: file.type
+      });
 
     if (uploadError) {
       console.error('Supabase upload error:', uploadError);
