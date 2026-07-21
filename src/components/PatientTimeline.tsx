@@ -546,23 +546,22 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       
       const compressedBlob = await compressImage(uploadFileObj);
 
-      // Upload via our own backend API to bypass AdBlockers (like uBlock Origin) blocking Supabase domains!
-      const formData = new FormData();
-      formData.append('file', compressedBlob, uploadFileObj.name);
-      formData.append('patientId', patientId);
-      formData.append('fileName', filePath);
+      // Upload directly from the browser to Supabase Storage (matching UKA Management System)
+      const { error: uploadError } = await supabase.storage
+        .from('health360_documents')
+        .upload(filePath, compressedBlob, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: uploadFileObj.type || 'application/octet-stream'
+        });
 
-      const uploadRes = await fetch('/api/patients/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!uploadRes.ok) {
-        const errorData = await uploadRes.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Backend upload failed');
+      if (uploadError) {
+        throw new Error(uploadError.message || 'Supabase upload failed');
       }
 
-      const { publicUrl } = await uploadRes.json();
+      const { data: { publicUrl } } = supabase.storage
+        .from('health360_documents')
+        .getPublicUrl(filePath);
       const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
       updatePatientMutation.mutate({
         attachment: {
