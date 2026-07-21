@@ -540,6 +540,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     setIsUploadingToSupabase(true);
     
     try {
+      // Temporary debug alert to inspect the Supabase URL on the client-side
+      const testUrl = supabase.storage.from('health360_documents').getPublicUrl('test').data.publicUrl;
+      alert(`DEBUG INFO:\nURL: ${testUrl}\nAnon Key length: ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.length}`);
+
       const fileExt = uploadFileObj.name.split('.').pop();
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
