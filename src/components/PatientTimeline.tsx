@@ -2271,7 +2271,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 </div>
                 <div className="flex items-center gap-2">
                   <a 
-                    href={viewingDoc.url} 
+                    href={viewingDoc.url + '&download=true'} 
                     download 
                     target="_blank"
                     rel="noreferrer"

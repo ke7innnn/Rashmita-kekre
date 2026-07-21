@@ -68,11 +68,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: `Supabase download failed with status ${fileData.statusCode}` }, { status: fileData.statusCode });
     }
 
+    const fileName = path.split('/').pop() || 'file';
+    const isDownload = searchParams.get('download') === 'true';
+    const disposition = isDownload 
+      ? `attachment; filename="${encodeURIComponent(fileName)}"` 
+      : `inline; filename="${encodeURIComponent(fileName)}"`;
+
     return new Response(new Uint8Array(fileData.buffer), {
       headers: {
         'Content-Type': fileData.contentType,
         'Cache-Control': 'public, max-age=3600',
-        'Content-Disposition': 'inline'
+        'Content-Disposition': disposition
       }
     });
   } catch (error: any) {
