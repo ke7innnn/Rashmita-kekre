@@ -30,10 +30,30 @@ export async function POST(req: NextRequest) {
     
     const uploadPath = `/storage/v1/object/health360_documents/${encodeURI(fileName)}`;
     
+    // DNS bypass logic: If Vercel fails to resolve the Supabase host (getaddrinfo ENOTFOUND),
+    // fallback to a stable Cloudflare IP address and route via SNI headers.
+    let ipAddress = 'cqisdrbprijcwbybsllq.supabase.co';
+    try {
+      const dns = require('dns').promises;
+      const ips = await dns.resolve4('cqisdrbprijcwbybsllq.supabase.co').catch(() => []);
+      if (ips && ips.length > 0) {
+        ipAddress = ips[0];
+      } else {
+        ipAddress = '172.64.149.246'; // Fallback Cloudflare IP
+      }
+    } catch (e) {
+      ipAddress = '172.64.149.246';
+    }
+
     const uploadError = await new Promise<any>((resolve) => {
-      const reqConfig = https.request(supabaseUrl + uploadPath, {
+      const reqConfig = https.request({
+        hostname: ipAddress,
+        port: 443,
+        path: uploadPath,
         method: 'POST',
+        servername: 'cqisdrbprijcwbybsllq.supabase.co', // Force SNI certificate matching
         headers: {
+          'Host': 'cqisdrbprijcwbybsllq.supabase.co',
           'Authorization': `Bearer ${supabaseKey}`,
           'apikey': supabaseKey,
           'Content-Type': file.type || 'application/octet-stream',
