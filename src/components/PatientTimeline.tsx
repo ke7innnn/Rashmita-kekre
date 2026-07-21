@@ -450,18 +450,25 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     
     try {
       const fileExt = uploadFileObj.name.split('.').pop();
-      const fileName = `${Date.now()}_${uploadFileName.replace(/\\s+/g, '_')}.${fileExt}`;
+      const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from('health360_documents')
-        .upload(filePath, uploadFileObj);
+      const formData = new FormData();
+      formData.append('file', uploadFileObj);
+      formData.append('patientId', patientId);
+      formData.append('fileName', filePath);
 
-      if (uploadError) throw uploadError;
+      const uploadRes = await fetch('/api/patients/upload', {
+        method: 'POST',
+        body: formData,
+      });
 
-      const { data: { publicUrl } } = supabase.storage
-        .from('health360_documents')
-        .getPublicUrl(filePath);
+      if (!uploadRes.ok) {
+        const errorData = await uploadRes.json();
+        throw new Error(errorData.error || 'Upload failed');
+      }
+
+      const { publicUrl } = await uploadRes.json();
 
       const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
       updatePatientMutation.mutate({
@@ -481,10 +488,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           setIsUploadingToSupabase(false);
         }
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error('File upload failed:', err);
       setIsUploadingToSupabase(false);
-      alert('Failed to upload file. Please try again.');
+      alert('Failed to upload file: ' + (err.message || 'Please try again.'));
     }
   };
 
