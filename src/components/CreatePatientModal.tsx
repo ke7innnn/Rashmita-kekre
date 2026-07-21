@@ -51,7 +51,7 @@ function calculateDobFromAge(years: number, months: number) {
 const createPatientSchema = z.object({
   fullName: z.string().min(1, 'Patient Name is required'),
   gender: z.string().min(1, 'Gender is required'),
-  dateOfBirth: z.string().min(1, 'Date of Birth is required'),
+  dateOfBirth: z.string().optional(),
   phoneCountryCode: z.string().default('+91'),
   phoneLocal: z.string().min(10, 'Valid 10-digit mobile number is required'),
   email: z.string().optional(),
@@ -195,7 +195,7 @@ export default function CreatePatientModal({
     const payload = {
       fullName: data.fullName,
       gender: data.gender,
-      dateOfBirth: new Date(data.dateOfBirth),
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : new Date(),
       phone: `${data.phoneCountryCode}${data.phoneLocal}`,
       address: data.address || '',
       referringDoctor: data.referringDoctor || '',

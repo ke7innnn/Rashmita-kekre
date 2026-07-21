@@ -315,7 +315,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                   }`}
                 >
                   {/* Doctor Profile Banner */}
-                  <div className="p-6 flex flex-col justify-between h-full space-y-4">
+                  <div className="p-6 flex flex-col justify-between space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1 truncate">
                         <h4 className="text-lg font-serif font-bold text-[#2B2620] truncate">
