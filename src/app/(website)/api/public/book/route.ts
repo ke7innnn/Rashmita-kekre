@@ -14,6 +14,48 @@ const publicBookingSchema = z.object({
   notes: z.string().optional(),
 });
 
+export async function GET(req: NextRequest) {
+  try {
+    const { searchParams } = new URL(req.url);
+    const dateStr = searchParams.get('date');
+    if (!dateStr) {
+      return NextResponse.json({ bookedSlots: [], isHoliday: false });
+    }
+
+    const targetDate = new Date(dateStr);
+    targetDate.setHours(0, 0, 0, 0);
+
+    const settings = await prisma.clinicSettings.findUnique({
+      where: { id: 'clinic_settings' },
+    });
+
+    const holidaysList = settings?.holidays 
+      ? settings.holidays.split(',').map((h) => h.trim()).filter(Boolean) 
+      : [];
+
+    const isHoliday = holidaysList.includes(dateStr);
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        date: targetDate,
+        status: {
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS, AppointmentStatus.COMPLETED],
+        },
+      },
+      select: {
+        startTime: true,
+      },
+    });
+
+    const bookedSlots = appointments.map((a) => a.startTime);
+
+    return NextResponse.json({ bookedSlots, isHoliday });
+  } catch (error) {
+    console.error('Error fetching booked slots:', error);
+    return NextResponse.json({ bookedSlots: [], isHoliday: false });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const json = await req.json();
@@ -41,11 +83,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Selected date is a holiday/blocked date.' }, { status: 400 });
     }
 
-    // 3. Validate against working hours
+    // 3. Validate against working hours (Allow slots from 09:00 up to 21:00)
     const { startTime, date } = body;
-    if (startTime < settings.workingHoursStart || startTime >= settings.workingHoursEnd) {
+    if (startTime < '09:00' || startTime >= '21:00') {
       return NextResponse.json({
-        error: `Appointments can only be scheduled between ${settings.workingHoursStart} and ${settings.workingHoursEnd}.`,
+        error: `Appointments can only be scheduled between 09:00 AM and 09:00 PM.`,
       }, { status: 400 });
     }
 

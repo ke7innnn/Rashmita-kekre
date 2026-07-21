@@ -53,7 +53,7 @@ export default function AddAppointmentModal({ onClose, modalities }: Props) {
 
   // Create appointment mutation
   const mutation = useMutation({
-    motionFn: async (data: any) => {
+    mutationFn: async (data: any) => {
       // Calculate end time
       const [hours, minutes] = data.startTime.split(':').map(Number);
       const endMinutes = minutes + data.assignedSlotDuration;
