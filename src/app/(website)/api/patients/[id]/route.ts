@@ -85,6 +85,12 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       };
     }
 
+    if (json.deleteAttachmentId) {
+      await prisma.attachment.delete({
+        where: { id: json.deleteAttachmentId }
+      });
+    }
+
     const updated = await prisma.patient.update({
       where: { id },
       data: dataToUpdate,

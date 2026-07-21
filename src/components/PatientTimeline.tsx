@@ -1208,8 +1208,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           title: 'Remove Document',
                           message: `Are you sure you want to permanently remove "${file.displayName}" from this patient's records?`,
                           onConfirm: () => {
-                            const updatedAttachments = patient.attachments.filter((a: any) => a.id !== file.id);
-                            updatePatientMutation.mutate({ attachments: updatedAttachments });
+                            updatePatientMutation.mutate({ deleteAttachmentId: file.id });
                             setConfirmDelete(prev => ({ ...prev, isOpen: false }));
                           }
                         });
