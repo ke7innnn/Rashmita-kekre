@@ -19,12 +19,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Missing file, patientId, or fileName' }, { status: 400 });
     }
 
-    const buffer = Buffer.from(await file.arrayBuffer());
-    
+    const arrayBuffer = await file.arrayBuffer();
+
     // Upload using backend service role supabase client (bypasses RLS)
     const { error: uploadError } = await supabase.storage
       .from('health360_documents')
-      .upload(fileName, buffer, {
+      .upload(fileName, arrayBuffer, {
         contentType: file.type
       });
 
