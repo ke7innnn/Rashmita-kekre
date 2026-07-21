@@ -27,45 +27,29 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send SMS via Fast2SMS
-    const fast2SmsKey = process.env.FAST2SMS_API_KEY;
+    // Send SMS via MSG91 OTP API
+    const msg91AuthKey = process.env.MSG91_AUTH_KEY || '552679AiTV4h5NbNZY6a5fb69dP1';
+    const msg91TemplateId = process.env.MSG91_TEMPLATE_ID || '6a5f80560094e405d00c3a12';
+    
     let smsSent = false;
     let smsError: string | null = null;
 
-    if (!fast2SmsKey) {
-      console.error('[OTP] FAST2SMS_API_KEY is NOT set in environment variables!');
-      smsError = 'SMS service not configured (missing API key)';
-    } else {
-      const message = `Your HEALTH 360 booking OTP is ${otp}. It is valid for 10 minutes.`;
+    try {
+      const msg91Url = `https://control.msg91.com/api/v5/otp?template_id=${msg91TemplateId}&mobile=91${cleanPhone}&authkey=${msg91AuthKey}&otp=${otp}`;
+      const response = await fetch(msg91Url, { method: 'POST' });
+      const data = await response.json();
 
-      try {
-        const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
-          method: 'POST',
-          headers: {
-            'authorization': fast2SmsKey,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            route: 'q',
-            message,
-            flash: 0,
-            numbers: cleanPhone,
-          }),
-        });
+      console.log('[MSG91 OTP] Response for', cleanPhone, ':', JSON.stringify(data));
 
-        const data = await response.json();
-        console.log('[OTP] Fast2SMS response for', cleanPhone, ':', JSON.stringify(data));
-
-        if (data.return === true) {
-          smsSent = true;
-        } else {
-          smsError = JSON.stringify(data);
-          console.error('[OTP] Fast2SMS rejected:', data);
-        }
-      } catch (smsErr: any) {
-        smsError = smsErr?.message || 'fetch error';
-        console.error('[OTP] Fast2SMS fetch error:', smsErr);
+      if (data.type === 'success') {
+        smsSent = true;
+      } else {
+        smsError = JSON.stringify(data);
+        console.error('[MSG91 OTP] Rejected:', data);
       }
+    } catch (smsErr: any) {
+      smsError = smsErr?.message || 'fetch error';
+      console.error('[MSG91 OTP] Fetch error:', smsErr);
     }
 
     if (!smsSent) {
@@ -76,7 +60,7 @@ export async function POST(req: NextRequest) {
       success: true,
       smsSent,
       ...(smsError && { smsError }),
-      message: smsSent ? 'OTP sent successfully' : `OTP generated but SMS failed: ${smsError}`,
+      message: smsSent ? 'OTP sent successfully via MSG91' : `OTP generated but SMS failed: ${smsError}`,
     });
 
   } catch (error) {

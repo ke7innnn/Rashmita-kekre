@@ -12,6 +12,7 @@ const publicBookingSchema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
   treatmentType: z.string().min(1, 'Treatment type is required'),
   notes: z.string().optional(),
+  otp: z.string().optional(),
 });
 
 export async function GET(req: NextRequest) {
@@ -64,6 +65,22 @@ export async function POST(req: NextRequest) {
 
     // Normalize phone to last 10 digits (strip +91, 91, spaces etc)
     body.phone = body.phone.replace(/\D/g, '').slice(-10);
+
+    // Verify OTP if provided
+    if (body.otp) {
+      const validOtp = await prisma.otpRequest.findFirst({
+        where: {
+          phone: body.phone,
+          otp: body.otp,
+          expiresAt: { gte: new Date() },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!validOtp) {
+        return NextResponse.json({ error: 'Invalid or expired OTP. Please try again.' }, { status: 400 });
+      }
+    }
 
     // 1. Fetch Clinic Settings
     const settings = await prisma.clinicSettings.findUnique({
