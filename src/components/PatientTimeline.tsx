@@ -505,28 +505,31 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       const fileExt = uploadFileObj.name.split('.').pop();
       const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
       const filePath = `${patientId}/${fileName}`;
-      if (uploadFileObj.size > 4.5 * 1024 * 1024) {
-        alert("File is too large! Please select a file under 4.5MB. (Vercel Server Limit)");
-        setIsUploadingToSupabase(false);
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('file', uploadFileObj);
-      formData.append('patientId', patientId);
-      formData.append('fileName', filePath);
-
-      const uploadRes = await fetch('/api/patients/upload', {
+      // Upload via Next.js Edge Rewrite Proxy! 
+      // This brilliantly bypasses Vercel's 4.5MB Serverless limit AND Supabase's CORS restrictions!
+      const proxyUrl = `/supabase-proxy/storage/v1/object/health360_documents/${filePath}`;
+      const uploadRes = await fetch(proxyUrl, {
         method: 'POST',
-        body: formData,
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string,
+          'Content-Type': uploadFileObj.type || 'application/octet-stream',
+        },
+        body: uploadFileObj,
       });
 
       if (!uploadRes.ok) {
-        const errorData = await uploadRes.json();
-        throw new Error(errorData.error || 'Upload failed');
+        let errorMsg = 'Proxy upload failed';
+        try {
+          const errorData = await uploadRes.json();
+          errorMsg = errorData.message || errorData.error || errorMsg;
+        } catch (e) {}
+        throw new Error(errorMsg);
       }
 
-      const { publicUrl } = await uploadRes.json();
+      const { data: { publicUrl } } = supabase.storage
+        .from('health360_documents')
+        .getPublicUrl(filePath);
       const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
       updatePatientMutation.mutate({
         attachment: {
