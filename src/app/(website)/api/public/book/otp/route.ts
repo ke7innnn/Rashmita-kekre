@@ -29,10 +29,15 @@ export async function POST(req: NextRequest) {
 
     // Send SMS via Fast2SMS
     const fast2SmsKey = process.env.FAST2SMS_API_KEY;
-    
-    if (fast2SmsKey) {
+    let smsSent = false;
+    let smsError: string | null = null;
+
+    if (!fast2SmsKey) {
+      console.error('[OTP] FAST2SMS_API_KEY is NOT set in environment variables!');
+      smsError = 'SMS service not configured (missing API key)';
+    } else {
       const message = `Your HEALTH 360 booking OTP is ${otp}. It is valid for 10 minutes.`;
-      
+
       try {
         const response = await fetch('https://www.fast2sms.com/dev/bulkV2', {
           method: 'POST',
@@ -42,27 +47,40 @@ export async function POST(req: NextRequest) {
           },
           body: JSON.stringify({
             route: 'q',
-            message: message,
+            message,
             flash: 0,
             numbers: cleanPhone,
           }),
         });
 
         const data = await response.json();
-        if (!data.return) {
-          console.error('Fast2SMS Error:', data);
+        console.log('[OTP] Fast2SMS response for', cleanPhone, ':', JSON.stringify(data));
+
+        if (data.return === true) {
+          smsSent = true;
+        } else {
+          smsError = JSON.stringify(data);
+          console.error('[OTP] Fast2SMS rejected:', data);
         }
-      } catch (smsErr) {
-        console.error('Fast2SMS fetch error:', smsErr);
+      } catch (smsErr: any) {
+        smsError = smsErr?.message || 'fetch error';
+        console.error('[OTP] Fast2SMS fetch error:', smsErr);
       }
-    } else {
-      console.warn('FAST2SMS_API_KEY is not set. OTP generated but not sent:', otp);
     }
 
-    return NextResponse.json({ success: true, message: 'OTP sent successfully' });
+    if (!smsSent) {
+      console.error(`[OTP] OTP for ${cleanPhone} NOT sent. Reason: ${smsError}`);
+    }
+
+    return NextResponse.json({
+      success: true,
+      smsSent,
+      ...(smsError && { smsError }),
+      message: smsSent ? 'OTP sent successfully' : `OTP generated but SMS failed: ${smsError}`,
+    });
 
   } catch (error) {
-    console.error('Error sending OTP:', error);
+    console.error('[OTP] Server error:', error);
     return NextResponse.json({ error: 'Failed to send OTP' }, { status: 500 });
   }
 }
