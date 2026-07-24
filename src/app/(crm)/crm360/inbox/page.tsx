@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Mail, Phone, ExternalLink, Calendar, CheckCircle2, Circle, Briefcase, Stethoscope, User } from 'lucide-react';
+import { Mail, Phone, ExternalLink, Calendar, CheckCircle2, Circle, Briefcase, Stethoscope, User, Loader2 } from 'lucide-react';
+import GlassPanel from '@/components/GlassPanel';
 
 interface InboxMessage {
   id: string;
@@ -53,79 +54,91 @@ export default function InboxPage() {
   };
 
   const getIcon = (type: string) => {
-    if (type === 'CONTACT') return <User className="text-blue-500" size={20} />;
-    if (type === 'REFERRAL') return <Stethoscope className="text-purple-500" size={20} />;
-    if (type === 'CAREERS') return <Briefcase className="text-orange-500" size={20} />;
-    return <Mail size={20} />;
+    if (type === 'CONTACT') return <User className="text-[#22B8FF]" size={18} />;
+    if (type === 'REFERRAL') return <Stethoscope className="text-[#7B5CFF]" size={18} />;
+    if (type === 'CAREERS') return <Briefcase className="text-[#FFB454]" size={18} />;
+    return <Mail className="text-primary" size={18} />;
   };
 
   const filteredMessages = messages.filter(m => filter === 'ALL' || m.type === filter);
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50/30 p-8 animate-fadeIn">
-      <div className="flex justify-between items-center mb-8">
+    <div className="space-y-6 select-none animate-fadeIn">
+      {/* Header & Filter Bar */}
+      <GlassPanel className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-light text-[#2B2620] mb-2 tracking-tight">Unified Inbox</h1>
-          <p className="text-sm text-[#2B2620]/60">Manage your contact, referral, and career submissions.</p>
+          <h1 className="text-3xl font-serif text-[#F5F3FA] font-bold tracking-tight">Unified Inbox</h1>
+          <p className="text-xs text-[rgba(245,243,250,0.62)] font-medium mt-0.5">Manage your contact, referral, and career submissions.</p>
         </div>
-        <div className="flex bg-white rounded-lg border border-gray-100 p-1">
+        <div className="flex bg-[rgba(255,255,255,0.04)] rounded-xl border border-[rgba(255,255,255,0.08)] p-1 shrink-0">
           {['ALL', 'CONTACT', 'REFERRAL', 'CAREERS'].map(f => (
             <button
               key={f}
               onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${filter === f ? 'bg-primary/10 text-primary' : 'text-gray-500 hover:text-gray-900'}`}
+              className={`px-4 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                filter === f 
+                  ? 'bg-primary/20 text-primary border border-primary/30 shadow-xs' 
+                  : 'text-[rgba(245,243,250,0.6)] hover:text-[#F5F3FA] hover:bg-[rgba(255,255,255,0.04)]'
+              }`}
             >
               {f.charAt(0) + f.slice(1).toLowerCase()}
             </button>
           ))}
         </div>
-      </div>
+      </GlassPanel>
 
       {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full"></div>
+        <div className="flex justify-center items-center h-64 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] rounded-2xl">
+          <Loader2 className="w-8 h-8 text-primary animate-spin" />
         </div>
       ) : filteredMessages.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-64 bg-white rounded-xl border border-gray-100">
-          <Mail className="text-gray-300 mb-4" size={48} />
-          <h3 className="text-lg font-medium text-gray-900">No messages found</h3>
-          <p className="text-gray-500">You're all caught up!</p>
-        </div>
+        <GlassPanel className="flex flex-col items-center justify-center p-16 text-center border-dashed">
+          <Mail className="text-primary/40 mb-3" size={42} />
+          <h3 className="text-base font-serif font-bold text-[#F5F3FA]">No messages found</h3>
+          <p className="text-xs text-[rgba(245,243,250,0.4)] font-medium mt-0.5">You're all caught up!</p>
+        </GlassPanel>
       ) : (
         <div className="space-y-4">
           {filteredMessages.map(msg => (
-            <div key={msg.id} className={`bg-white rounded-xl border p-6 transition-all ${msg.isRead ? 'border-gray-100 opacity-70' : 'border-primary/20 shadow-sm'}`}>
-              <div className="flex items-start justify-between">
+            <GlassPanel key={msg.id} className={`p-6 transition-all ${msg.isRead ? 'opacity-60' : 'border-primary/30 shadow-[0_0_30px_rgba(18,214,196,0.1)]'}`}>
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  <div className="mt-1 p-2 bg-gray-50 rounded-lg">
+                  <div className="p-2.5 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl shrink-0">
                     {getIcon(msg.type)}
                   </div>
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h3 className="text-lg font-semibold text-gray-900">{msg.name}</h3>
-                      <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full font-medium">
-                        {msg.type}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-4 text-sm text-gray-500 mb-4">
-                      {msg.email !== 'N/A' && msg.email !== '' && (
-                        <span className="flex items-center gap-1.5"><Mail size={14} /> {msg.email}</span>
-                      )}
-                      {msg.phone !== 'N/A' && msg.phone !== '' && (
-                        <span className="flex items-center gap-1.5"><Phone size={14} /> {msg.phone}</span>
-                      )}
-                      <span className="flex items-center gap-1.5"><Calendar size={14} /> {new Date(msg.createdAt).toLocaleDateString()}</span>
+                  <div className="space-y-3">
+                    <div>
+                      <div className="flex items-center gap-3 mb-1">
+                        <h3 className="text-base font-serif font-bold text-[#F5F3FA]">{msg.name}</h3>
+                        <span className="text-[9px] eyebrow px-2.5 py-0.5 bg-[rgba(255,255,255,0.04)] text-primary border border-primary/20 rounded-full font-bold">
+                          {msg.type}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-4 text-xs text-[rgba(245,243,250,0.6)] font-medium">
+                        {msg.email && msg.email !== 'N/A' && (
+                          <span className="flex items-center gap-1.5"><Mail size={13} className="text-primary" /> {msg.email}</span>
+                        )}
+                        {msg.phone && msg.phone !== 'N/A' && (
+                          <span className="flex items-center gap-1.5"><Phone size={13} className="text-primary" /> {msg.phone}</span>
+                        )}
+                        <span className="flex items-center gap-1.5 num-tabular"><Calendar size={13} className="text-primary" /> {new Date(msg.createdAt).toLocaleDateString()}</span>
+                      </div>
                     </div>
                     
                     {msg.message && (
-                      <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 leading-relaxed max-w-3xl">
+                      <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)] p-4 rounded-xl text-xs text-[rgba(245,243,250,0.8)] leading-relaxed max-w-3xl font-medium">
                         {msg.message}
                       </div>
                     )}
 
                     {msg.attachmentUrl && (
-                      <a href={msg.attachmentUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary hover:underline bg-primary/5 px-4 py-2 rounded-lg">
-                        <ExternalLink size={16} />
+                      <a 
+                        href={msg.attachmentUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center gap-2 text-xs font-bold text-primary hover:underline bg-primary/10 border border-primary/20 px-4 py-2 rounded-xl transition-all cursor-pointer"
+                      >
+                        <ExternalLink size={14} />
                         View Attached Document
                       </a>
                     )}
@@ -134,13 +147,17 @@ export default function InboxPage() {
                 
                 <button
                   onClick={() => markAsRead(msg.id, msg.isRead)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${msg.isRead ? 'bg-gray-100 text-gray-600 hover:bg-gray-200' : 'bg-primary/10 text-primary hover:bg-primary/20'}`}
+                  className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                    msg.isRead 
+                      ? 'bg-[rgba(255,255,255,0.04)] text-[rgba(245,243,250,0.5)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.08)]' 
+                      : 'bg-primary/15 text-primary border-primary/30 hover:bg-primary/25 shadow-xs'
+                  }`}
                 >
-                  {msg.isRead ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+                  {msg.isRead ? <CheckCircle2 size={15} /> : <Circle size={15} />}
                   {msg.isRead ? 'Read' : 'Mark as read'}
                 </button>
               </div>
-            </div>
+            </GlassPanel>
           ))}
         </div>
       )}

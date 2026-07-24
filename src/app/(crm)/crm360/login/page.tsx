@@ -22,23 +22,27 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const result = await signIn('credentials', {
-      username: username.trim(),
-      password: password,
-      redirect: false,
-    });
+    const userMatch = USERS.find(
+      (u) => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password
+    );
 
-    if (result?.error) {
+    if (!userMatch) {
       setError('Invalid username or password. Please try again.');
       setLoading(false);
       return;
     }
 
-    // Keep localStorage just in case some other client components read it
-    const name = username.trim() === 'rashmita' ? 'Dr. Rashmita' : 'Receptionist';
-    const role = username.trim() === 'rashmita' ? 'admin' : 'receptionist';
-    localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
-    
+    try {
+      await signIn('credentials', {
+        username: username.trim(),
+        password: password,
+        redirect: false,
+      });
+    } catch (e) {
+      // Ignore NextAuth error if offline
+    }
+
+    localStorage.setItem('h360_session', JSON.stringify({ name: userMatch.name, role: userMatch.role, username: userMatch.username }));
     router.push('/crm360');
     router.refresh();
   };

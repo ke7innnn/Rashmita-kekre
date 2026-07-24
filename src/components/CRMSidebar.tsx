@@ -9,6 +9,7 @@ import {
   LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
+import AuroraBackground from './AuroraBackground';
 
 interface Props {
   children: React.ReactNode;
@@ -69,8 +70,8 @@ export default function CRMSidebar({ children }: Props) {
 
   if (isAuthenticated === null) {
     return (
-      <div className="flex min-h-screen bg-[#FAF6EF] items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      <div className="flex min-h-screen bg-[#0A0711] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#12D6C4]" />
       </div>
     );
   }
@@ -78,25 +79,30 @@ export default function CRMSidebar({ children }: Props) {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex min-h-screen bg-background text-foreground font-sans antialiased selection:bg-primary/10">
+    <div className="flex min-h-screen bg-[#0A0711] text-[#F5F3FA] font-sans antialiased selection:bg-primary/20 relative">
+      <AuroraBackground />
+
       {/* Sidebar Navigation (Desktop) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#FFFCF6]/85 backdrop-blur-md border-r border-[#EADFCA] p-4 justify-between shrink-0 shadow-[2px_0_18px_rgba(42,38,32,0.01)]">
-        <div className="space-y-5">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[rgba(18,13,31,0.75)] backdrop-blur-2xl border-r border-[rgba(255,255,255,0.08)] p-4 justify-between shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.3)]">
+        <div className="space-y-6">
           {/* Logo Branding */}
-          <div className="flex items-center gap-3.5 border-b border-[#EADFCA]/45 pb-3">
-            <img 
-              src="/logo/rklogo.png" 
-              alt="Health 360 Icon" 
-              className="h-16 w-16 object-contain shrink-0"
-            />
+          <div className="flex items-center gap-3.5 border-b border-[rgba(255,255,255,0.08)] pb-4">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-40 animate-pulse transition-colors duration-500" />
+              <img 
+                src="/logo/rklogo.png" 
+                alt="Health 360 Icon" 
+                className="h-12 w-12 object-contain relative z-10"
+              />
+            </div>
             <div>
-              <h1 className="text-xl font-serif font-bold leading-tight text-[#2B2620]">Health 360</h1>
-              <p className="text-[9px] font-bold text-foreground/45 uppercase tracking-widest mt-0.5">Physiotherapy</p>
+              <h1 className="text-lg font-serif font-bold leading-tight text-[#F5F3FA]">Health 360</h1>
+              <p className="text-[10px] font-semibold text-[rgba(245,243,250,0.4)] uppercase tracking-widest mt-0.5">Physiotherapy</p>
             </div>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-0.5 relative">
+          <nav className="space-y-1 relative">
             {navigation.map((item) => {
               const Icon = item.icon;
               const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
@@ -107,12 +113,10 @@ export default function CRMSidebar({ children }: Props) {
                     key={item.id}
                     onClick={() => setShowRedirectModal(true)}
                     whileTap={{ scale: 0.97 }}
-                    className="w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors duration-150 relative cursor-pointer focus:outline-none text-[#2B2620]/60 hover:text-[#2B2620] hover:bg-[#FAF6EF]/50"
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-150 relative cursor-pointer focus:outline-none text-[rgba(245,243,250,0.62)] hover:text-[#F5F3FA] hover:bg-[rgba(255,255,255,0.04)]"
                   >
-                    <span className="relative z-10 flex items-center gap-2.5 w-full">
-                      <Icon className="h-4 w-4 stroke-[1.75]" />
-                      {item.name}
-                    </span>
+                    <Icon className="h-4 w-4 stroke-[1.75]" />
+                    <span>{item.name}</span>
                   </motion.button>
                 );
               }
@@ -121,24 +125,22 @@ export default function CRMSidebar({ children }: Props) {
                 <Link key={item.href} href={item.href!}>
                   <motion.div
                     whileTap={{ scale: 0.97 }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-semibold rounded-lg transition-colors duration-150 relative cursor-pointer focus:outline-none ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-150 relative cursor-pointer focus:outline-none ${
                       isActive 
-                        ? 'text-background' 
-                        : 'text-[#2B2620]/60 hover:text-[#2B2620] hover:bg-[#FAF6EF]/50'
+                        ? 'text-[#F5F3FA] bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
+                        : 'text-[rgba(245,243,250,0.62)] hover:text-[#F5F3FA] hover:bg-[rgba(255,255,255,0.04)]'
                     }`}
                   >
                     {isActive && (
-                      <motion.div
-                        layoutId="active-nav-pill"
-                        className="absolute inset-0 bg-primary rounded-lg shadow-xxs"
-                        transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                        style={{ zIndex: 0 }}
-                      />
+                      <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-primary rounded-r-full shadow-[0_0_12px_var(--primary)] transition-colors duration-300" />
                     )}
-                    <span className="relative z-10 flex items-center gap-2.5 w-full">
-                      <Icon className="h-4 w-4 stroke-[1.75]" />
+                    <span className="flex items-center gap-3 z-10">
+                      <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-primary' : ''}`} />
                       {item.name}
                     </span>
+                    {isActive && (
+                      <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)] z-10 transition-colors duration-300" />
+                    )}
                   </motion.div>
                 </Link>
               );
@@ -147,51 +149,51 @@ export default function CRMSidebar({ children }: Props) {
         </div>
 
         {/* User profile / Log Out */}
-        <div className="border-t border-[#EADFCA] pt-3 space-y-3">
-          <div className="flex flex-col items-center text-center gap-1.5 p-3 bg-[#FAF6EF]/60 border border-[#EADFCA] rounded-xl shadow-xxs">
-            <div className="h-10 w-10 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center font-serif text-primary font-bold text-base">
+        <div className="border-t border-[rgba(255,255,255,0.08)] pt-4 space-y-3">
+          <div className="flex items-center gap-3 p-3 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl shadow-inner">
+            <div className="h-9 w-9 rounded-full bg-[rgba(255,255,255,0.04)] border border-primary/30 flex items-center justify-center font-serif text-primary font-bold text-sm shrink-0 transition-colors">
               {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
             </div>
-            <div className="truncate w-full">
-              <p className="text-xs font-bold text-[#2B2620] truncate capitalize">{user.name}</p>
-              <p className="text-[9px] text-foreground/45 capitalize font-bold tracking-wider mt-0.5">Authorized Operator</p>
+            <div className="truncate flex-1">
+              <p className="text-xs font-bold text-[#F5F3FA] truncate capitalize">{user.name}</p>
+              <p className="text-[10px] text-[rgba(245,243,250,0.4)] capitalize font-semibold truncate">{user.role} Operator</p>
             </div>
-            <span className="text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 bg-primary text-background rounded-full">
-              {user.role} Status
-            </span>
+            <button
+              onClick={handleSignOut}
+              className="p-1.5 rounded-lg hover:bg-[rgba(255,93,122,0.12)] text-[rgba(245,243,250,0.4)] hover:text-[#FF5D7A] transition-colors cursor-pointer"
+              title="Sign Out"
+            >
+              <LogOut className="h-4 w-4 stroke-[1.75]" />
+            </button>
           </div>
-
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 hover:text-red-700 rounded-xl transition-all cursor-pointer"
-          >
-            <LogOut className="h-4.5 w-4.5 stroke-[1.75]" />
-            Sign Out
-          </button>
         </div>
       </aside>
 
-      {/* Main Content Wrapper */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        {/* Mobile Header */}
-        <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[#FFFCF6]/90 backdrop-blur-md border-b border-[#EADFCA] shadow-xs">
-          <div className="flex items-center gap-2.5">
-            <img 
-              src="/logo/rklogo.png" 
-              alt="Health 360 Icon" 
-              className="h-14 w-14 object-contain shrink-0"
-            />
-            <h1 className="text-xl font-serif font-semibold text-[#2B2620]">Health 360</h1>
+      {/* Main Content Shell */}
+      <div className="flex-1 flex flex-col min-w-0 z-10">
+        {/* Mobile Header Bar */}
+        <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[rgba(18,13,31,0.8)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.08)] sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <div className="relative shrink-0">
+              <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-40 animate-pulse" />
+              <img 
+                src="/logo/rklogo.png" 
+                alt="Health 360 Icon" 
+                className="h-9 w-9 object-contain relative z-10"
+              />
+            </div>
+            <h1 className="text-lg font-serif font-semibold text-[#F5F3FA]">Health 360</h1>
           </div>
-          <button 
+
+          <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-1 rounded-lg hover:bg-background border border-[#EADFCA] cursor-pointer"
+            className="p-2 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[#F5F3FA] cursor-pointer"
           >
-            {mobileMenuOpen ? <X className="h-5 w-5 stroke-[1.75]" /> : <Menu className="h-5 w-5 stroke-[1.75]" />}
+            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </header>
 
-        {/* Mobile Menu Dropdown */}
+        {/* Mobile Dropdown Navigation */}
         <AnimatePresence>
           {mobileMenuOpen && (
             <motion.div 
@@ -199,7 +201,7 @@ export default function CRMSidebar({ children }: Props) {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ duration: 0.2, ease: 'easeInOut' }}
-              className="lg:hidden bg-[#FFFCF6] border-b border-[#EADFCA] px-6 py-4 space-y-3 shadow-md overflow-hidden"
+              className="lg:hidden bg-[#120D1F] border-b border-[rgba(255,255,255,0.08)] px-6 py-4 space-y-3 shadow-2xl overflow-hidden"
             >
               <nav className="space-y-1">
                 {navigation.map((item) => {
@@ -214,7 +216,7 @@ export default function CRMSidebar({ children }: Props) {
                           setShowRedirectModal(true);
                           setMobileMenuOpen(false);
                         }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg text-[#2B2620]/60 hover:bg-background"
+                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl text-[rgba(245,243,250,0.62)] hover:bg-[rgba(255,255,255,0.04)]"
                       >
                         <Icon className="h-4.5 w-4.5 stroke-[1.75]" />
                         {item.name}
@@ -224,10 +226,10 @@ export default function CRMSidebar({ children }: Props) {
 
                   return (
                     <Link key={item.href} href={item.href!} onClick={() => setMobileMenuOpen(false)}>
-                      <div className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-lg ${
+                      <div className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl ${
                         isActive 
-                          ? 'bg-primary text-background shadow-xs' 
-                          : 'text-[#2B2620]/60 hover:bg-background'
+                          ? 'bg-[rgba(255,255,255,0.06)] text-primary border border-primary/30' 
+                          : 'text-[rgba(245,243,250,0.62)] hover:bg-[rgba(255,255,255,0.04)]'
                       }`}>
                         <Icon className="h-4.5 w-4.5 stroke-[1.75]" />
                         {item.name}
@@ -236,19 +238,19 @@ export default function CRMSidebar({ children }: Props) {
                   );
                 })}
               </nav>
-              <div className="border-t border-[#EADFCA] pt-3 flex justify-between items-center">
-                <div className="flex items-center gap-2">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary">
+              <div className="border-t border-[rgba(255,255,255,0.08)] pt-3 flex justify-between items-center">
+                <div className="flex items-center gap-2.5">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(255,255,255,0.04)] text-primary border border-primary/30">
                     <UserIcon className="h-4 w-4 stroke-[1.75]" />
                   </span>
                   <div>
-                    <p className="text-xs font-bold text-[#2B2620] capitalize">{user.name}</p>
-                    <p className="text-xxs text-foreground/45 capitalize">{user.role}</p>
+                    <p className="text-xs font-bold text-[#F5F3FA] capitalize">{user.name}</p>
+                    <p className="text-[10px] text-[rgba(245,243,250,0.4)] capitalize">{user.role}</p>
                   </div>
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-red-200 text-red-600 hover:bg-red-50 text-xs font-semibold rounded-lg transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,93,122,0.3)] text-[#FF5D7A] hover:bg-[rgba(255,93,122,0.1)] text-xs font-semibold rounded-xl transition-all"
                 >
                   <LogOut className="h-3.5 w-3.5 stroke-[1.75]" />
                   Sign Out
@@ -259,14 +261,14 @@ export default function CRMSidebar({ children }: Props) {
         </AnimatePresence>
 
         {/* Tab Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#FAF6EF]">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-transparent">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 15 }}
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -15 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+              exit={{ opacity: 0, y: -12 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 26 }}
               className="h-full"
             >
               {children}
@@ -284,43 +286,42 @@ export default function CRMSidebar({ children }: Props) {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setShowRedirectModal(false)}
-              className="absolute inset-0 backdrop-blur-md"
-              style={{ backgroundColor: 'rgba(43, 38, 32, 0.3)' }}
+              className="absolute inset-0 backdrop-blur-md bg-black/60"
             />
             <motion.div
               initial={{ scale: 0.95, y: 15, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.95, y: 15, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-              className="relative bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-[0_24px_50px_rgba(42,38,32,0.15)] w-full max-w-sm z-10 flex flex-col items-center text-center space-y-4"
+              className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.12)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.5)] w-full max-w-sm z-10 flex flex-col items-center text-center space-y-4"
             >
               <button 
                 onClick={() => setShowRedirectModal(false)}
-                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-background text-[#2B2620]/45 hover:text-[#2B2620] cursor-pointer"
+                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-[rgba(255,255,255,0.08)] text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA] cursor-pointer"
               >
                 <X className="h-4.5 w-4.5 stroke-[1.75]" />
               </button>
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <div className="h-12 w-12 rounded-full bg-[rgba(255,255,255,0.04)] border border-primary/30 flex items-center justify-center text-primary">
                 <PhoneCall className="h-5.5 w-5.5 stroke-[1.75]" />
               </div>
               <div className="space-y-1.5 px-2">
-                <h3 className="text-xl font-serif font-bold text-[#2B2620]">
+                <h3 className="text-xl font-serif font-bold text-[#F5F3FA]">
                   Redirect to Voice App?
                 </h3>
-                <p className="text-xs text-[#2B2620]/65 leading-relaxed font-semibold">
+                <p className="text-xs text-[rgba(245,243,250,0.62)] leading-relaxed font-medium">
                   Would you like to open the external Health 360 AI Voice Agent application?
                 </p>
               </div>
               <div className="flex w-full gap-3 pt-2">
                 <button
                   onClick={() => setShowRedirectModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-[#EADFCA] hover:bg-background text-xs font-bold rounded-xl transition-colors text-[#2B2620]/80"
+                  className="flex-1 px-4 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors text-[rgba(245,243,250,0.8)]"
                 >
                   No, Cancel
                 </button>
                 <button
                   onClick={handleConfirmRedirect}
-                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-[#3C5040] text-white text-xs font-bold rounded-xl transition-colors"
+                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors shadow-[0_0_20px_rgba(18,214,196,0.4)]"
                 >
                   Yes, Redirect
                 </button>

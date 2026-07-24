@@ -2,12 +2,15 @@
 
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Award, Calendar, 
   ArrowRight, ShieldCheck, HeartPulse, UserCheck, ChevronRight,
-  Clock, Sparkles, Plus, Check, Trash2, ArrowUpRight, Share2, Send
+  Clock, Sparkles, Plus, Check, Trash2, ArrowUpRight, Share2, Send,
+  Maximize2, TrendingUp, BarChart3, X
 } from 'lucide-react';
+import GlassPanel from './GlassPanel';
+
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
 
@@ -20,6 +23,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
   const [promotingEntryId, setPromotingEntryId] = useState<string | null>(null);
   const [promoteTime, setPromoteTime] = useState('11:00');
   const [promoteModality, setPromoteModality] = useState('Physiotherapy');
+  const [showDemandModal, setShowDemandModal] = useState(false);
 
   // Fetch today's appointments
   const todayStr = new Date().toISOString().split('T')[0];
@@ -87,6 +91,22 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
   const completedCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.COMPLETED).length;
   const waitingCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.WAITING).length;
 
+  const getDynamicGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) return 'Good Morning, Dr. Rashmita 👋';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon, Dr. Rashmita 👋';
+    return 'Good Evening, Dr. Rashmita 👋';
+  };
+
+  const getFormattedDate = () => {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   return (
     <div className="space-y-6 select-none animate-fadeIn">
       {/* 2-Column Dashboard Shell for Bento Grid */}
@@ -96,87 +116,80 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
         <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
           
           {/* CENTERPIECE HERO CARD */}
-          <div className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-2xl shadow-[0_6px_25px_rgba(42,38,32,0.02)] flex flex-col justify-between relative overflow-hidden min-h-[280px] flex-1">
+          <GlassPanel accent="teal" className="p-6 flex flex-col justify-between relative overflow-hidden min-h-[280px] flex-1">
             
-            {/* Abstract vector 3D sculpture in centerpiece (Opaque, Visible) */}
-            <div className="absolute right-4 top-4 bottom-4 w-1/3 hidden md:block pointer-events-none">
+            {/* Abstract vector 3D sculpture in centerpiece */}
+            <div className="absolute right-4 top-4 bottom-4 w-1/3 hidden md:block pointer-events-none opacity-40">
               <svg viewBox="0 0 200 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                {/* Sage Green Base Blob */}
                 <motion.path 
                   d="M 50,100 C 50,60 140,50 150,100 C 160,150 50,150 50,100" 
-                  fill="#E2ECE9" 
+                  fill="url(#tealGlowGrad)" 
                   animate={{ scale: [1, 1.05, 0.98, 1], rotate: [0, 90, 180, 270, 360] }}
                   transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                 />
-                {/* Terracotta/Amber Accent Sculpture Part */}
-                <motion.path 
-                  d="M 70,100 C 70,70 130,70 130,100 C 130,130 70,130 70,100" 
-                  fill="#FCE2DB"
-                  animate={{ rotate: [360, 270, 180, 90, 0], scale: [0.95, 1.05, 0.95] }}
-                  transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-                />
-                {/* Inner Core Solid Primary Sage Ball */}
                 <motion.circle 
                   cx="100" 
                   cy="100" 
                   r="20" 
-                  fill="#4E6551"
-                  opacity="0.95"
+                  fill="var(--aurora-teal)"
+                  opacity="0.8"
                   animate={{ scale: [0.9, 1.1, 0.9], y: [0, -4, 0] }}
                   transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                 />
-                {/* Terracotta Core Ball */}
-                <motion.circle 
-                  cx="120" 
-                  cy="90" 
-                  r="12" 
-                  fill="#D98353"
-                  opacity="0.9"
-                  animate={{ x: [0, 8, 0], y: [0, 5, 0] }}
-                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                />
+                <defs>
+                  <linearGradient id="tealGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="var(--aurora-teal)" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="var(--aurora-violet)" stopOpacity="0.1" />
+                  </linearGradient>
+                </defs>
               </svg>
             </div>
 
             <div className="space-y-2 max-w-md relative z-10">
-              <span className="inline-block text-[9px] font-mono font-bold px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full uppercase tracking-wider">
-                Practice Overview
-              </span>
-              <h3 className="text-2xl font-serif text-[#2B2620] font-semibold leading-snug mt-1">
-                Dr. Rashmita's Clinic Desk
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 text-[10px] eyebrow px-3 py-1 bg-[rgba(255,255,255,0.04)] text-primary border border-primary/30 rounded-full">
+                  <Sparkles className="h-3 w-3" />
+                  Practice Overview • {getFormattedDate()}
+                </span>
+              </div>
+              <h3 className="text-2xl md:text-3xl font-sans font-bold tracking-tight text-[#F5F3FA] mt-1.5">
+                {getDynamicGreeting()}
               </h3>
-              <p className="text-xs text-[#2B2620]/60 leading-normal font-semibold mt-1">
-                Manage your daily schedule, check in upcoming patients, and coordinate active voice agent triage logs.
+              <p className="text-xs text-[rgba(245,243,250,0.62)] leading-relaxed font-medium mt-1">
+                {appointmentsList.length > 0 
+                  ? `You have ${appointmentsList.length} patient session${appointmentsList.length === 1 ? '' : 's'} scheduled for today. ${waitingCount > 0 ? `${waitingCount} patient${waitingCount === 1 ? ' is' : 's are'} currently waiting in the lounge.` : 'No patients currently waiting in lounge.'}`
+                  : 'Welcome to your clinic desk. All session logs, waitlist queues, and AI triage streams are active and ready.'
+                }
               </p>
             </div>
 
             {/* Today's Daily Intake Checklist */}
-            <div className="space-y-3 relative z-10 w-full mt-6 border-t border-[#EADFCA]/40 pt-4">
+            <div className="space-y-3 relative z-10 w-full mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
               <div className="flex justify-between items-center px-1">
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-[#2B2620]/50 flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-primary" />
+                <h4 className="eyebrow flex items-center gap-2">
+                  <Calendar className="h-4 w-4 text-[#12D6C4]" />
                   Today's Intake Checklist ({appointmentsList.length} scheduled)
                 </h4>
               </div>
 
               <div className="max-h-[180px] overflow-y-auto space-y-2 pr-1 select-none">
                 {appointmentsList.length === 0 ? (
-                  <div className="p-5 text-center bg-[#FAF6EF]/50 rounded-xl border border-[#EADFCA]/50">
-                    <p className="text-xs text-foreground/45 italic font-bold">No appointments registered for today.</p>
+                  <div className="p-5 text-center bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(255,255,255,0.06)]">
+                    <p className="text-xs text-[rgba(245,243,250,0.4)] italic font-medium">No appointments registered for today.</p>
                   </div>
                 ) : (
                   appointmentsList.map((app: any) => {
                     const status = app.status;
                     return (
-                      <div key={app.id} className="flex justify-between items-center p-3 border border-[#EADFCA]/70 bg-[#FAF6EF]/30 hover:bg-[#FAF6EF]/50 rounded-xl gap-4 transition-colors">
+                      <div key={app.id} className="flex justify-between items-center p-3 border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] rounded-xl gap-4 transition-colors">
                         <div className="flex items-center gap-3 truncate w-[75%]">
                           {/* Time tag */}
-                          <span className="text-[10px] font-mono font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-1 rounded-lg shrink-0">
+                          <span className="text-[11px] num-tabular font-bold text-[#12D6C4] bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] px-2.5 py-1 rounded-lg shrink-0">
                             {app.startTime}
                           </span>
                           <div className="truncate">
-                            <p className="text-xs font-bold text-[#2B2620] truncate">{app.patient?.fullName || 'Patient'}</p>
-                            <p className="text-[9px] text-[#2B2620]/50 font-bold uppercase tracking-wider">{app.treatmentType}</p>
+                            <p className="text-xs font-bold text-[#F5F3FA] truncate">{app.patient?.fullName || 'Patient'}</p>
+                            <p className="eyebrow text-[9px] mt-0.5">{app.treatmentType}</p>
                           </div>
                         </div>
 
@@ -184,20 +197,20 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                           {status === 'SCHEDULED' ? (
                             <button
                               onClick={() => checkInMutation.mutate(app.id)}
-                              className="bg-primary hover:bg-[#3C5040] text-background text-[10px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-colors cursor-pointer shadow-xxs border-0"
+                              className="bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-[10px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(18,214,196,0.3)] border-0"
                             >
                               Check In
                             </button>
                           ) : status === 'WAITING' ? (
-                            <span className="text-[9px] font-bold uppercase text-[#D98353] bg-[#D98353]/10 border border-[#D98353]/25 px-2.5 py-1 rounded-full">
+                            <span className="text-[10px] font-bold uppercase text-[#FFB454] bg-[rgba(255,180,84,0.12)] border border-[rgba(255,180,84,0.3)] px-2.5 py-1 rounded-full">
                               Waiting
                             </span>
                           ) : status === 'IN_PROGRESS' ? (
-                            <span className="text-[9px] font-bold uppercase text-primary bg-primary/10 border border-primary/25 px-2.5 py-1 rounded-full">
+                            <span className="text-[10px] font-bold uppercase text-[#19E3B1] bg-[rgba(25,227,177,0.12)] border border-[rgba(25,227,177,0.3)] px-2.5 py-1 rounded-full">
                               In Progress
                             </span>
                           ) : (
-                            <span className="text-[9px] font-bold uppercase text-[#2B2620]/45 bg-[#FAF6EF] border border-[#EADFCA]/50 px-2.5 py-1 rounded-full">
+                            <span className="text-[10px] font-bold uppercase text-[rgba(245,243,250,0.4)] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] px-2.5 py-1 rounded-full">
                               Completed
                             </span>
                           )}
@@ -208,103 +221,114 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                 )}
               </div>
             </div>
-          </div>
+          </GlassPanel>
           
           {/* Sub-grid of two cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             
             {/* WEEKLY APPOINTMENTS CHART CARD */}
-            <div className="bg-[#FFFCF6] border border-[#EADFCA] p-5 rounded-2xl shadow-[0_6px_25px_rgba(42,38,32,0.01)] flex flex-col justify-between min-h-[160px]">
-              <div className="space-y-0.5">
-                <h5 className="text-[9px] font-mono font-bold text-foreground/40 uppercase tracking-wider">
-                  Demand Levels
-                </h5>
-                <h4 className="font-serif font-bold text-xs text-[#2B2620]">
-                  Weekly Appointments
-                </h4>
+            <GlassPanel 
+              onClick={() => setShowDemandModal(true)}
+              className="p-5 flex flex-col justify-between min-h-[160px] cursor-pointer group hover:border-primary/40 transition-all relative overflow-hidden"
+            >
+              <div className="flex justify-between items-start">
+                <div className="space-y-0.5">
+                  <h5 className="eyebrow">
+                    Demand Levels
+                  </h5>
+                  <h4 className="font-serif font-bold text-sm text-[#F5F3FA]">
+                    Weekly Appointments
+                  </h4>
+                </div>
+                <span className="eyebrow text-[9px] text-[rgba(245,243,250,0.4)] group-hover:text-primary transition-colors flex items-center gap-1">
+                  <Maximize2 className="h-3 w-3" /> Details
+                </span>
               </div>
 
-              {/* Native, Robust SVG Weekly Bar Chart */}
+              {/* SVG Weekly Bar Chart */}
               <div className="mt-4 select-none">
                 <svg viewBox="0 0 240 80" className="w-full h-20 overflow-visible" xmlns="http://www.w3.org/2000/svg">
-                  {/* Background grid lines */}
-                  <line x1="0" y1="60" x2="240" y2="60" stroke="#EADFCA" strokeWidth="1" strokeDasharray="2 2" />
-                  <line x1="0" y1="30" x2="240" y2="30" stroke="#EADFCA" strokeWidth="1" strokeDasharray="2 2" opacity="0.5" />
+                  <line x1="0" y1="60" x2="240" y2="60" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="2 2" />
+                  <line x1="0" y1="30" x2="240" y2="30" stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="2 2" opacity="0.5" />
                   
-                  {/* Bars (M, T, W, T, F, S) */}
                   {[35, 60, 45, 80, 50, 20].map((heightPct, idx) => {
                     const xPos = idx * 40 + 15;
-                    const barHeight = (heightPct / 100) * 55; // max 55px height
+                    const barHeight = (heightPct / 100) * 55;
                     const yPos = 60 - barHeight;
                     const dayLabels = ['M', 'T', 'W', 'T', 'F', 'S'];
                     
                     return (
                       <g key={idx} className="group cursor-pointer">
-                        {/* Shadow/Track */}
-                        <rect x={xPos} y="5" width="12" height="55" rx="3" fill="#FAF6EF" />
-                        {/* Actual Bar with Spring Animation simulated */}
+                        <rect x={xPos} y="5" width="12" height="55" rx="3" fill="rgba(255,255,255,0.03)" />
                         <motion.rect 
                           x={xPos} 
                           y={yPos} 
                           width="12" 
                           height={barHeight} 
                           rx="3" 
-                          fill="#4E6551" 
+                          fill="url(#barGradient)" 
                           initial={{ scaleY: 0 }}
                           animate={{ scaleY: 1 }}
                           style={{ transformOrigin: 'bottom', originY: 1 }}
-                          className="transition-all duration-200 hover:fill-[#D98353]"
+                          className="transition-all duration-200"
                           transition={{ type: 'spring', stiffness: 100, damping: 15, delay: idx * 0.05 }}
                         />
-                        {/* Text Label */}
                         <text 
                           x={xPos + 6} 
                           y="75" 
                           textAnchor="middle" 
-                          className="text-[9px] font-bold fill-[#2B2620]/50 font-sans"
+                          className="text-[10px] font-bold fill-[rgba(245,243,250,0.4)] font-sans"
                         >
                           {dayLabels[idx]}
                         </text>
                       </g>
                     );
                   })}
+                  <defs>
+                    <linearGradient id="barGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stopColor="var(--aurora-teal)" />
+                      <stop offset="100%" stopColor="var(--aurora-violet)" />
+                    </linearGradient>
+                  </defs>
                 </svg>
               </div>
-            </div>
+            </GlassPanel>
 
             {/* TALL VOICE AGENT WIDGET */}
-            <div 
+            <GlassPanel 
               onClick={onVoiceAgentClick}
-              className="bg-[#FFFCF6] border border-[#EADFCA] p-5 rounded-2xl shadow-[0_6px_25px_rgba(42,38,32,0.01)] flex flex-col justify-between min-h-[160px] cursor-pointer hover:border-primary/50 transition-all hover:scale-[1.01] duration-200 active:scale-[0.99] group"
+              accent="teal"
+              className="p-5 flex flex-col justify-between min-h-[160px] cursor-pointer group"
             >
               <div className="space-y-0.5">
-                <h5 className="text-[9px] font-mono font-bold text-foreground/40 uppercase tracking-wider">
-                  Live AI calling
+                <h5 className="eyebrow">
+                  Live AI Calling
                 </h5>
-                <h4 className="font-serif font-bold text-xs text-[#2B2620]">
+                <h4 className="font-serif font-bold text-sm text-[#F5F3FA]">
                   Voice Agent Status
                 </h4>
               </div>
 
-              <div className="bg-[#FAF6EF]/70 border border-[#EADFCA] p-3 rounded-xl flex items-center justify-between gap-3 mt-4">
+              <div className="bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.08)] p-3 rounded-xl flex items-center justify-between gap-3 mt-4">
                 <div className="flex flex-col gap-0.5 items-start">
-                  <span className="text-[8px] font-bold uppercase text-emerald-700 bg-emerald-50 px-2 py-0.5 border border-emerald-150 rounded-md">
+                  <span className="text-[9px] font-bold uppercase text-[#19E3B1] bg-[rgba(25,227,177,0.12)] px-2 py-0.5 border border-[rgba(25,227,177,0.3)] rounded-md flex items-center gap-1.5">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#19E3B1] animate-ping" />
                     Online
                   </span>
-                  <p className="text-[10px] font-bold text-[#2B2620] mt-1">Ready for inbound routing</p>
+                  <p className="text-[11px] font-bold text-[#F5F3FA] mt-1">Ready for inbound routing</p>
                 </div>
-                <div className="flex gap-0.5 items-center justify-center h-4 shrink-0">
+                <div className="flex gap-1 items-center justify-center h-4 shrink-0">
                   {[0.4, 0.9, 0.5, 0.7, 0.3].map((val, idx) => (
                     <motion.div 
                       key={idx}
                       animate={{ scaleY: [1, 2.5, 1] }}
                       transition={{ duration: 1, repeat: Infinity, delay: idx * 0.15 }}
-                      className="w-0.5 bg-primary h-2"
+                      className="w-0.5 bg-[#12D6C4] h-2 rounded-full shadow-[0_0_6px_#12D6C4]"
                     />
                   ))}
                 </div>
               </div>
-            </div>
+            </GlassPanel>
 
           </div>
         </div>
@@ -312,83 +336,83 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
         {/* RIGHT COLUMN (1/3 width on desktop) */}
         <div className="space-y-6 flex flex-col">
           
-          {/* SPOTLIGHT GRADIENT KPI TILE */}
-          <div className="bg-[#D98353] text-[#FFFCF6] p-6 rounded-2xl flex flex-col justify-between shadow-[0_6px_25px_rgba(217,131,83,0.15)] border border-[#D98353] min-h-[150px] flex-1">
+          {/* SPOTLIGHT KPI TILE */}
+          <GlassPanel accent="teal" className="p-6 flex flex-col justify-between shadow-[0_0_50px_-20px_rgba(18,214,196,0.35)] min-h-[150px] flex-1">
             <div className="space-y-0.5">
-              <p className="text-[9px] font-mono font-bold text-[#FFFCF6]/80 uppercase tracking-wider">
+              <p className="eyebrow text-[#12D6C4]">
                 Glanceable Metrics
               </p>
-              <h4 className="font-serif font-bold text-lg leading-snug">
+              <h4 className="font-serif font-bold text-lg text-[#F5F3FA] leading-snug">
                 Appointments Volume
               </h4>
             </div>
             <div className="mt-4">
-              <p className="text-5xl font-mono font-bold tracking-tight">
+              <p className="text-5xl font-serif font-bold num-tabular text-[#12D6C4]">
                 {appointmentsList.length}
               </p>
-              <p className="text-[10px] text-[#FFFCF6]/80 mt-1 font-bold">
+              <p className="text-[11px] text-[rgba(245,243,250,0.62)] mt-1 font-medium">
                 Sessions scheduled for today
               </p>
             </div>
-          </div>
+          </GlassPanel>
 
           {/* SESSIONS STATUS (DONUT) */}
-          <div className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-2xl shadow-[0_6px_25px_rgba(42,38,32,0.01)] flex flex-col justify-between min-h-[150px] flex-1">
+          <GlassPanel className="p-6 flex flex-col justify-between min-h-[150px] flex-1">
             <div className="space-y-0.5">
-              <h5 className="text-[9px] font-mono font-bold text-foreground/40 uppercase tracking-wider">
+              <h5 className="eyebrow">
                 Sessions Status
               </h5>
-              <h4 className="font-serif font-bold text-xs text-[#2B2620]">
+              <h4 className="font-serif font-bold text-sm text-[#F5F3FA]">
                 Completion Rate
               </h4>
             </div>
 
             <div className="flex items-center gap-6 mt-4">
-              {/* Embedded Donut Widget */}
+              {/* Donut Widget */}
               <div className="relative w-14 h-14 flex items-center justify-center shrink-0">
                 <svg className="absolute -rotate-90" width="100%" height="100%" viewBox="0 0 36 36">
-                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#FAF6EF" strokeWidth="3" />
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth="3" />
                   <circle 
                     cx="18" 
                     cy="18" 
                     r="15.915" 
                     fill="none" 
-                    stroke="#4E6551" 
+                    stroke="#12D6C4" 
                     strokeWidth="3.5" 
                     strokeDasharray={`${appointmentsList.length > 0 ? (completedCount / appointmentsList.length) * 100 : 0} ${100 - (appointmentsList.length > 0 ? (completedCount / appointmentsList.length) * 100 : 0)}`}
                   />
                 </svg>
-                <span className="text-[10px] font-mono font-bold text-primary">
+                <span className="text-xs font-serif font-bold num-tabular text-[#12D6C4]">
                   {appointmentsList.length > 0 ? Math.round((completedCount / appointmentsList.length) * 100) : 0}%
                 </span>
               </div>
 
-              <div className="space-y-1.5 font-bold text-[10px] text-[#2B2620]/70">
+              <div className="space-y-1.5 font-medium text-xs text-[rgba(245,243,250,0.7)]">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 bg-primary rounded-full" />
+                  <span className="h-2 w-2 bg-[#12D6C4] rounded-full shadow-[0_0_6px_#12D6C4]" />
                   <span>Completed: {completedCount}</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 bg-orange-400 rounded-full" />
+                  <span className="h-2 w-2 bg-[#FFB454] rounded-full shadow-[0_0_6px_#FFB454]" />
                   <span>Waiting: {waitingCount}</span>
                 </div>
               </div>
             </div>
-          </div>
+          </GlassPanel>
 
-          {/* LIVE WAITLIST TRACKER & PROMOTION TILE (Replaces Practitioner Profile) */}
-          <div className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-2xl shadow-[0_6px_25px_rgba(42,38,32,0.01)] flex flex-col justify-between min-h-[220px] flex-1">
-            <div className="space-y-0.5 border-b border-[#EADFCA]/40 pb-2.5">
+          {/* LIVE WAITLIST TRACKER */}
+          <GlassPanel className="p-6 flex flex-col justify-between min-h-[220px] flex-1">
+            <div className="space-y-0.5 border-b border-[rgba(255,255,255,0.08)] pb-3">
               <div className="flex justify-between items-center">
                 <div>
-                  <h5 className="text-[9px] font-mono font-bold text-foreground/40 uppercase tracking-wider">
+                  <h5 className="eyebrow">
                     Waitlist Management
                   </h5>
-                  <h4 className="font-serif font-bold text-xs text-[#2B2620]">
+                  <h4 className="font-serif font-bold text-sm text-[#F5F3FA]">
                     Clinic Live Waitlist
                   </h4>
                 </div>
-                <span className="bg-[#FAF6EF] border border-[#EADFCA] text-primary text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
+                <span className="bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] text-[#12D6C4] text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
                   {waitlistList.length} Active
                 </span>
               </div>
@@ -396,18 +420,18 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
 
             <div className="mt-3.5 space-y-3 flex-1 overflow-y-auto max-h-[160px] pr-1">
               {waitlistList.length === 0 ? (
-                <div className="p-4 bg-[#FAF6EF]/50 rounded-xl text-center">
-                  <p className="text-xxs text-foreground/45 italic font-bold">No patients waitlisted today.</p>
+                <div className="p-4 bg-[rgba(255,255,255,0.02)] rounded-xl text-center">
+                  <p className="text-xs text-[rgba(245,243,250,0.4)] italic font-medium">No patients waitlisted today.</p>
                 </div>
               ) : (
                 waitlistList.map((entry: any) => {
                   const isPromoting = promotingEntryId === entry.id;
                   return (
-                    <div key={entry.id} className="p-3 border border-[#EADFCA] bg-[#FAF6EF]/40 rounded-xl space-y-2">
+                    <div key={entry.id} className="p-3 border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] rounded-xl space-y-2">
                       <div className="flex justify-between items-start gap-2">
                         <div className="truncate">
-                          <p className="text-xs font-bold text-[#2B2620] truncate">{entry.patient.fullName}</p>
-                          <p className="text-[9px] text-[#2B2620]/45 font-bold uppercase tracking-wider mt-0.5">
+                          <p className="text-xs font-bold text-[#F5F3FA] truncate">{entry.patient.fullName}</p>
+                          <p className="eyebrow text-[9px] mt-0.5">
                             {entry.preferredTimeWindow} • {entry.desiredTreatmentType}
                           </p>
                         </div>
@@ -418,7 +442,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                               setPromoteModality(entry.desiredTreatmentType);
                               setPromoteTime('12:00');
                             }}
-                            className="bg-primary hover:bg-[#3C5040] text-background text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-colors cursor-pointer border-0"
+                            className="bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-colors cursor-pointer border-0 shadow-[0_0_10px_rgba(18,214,196,0.3)]"
                           >
                             Promote
                           </button>
@@ -426,32 +450,32 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                       </div>
 
                       {isPromoting && (
-                        <div className="bg-[#FFFCF6] border border-[#EADFCA] p-2.5 rounded-lg space-y-2.5">
+                        <div className="bg-[rgba(18,13,31,0.9)] border border-[rgba(255,255,255,0.12)] p-3 rounded-xl space-y-2.5">
                           <div className="grid grid-cols-2 gap-2">
                             <div>
-                              <label className="text-[8px] font-bold text-[#2B2620]/40 uppercase tracking-wider block mb-0.5">Start Time</label>
+                              <label className="eyebrow text-[8px] block mb-1">Start Time</label>
                               <input
                                 type="text"
                                 value={promoteTime}
                                 onChange={(e) => setPromoteTime(e.target.value)}
-                                className="w-full text-[10px] bg-[#FAF6EF] border border-[#EADFCA] rounded-md p-1 focus:outline-hidden font-semibold"
+                                className="w-full text-xs glass-input p-1.5 font-semibold"
                                 placeholder="e.g. 12:00"
                               />
                             </div>
                             <div>
-                              <label className="text-[8px] font-bold text-[#2B2620]/40 uppercase tracking-wider block mb-0.5">Modality</label>
+                              <label className="eyebrow text-[8px] block mb-1">Modality</label>
                               <input
                                 type="text"
                                 value={promoteModality}
                                 onChange={(e) => setPromoteModality(e.target.value)}
-                                className="w-full text-[10px] bg-[#FAF6EF] border border-[#EADFCA] rounded-md p-1 focus:outline-hidden font-semibold"
+                                className="w-full text-xs glass-input p-1.5 font-semibold"
                               />
                             </div>
                           </div>
-                          <div className="flex justify-end gap-1.5 pt-1 border-t border-[#EADFCA]/40">
+                          <div className="flex justify-end gap-1.5 pt-1.5 border-t border-[rgba(255,255,255,0.08)]">
                             <button
                               onClick={() => setPromotingEntryId(null)}
-                              className="px-2 py-0.5 border border-[#EADFCA] text-[9px] font-bold rounded-md cursor-pointer bg-transparent"
+                              className="px-2.5 py-1 border border-[rgba(255,255,255,0.1)] text-xs font-bold rounded-lg cursor-pointer bg-transparent text-[rgba(245,243,250,0.6)]"
                             >
                               Cancel
                             </button>
@@ -465,7 +489,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                                 });
                                 setPromotingEntryId(null);
                               }}
-                              className="px-2 py-0.5 bg-primary text-background text-[9px] font-bold rounded-md cursor-pointer border-0"
+                              className="px-2.5 py-1 bg-[#12D6C4] text-[#06231D] text-xs font-bold rounded-lg cursor-pointer border-0 shadow-[0_0_10px_rgba(18,214,196,0.3)]"
                             >
                               Confirm
                             </button>
@@ -477,11 +501,130 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                 })
               )}
             </div>
-          </div>
+          </GlassPanel>
 
         </div>
 
       </div>
+
+      {/* Detailed Demand Analytics Modal */}
+      <AnimatePresence>
+        {showDemandModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowDemandModal(false)}
+              className="absolute inset-0 backdrop-blur-md bg-black/60"
+            />
+            <motion.div
+              initial={{ scale: 0.95, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 15, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+              className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.12)] p-6 md:p-8 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.6)] w-full max-w-2xl z-10 space-y-6 max-h-[90vh] overflow-y-auto"
+            >
+              <button 
+                onClick={() => setShowDemandModal(false)}
+                className="absolute right-5 top-5 p-2 rounded-full hover:bg-[rgba(255,255,255,0.08)] text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA] cursor-pointer"
+              >
+                <X className="h-5 w-5 stroke-[1.75]" />
+              </button>
+
+              {/* Header */}
+              <div className="flex items-center gap-3 border-b border-[rgba(255,255,255,0.08)] pb-4">
+                <div className="p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] text-primary border border-primary/30">
+                  <BarChart3 className="h-6 w-6 stroke-[1.75]" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-serif font-bold text-[#F5F3FA]">
+                    Weekly Appointment Analytics
+                  </h3>
+                  <p className="text-xs text-[rgba(245,243,250,0.62)] font-medium mt-0.5">
+                    Detailed daily patient throughput, peak booking slots, and capacity utilization.
+                  </p>
+                </div>
+              </div>
+
+              {/* Daily Throughput Grid */}
+              <div className="space-y-3">
+                <h4 className="eyebrow text-[10px] text-[rgba(245,243,250,0.5)]">
+                  Daily Capacity Breakdown
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {[
+                    { day: 'Monday', count: 14, pct: '70%', peak: '10:00 AM - 12:30 PM', status: 'Moderate' },
+                    { day: 'Tuesday', count: 24, pct: '95%', peak: '09:00 AM - 11:30 AM', status: 'High' },
+                    { day: 'Wednesday', count: 18, pct: '75%', peak: '02:00 PM - 04:30 PM', status: 'Moderate' },
+                    { day: 'Thursday', count: 28, pct: '100%', peak: '10:00 AM - 05:00 PM', status: 'Peak Capacity' },
+                    { day: 'Friday', count: 20, pct: '85%', peak: '11:00 AM - 01:00 PM', status: 'High' },
+                    { day: 'Saturday', count: 8, pct: '40%', peak: '09:00 AM - 12:00 PM', status: 'Light' },
+                  ].map((item, idx) => (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] flex justify-between items-center">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-serif font-bold text-[#F5F3FA]">{item.day}</span>
+                          <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                            item.pct === '100%' 
+                              ? 'bg-[rgba(255,93,122,0.15)] text-[#FF5D7A] border-[rgba(255,93,122,0.3)]'
+                              : 'bg-primary/15 text-primary border-primary/30'
+                          }`}>
+                            {item.status}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[rgba(245,243,250,0.5)] mt-1">
+                          Peak: {item.peak}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-sm font-serif font-bold text-[#F5F3FA] block num-tabular">{item.count} sessions</span>
+                        <span className="text-[10px] text-primary font-bold num-tabular">{item.pct} full</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Modality Demand */}
+              <div className="space-y-3">
+                <h4 className="eyebrow text-[10px] text-[rgba(245,243,250,0.5)]">
+                  Modality Distribution
+                </h4>
+                <div className="space-y-2">
+                  {[
+                    { label: 'Spine & Musculoskeletal', pct: 42, color: 'bg-primary' },
+                    { label: 'Post-Op Rehabilitation', pct: 28, color: 'bg-[#7B5CFF]' },
+                    { label: 'Sports Injury & Dry Needling', pct: 18, color: 'bg-[#22B8FF]' },
+                    { label: 'Neuro & Geriatric Care', pct: 12, color: 'bg-[#E23FA6]' },
+                  ].map((m, idx) => (
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between text-xs font-medium">
+                        <span className="text-[rgba(245,243,250,0.8)]">{m.label}</span>
+                        <span className="text-[#F5F3FA] font-bold num-tabular">{m.pct}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-[rgba(255,255,255,0.06)] rounded-full overflow-hidden">
+                        <div className={`h-full ${m.color} rounded-full`} style={{ width: `${m.pct}%` }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* AI Recommendation Box */}
+              <div className="p-4 bg-[rgba(255,255,255,0.03)] border border-primary/30 rounded-2xl flex items-start gap-3 text-xs text-[rgba(245,243,250,0.8)]">
+                <TrendingUp className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-bold text-[#F5F3FA]">AI Capacity Optimization Tip</p>
+                  <p className="text-[11px] text-[rgba(245,243,250,0.6)] mt-0.5 leading-relaxed">
+                    Thursday demand consistently hits 100% capacity. Consider enabling an automated waitlist auto-promotion buffer for peak hours between 10 AM and 2 PM.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

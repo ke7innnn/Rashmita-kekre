@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 
@@ -16,6 +16,11 @@ export default function Providers({ children }: { children: React.ReactNode }) {
         },
       })
   );
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('h360_theme') || 'aurora';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+  }, []);
 
   return (
     <SessionProvider>

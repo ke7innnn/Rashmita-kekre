@@ -32,7 +32,7 @@
 }
 
 .intro-heading {
-  font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+  font-family: 'Space Grotesk', sans-serif;
   font-optical-sizing: auto;
   font-size: clamp(2.5rem, 5vw, 4.5rem);
   font-weight: 500;

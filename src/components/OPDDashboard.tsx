@@ -11,7 +11,8 @@ import {
 import QuickActionModal from './QuickActionModal';
 import AddAppointmentModal from './AddAppointmentModal';
 import SegmentedControl from './SegmentedControl';
-// Replicated from @prisma/client to avoid bundling Prisma in the browser
+import GlassPanel from './GlassPanel';
+
 const AppointmentStatus = {
   WAITING: 'WAITING',
   IN_PROGRESS: 'IN_PROGRESS',
@@ -46,7 +47,7 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isAdjustTimingsOpen, setIsAdjustTimingsOpen] = useState(false);
 
-  // New bookings markers ("NEW" badge tracking)
+  // New bookings markers
   const [boardOpenedTime, setBoardOpenedTime] = useState(() => Date.now());
   const [isRefreshSpinning, setIsRefreshSpinning] = useState(false);
 
@@ -114,14 +115,12 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
       if (res.ok) return res.json();
       return [];
     },
-    refetchInterval: 8000, // Auto-poll notifications every 8 seconds for real-time sync
+    refetchInterval: 8000,
   });
 
-  // Safe fallback arrays to prevent type crashes
   const appointmentsList = Array.isArray(appointments) ? appointments : [];
   const notificationsList = Array.isArray(notifications) ? notifications : [];
 
-  // Notification action mutations
   const dismissNotificationMutation = useMutation({
     mutationFn: async (id: string) => {
       await fetch(`/api/notifications`, {
@@ -148,7 +147,6 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
     },
   });
 
-  // Fetch treatment modalities
   const { data: modalities = [] } = useQuery({
     queryKey: ['modalities'],
     queryFn: async () => {
@@ -160,7 +158,6 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
 
   const modalitiesList = Array.isArray(modalities) ? modalities : [];
 
-  // Manual Force-Refresh Handler
   const handleForceRefresh = async () => {
     setIsRefreshSpinning(true);
     setBoardOpenedTime(Date.now());
@@ -170,14 +167,12 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
     }, 850);
   };
 
-  // Date Navigation Helpers
   const shiftDate = (days: number) => {
     const d = new Date(selectedDate);
     d.setDate(d.getDate() + days);
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
-  // Stats Calculations
   const totalCount = appointmentsList.length;
   const waitingCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.WAITING).length;
   const doneCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.COMPLETED).length;
@@ -187,14 +182,13 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
     .map((a: any) => {
       const checkIn = new Date(a.checkInTime).getTime();
       const seen = new Date(a.seenTime).getTime();
-      return (seen - checkIn) / (1000 * 60); // minutes
+      return (seen - checkIn) / (1000 * 60);
     });
 
   const avgWaitTime = waitTimes.length > 0 
     ? Math.round(waitTimes.reduce((acc: number, val: number) => acc + val, 0) / waitTimes.length) 
     : 0;
 
-  // Filters: Search and Time Segments
   const filteredAppointments = appointmentsList.filter((app: any) => {
     const matchesSearch = app.patient.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       app.patient.phone.includes(searchQuery);
@@ -209,23 +203,22 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
     return true;
   });
 
-  // Helper to color-code status pills nicely
   const getStatusStyle = (status: AppointmentStatus) => {
     switch (status) {
       case AppointmentStatus.COMPLETED:
-        return 'bg-emerald-50 text-emerald-700 border-emerald-200/60';
+        return 'bg-[rgba(25,227,177,0.12)] text-[#19E3B1] border-[rgba(25,227,177,0.3)]';
       case AppointmentStatus.IN_PROGRESS:
-        return 'bg-amber-50 text-amber-700 border-amber-200/60';
+        return 'bg-[rgba(255,180,84,0.12)] text-[#FFB454] border-[rgba(255,180,84,0.3)]';
       case AppointmentStatus.WAITING:
-        return 'bg-orange-50 text-orange-700 border-orange-200/60';
+        return 'bg-[rgba(255,180,84,0.12)] text-[#FFB454] border-[rgba(255,180,84,0.3)]';
       case AppointmentStatus.SCHEDULED:
-        return 'bg-blue-50 text-blue-700 border-blue-200/60';
+        return 'bg-[rgba(18,214,196,0.12)] text-[#12D6C4] border-[rgba(18,214,196,0.3)]';
       case AppointmentStatus.NO_SHOW:
-        return 'bg-rose-50 text-rose-700 border-rose-200/60';
+        return 'bg-[rgba(255,93,122,0.12)] text-[#FF5D7A] border-[rgba(255,93,122,0.3)]';
       case AppointmentStatus.CANCELLED:
-        return 'bg-gray-50 text-gray-500 border-gray-200/60';
+        return 'bg-[rgba(255,255,255,0.04)] text-[rgba(245,243,250,0.5)] border-[rgba(255,255,255,0.08)]';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200/60';
+        return 'bg-[rgba(255,255,255,0.04)] text-[rgba(245,243,250,0.7)] border-[rgba(255,255,255,0.08)]';
     }
   };
 
@@ -234,19 +227,19 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
       case AppointmentSource.WEBSITE:
         return (
           <span title="Website Booking">
-            <Link className="h-3.5 w-3.5 text-blue-600 stroke-[1.75]" />
+            <Link className="h-3.5 w-3.5 text-[#22B8FF] stroke-[1.75]" />
           </span>
         );
       case AppointmentSource.PHONE_AI_AGENT:
         return (
           <span title="AI Voice Agent">
-            <PhoneCall className="h-3.5 w-3.5 text-emerald-600 stroke-[1.75]" />
+            <PhoneCall className="h-3.5 w-3.5 text-[#12D6C4] stroke-[1.75]" />
           </span>
         );
       default:
         return (
           <span title="Manual Booking">
-            <UserIcon className="h-3.5 w-3.5 text-gray-500 stroke-[1.75]" />
+            <UserIcon className="h-3.5 w-3.5 text-[rgba(245,243,250,0.5)] stroke-[1.75]" />
           </span>
         );
     }
@@ -261,95 +254,88 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
     { label: 'Evening', value: 'EVENING' },
   ];
 
-  // Daily Summary Strip Stats
   const stats = [
     { 
       label: 'Total Appointments', 
       value: totalCount, 
       desc: 'Registered today',
       icon: Calendar,
-      color: 'text-primary bg-primary/10 border-primary/20',
-      borderLeft: 'border-l-4 border-l-primary'
+      accent: 'teal' as const,
+      color: 'text-[#12D6C4]',
     },
     { 
       label: 'Currently Waiting', 
       value: waitingCount, 
       desc: 'Patients in lounge',
       icon: Clock,
-      color: 'text-[#D98353] bg-[#D98353]/10 border-[#D98353]/20',
-      borderLeft: 'border-l-4 border-l-[#D98353]'
+      accent: 'magenta' as const,
+      color: 'text-[#FFB454]',
     },
     { 
       label: 'Completed Sessions', 
       value: doneCount, 
       desc: 'Sessions finished',
       icon: CheckCircle,
-      color: 'text-emerald-600 bg-emerald-50 border-emerald-100',
-      borderLeft: 'border-l-4 border-l-emerald-500'
+      accent: 'teal' as const,
+      color: 'text-[#19E3B1]',
     },
     { 
       label: 'Avg Waiting Time', 
       value: `${avgWaitTime}m`, 
       desc: waitTimes.length > 0 ? 'Based on live check-ins' : 'No records yet',
       icon: Activity,
-      color: 'text-blue-600 bg-blue-50 border-blue-100',
-      borderLeft: 'border-l-4 border-l-blue-500'
+      accent: 'violet' as const,
+      color: 'text-[#22B8FF]',
     }
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 select-none">
       {/* 1. Daily Summary Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
           return (
-            <motion.div 
-              key={i} 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 260, damping: 20, delay: i * 0.05 }}
-              className={`bg-[#FFFCF6] p-5 rounded-2xl shadow-[0_4px_20px_rgba(42,38,32,0.015)] border border-[#EADFCA]/50 ${stat.borderLeft} flex items-center justify-between hover:shadow-[0_8px_25px_rgba(42,38,32,0.03)] hover:-translate-y-0.5 transition-all duration-300`}
-            >
+            <GlassPanel key={i} accent={stat.accent} className="p-5 flex items-center justify-between">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-wider text-[#2B2620]/45">{stat.label}</p>
-                <p className="text-3xl font-serif text-[#2B2620] font-bold tracking-tight leading-none pt-0.5">{stat.value}</p>
-                <p className="text-[10px] text-[#2B2620]/50 font-medium pt-1">{stat.desc}</p>
+                <p className="eyebrow text-[9px] text-[rgba(245,243,250,0.45)]">{stat.label}</p>
+                <p className="text-3xl font-serif num-tabular text-[#F5F3FA] font-bold tracking-tight leading-none pt-0.5">{stat.value}</p>
+                <p className="text-[10px] text-[rgba(245,243,250,0.45)] font-medium pt-1">{stat.desc}</p>
               </div>
-              <div className={`p-2.5 rounded-xl border ${stat.color} shrink-0 shadow-xxs`}>
+              <div className={`p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] ${stat.color} shrink-0`}>
                 <Icon className="h-5 w-5 stroke-[1.75]" />
               </div>
-            </motion.div>
+            </GlassPanel>
           );
         })}
       </div>
 
       {/* 2. Control Panel & Filters */}
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center bg-[#FFFCF6] p-4 rounded-2xl shadow-[0_8px_30px_rgba(42,38,32,0.02)] border border-[#EADFCA]/45">
+      <GlassPanel className="p-4 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
         {/* Date Selector */}
         <div className="flex items-center gap-2">
           <motion.button 
             whileTap={{ scale: 0.95 }}
             onClick={() => shiftDate(-1)} 
-            className="p-2.5 rounded-xl hover:bg-[#FAF6EF] border border-[#EADFCA] text-[#2B2620]/70 hover:text-primary transition-all cursor-pointer focus:outline-hidden"
+            className="p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.08)] text-[#F5F3FA] cursor-pointer"
           >
             <ChevronLeft className="h-4 w-4 stroke-[2]" />
           </motion.button>
 
-          <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[#FAF6EF]/65 border border-[#EADFCA] rounded-xl hover:border-primary/30 transition-all duration-200 shadow-xxs">
-            <Calendar className="h-4 w-4 text-primary stroke-[2]" />
+          <div className="flex items-center gap-2.5 px-4 py-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl">
+            <Calendar className="h-4 w-4 text-[#12D6C4] stroke-[2]" />
             <input 
               type="date" 
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="text-xs font-semibold text-[#2B2620] bg-transparent focus:outline-hidden cursor-pointer"
+              className="text-xs font-bold text-[#F5F3FA] bg-transparent focus:outline-hidden cursor-pointer num-tabular"
             />
           </div>
 
           <motion.button 
             whileTap={{ scale: 0.95 }}
             onClick={() => shiftDate(1)} 
-            className="p-2.5 rounded-xl hover:bg-[#FAF6EF] border border-[#EADFCA] text-[#2B2620]/70 hover:text-primary transition-all cursor-pointer focus:outline-hidden"
+            className="p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.08)] text-[#F5F3FA] cursor-pointer"
           >
             <ChevronRight className="h-4 w-4 stroke-[2]" />
           </motion.button>
@@ -358,7 +344,7 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
           <motion.button
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsAdjustTimingsOpen(true)}
-            className="p-2.5 rounded-xl hover:bg-[#FAF6EF] border border-[#EADFCA] text-[#2B2620]/70 hover:text-primary transition-all cursor-pointer focus:outline-hidden flex items-center gap-1.5 text-xs font-semibold shadow-xxs"
+            className="p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.08)] text-[rgba(245,243,250,0.8)] cursor-pointer flex items-center gap-1.5 text-xs font-bold"
             title="Adjust Hours"
           >
             <Settings className="h-4 w-4 stroke-[1.75]" />
@@ -369,13 +355,13 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
         {/* Search bar & Refresh triggers */}
         <div className="flex items-center gap-3">
           <div className="relative flex-1 md:flex-initial">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#2B2620]/45 stroke-[2]" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(245,243,250,0.4)] stroke-[2]" />
             <input 
               type="text"
               placeholder="Search patients..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9 pr-4.5 py-2.5 w-full md:w-56 text-xs bg-[#FAF6EF]/65 border border-[#EADFCA] rounded-xl hover:border-primary/30 focus:bg-white focus:border-primary focus:outline-hidden text-[#2B2620] placeholder-[#2B2620]/45 font-semibold transition-all duration-200 shadow-xxs"
+              className="pl-9 pr-4 py-2.5 w-full md:w-56 text-xs glass-input font-medium placeholder-[rgba(245,243,250,0.4)]"
             />
           </div>
 
@@ -383,7 +369,7 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={handleForceRefresh}
-            className="p-2.5 rounded-xl bg-[#FAF6EF] hover:bg-[#FAF6EF]/80 border border-[#EADFCA]/70 text-primary cursor-pointer focus:outline-hidden shadow-xxs"
+            className="p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.08)] text-[#12D6C4] cursor-pointer"
           >
             <motion.div animate={{ rotate: isRefreshSpinning ? 360 : 0 }} transition={{ duration: 0.8, ease: 'easeInOut' }}>
               <RotateCw className="h-4 w-4 stroke-[2]" />
@@ -394,11 +380,11 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
           <motion.button
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsNotificationOpen(true)}
-            className="p-2.5 rounded-xl bg-[#FAF6EF] hover:bg-[#FAF6EF]/80 border border-[#EADFCA]/70 text-primary relative cursor-pointer focus:outline-hidden shadow-xxs"
+            className="p-2.5 rounded-xl bg-[rgba(255,255,255,0.04)] hover:bg-[rgba(255,255,255,0.08)] border border-[rgba(255,255,255,0.08)] text-[#12D6C4] relative cursor-pointer"
           >
             <Bell className="h-4 w-4 stroke-[2]" />
             {unreadNotifications.length > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#D98353] text-[8px] font-bold text-white shadow-xxs animate-bounce">
+              <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#FF5D7A] text-[8px] font-bold text-white shadow-[0_0_8px_#FF5D7A] animate-bounce">
                 {unreadNotifications.length}
               </span>
             )}
@@ -409,13 +395,13 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 bg-primary hover:bg-[#3C5040] text-background text-xs font-semibold px-4.5 py-2.5 rounded-xl transition-all cursor-pointer focus:outline-hidden shadow-xs"
+            className="flex items-center gap-2 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0"
           >
-            <Plus className="h-4 w-4 stroke-[2]" />
+            <Plus className="h-4 w-4 stroke-[2.5]" />
             Book Patient
           </motion.button>
         </div>
-      </div>
+      </GlassPanel>
 
       {/* 3. Time segments control */}
       <div className="flex justify-start">
@@ -428,15 +414,15 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
 
       {/* 4. Appointments Grid */}
       {isLoading ? (
-        <div className="flex justify-center py-20 bg-[#FFFCF6] border border-[#EADFCA]/50 rounded-2xl">
-          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        <div className="flex justify-center py-20 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] rounded-2xl">
+          <Loader2 className="h-8 w-8 text-[#12D6C4] animate-spin" />
         </div>
       ) : filteredAppointments.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center bg-[#FFFCF6] border border-dashed border-[#EADFCA] rounded-2xl p-6">
-          <Calendar className="h-10 w-10 text-[#2B2620]/30 stroke-[1.25] mb-2 animate-bounce" />
-          <p className="text-sm font-semibold text-foreground/60">No sessions scheduled.</p>
-          <p className="text-xxs text-[#2B2620]/45 mt-0.5 font-bold">Try adjusting filters or record a new appointment.</p>
-        </div>
+        <GlassPanel className="flex flex-col items-center justify-center py-20 text-center p-6 border-dashed">
+          <Calendar className="h-10 w-10 text-[rgba(18,214,196,0.4)] stroke-[1.25] mb-2 animate-bounce" />
+          <p className="text-sm font-semibold text-[rgba(245,243,250,0.62)]">No sessions scheduled.</p>
+          <p className="text-xs text-[rgba(245,243,250,0.4)] mt-1 font-medium">Try adjusting filters or record a new appointment.</p>
+        </GlassPanel>
       ) : (
         <motion.div 
           layout
@@ -453,61 +439,50 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                 .toUpperCase()
                 .slice(0, 2);
 
-              const statusConfig: Record<string, { gradient: string; border: string; initialsBg: string }> = {
+              const statusConfig: Record<string, { gradient: string; initialsBg: string }> = {
                 [AppointmentStatus.COMPLETED]: {
-                  gradient: 'from-emerald-500 to-teal-400',
-                  border: 'border-emerald-500/10 hover:border-emerald-500/35',
-                  initialsBg: 'bg-emerald-50 text-emerald-700 border-emerald-200/50'
+                  gradient: 'from-[#19E3B1] to-[#12D6C4]',
+                  initialsBg: 'bg-[rgba(25,227,177,0.12)] text-[#19E3B1] border-[rgba(25,227,177,0.3)]'
                 },
                 [AppointmentStatus.IN_PROGRESS]: {
-                  gradient: 'from-amber-500 to-orange-400',
-                  border: 'border-amber-500/15 hover:border-amber-500/40',
-                  initialsBg: 'bg-amber-50 text-amber-700 border-amber-200/50'
+                  gradient: 'from-[#FFB454] to-[#E23FA6]',
+                  initialsBg: 'bg-[rgba(255,180,84,0.12)] text-[#FFB454] border-[rgba(255,180,84,0.3)]'
                 },
                 [AppointmentStatus.WAITING]: {
-                  gradient: 'from-orange-500 to-red-400',
-                  border: 'border-orange-500/10 hover:border-orange-500/35',
-                  initialsBg: 'bg-orange-50 text-orange-700 border-orange-200/50'
+                  gradient: 'from-[#FFB454] to-[#FF5D7A]',
+                  initialsBg: 'bg-[rgba(255,180,84,0.12)] text-[#FFB454] border-[rgba(255,180,84,0.3)]'
                 },
                 [AppointmentStatus.SCHEDULED]: {
-                  gradient: 'from-blue-500 to-indigo-400',
-                  border: 'border-blue-500/10 hover:border-blue-500/35',
-                  initialsBg: 'bg-blue-50 text-blue-700 border-blue-200/50'
+                  gradient: 'from-[#12D6C4] to-[#7B5CFF]',
+                  initialsBg: 'bg-[rgba(18,214,196,0.12)] text-[#12D6C4] border-[rgba(18,214,196,0.3)]'
                 },
                 [AppointmentStatus.NO_SHOW]: {
-                  gradient: 'from-rose-500 to-pink-400',
-                  border: 'border-rose-500/10 hover:border-rose-500/35',
-                  initialsBg: 'bg-rose-50 text-rose-700 border-rose-200/50'
+                  gradient: 'from-[#FF5D7A] to-[#E23FA6]',
+                  initialsBg: 'bg-[rgba(255,93,122,0.12)] text-[#FF5D7A] border-[rgba(255,93,122,0.3)]'
                 },
                 [AppointmentStatus.CANCELLED]: {
-                  gradient: 'from-gray-400 to-slate-300',
-                  border: 'border-gray-500/10 hover:border-gray-500/35',
-                  initialsBg: 'bg-gray-100 text-gray-600 border-gray-300/50'
+                  gradient: 'from-[rgba(255,255,255,0.2)] to-[rgba(255,255,255,0.05)]',
+                  initialsBg: 'bg-[rgba(255,255,255,0.04)] text-[rgba(245,243,250,0.4)] border-[rgba(255,255,255,0.08)]'
                 }
               };
 
               const config = statusConfig[app.status] || {
-                gradient: 'from-primary to-[#EADFCA]',
-                border: 'border-[#EADFCA]/60 hover:border-primary/30',
-                initialsBg: 'bg-primary/10 text-primary border-primary/20'
+                gradient: 'from-[#12D6C4] to-[#7B5CFF]',
+                initialsBg: 'bg-[rgba(18,214,196,0.12)] text-[#12D6C4] border-[rgba(18,214,196,0.3)]'
               };
 
               return (
-                <motion.div
-                  layout
+                <GlassPanel
                   key={app.id}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                  className={`bg-[#FFFCF6] hover:bg-white border ${config.border} rounded-2xl shadow-[0_4px_25px_rgba(42,38,32,0.012)] hover:shadow-[0_16px_35px_rgba(42,38,32,0.04)] flex flex-col justify-between group transition-all duration-300 relative overflow-hidden hover:-translate-y-0.5`}
+                  accent="teal"
+                  className="flex flex-col justify-between group transition-all duration-200 relative overflow-hidden"
                 >
-                  {/* Visual Accent Top Bar Gradient */}
-                  <div className={`h-1.5 w-full bg-linear-to-r ${config.gradient}`} />
+                  {/* Soft Colored Top Glow Accent */}
+                  <div className={`h-1 w-full bg-gradient-to-r ${config.gradient}`} />
 
                   {/* Pulsing NEW Badge */}
                   {new Date(app.createdAt).getTime() > boardOpenedTime && (
-                    <span className="absolute top-3.5 right-3.5 flex h-5 px-2 items-center justify-center rounded-full bg-[#D98353] text-[8px] font-bold uppercase tracking-wider text-white shadow-xxs animate-pulse z-10">
+                    <span className="absolute top-3.5 right-3.5 flex h-5 px-2 items-center justify-center rounded-full bg-[#12D6C4] text-[8px] font-bold uppercase tracking-wider text-[#06231D] shadow-[0_0_10px_#12D6C4] animate-pulse z-10">
                       New
                     </span>
                   )}
@@ -515,14 +490,13 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                   <div className="p-5 flex-1 flex flex-col justify-between space-y-4">
                     <div className="space-y-3.5">
                       {/* Time Header with soft background block */}
-                      <div className="flex justify-between items-center pb-2.5 border-b border-[#EADFCA]/30">
-                        <div className="flex items-center gap-1.5 text-xs text-[#2B2620]/80 font-bold bg-[#FAF6EF] px-2.5 py-1 rounded-lg">
-                          <Clock className="h-3.5 w-3.5 text-primary stroke-[2]" />
+                      <div className="flex justify-between items-center pb-2.5 border-b border-[rgba(255,255,255,0.08)]">
+                        <div className="flex items-center gap-1.5 text-xs text-[#12D6C4] font-bold bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] px-2.5 py-1 rounded-lg num-tabular">
+                          <Clock className="h-3.5 w-3.5 stroke-[2]" />
                           <span>{app.startTime} - {app.endTime}</span>
                         </div>
 
                         <div className="flex items-center gap-1.5">
-                          {/* Session-Pack warning badges */}
                           {(() => {
                             const pkgs = app.patient.sessionPackages;
                             if (!pkgs || pkgs.length === 0) return null;
@@ -530,14 +504,14 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                             const remaining = activePkg.totalSessions - activePkg.sessionsUsed;
                             if (remaining <= 2 && remaining > 0) {
                               return (
-                                <span className="text-[9px] font-bold px-2 py-0.5 bg-orange-50 text-orange-600 border border-orange-100/60 rounded-full">
+                                <span className="text-[9px] font-bold px-2 py-0.5 bg-[rgba(255,180,84,0.12)] text-[#FFB454] border border-[rgba(255,180,84,0.3)] rounded-full num-tabular">
                                   {remaining} Left
                                 </span>
                               );
                             }
                             if (remaining <= 0) {
                               return (
-                                <span className="text-[9px] font-bold px-2 py-0.5 bg-red-50 text-red-600 border border-red-100/60 rounded-full animate-pulse">
+                                <span className="text-[9px] font-bold px-2 py-0.5 bg-[rgba(255,93,122,0.12)] text-[#FF5D7A] border border-[rgba(255,93,122,0.3)] rounded-full animate-pulse">
                                   Exhausted
                                 </span>
                               );
@@ -551,42 +525,42 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                       <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2.5 truncate">
-                            <div className={`h-7 w-7 rounded-full flex items-center justify-center font-serif text-[10px] font-bold uppercase shrink-0 shadow-xxs border ${config.initialsBg}`}>
+                            <div className={`h-7 w-7 rounded-full flex items-center justify-center font-serif text-[10px] font-bold uppercase shrink-0 border ${config.initialsBg}`}>
                               {initials}
                             </div>
-                            <h4 className="text-base font-serif font-bold text-[#2B2620] tracking-wide group-hover:text-primary transition-colors truncate">
+                            <h4 className="text-base font-serif font-bold text-[#F5F3FA] tracking-wide group-hover:text-[#12D6C4] transition-colors truncate">
                               {app.patient.fullName}
                             </h4>
                           </div>
-                          <div className="p-1 bg-[#FAF6EF] rounded-lg border border-[#EADFCA]/40 group-hover:border-primary/20 transition-all shrink-0">
+                          <div className="p-1.5 bg-[rgba(255,255,255,0.04)] rounded-lg border border-[rgba(255,255,255,0.08)] shrink-0">
                             {getSourceIcon(app.source)}
                           </div>
                         </div>
                         
                         {/* Demographics details row */}
-                        <div className="flex items-center gap-1.5 pl-9 text-[10px] font-bold uppercase tracking-wider text-[#2B2620]/45">
+                        <div className="flex items-center gap-1.5 pl-9 eyebrow text-[9px]">
                           <span>{app.patient.gender}</span>
-                          <span className="text-[#EADFCA] font-light">•</span>
-                          <span>{new Date().getFullYear() - new Date(app.patient.dateOfBirth).getFullYear()} Years</span>
+                          <span>•</span>
+                          <span className="num-tabular">{new Date().getFullYear() - new Date(app.patient.dateOfBirth).getFullYear()} Years</span>
                         </div>
                       </div>
 
                       {/* Treatment type segment */}
-                      <div className="bg-[#FAF6EF]/60 border border-[#EADFCA]/30 px-3.5 py-2.5 rounded-xl ml-9 shadow-inner">
-                        <span className="text-[9px] font-bold text-[#2B2620]/40 uppercase tracking-widest block mb-0.5">Assigned Treatment</span>
-                        <span className="text-xs font-serif font-bold text-primary block leading-tight">{app.treatmentType}</span>
+                      <div className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)] px-3.5 py-2.5 rounded-xl ml-9">
+                        <span className="eyebrow text-[8px] block mb-0.5">Assigned Treatment</span>
+                        <span className="text-xs font-serif font-bold text-[#12D6C4] block leading-tight">{app.treatmentType}</span>
                       </div>
 
                       {/* Pills container */}
                       <div className="flex flex-wrap gap-1.5 pl-9 pt-0.5">
                         {app.notes && (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-md">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-[rgba(18,214,196,0.12)] text-[#12D6C4] border border-[rgba(18,214,196,0.3)] rounded-md">
                             <FileText className="h-3 w-3 stroke-[2]" />
                             SOAP Attached
                           </span>
                         )}
                         {app.assignedExercises && app.assignedExercises.length > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-[#FAF6EF] text-[#D98353] border border-[#D98353]/20 rounded-md">
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-[rgba(255,180,84,0.12)] text-[#FFB454] border border-[rgba(255,180,84,0.3)] rounded-md num-tabular">
                             <Activity className="h-3 w-3 stroke-[2]" />
                             {app.assignedExercises.length} Home Ex
                           </span>
@@ -595,8 +569,8 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                     </div>
 
                     {/* Footer Controls with Status Indicators */}
-                    <div className="pt-3 border-t border-[#EADFCA]/40 flex items-center justify-between">
-                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full border text-[10px] font-bold uppercase tracking-wider ${getStatusStyle(app.status)}`}>
+                    <div className="pt-3 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between">
+                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider ${getStatusStyle(app.status)}`}>
                         {app.status === AppointmentStatus.COMPLETED && <CheckCircle className="h-3.5 w-3.5 shrink-0" />}
                         {app.status === AppointmentStatus.IN_PROGRESS && <Activity className="h-3.5 w-3.5 shrink-0 animate-pulse" />}
                         {app.status === AppointmentStatus.WAITING && <Clock className="h-3.5 w-3.5 shrink-0" />}
@@ -615,21 +589,21 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                             setActiveAppointmentId(app.id);
                           }
                         }}
-                        className="flex items-center gap-1 text-xs font-bold text-primary hover:text-white hover:bg-primary border border-primary/20 px-3.5 py-1.5 rounded-xl shadow-xxs transition-all cursor-pointer focus:outline-hidden"
+                        className="flex items-center gap-1 text-xs font-bold text-[#12D6C4] hover:text-[#06231D] hover:bg-[#12D6C4] border border-[rgba(18,214,196,0.3)] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer focus:outline-hidden"
                       >
                         Manage
                         <ChevronRight className="h-3.5 w-3.5" />
                       </motion.button>
                     </div>
                   </div>
-                </motion.div>
+                </GlassPanel>
               );
             })}
           </AnimatePresence>
         </motion.div>
       )}
 
-      {/* 5. Dynamic SOAP and checked-in Action sheet drawer overlay */}
+      {/* Dynamic SOAP and checked-in Action sheet drawer overlay */}
       <AnimatePresence>
         {activeAppointmentId && (
           <QuickActionModal 
@@ -654,61 +628,60 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
       <AnimatePresence>
         {isNotificationOpen && (
           <div className="fixed inset-0 z-50 flex justify-end select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsNotificationOpen(false)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsNotificationOpen(false)} />
             <motion.div
               initial={{ x: '100%' }}
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', stiffness: 350, damping: 30 }}
-              className="relative w-full max-w-md bg-[#FFFCF6] border-l border-[#EADFCA] h-full flex flex-col p-6 shadow-2xl z-10"
+              className="relative w-full max-w-md bg-[#120D1F] border-l border-[rgba(255,255,255,0.12)] h-full flex flex-col p-6 shadow-2xl z-10"
             >
-              <div className="flex justify-between items-center border-b border-[#EADFCA] pb-4 mb-4">
+              <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-4 mb-4">
                 <div>
-                  <h3 className="text-xl font-serif font-bold text-[#2B2620]">Practice Notifications</h3>
-                  <p className="text-xxs text-foreground/45 font-bold uppercase tracking-wider mt-0.5">Clinic activity logs</p>
+                  <h3 className="text-xl font-serif font-bold text-[#F5F3FA]">Practice Notifications</h3>
+                  <p className="eyebrow text-[9px] mt-0.5">Clinic activity logs</p>
                 </div>
                 <div className="flex items-center gap-2">
                   {unreadNotifications.length > 0 && (
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={() => dismissAllNotificationsMutation.mutate()}
-                      className="text-[10px] font-bold tracking-wider uppercase text-primary border border-primary/20 px-2 py-1.5 rounded-lg hover:bg-primary/10 cursor-pointer"
+                      className="eyebrow text-[9px] text-[#12D6C4] border border-[rgba(18,214,196,0.3)] px-2.5 py-1 rounded-lg hover:bg-[rgba(18,214,196,0.1)] cursor-pointer"
                     >
                       Clear All
                     </motion.button>
                   )}
-                  <button onClick={() => setIsNotificationOpen(false)} className="p-1 rounded-full hover:bg-[#FAF6EF] text-[#2B2620]/50 hover:text-[#2B2620] cursor-pointer">
+                  <button onClick={() => setIsNotificationOpen(false)} className="p-1 rounded-full text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA] cursor-pointer">
                     <X className="h-5 w-5" />
                   </button>
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto space-y-4">
+              <div className="flex-1 overflow-y-auto space-y-3">
                 {notificationsList.length === 0 ? (
-                  <p className="text-xs text-foreground/45 italic text-center py-20 font-semibold">No recent alerts recorded.</p>
+                  <p className="text-xs text-[rgba(245,243,250,0.4)] italic text-center py-20 font-medium">No recent alerts recorded.</p>
                 ) : (
                   notificationsList.map((n: any) => (
                     <div key={n.id} className={`p-4 rounded-2xl border flex justify-between items-start gap-3 transition-colors ${
-                      n.isRead ? 'bg-[#FAF6EF]/40 border-[#EADFCA]/40 opacity-70' : 'bg-[#FAF6EF] border-[#EADFCA]'
+                      n.isRead ? 'bg-[rgba(255,255,255,0.02)] border-[rgba(255,255,255,0.06)] opacity-60' : 'bg-[rgba(255,255,255,0.04)] border-[rgba(255,255,255,0.12)]'
                     }`}>
                       <div className="space-y-1">
                         <div className="flex items-center gap-1.5">
                           <span className={`h-1.5 w-1.5 rounded-full ${
-                            n.type === 'BOOKING' ? 'bg-blue-500' : n.type === 'CANCELLATION' ? 'bg-rose-500' : 'bg-orange-500'
+                            n.type === 'BOOKING' ? 'bg-[#12D6C4]' : n.type === 'CANCELLATION' ? 'bg-[#FF5D7A]' : 'bg-[#FFB454]'
                           }`} />
-                          <h4 className="text-xs font-bold text-[#2B2620]">{n.title}</h4>
+                          <h4 className="text-xs font-bold text-[#F5F3FA]">{n.title}</h4>
                         </div>
-                        <p className="text-xxs text-[#2B2620]/70 font-semibold leading-relaxed">{n.message}</p>
-                        <p className="text-[9px] text-foreground/40 font-bold">{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-xs text-[rgba(245,243,250,0.7)] font-medium leading-relaxed">{n.message}</p>
+                        <p className="eyebrow text-[9px] num-tabular">{new Date(n.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                       </div>
                       {!n.isRead && (
-                        <motion.button
-                          whileTap={{ scale: 0.9 }}
+                        <button
                           onClick={() => dismissNotificationMutation.mutate(n.id)}
-                          className="p-1 text-primary hover:bg-[#FFFCF6] border border-[#EADFCA] rounded-lg cursor-pointer"
+                          className="p-1 text-[#12D6C4] hover:bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] rounded-lg cursor-pointer"
                         >
                           <CheckCircle className="h-3.5 w-3.5" />
-                        </motion.button>
+                        </button>
                       )}
                     </div>
                   ))
@@ -723,65 +696,64 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
       <AnimatePresence>
         {isAdjustTimingsOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsAdjustTimingsOpen(false)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsAdjustTimingsOpen(false)} />
             <motion.div 
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm bg-[#FFFCF6] border border-[#EADFCA] rounded-3xl shadow-xl flex flex-col p-6 space-y-4 z-10 select-none"
+              className="relative w-full max-w-sm bg-[#120D1F] border border-[rgba(255,255,255,0.12)] rounded-3xl shadow-2xl flex flex-col p-6 space-y-4 z-10 select-none"
             >
               <div>
-                <h3 className="text-lg font-serif font-bold text-[#2B2620]">Adjust Daily Hours</h3>
-                <p className="text-xxs text-[#2B2620]/50 font-bold uppercase">Quick configure boundaries</p>
+                <h3 className="text-lg font-serif font-bold text-[#F5F3FA]">Adjust Daily Hours</h3>
+                <p className="eyebrow text-[9px]">Quick configure boundaries</p>
               </div>
 
-              <div className="space-y-3 text-xs font-semibold">
+              <div className="space-y-3 text-xs font-medium">
                 <div>
-                  <label className="block text-xxs uppercase tracking-wider text-[#2B2620]/60 mb-1">Opening Hour (HH:MM)</label>
+                  <label className="eyebrow text-[9px] block mb-1">Opening Hour (HH:MM)</label>
                   <input 
                     type="text" 
                     value={startTimeInput} 
                     onChange={(e) => setStartTimeInput(e.target.value)} 
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden"
+                    className="block w-full text-xs glass-input p-2.5 font-medium num-tabular"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xxs uppercase tracking-wider text-[#2B2620]/60 mb-1">Closing Hour (HH:MM)</label>
+                  <label className="eyebrow text-[9px] block mb-1">Closing Hour (HH:MM)</label>
                   <input 
                     type="text" 
                     value={endTimeInput} 
                     onChange={(e) => setEndTimeInput(e.target.value)} 
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden"
+                    className="block w-full text-xs glass-input p-2.5 font-medium num-tabular"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xxs uppercase tracking-wider text-[#2B2620]/60 mb-1">Slot Duration (Minutes)</label>
+                  <label className="eyebrow text-[9px] block mb-1">Slot Duration (Minutes)</label>
                   <input 
                     type="number" 
                     value={durationInput} 
                     onChange={(e) => setDurationInput(Number(e.target.value))} 
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden"
+                    className="block w-full text-xs glass-input p-2.5 font-medium num-tabular"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#EADFCA]/60">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[rgba(255,255,255,0.08)]">
                 <button 
                   onClick={() => setIsAdjustTimingsOpen(false)}
-                  className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                  className="px-4 py-2 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl cursor-pointer text-[rgba(245,243,250,0.8)]"
                 >
                   Cancel
                 </button>
-                <motion.button 
-                  whileTap={{ scale: 0.95 }}
+                <button 
                   onClick={() => adjustTimingMutation.mutate({ startTime: startTimeInput, endTime: endTimeInput, slotDuration: durationInput })}
-                  className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1.5 shadow-[0_0_15px_rgba(18,214,196,0.3)] border-0"
                 >
                   {adjustTimingMutation.isPending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   Save Settings
-                </motion.button>
+                </button>
               </div>
             </motion.div>
           </div>
