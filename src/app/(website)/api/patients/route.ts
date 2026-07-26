@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
       message: error?.message,
     });
 
-    if (error?.code === 'P2002') {
+    if (error?.code === 'P2002' || error?.message?.includes('Unique constraint')) {
       return NextResponse.json({ 
         error: 'A patient with this number already exists' 
       }, { status: 400 });
