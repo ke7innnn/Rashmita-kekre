@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -93,84 +93,148 @@ export default function CRMSidebar({ children }: Props) {
       <AuroraBackground />
 
       {/* Sidebar Navigation (Desktop) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[rgba(18,13,31,0.75)] backdrop-blur-2xl border-r border-[rgba(255,255,255,0.08)] p-4 justify-between shrink-0 z-20 shadow-[4px_0_24px_rgba(0,0,0,0.3)]">
-        <div className="space-y-6">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 justify-between shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none">
+        <div className="space-y-5">
           {/* Logo Branding */}
-          <div className="flex items-center gap-3.5 border-b border-[rgba(255,255,255,0.08)] pb-4">
-            <div className="relative shrink-0">
-              <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-40 animate-pulse transition-colors duration-500" />
-              <img 
-                src="/logo/rklogo.png" 
-                alt="Health 360 Icon" 
-                className="h-12 w-12 object-contain relative z-10"
-              />
-            </div>
-            <div>
-              <h1 className="text-lg font-serif font-bold leading-tight text-[#F5F3FA]">Health 360</h1>
-              <p className="text-[10px] font-semibold text-[rgba(245,243,250,0.4)] uppercase tracking-widest mt-0.5">Physiotherapy</p>
+          <div className="flex items-center justify-between pb-3 border-b border-white/10">
+            <div className="flex items-center gap-3">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-full bg-[var(--primary)] blur-md opacity-40 animate-pulse transition-colors duration-500" />
+                <img 
+                  src="/logo/rklogo.png" 
+                  alt="Health 360 Icon" 
+                  className="h-10 w-10 object-contain relative z-10"
+                />
+              </div>
+              <div>
+                <h1 className="text-base font-serif font-bold leading-tight text-white">Health 360</h1>
+                <p className="text-[9px] font-bold text-white/40 uppercase tracking-widest mt-0.5">Physiotherapy</p>
+              </div>
             </div>
           </div>
 
-          {/* Navigation Links */}
-          <nav className="space-y-1 relative">
-            {navigation.map((item) => {
-              const Icon = item.icon;
-              const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
-              
-              if (item.id === 'calls') {
-                return (
-                  <motion.button
-                    key={item.id}
-                    onClick={() => setShowRedirectModal(true)}
-                    whileTap={{ scale: 0.97 }}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-150 relative cursor-pointer focus:outline-none text-[rgba(245,243,250,0.62)] hover:text-[#F5F3FA] hover:bg-[rgba(255,255,255,0.04)]"
-                  >
-                    <Icon className="h-4 w-4 stroke-[1.75]" />
-                    <span>{item.name}</span>
-                  </motion.button>
-                );
-              }
+          {/* Quick Search Bar */}
+          <div className="relative flex items-center bg-white/[0.04] border border-white/10 rounded-2xl px-3 py-2 text-xs text-white/70 focus-within:border-[var(--primary)] transition-all">
+            <Search className="h-3.5 w-3.5 text-white/40 mr-2 shrink-0" />
+            <input
+              type="text"
+              placeholder="Search..."
+              className="bg-transparent border-0 outline-none text-xs text-white placeholder-white/40 w-full font-medium"
+            />
+            <span className="text-[9px] font-bold font-mono text-white/40 bg-white/10 px-1.5 py-0.5 rounded border border-white/10 ml-1">⌘F</span>
+          </div>
 
-              return (
-                <Link key={item.href} href={item.href!}>
-                  <motion.div
-                    whileTap={{ scale: 0.97 }}
-                    className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-xl transition-all duration-150 relative cursor-pointer focus:outline-none ${
-                      isActive 
-                        ? 'text-[#F5F3FA] bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.12)] shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]' 
-                        : 'text-[rgba(245,243,250,0.62)] hover:text-[#F5F3FA] hover:bg-[rgba(255,255,255,0.04)]'
-                    }`}
-                  >
-                    {isActive && (
-                      <span className="absolute left-0 top-1.5 bottom-1.5 w-1 bg-primary rounded-r-full shadow-[0_0_12px_var(--primary)] transition-colors duration-300" />
-                    )}
-                    <span className="flex items-center gap-3 z-10">
-                      <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-primary' : ''}`} />
-                      {item.name}
-                    </span>
-                    {isActive && (
-                      <span className="h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--primary)] z-10 transition-colors duration-300" />
-                    )}
-                  </motion.div>
-                </Link>
-              );
-            })}
+          {/* Navigation Links with Category Headers */}
+          <nav className="space-y-4">
+            <div>
+              <p className="text-[9px] font-bold tracking-widest text-white/35 uppercase px-3.5 pb-2">Main Menu</p>
+              <div className="space-y-1">
+                {navigation.slice(0, 4).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
+
+                  return (
+                    <Link key={item.href} href={item.href!}>
+                      <motion.div
+                        whileTap={{ scale: 0.97 }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer ${
+                          isActive 
+                            ? 'text-white bg-gradient-to-r from-[var(--primary)]/30 via-[var(--primary)]/15 to-transparent border-r-2 border-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)] font-bold' 
+                            : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3 z-10">
+                          <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-[var(--primary)]' : ''}`} />
+                          {item.name}
+                        </span>
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] z-10" />
+                        )}
+                      </motion.div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-[9px] font-bold tracking-widest text-white/35 uppercase px-3.5 pb-2">Management</p>
+              <div className="space-y-1">
+                {navigation.slice(4).map((item) => {
+                  const Icon = item.icon;
+                  const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
+
+                  if (item.id === 'calls') {
+                    return (
+                      <motion.button
+                        key={item.id}
+                        onClick={() => setShowRedirectModal(true)}
+                        whileTap={{ scale: 0.97 }}
+                        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer text-white/60 hover:text-white hover:bg-white/[0.04]"
+                      >
+                        <Icon className="h-4 w-4 stroke-[1.75]" />
+                        <span>{item.name}</span>
+                      </motion.button>
+                    );
+                  }
+
+                  return (
+                    <Link key={item.href} href={item.href!}>
+                      <motion.div
+                        whileTap={{ scale: 0.97 }}
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer ${
+                          isActive 
+                            ? 'text-white bg-gradient-to-r from-[var(--primary)]/30 via-[var(--primary)]/15 to-transparent border-r-2 border-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)] font-bold' 
+                            : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
+                        }`}
+                      >
+                        <span className="flex items-center gap-3 z-10">
+                          <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-[var(--primary)]' : ''}`} />
+                          {item.name}
+                        </span>
+                        {isActive && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] z-10" />
+                        )}
+                      </motion.div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
           </nav>
         </div>
 
-        {/* User profile / Log Out */}
-        <div className="border-t border-[rgba(255,255,255,0.08)] pt-4 space-y-3">
-          <div className="flex items-center gap-3 p-3 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] rounded-xl shadow-inner">
-            <div className="h-9 w-9 rounded-full bg-[rgba(255,255,255,0.04)] border border-primary/30 flex items-center justify-center font-serif text-primary font-bold text-sm shrink-0 transition-colors">
+        <div className="space-y-3.5 pt-4">
+          {/* AI Copilot Promotion Card (Matches Boost with AI card) */}
+          <div className="bg-white/[0.03] border border-white/10 p-3.5 rounded-2xl space-y-2.5">
+            <div className="flex items-center gap-2 text-white">
+              <Sparkles className="h-4 w-4 text-[var(--primary)] shrink-0" />
+              <span className="text-xs font-bold">Boost with AI</span>
+            </div>
+            <p className="text-[10px] text-white/50 leading-relaxed font-medium">
+              AI-powered SOAP notes, instant speech insights, and tools.
+            </p>
+            <button
+              type="button"
+              onClick={() => router.push('/crm360/analytics')}
+              className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[var(--primary)] to-cyan-400 text-black font-bold text-xs shadow-lg hover:brightness-110 transition-all cursor-pointer"
+            >
+              Explore Copilot
+            </button>
+          </div>
+
+          {/* User Profile Footer Card */}
+          <div className="flex items-center gap-3 p-3 bg-white/[0.04] border border-white/10 rounded-2xl">
+            <div className="h-9 w-9 rounded-full bg-white/10 border border-[var(--primary)]/40 flex items-center justify-center font-bold text-white text-xs shrink-0">
               {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
             </div>
             <div className="truncate flex-1">
-              <p className="text-xs font-bold text-[#F5F3FA] truncate capitalize">{user.name}</p>
-              <p className="text-[10px] text-[rgba(245,243,250,0.4)] capitalize font-semibold truncate">{user.role} Operator</p>
+              <p className="text-xs font-bold text-white truncate capitalize">{user.name}</p>
+              <p className="text-[10px] text-white/50 capitalize font-medium truncate">{user.role} Operator</p>
             </div>
             <button
               onClick={handleSignOut}
-              className="p-1.5 rounded-lg hover:bg-[rgba(255,93,122,0.12)] text-[rgba(245,243,250,0.4)] hover:text-[#FF5D7A] transition-colors cursor-pointer"
+              className="p-1.5 rounded-lg hover:bg-rose-500/20 text-white/40 hover:text-rose-400 transition-colors cursor-pointer"
               title="Sign Out"
             >
               <LogOut className="h-4 w-4 stroke-[1.75]" />
