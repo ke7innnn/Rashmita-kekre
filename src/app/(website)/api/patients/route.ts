@@ -117,16 +117,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: issueMsg, details: error.issues }, { status: 400 });
     }
 
-    console.error('Error creating patient:', error);
+    console.error('Error creating patient:', {
+      code: error?.code,
+      meta: error?.meta,
+      message: error?.message,
+    });
 
     if (error?.code === 'P2002') {
       return NextResponse.json({ 
-        error: 'A patient with this phone number is already registered in the system.' 
+        error: 'A patient with this number already exists' 
       }, { status: 400 });
     }
 
-    return NextResponse.json({ 
-      error: error.message?.split('\n')?.pop()?.trim() || 'Failed to create patient record' 
-    }, { status: 400 });
+    const isDev = process.env.NODE_ENV !== 'production';
+    const responseMsg = isDev 
+      ? (error?.message || 'Failed to create patient record')
+      : 'Failed to create patient record';
+
+    return NextResponse.json({ error: responseMsg }, { status: 400 });
   }
 }
