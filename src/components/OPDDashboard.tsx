@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Calendar, Clock, Plus, ChevronLeft, ChevronRight, 
   Search, Loader2, RotateCw, Sparkles, AlertCircle, RefreshCw, 
-  Check, User as UserIcon, Link, PhoneCall, Trash2, CheckCircle, Bell, X, Edit3, Settings, FileText
+  Check, CheckCheck, LogIn, LogOut, User as UserIcon, Link, PhoneCall, Trash2, CheckCircle, Bell, X, Edit3, Settings, FileText
 } from 'lucide-react';
 import QuickActionModal from './QuickActionModal';
 import AddAppointmentModal from './AddAppointmentModal';
@@ -146,6 +146,33 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },
   });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ id, payload }: { id: string; payload: any }) => {
+      const res = await fetch(`/api/appointments/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to update appointment status');
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+    },
+  });
+
+  const formatTimeRecorded = (isoStr?: string) => {
+    if (!isoStr) return '';
+    try {
+      return new Date(isoStr).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  };
 
   const { data: modalities = [] } = useQuery({
     queryKey: ['modalities'],
@@ -568,32 +595,114 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                       </div>
                     </div>
 
-                    {/* Footer Controls with Status Indicators */}
-                    <div className="pt-3 border-t border-[rgba(255,255,255,0.08)] flex items-center justify-between">
-                      <div className={`flex items-center gap-1 px-3 py-1 rounded-full border text-[9px] font-bold uppercase tracking-wider ${getStatusStyle(app.status)}`}>
-                        {app.status === AppointmentStatus.COMPLETED && <CheckCircle className="h-3.5 w-3.5 shrink-0" />}
-                        {app.status === AppointmentStatus.IN_PROGRESS && <Activity className="h-3.5 w-3.5 shrink-0 animate-pulse" />}
-                        {app.status === AppointmentStatus.WAITING && <Clock className="h-3.5 w-3.5 shrink-0" />}
-                        {app.status === AppointmentStatus.SCHEDULED && <Calendar className="h-3.5 w-3.5 shrink-0" />}
-                        {app.status === AppointmentStatus.NO_SHOW && <AlertCircle className="h-3.5 w-3.5 shrink-0" />}
-                        {app.status === AppointmentStatus.CANCELLED && <X className="h-3.5 w-3.5 shrink-0" />}
-                        <span>{app.status}</span>
+                    {/* Footer Controls with Check In / Check Out & Colored Ticks */}
+                    <div className="pt-3 border-t border-[rgba(255,255,255,0.08)] flex flex-col gap-2.5">
+                      <div className="flex items-center justify-between">
+                        {/* Colored Tick Indicator Badge */}
+                        {(() => {
+                          const checkInIso = app.checkInAt || app.checkInTime;
+                          const checkOutIso = app.checkOutAt || (app.status === 'COMPLETED' ? app.seenTime : null);
+                          const isCheckedOut = app.status === 'COMPLETED' || !!app.checkOutAt;
+                          const isCheckedIn = !!checkInIso && !isCheckedOut;
+                          const isNoShow = app.status === 'NO_SHOW';
+
+                          if (isCheckedOut) {
+                            return (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-[10px] font-mono font-bold">
+                                <CheckCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
+                                <span>✓✓ {formatTimeRecorded(checkInIso) ? `In ${formatTimeRecorded(checkInIso)}` : 'In'} • {formatTimeRecorded(checkOutIso) ? `Out ${formatTimeRecorded(checkOutIso)}` : 'Out'}</span>
+                              </div>
+                            );
+                          }
+
+                          if (isCheckedIn) {
+                            return (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-mono font-bold">
+                                <Check className="h-3.5 w-3.5 text-amber-400 shrink-0 animate-pulse" />
+                                <span>✓ In {formatTimeRecorded(checkInIso)}</span>
+                              </div>
+                            );
+                          }
+
+                          if (isNoShow) {
+                            return (
+                              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-400 text-[10px] font-semibold">
+                                <AlertCircle className="h-3.5 w-3.5 text-rose-400 shrink-0" />
+                                <span>✕ No-Show</span>
+                              </div>
+                            );
+                          }
+
+                          return (
+                            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 text-slate-400 text-[10px] font-semibold">
+                              <Clock className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>⚪ Booked</span>
+                            </div>
+                          );
+                        })()}
+
+                        <motion.button 
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            if (onManageAppointment) {
+                              onManageAppointment(app.id);
+                            } else {
+                              setActiveAppointmentId(app.id);
+                            }
+                          }}
+                          className="text-xs font-semibold text-[#12D6C4] hover:underline transition-colors"
+                        >
+                          Details
+                        </motion.button>
                       </div>
 
-                      <motion.button 
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => {
-                          if (onManageAppointment) {
-                            onManageAppointment(app.id);
-                          } else {
-                            setActiveAppointmentId(app.id);
-                          }
-                        }}
-                        className="flex items-center gap-1 text-xs font-bold text-[#12D6C4] hover:text-[#06231D] hover:bg-[#12D6C4] border border-[rgba(18,214,196,0.3)] px-3.5 py-1.5 rounded-xl transition-all cursor-pointer focus:outline-hidden"
-                      >
-                        Manage
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      </motion.button>
+                      {/* Check In / Check Out Action Buttons */}
+                      <div className="flex items-center gap-2 pt-0.5">
+                        {!app.checkInAt && !app.checkInTime && app.status !== 'COMPLETED' && app.status !== 'NO_SHOW' && (
+                          <>
+                            <button
+                              type="button"
+                              disabled={updateStatusMutation.isPending}
+                              onClick={() => updateStatusMutation.mutate({
+                                id: app.id,
+                                payload: { checkInAt: new Date().toISOString(), status: 'IN_PROGRESS' }
+                              })}
+                              className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs flex items-center justify-center gap-1 shadow-md transition-all cursor-pointer"
+                            >
+                              <LogIn size={13} />
+                              Check In
+                            </button>
+                            
+                            <button
+                              type="button"
+                              disabled={updateStatusMutation.isPending}
+                              onClick={() => updateStatusMutation.mutate({
+                                id: app.id,
+                                payload: { status: 'NO_SHOW' }
+                              })}
+                              className="py-1.5 px-2.5 rounded-xl border border-rose-500/40 hover:bg-rose-500/20 text-rose-400 text-xs font-semibold flex items-center justify-center transition-all cursor-pointer"
+                              title="Mark No-Show"
+                            >
+                              No-Show
+                            </button>
+                          </>
+                        )}
+
+                        {(app.checkInAt || app.checkInTime) && !app.checkOutAt && app.status !== 'COMPLETED' && app.status !== 'NO_SHOW' && (
+                          <button
+                            type="button"
+                            disabled={updateStatusMutation.isPending}
+                            onClick={() => updateStatusMutation.mutate({
+                              id: app.id,
+                              payload: { checkOutAt: new Date().toISOString(), status: 'COMPLETED' }
+                            })}
+                            className="w-full py-1.5 px-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-black font-bold text-xs flex items-center justify-center gap-1.5 shadow-md transition-all cursor-pointer"
+                          >
+                            <LogOut size={13} />
+                            Check Out Patient
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </GlassPanel>

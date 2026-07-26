@@ -11,6 +11,8 @@ const patchSchema = z.object({
   treatmentType: z.string().optional(),
   checkInTime: z.string().transform((val) => (val ? new Date(val) : undefined)).optional(),
   seenTime: z.string().transform((val) => (val ? new Date(val) : undefined)).optional(),
+  checkInAt: z.string().transform((val) => (val ? new Date(val) : undefined)).optional(),
+  checkOutAt: z.string().transform((val) => (val ? new Date(val) : undefined)).optional(),
   date: z.string().transform((val) => (val ? new Date(val) : undefined)).optional(),
   startTime: z.string().optional(),
   endTime: z.string().optional(),
@@ -123,6 +125,18 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
     if (body.checkInTime !== undefined) dataToUpdate.checkInTime = body.checkInTime;
     if (body.seenTime !== undefined) dataToUpdate.seenTime = body.seenTime;
+
+    if (body.checkInAt !== undefined) {
+      dataToUpdate.checkInAt = body.checkInAt;
+      dataToUpdate.checkInTime = body.checkInAt;
+      if (!body.status) dataToUpdate.status = AppointmentStatus.IN_PROGRESS;
+    }
+
+    if (body.checkOutAt !== undefined) {
+      dataToUpdate.checkOutAt = body.checkOutAt;
+      dataToUpdate.seenTime = body.checkOutAt;
+      dataToUpdate.status = AppointmentStatus.COMPLETED;
+    }
 
     const updated = await prisma.appointment.update({
       where: { id },
