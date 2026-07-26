@@ -75,20 +75,23 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     const body = createPatientSchema.parse(json);
 
+    const dataToCreate: any = {
+      fullName: body.fullName,
+      gender: body.gender || 'Female',
+      dateOfBirth: body.dateOfBirth || new Date('1990-01-01'),
+      phone: body.phone,
+      tags: Array.isArray(body.tags) ? body.tags.join(', ') : '',
+    };
+
+    if (body.secondaryPhone) dataToCreate.secondaryPhone = body.secondaryPhone;
+    if (body.address) dataToCreate.address = body.address;
+    if (body.referringDoctor) dataToCreate.referringDoctor = body.referringDoctor;
+    if (body.presentingComplaint) dataToCreate.presentingComplaint = body.presentingComplaint;
+    if (body.treatmentModalityAssigned) dataToCreate.treatmentModalityAssigned = body.treatmentModalityAssigned;
+    if (body.notes) dataToCreate.notes = body.notes;
+
     const patient = await prisma.patient.create({
-      data: {
-        fullName: body.fullName,
-        gender: body.gender || 'Female',
-        dateOfBirth: body.dateOfBirth,
-        phone: body.phone,
-        secondaryPhone: body.secondaryPhone,
-        address: body.address,
-        referringDoctor: body.referringDoctor,
-        presentingComplaint: body.presentingComplaint,
-        treatmentModalityAssigned: body.treatmentModalityAssigned,
-        tags: Array.isArray(body.tags) ? body.tags.join(', ') : '',
-        notes: body.notes,
-      },
+      data: dataToCreate,
     });
 
     const parsedPatient = {
