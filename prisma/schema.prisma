@@ -71,6 +71,8 @@ model Patient {
   appointments              Appointment[]
   callLogs                  CallLog[]
   sessionPackages           SessionPackage[]
+  patientPackages           PatientPackage[]
+  invoices                  Invoice[]
   feedback                  Feedback[]
   waitlists                 Waitlist[]
   sentHandouts              SentHandout[]
@@ -306,4 +308,91 @@ model InboxMessage {
   attachmentUrl  String?
   isRead         Boolean  @default(false)
   createdAt      DateTime @default(now())
+}
+
+enum InvoiceStatus {
+  PENDING
+  PARTIALLY_PAID
+  PAID
+  CANCELLED
+}
+
+enum PackageStatus {
+  ACTIVE
+  EXHAUSTED
+  EXPIRED
+  CANCELLED
+}
+
+model TreatmentPackage {
+  id              String           @id @default(cuid())
+  name            String
+  totalSessions   Int
+  price           Float
+  validityDays    Int              @default(30)
+  isActive        Boolean          @default(true)
+  patientPackages PatientPackage[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model PatientPackage {
+  id                 String            @id @default(cuid())
+  patientId          String
+  patient            Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  treatmentPackageId String?
+  treatmentPackage   TreatmentPackage? @relation(fields: [treatmentPackageId], references: [id])
+  packageName        String
+  totalSessions      Int
+  sessionsUsed       Int               @default(0)
+  price              Float
+  paidAmount         Float             @default(0)
+  status             PackageStatus     @default(ACTIVE)
+  purchaseDate       DateTime          @default(now())
+  expiryDate         DateTime?
+  invoiceLines       InvoiceLine[]
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  invoiceNumber  String        @unique
+  patientId      String
+  patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  date           DateTime      @default(now())
+  dueDate        DateTime?
+  totalAmount    Float
+  paidAmount     Float         @default(0)
+  discountAmount Float         @default(0)
+  status         InvoiceStatus @default(PENDING)
+  notes          String?
+  lines          InvoiceLine[]
+  payments       Payment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model InvoiceLine {
+  id                 String          @id @default(cuid())
+  invoiceId          String
+  invoice            Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description        String
+  quantity           Int             @default(1)
+  unitPrice          Float
+  totalPrice         Float
+  isCoveredByPackage Boolean         @default(false)
+  patientPackageId   String?
+  patientPackage     PatientPackage? @relation(fields: [patientPackageId], references: [id])
+}
+
+model Payment {
+  id              String   @id @default(cuid())
+  invoiceId       String
+  invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount          Float
+  paymentMode     String   // "Cash", "UPI", "Card", "Bank transfer"
+  referenceNumber String?
+  date            DateTime @default(now())
+  createdAt       DateTime @default(now())
 }
