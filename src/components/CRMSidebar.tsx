@@ -62,7 +62,6 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, roles: ['admin', 'physio', 'receptionist'] },
     { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, roles: ['admin'] },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, roles: ['admin'] },
-    { href: '/crm360/treatments', name: 'Modalities Reference', icon: Library, roles: ['admin'] },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, roles: ['admin'] },
     { href: '/crm360/referrals', name: 'Referral Network', icon: Network, roles: ['admin'] },
     { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings, roles: ['admin'] },

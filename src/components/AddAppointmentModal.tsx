@@ -14,17 +14,17 @@ const schema = z.object({
   patientId: z.string().min(1, 'Please select or add a patient'),
   date: z.string().min(1, 'Date is required'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid start time'),
-  treatmentType: z.string().min(1, 'Modality is required'),
+  treatmentType: z.string().default('Physiotherapy Consultation'),
   assignedSlotDuration: z.number().int().positive().default(30),
   notes: z.string().optional(),
 });
 
 interface Props {
   onClose: () => void;
-  modalities: any[];
+  modalities?: any[];
 }
 
-export default function AddAppointmentModal({ onClose, modalities }: Props) {
+export default function AddAppointmentModal({ onClose }: Props) {
   const queryClient = useQueryClient();
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatientName, setSelectedPatientName] = useState<string | null>(null);
@@ -35,6 +35,7 @@ export default function AddAppointmentModal({ onClose, modalities }: Props) {
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       startTime: '09:00',
+      treatmentType: 'Physiotherapy Consultation',
       assignedSlotDuration: 30,
     },
   });
@@ -211,21 +212,7 @@ export default function AddAppointmentModal({ onClose, modalities }: Props) {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            {/* Modality */}
-            <div>
-              <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 mb-1">
-                Modality
-              </label>
-              <input
-                type="text"
-                placeholder="E.g., Laser Therapy"
-                {...register('treatmentType')}
-                className="block w-full text-sm rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
-              />
-              {errors.treatmentType?.message && <p className="text-xs text-red-500 mt-1">{errors.treatmentType.message as string}</p>}
-            </div>
-
+          <div>
             {/* Duration */}
             <div>
               <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 mb-1">
