@@ -14,6 +14,7 @@ const schema = z.object({
   patientId: z.string().min(1, 'Please select or add a patient'),
   date: z.string().min(1, 'Date is required'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid start time'),
+  appointmentType: z.string().min(1, 'Please select Appointment Type'),
   treatmentType: z.string().default('Physiotherapy Consultation'),
   assignedSlotDuration: z.number().int().positive().default(30),
   notes: z.string().optional(),
@@ -44,6 +45,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
       startTime: '09:00',
+      appointmentType: 'CONSULTATION',
       treatmentType: 'Physiotherapy Consultation',
       assignedSlotDuration: 30,
     },
@@ -314,6 +316,26 @@ export default function AddAppointmentModal({ onClose }: Props) {
             )}
             {errors.patientId?.message && !selectedPatientName && !showAddPatient && (
               <p className="text-xs text-rose-400">{errors.patientId.message as string}</p>
+            )}
+          </div>
+
+          {/* Appointment Type */}
+          <div>
+            <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
+              Appointment Type *
+            </label>
+            <select
+              {...register('appointmentType')}
+              className="block w-full text-sm rounded-xl border border-white/15 bg-[#130E26] px-3 py-2.5 text-white focus:border-[var(--primary)] focus:outline-none font-semibold"
+            >
+              <option value="CONSULTATION">Consultation</option>
+              <option value="CONSULTATION_TREATMENT">Consultation + Treatment</option>
+              <option value="TREATMENT">Treatment</option>
+              <option value="FOLLOW_UP">Follow-up</option>
+              <option value="CRANIOSACRAL_THERAPY">Craniosacral Therapy</option>
+            </select>
+            {errors.appointmentType?.message && (
+              <p className="text-xs text-rose-400 mt-1">{errors.appointmentType.message as string}</p>
             )}
           </div>
 

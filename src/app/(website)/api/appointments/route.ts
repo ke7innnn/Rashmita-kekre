@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
-import { AppointmentStatus, AppointmentSource } from '@prisma/client';
+import { AppointmentStatus, AppointmentSource, AppointmentType } from '@prisma/client';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -14,7 +14,8 @@ const createSchema = z.object({
   date: z.string().transform((val) => new Date(val)),
   startTime: z.string().regex(/^\d{2}:\d{2}$/),
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
-  treatmentType: z.string(),
+  treatmentType: z.string().default('Physiotherapy Consultation'),
+  appointmentType: z.nativeEnum(AppointmentType).optional(),
   assignedSlotDuration: z.number().int().positive(),
   source: z.nativeEnum(AppointmentSource).default(AppointmentSource.MANUAL_ADMIN),
   notes: z.string().optional(),
@@ -94,7 +95,8 @@ export async function POST(req: NextRequest) {
         date: body.date,
         startTime: body.startTime,
         endTime: body.endTime,
-        treatmentType: body.treatmentType,
+        treatmentType: body.treatmentType || 'Physiotherapy Consultation',
+        appointmentType: body.appointmentType,
         assignedSlotDuration: body.assignedSlotDuration,
         source: body.source,
         notes: body.notes,
