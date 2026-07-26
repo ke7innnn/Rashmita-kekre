@@ -6,15 +6,19 @@ import { z } from 'zod';
 
 const createPatientSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
-  gender: z.string().min(1, 'Gender is required'),
-  dateOfBirth: z.string().transform((val) => new Date(val)),
-  phone: z.string().min(10, 'Primary contact must be a valid number'),
+  gender: z.string().default('Female'),
+  dateOfBirth: z.string().or(z.date()).optional().transform((val) => {
+    if (!val) return new Date('1990-01-01');
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? new Date('1990-01-01') : d;
+  }),
+  phone: z.string().min(1, 'Phone number is required'),
   secondaryPhone: z.string().optional(),
   address: z.string().optional(),
   referringDoctor: z.string().optional(),
   presentingComplaint: z.string().optional(),
   treatmentModalityAssigned: z.string().optional(),
-  tags: z.array(z.string()).default([]),
+  tags: z.array(z.string()).optional().default([]),
   notes: z.string().optional(),
 });
 
@@ -32,8 +36,8 @@ export async function GET(req: NextRequest) {
       where: search
         ? {
             OR: [
-              { fullName: { contains: search } }, // Case insensitive by default in SQLite
-              { phone: { contains: search } },
+              { fullName: { contains: search, mode: 'insensitive' } },
+              { phone: { contains: search, mode: 'insensitive' } },
             ],
           }
         : {},
@@ -74,7 +78,7 @@ export async function POST(req: NextRequest) {
     const patient = await prisma.patient.create({
       data: {
         fullName: body.fullName,
-        gender: body.gender,
+        gender: body.gender || 'Female',
         dateOfBirth: body.dateOfBirth,
         phone: body.phone,
         secondaryPhone: body.secondaryPhone,
@@ -82,7 +86,7 @@ export async function POST(req: NextRequest) {
         referringDoctor: body.referringDoctor,
         presentingComplaint: body.presentingComplaint,
         treatmentModalityAssigned: body.treatmentModalityAssigned,
-        tags: body.tags.join(', '),
+        tags: Array.isArray(body.tags) ? body.tags.join(', ') : '',
         notes: body.notes,
       },
     });
@@ -95,9 +99,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(parsedPatient, { status: 201 });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });
+      const issueMsg = error.issues[0]?.message || 'Invalid request data';
+      return NextResponse.json({ error: issueMsg, details: error.issues }, { status: 400 });
     }
     console.error('Error creating patient:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Failed to create patient record' }, { status: 500 });
   }
 }
