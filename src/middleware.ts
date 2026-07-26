@@ -43,16 +43,16 @@ export async function middleware(req: NextRequest) {
     const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
 
     if (isPhysio) {
-      const allowedApiPrefixes = ['/api/attendance', '/api/patients'];
+      const allowedApiPrefixes = ['/api/attendance', '/api/patients', '/api/appointments', '/api/modalities', '/api/settings'];
       const isAllowedApi = allowedApiPrefixes.some(p => pathname.startsWith(p));
 
       if (!isAllowedApi) {
         return NextResponse.json({ error: 'Forbidden. Access restricted for PHYSIO role.' }, { status: 403 });
       }
 
-      // If accessing /api/patients, only GET (read-only) is permitted for PHYSIO
-      if (pathname.startsWith('/api/patients') && req.method !== 'GET') {
-        return NextResponse.json({ error: 'Forbidden. Read-only access permitted.' }, { status: 403 });
+      // Restrict DELETE actions for PHYSIO role
+      if (pathname.startsWith('/api/patients') && req.method === 'DELETE') {
+        return NextResponse.json({ error: 'Forbidden. Only ADMIN can delete patient records.' }, { status: 403 });
       }
     }
   }

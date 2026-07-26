@@ -7,12 +7,23 @@ import { z } from 'zod';
 const createPatientSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
   gender: z.string().default('Female'),
-  dateOfBirth: z.string().or(z.date()).optional().transform((val) => {
+  dateOfBirth: z.union([z.string(), z.date()]).optional().transform((val) => {
     if (!val) return new Date('1990-01-01');
+    if (val instanceof Date) return val;
+    if (typeof val === 'string' && val.includes('/')) {
+      const parts = val.split('/');
+      if (parts.length === 3) {
+        const [p1, p2, yr] = parts.map(p => p.trim());
+        if (yr && yr.length === 4) {
+          const parsed = new Date(`${yr}-${p2.padStart(2, '0')}-${p1.padStart(2, '0')}`);
+          if (!isNaN(parsed.getTime())) return parsed;
+        }
+      }
+    }
     const d = new Date(val);
     return isNaN(d.getTime()) ? new Date('1990-01-01') : d;
   }),
-  phone: z.string().trim().min(10, 'Contact number must be at least 10 digits'),
+  phone: z.string().trim().min(5, 'Contact number is required').transform(v => v.replace(/[^\d+]/g, '')),
   secondaryPhone: z.string().optional(),
   address: z.string().optional(),
   referringDoctor: z.string().optional(),
