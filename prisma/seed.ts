@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient, AppointmentStatus, AppointmentSource, CallDirection, CallOutcome } from '@prisma/client';
+import { PrismaClient, AppointmentStatus, AppointmentSource, CallDirection, CallOutcome, Role } from '@prisma/client';
 import crypto from 'crypto';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
@@ -48,6 +48,8 @@ async function main() {
   console.log('Start seeding...');
 
   // 1. Clean database
+  await prisma.staffAttendance.deleteMany();
+  await prisma.clinicHoliday.deleteMany();
   await prisma.user.deleteMany();
   await prisma.feedback.deleteMany();
   await prisma.waitlist.deleteMany();
@@ -62,12 +64,24 @@ async function main() {
 
   // 2. Create Users
   const adminPassword = hashPassword('rashmita123');
-  const receptionistPassword = hashPassword('receptionist123');
+  const physioPassword = hashPassword('physio123');
 
   await prisma.user.createMany({
     data: [
-      { username: 'rashmita', password: adminPassword, role: 'admin' },
-      { username: 'receptionist', password: receptionistPassword, role: 'receptionist' }
+      { username: 'rashmita', password: adminPassword, role: Role.ADMIN },
+      { username: 'physio', password: physioPassword, role: Role.PHYSIO }
+    ]
+  });
+
+  // 2b. Create Clinic Holidays
+  await prisma.clinicHoliday.createMany({
+    data: [
+      { date: new Date('2026-01-01T00:00:00.000Z'), name: 'New Year', repeatsAnnually: true },
+      { date: new Date('2026-01-26T00:00:00.000Z'), name: 'Republic Day', repeatsAnnually: true },
+      { date: new Date('2026-08-15T00:00:00.000Z'), name: 'Independence Day', repeatsAnnually: true },
+      { date: new Date('2026-08-28T00:00:00.000Z'), name: 'Rakshabandhan', repeatsAnnually: false },
+      { date: new Date('2026-09-14T00:00:00.000Z'), name: 'Ganesh Chaturthi (First Day)', repeatsAnnually: false },
+      { date: new Date('2026-11-08T00:00:00.000Z'), name: 'Diwali (Laxmi Pujan)', repeatsAnnually: false },
     ]
   });
 

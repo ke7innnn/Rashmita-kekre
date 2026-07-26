@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -52,17 +52,28 @@ export default function CRMSidebar({ children }: Props) {
     window.open('https://health360-nu.vercel.app', '_blank');
   };
 
-  const navigation = [
-    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true },
-    { href: '/crm360/appointments', name: 'Appointments', icon: Activity },
-    { href: '/crm360/patients', name: 'Patients Directory', icon: Users },
-    { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall },
-    { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail },
-    { href: '/crm360/treatments', name: 'Modalities Reference', icon: Library },
-    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3 },
-    { href: '/crm360/referrals', name: 'Referral Network', icon: Network },
-    { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings },
+  const userRole = (user?.role || '').toLowerCase();
+  const isPhysio = userRole === 'physio' || userRole === 'receptionist';
+
+  const fullNavigation = [
+    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, roles: ['admin'] },
+    { href: '/crm360/appointments', name: 'Appointments', icon: Activity, roles: ['admin'] },
+    { href: '/crm360/patients', name: 'Patients Directory', icon: Users, roles: ['admin', 'physio', 'receptionist'] },
+    { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, roles: ['admin', 'physio', 'receptionist'] },
+    { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, roles: ['admin'] },
+    { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, roles: ['admin'] },
+    { href: '/crm360/treatments', name: 'Modalities Reference', icon: Library, roles: ['admin'] },
+    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, roles: ['admin'] },
+    { href: '/crm360/referrals', name: 'Referral Network', icon: Network, roles: ['admin'] },
+    { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings, roles: ['admin'] },
   ];
+
+  const navigation = fullNavigation.filter(item => {
+    if (isPhysio) {
+      return item.roles.includes('physio') || item.roles.includes('receptionist');
+    }
+    return true;
+  });
 
   if (pathname === '/crm360/login') {
     return <>{children}</>;

@@ -4,10 +4,11 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 
-// Hardcoded credentials — no database needed
+// Hardcoded credentials & database fallback
 const USERS = [
   { username: 'rashmita', password: 'rashmita123', name: 'Dr. Rashmita', role: 'admin' },
-  { username: 'receptionist', password: 'receptionist123', name: 'Receptionist', role: 'receptionist' },
+  { username: 'physio', password: 'physio123', name: 'Physio Practitioner', role: 'physio' },
+  { username: 'receptionist', password: 'receptionist123', name: 'Receptionist', role: 'physio' },
 ];
 
 export default function LoginPage() {
@@ -43,7 +44,12 @@ export default function LoginPage() {
     }
 
     localStorage.setItem('h360_session', JSON.stringify({ name: userMatch.name, role: userMatch.role, username: userMatch.username }));
-    router.push('/crm360');
+    
+    if (userMatch.role === 'physio' || userMatch.role === 'receptionist') {
+      router.push('/crm360/patients');
+    } else {
+      router.push('/crm360');
+    }
     router.refresh();
   };
 

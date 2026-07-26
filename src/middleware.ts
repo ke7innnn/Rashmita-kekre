@@ -1,10 +1,65 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Skip auth checks on login page
+  if (pathname === '/crm360/login') {
+    return NextResponse.next();
+  }
+
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET || 'your-nextauth-secret-key-12345' });
+
+  // 1. CRM Page Routes protection
+  if (pathname.startsWith('/crm360')) {
+    if (!token) {
+      const loginUrl = new URL('/crm360/login', req.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const role = (token.role as string)?.toUpperCase();
+    const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
+
+    if (isPhysio) {
+      const allowedPaths = ['/crm360/attendance', '/crm360/patients'];
+      const isAllowed = allowedPaths.some(p => pathname.startsWith(p));
+      if (!isAllowed) {
+        const patientsUrl = new URL('/crm360/patients', req.url);
+        return NextResponse.redirect(patientsUrl);
+      }
+    }
+  }
+
+  // 2. API Routes protection
+  if (pathname.startsWith('/api') && !pathname.startsWith('/api/public') && !pathname.startsWith('/api/auth')) {
+    if (!token) {
+      // Allow unauthenticated website API requests or internal public widgets if handled by route handler
+      return NextResponse.next();
+    }
+
+    const role = (token.role as string)?.toUpperCase();
+    const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
+
+    if (isPhysio) {
+      const allowedApiPrefixes = ['/api/attendance', '/api/patients'];
+      const isAllowedApi = allowedApiPrefixes.some(p => pathname.startsWith(p));
+
+      if (!isAllowedApi) {
+        return NextResponse.json({ error: 'Forbidden. Access restricted for PHYSIO role.' }, { status: 403 });
+      }
+
+      // If accessing /api/patients, only GET (read-only) is permitted for PHYSIO
+      if (pathname.startsWith('/api/patients') && req.method !== 'GET') {
+        return NextResponse.json({ error: 'Forbidden. Read-only access permitted.' }, { status: 403 });
+      }
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [],
+  matcher: ['/crm360/:path*', '/api/:path*'],
 };

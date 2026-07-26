@@ -1,7 +1,5 @@
-'use client';
-
 import { useState, useEffect } from 'react';
-import { Calendar, Check, ArrowLeft, Loader2 } from 'lucide-react';
+import { Calendar, Check, ArrowLeft, Loader2, Phone, MessageCircle, Sparkles, ShieldCheck, MapPin, UserCheck, Zap } from 'lucide-react';
 import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import './BookingModal.css';
@@ -29,6 +27,7 @@ const HOURS: Record<number, { name: string; closed: boolean; windows: Array<{ la
 const CRM_API_URL = process.env.NEXT_PUBLIC_CRM_API_URL || '';
 
 export default function BookingModal({ onClose }: BookingPageProps) {
+  const [activeServiceTab, setActiveServiceTab] = useState<'physio' | 'craniosacral'>('physio');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [name, setName] = useState('');
@@ -271,7 +270,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
             <p className="subtitle uppercase">Book a consultation with our Vasai clinical team today.</p>
             <h2 className="booking-section-title">Let's start your recovery journey</h2>
             <p className="booking-section-desc">
-              Ready to reclaim your strength? Choose a date and time slot below to schedule your personalized physiotherapy assessment.
+              Select your clinical service below. Online calendar slots are available for Physiotherapy assessments, while Craniosacral Therapy sessions are booked directly through our clinic desk.
             </p>
           </div>
         )}
@@ -292,10 +291,31 @@ export default function BookingModal({ onClose }: BookingPageProps) {
             
             {!isConfirmed ? (
               <>
-                {/* Single Booking Card */}
-                <div className="booking-card glass">
-                  <h3 className="booking-card-title">Book an appointment</h3>
-                  <div className="booking-card-divider" />
+                {/* Service Selection Tab Switcher */}
+                <div className="service-tab-switcher">
+                  <button
+                    type="button"
+                    className={`service-tab-btn ${activeServiceTab === 'physio' ? 'active' : ''}`}
+                    onClick={() => setActiveServiceTab('physio')}
+                  >
+                    <Calendar size={16} />
+                    <span>Physiotherapy Booking</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`service-tab-btn ${activeServiceTab === 'craniosacral' ? 'active' : ''}`}
+                    onClick={() => setActiveServiceTab('craniosacral')}
+                  >
+                    <Sparkles size={16} />
+                    <span>Craniosacral Therapy (BCST)</span>
+                  </button>
+                </div>
+
+                {activeServiceTab === 'physio' ? (
+                  /* Single Booking Card for Physiotherapy */
+                  <div className="booking-card glass">
+                    <h3 className="booking-card-title">Book a Physiotherapy Appointment</h3>
+                    <div className="booking-card-divider" />
 
                   {/* Date Selector */}
                   <div className="booking-card-section">
@@ -487,14 +507,88 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                           </p>
                         )}
                         
-                        <p className="booking-disclaimer">
-                          By booking, you agree to HEALTH 360 clinic guidelines.
-                        </p>
                       </div>
                     )}
                   </div>
 
                 </div>
+                ) : (
+                  /* Craniosacral Therapy (BCST) Specialized Card (NO Calendar, Direct Clinic CTAs Only) */
+                  <div className="cst-booking-card glass">
+                    <div className="cst-card-header">
+                      <span className="cst-badge">
+                        <Sparkles size={12} />
+                        SPECIALIZED CLINICAL THERAPY
+                      </span>
+                      <h3 className="cst-card-title">Biodynamic Craniosacral Therapy (BCST)</h3>
+                      <p className="cst-card-subtitle">
+                        A gentle, non-invasive hands-on therapy that calms the central nervous system, releases deep structural tensions, and restores natural body vitality.
+                      </p>
+                    </div>
+
+                    <div className="cst-divider" />
+
+                    <div className="cst-notice-box">
+                      <UserCheck size={20} className="cst-notice-icon" />
+                      <div>
+                        <h4 className="cst-notice-title">Direct Practitioner Consultation Only</h4>
+                        <p className="cst-notice-desc">
+                          Because Biodynamic Craniosacral Therapy (BCST) sessions require individual clinical evaluation and 60-minute hands-on slotting, booking is handled directly through Dr. Rashmita's clinical desk rather than automated calendar slots.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="cst-highlights-grid">
+                      <div className="cst-highlight-item">
+                        <div className="cst-highlight-icon">🧠</div>
+                        <div>
+                          <h5 className="cst-highlight-head">Nervous System Release</h5>
+                          <p className="cst-highlight-body">Calms autonomic stress, chronic fatigue, and trauma patterns.</p>
+                        </div>
+                      </div>
+                      <div className="cst-highlight-item">
+                        <div className="cst-highlight-icon">💆</div>
+                        <div>
+                          <h5 className="cst-highlight-head">Migraine & Spinal Realignment</h5>
+                          <p className="cst-highlight-body">Gentle release of cranial, spinal, and sacral fascial restrictions.</p>
+                        </div>
+                      </div>
+                      <div className="cst-highlight-item">
+                        <div className="cst-highlight-icon">🌿</div>
+                        <div>
+                          <h5 className="cst-highlight-head">60-Min Practitioner Session</h5>
+                          <p className="cst-highlight-body">Personalized hands-on care by Dr. Rashmita Karvir-Kekre (PT, BCST).</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="cst-cta-section">
+                      <p className="cst-cta-prompt">To reserve your Craniosacral Therapy assessment, contact our Vasai clinic desk directly:</p>
+                      
+                      <div className="cst-cta-buttons">
+                        <a href="tel:+919833333333" className="cst-primary-btn">
+                          <Phone size={18} />
+                          Call Clinic Desk (+91 98333 33333)
+                        </a>
+
+                        <a 
+                          href="https://wa.me/919833333333?text=Hi%20Dr.%20Rashmita,%20I%20would%20like%20to%20inquire%20about%20a%20Biodynamic%20Craniosacral%20Therapy%20(BCST)%20session%20at%20HEALTH%20360." 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="cst-secondary-btn"
+                        >
+                          <MessageCircle size={18} />
+                          Inquire on WhatsApp
+                        </a>
+                      </div>
+
+                      <div className="cst-clinic-location">
+                        <MapPin size={14} />
+                        <span>HEALTH 360 Clinic • Om Nagar, Vasai West, Maharashtra 401202</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </>
             ) : (
               /* Confirmation Box */
