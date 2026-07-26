@@ -29,6 +29,15 @@ export default function AddAppointmentModal({ onClose }: Props) {
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatientName, setSelectedPatientName] = useState<string | null>(null);
 
+  // New Patient Inline Creation State
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [newPatientName, setNewPatientName] = useState('');
+  const [newPatientPhone, setNewPatientPhone] = useState('');
+  const [newPatientGender, setNewPatientGender] = useState('Female');
+  const [newPatientDob, setNewPatientDob] = useState('1990-01-01');
+  const [isCreatingPatient, setIsCreatingPatient] = useState(false);
+  const [createPatientError, setCreatePatientError] = useState<string | null>(null);
+
   // Form setup
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<any>({
     resolver: zodResolver(schema),
@@ -39,6 +48,45 @@ export default function AddAppointmentModal({ onClose }: Props) {
       assignedSlotDuration: 30,
     },
   });
+
+  const handleCreatePatient = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!newPatientName.trim() || !newPatientPhone.trim()) {
+      setCreatePatientError('Full name and contact number are required.');
+      return;
+    }
+    setIsCreatingPatient(true);
+    setCreatePatientError(null);
+
+    try {
+      const res = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fullName: newPatientName.trim(),
+          phone: newPatientPhone.trim(),
+          gender: newPatientGender,
+          dateOfBirth: newPatientDob || '1990-01-01',
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create patient.');
+      }
+
+      // Automatically select new patient
+      setSelectedPatientName(data.fullName);
+      setValue('patientId', data.id);
+      setShowAddPatient(false);
+      setPatientSearch('');
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    } catch (err: any) {
+      setCreatePatientError(err.message || 'Error creating patient.');
+    } finally {
+      setIsCreatingPatient(false);
+    }
+  };
 
   // Search patients query
   const { data: patients = [] } = useQuery({
@@ -127,12 +175,94 @@ export default function AddAppointmentModal({ onClose }: Props) {
         {/* Content */}
         <form onSubmit={handleSubmit(onSubmit)} className="p-6 space-y-4">
           <input type="hidden" {...register('patientId')} />
-          {/* Patient Selection Search */}
+          {/* Patient Selection Search & Quick Add */}
           <div className="space-y-2">
-            <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 mb-1">
-              Select Patient
-            </label>
-            {selectedPatientName ? (
+            <div className="flex justify-between items-center">
+              <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                Select Patient
+              </label>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddPatient(!showAddPatient);
+                  if (!showAddPatient && patientSearch) {
+                    setNewPatientName(patientSearch);
+                  }
+                }}
+                className="text-xs font-bold text-primary hover:underline flex items-center gap-1 cursor-pointer focus:outline-hidden"
+              >
+                <Plus size={13} /> {showAddPatient ? 'Back to Search' : 'Add New Patient'}
+              </button>
+            </div>
+
+            {showAddPatient ? (
+              /* Inline Add New Patient Card */
+              <div className="p-4 bg-[#FAF6EF] border border-primary/30 rounded-2xl space-y-3">
+                <p className="text-xs font-bold text-[#2B2620]">New Patient Registration</p>
+                
+                <div>
+                  <input
+                    type="text"
+                    placeholder="Full Name *"
+                    value={newPatientName}
+                    onChange={(e) => setNewPatientName(e.target.value)}
+                    className="w-full text-xs bg-white border border-[#EADFCA] px-3 py-2 rounded-xl text-[#2B2620] font-semibold focus:outline-hidden focus:border-primary"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <input
+                    type="tel"
+                    placeholder="Phone Number *"
+                    value={newPatientPhone}
+                    onChange={(e) => setNewPatientPhone(e.target.value)}
+                    className="w-full text-xs bg-white border border-[#EADFCA] px-3 py-2 rounded-xl text-[#2B2620] font-semibold focus:outline-hidden focus:border-primary"
+                  />
+                  <select
+                    value={newPatientGender}
+                    onChange={(e) => setNewPatientGender(e.target.value)}
+                    className="w-full text-xs bg-white border border-[#EADFCA] px-3 py-2 rounded-xl text-[#2B2620] font-semibold focus:outline-hidden focus:border-primary"
+                  >
+                    <option value="Female">Female</option>
+                    <option value="Male">Male</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#2B2620]/60 mb-0.5">Date of Birth</label>
+                  <input
+                    type="date"
+                    value={newPatientDob}
+                    onChange={(e) => setNewPatientDob(e.target.value)}
+                    className="w-full text-xs bg-white border border-[#EADFCA] px-3 py-1.5 rounded-xl text-[#2B2620] font-semibold focus:outline-hidden focus:border-primary"
+                  />
+                </div>
+
+                {createPatientError && (
+                  <p className="text-xs text-red-500 font-medium">{createPatientError}</p>
+                )}
+
+                <div className="flex justify-end gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddPatient(false)}
+                    className="px-3 py-1.5 rounded-xl text-xs font-semibold text-[#2B2620]/70 hover:bg-black/5"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isCreatingPatient}
+                    onClick={handleCreatePatient}
+                    className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-primary text-white hover:opacity-90 flex items-center gap-1"
+                  >
+                    {isCreatingPatient ? <Loader2 size={13} className="animate-spin" /> : <Save size={13} />}
+                    Save & Select Patient
+                  </button>
+                </div>
+              </div>
+            ) : selectedPatientName ? (
               <div className="flex justify-between items-center bg-[#FAF6EF] border border-[#EADFCA] px-3.5 py-2.5 rounded-xl">
                 <span className="text-sm font-semibold text-primary">{selectedPatientName}</span>
                 <button
@@ -179,7 +309,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
                 )}
               </div>
             )}
-            {errors.patientId?.message && (
+            {errors.patientId?.message && !selectedPatientName && !showAddPatient && (
               <p className="text-xs text-red-500">{errors.patientId.message as string}</p>
             )}
           </div>
