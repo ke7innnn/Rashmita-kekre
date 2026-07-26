@@ -422,7 +422,7 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
             whileHover={{ y: -1 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-2 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0"
+            className="flex items-center gap-2 bg-white hover:bg-white/90 text-black text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.25)] border-0"
           >
             <Plus className="h-4 w-4 stroke-[2.5]" />
             Book Patient

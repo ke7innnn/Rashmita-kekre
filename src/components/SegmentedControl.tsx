@@ -15,22 +15,22 @@ export default function SegmentedControl({
   onChange,
 }: SegmentedControlProps) {
   return (
-    <div className="flex bg-[#EADFCA] p-1 rounded-xl relative shadow-inner select-none">
+    <div className="flex bg-white/[0.06] backdrop-blur-2xl border border-white/15 p-1 rounded-2xl relative shadow-lg select-none">
       {options.map((option) => {
         const isActive = option.value === activeValue;
         return (
           <button
             key={option.value}
             onClick={() => onChange(option.value)}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors duration-200 relative cursor-pointer focus:outline-hidden ${
-              isActive ? 'text-[#2B2620]' : 'text-[#2B2620]/60 hover:text-[#2B2620]'
+            className={`px-4 py-1.5 text-xs font-semibold rounded-xl transition-colors duration-200 relative cursor-pointer focus:outline-none ${
+              isActive ? 'text-black font-bold' : 'text-white/60 hover:text-white'
             }`}
             style={{ WebkitTapHighlightColor: 'transparent' }}
           >
             {isActive && (
               <motion.div
                 layoutId="segmented-highlight"
-                className="absolute inset-0 bg-[#FFFCF6] rounded-lg shadow-sm"
+                className="absolute inset-0 bg-white rounded-xl shadow-md"
                 transition={{ type: 'spring', stiffness: 380, damping: 30 }}
                 style={{ zIndex: 0 }}
               />
