@@ -16,10 +16,13 @@ const createSchema = z.object({
   endTime: z.string().regex(/^\d{2}:\d{2}$/),
   treatmentType: z.string().default('Physiotherapy Consultation'),
   appointmentType: z.nativeEnum(AppointmentType).optional(),
-  assignedSlotDuration: z.number().int().positive(),
+  assignedSlotDuration: z.number().int().positive().default(15),
   source: z.nativeEnum(AppointmentSource).default(AppointmentSource.MANUAL_ADMIN),
   notes: z.string().optional(),
   status: z.nativeEnum(AppointmentStatus).optional(),
+  isRecurring: z.boolean().optional().default(false),
+  frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY']).optional().default('WEEKLY'),
+  totalOccurrences: z.number().int().min(1).max(30).optional().default(1),
 });
 
 export async function GET(req: NextRequest) {
@@ -74,41 +77,60 @@ export async function POST(req: NextRequest) {
     const json = await req.json();
     const body = createSchema.parse(json);
 
-    // Double-booking check
-    const existing = await prisma.appointment.findFirst({
-      where: {
-        date: body.date,
-        startTime: body.startTime,
-        status: {
-          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS],
-        },
-      },
-    });
+    const occurrences = body.isRecurring ? body.totalOccurrences : 1;
+    const createdAppointments = [];
 
-    if (existing) {
-      return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 400 });
+    for (let i = 0; i < occurrences; i++) {
+      const occurrenceDate = new Date(body.date);
+      if (body.isRecurring && i > 0) {
+        if (body.frequency === 'DAILY') {
+          occurrenceDate.setDate(occurrenceDate.getDate() + i);
+        } else if (body.frequency === 'WEEKLY') {
+          occurrenceDate.setDate(occurrenceDate.getDate() + (i * 7));
+        } else if (body.frequency === 'BIWEEKLY') {
+          occurrenceDate.setDate(occurrenceDate.getDate() + (i * 14));
+        }
+      }
+
+      // Check double-booking for occurrence date
+      const existing = await prisma.appointment.findFirst({
+        where: {
+          date: occurrenceDate,
+          startTime: body.startTime,
+          status: {
+            in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS],
+          },
+        },
+      });
+
+      if (existing && !body.isRecurring) {
+        return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 400 });
+      }
+
+      if (!existing) {
+        const appointment = await prisma.appointment.create({
+          data: {
+            patientId: body.patientId,
+            date: occurrenceDate,
+            startTime: body.startTime,
+            endTime: body.endTime,
+            treatmentType: body.treatmentType || 'Physiotherapy Consultation',
+            appointmentType: body.appointmentType,
+            assignedSlotDuration: body.assignedSlotDuration,
+            source: body.source,
+            notes: body.notes ? (body.isRecurring ? `[Recurring Session ${i + 1}/${occurrences}] ${body.notes}` : body.notes) : (body.isRecurring ? `[Recurring Session ${i + 1}/${occurrences}]` : undefined),
+            status: body.status || AppointmentStatus.SCHEDULED,
+          },
+          include: {
+            patient: true,
+            assignedExercises: true,
+          },
+        });
+        createdAppointments.push(appointment);
+      }
     }
 
-    const appointment = await prisma.appointment.create({
-      data: {
-        patientId: body.patientId,
-        date: body.date,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        treatmentType: body.treatmentType || 'Physiotherapy Consultation',
-        appointmentType: body.appointmentType,
-        assignedSlotDuration: body.assignedSlotDuration,
-        source: body.source,
-        notes: body.notes,
-        status: body.status || AppointmentStatus.SCHEDULED,
-      },
-      include: {
-        patient: true,
-        assignedExercises: true,
-      },
-    });
-
-    return NextResponse.json(appointment, { status: 201 });
+    return NextResponse.json(createdAppointments.length === 1 ? createdAppointments[0] : createdAppointments, { status: 201 });
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: 'Invalid request data', details: error.issues }, { status: 400 });

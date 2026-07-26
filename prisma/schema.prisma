@@ -146,9 +146,9 @@ model ClinicSettings {
   email               String   @default("info@health360.com")
   address             String   @default("123 Clinic Street, Mumbai, India")
   primaryDoctor       String   @default("Dr. Rashmita Karvir Kekre")
-  workingHoursStart   String   @default("09:00")
-  workingHoursEnd     String   @default("18:00")
-  slotDuration        Int      @default(30)
+  workingHoursStart   String   @default("10:00")
+  workingHoursEnd     String   @default("21:00")
+  slotDuration        Int      @default(15)
   holidays            String   @default("") // Comma-separated list for SQLite compatibility
   isPubliclyVisible   Boolean  @default(true)
   reminder24hTemplate String   @default("Hi {patient}, this is a reminder for your session tomorrow at {time}.")

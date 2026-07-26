@@ -388,7 +388,7 @@ export default function ManageAppointmentPage({ appointmentId, onBack }: Props) 
                 return (
                   <div key={pkg.id} className="space-y-2">
                     <div className="flex justify-between items-center text-xs font-bold">
-                      <span className="text-[#2B2620]">{pkg.name || 'Treatment Pack'}</span>
+                      <span className="text-[#2B2620]">{pkg.packageName || 'Treatment Pack'}</span>
                       <span className="text-primary">{pkg.sessionsUsed} / {pkg.totalSessions} Used</span>
                     </div>
                     {/* Progress slider bar */}
@@ -406,8 +406,180 @@ export default function ManageAppointmentPage({ appointmentId, onBack }: Props) 
               })}
             </div>
           )}
+
+          {/* Clinical Assessment Form Attachments Panel */}
+          <PatientAttachmentsSection patientId={patient.id} />
         </div>
       </div>
+    </div>
+  );
+}
+
+function PatientAttachmentsSection({ patientId }: { patientId: string }) {
+  const queryClient = useQueryClient();
+  const [isUploading, setIsUploading] = useState(false);
+  const [attachmentName, setAttachmentName] = useState('');
+  const [attachmentUrl, setAttachmentUrl] = useState('');
+  const [fileType, setFileType] = useState('Assessment Form (PDF)');
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const { data: attachments = [] } = useQuery({
+    queryKey: ['patient-attachments', patientId],
+    queryFn: async () => {
+      const res = await fetch(`/api/patients/${patientId}/attachments`);
+      if (!res.ok) throw new Error('Failed to fetch attachments');
+      return res.json();
+    },
+  });
+
+  const addAttachmentMutation = useMutation({
+    mutationFn: async (payload: any) => {
+      const res = await fetch(`/api/patients/${patientId}/attachments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) throw new Error('Failed to save attachment');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-attachments', patientId] });
+      setAttachmentName('');
+      setAttachmentUrl('');
+      setIsUploading(false);
+      setUploadError(null);
+    },
+    onError: (err: any) => {
+      setUploadError(err.message || 'Error saving attachment');
+    },
+  });
+
+  const deleteAttachmentMutation = useMutation({
+    mutationFn: async (attachmentId: string) => {
+      const res = await fetch(`/api/patients/${patientId}/attachments?attachmentId=${attachmentId}`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to delete attachment');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-attachments', patientId] });
+    },
+  });
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (!attachmentName) {
+        setAttachmentName(file.name);
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setAttachmentUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  return (
+    <div className="bg-[#FFFCF6] border border-[#EADFCA]/50 p-6 rounded-2xl shadow-[0_8px_30px_rgba(42,38,32,0.02)] space-y-4">
+      <div className="flex items-center justify-between">
+        <h4 className="text-xs font-bold uppercase tracking-wider text-[#2B2620]/50 pl-0.5">
+          Clinical Assessment Attachments ({attachments.length})
+        </h4>
+        <button
+          type="button"
+          onClick={() => setIsUploading(!isUploading)}
+          className="text-xs font-bold text-primary hover:underline cursor-pointer focus:outline-none"
+        >
+          {isUploading ? 'Cancel' : '+ Attach Form'}
+        </button>
+      </div>
+
+      {isUploading && (
+        <div className="p-4 bg-[#FAF6EF] border border-primary/20 rounded-xl space-y-3">
+          <p className="text-xs font-bold text-[#2B2620]">Attach Assessment Document</p>
+          <div>
+            <input
+              type="text"
+              placeholder="Form Title / Document Name *"
+              value={attachmentName}
+              onChange={(e) => setAttachmentName(e.target.value)}
+              className="w-full text-xs bg-white border border-[#EADFCA] px-3 py-2 rounded-xl text-[#2B2620] font-semibold focus:outline-none focus:border-primary mb-2"
+            />
+            <div className="grid grid-cols-2 gap-2 mb-2">
+              <select
+                value={fileType}
+                onChange={(e) => setFileType(e.target.value)}
+                className="text-xs bg-white border border-[#EADFCA] px-3 py-2 rounded-xl text-[#2B2620] font-semibold focus:outline-none"
+              >
+                <option value="Assessment Form (PDF)">Assessment Form (PDF)</option>
+                <option value="Intake Form">Intake Form</option>
+                <option value="Imaging / X-Ray">Imaging / X-Ray</option>
+                <option value="Referral Letter">Referral Letter</option>
+              </select>
+              <label className="cursor-pointer bg-white border border-[#EADFCA] text-xs font-bold text-[#2B2620]/75 px-3 py-2 rounded-xl flex items-center justify-center hover:bg-black/5">
+                <span>{attachmentUrl ? '✓ File Uploaded' : 'Upload File'}</span>
+                <input type="file" onChange={handleFileUpload} className="hidden" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" />
+              </label>
+            </div>
+            {!attachmentUrl && (
+              <input
+                type="text"
+                placeholder="Or paste File / Document Web URL *"
+                value={attachmentUrl}
+                onChange={(e) => setAttachmentUrl(e.target.value)}
+                className="w-full text-xs bg-white border border-[#EADFCA] px-3 py-2 rounded-xl text-[#2B2620] font-semibold focus:outline-none focus:border-primary"
+              />
+            )}
+          </div>
+
+          {uploadError && <p className="text-xs text-red-500 font-medium">{uploadError}</p>}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              disabled={addAttachmentMutation.isPending || !attachmentName || !attachmentUrl}
+              onClick={() => addAttachmentMutation.mutate({ name: attachmentName, url: attachmentUrl, fileType })}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-primary text-white hover:opacity-90 disabled:opacity-50 flex items-center gap-1 cursor-pointer"
+            >
+              {addAttachmentMutation.isPending && <Loader2 size={13} className="animate-spin" />}
+              Save Attachment
+            </button>
+          </div>
+        </div>
+      )}
+
+      {attachments.length === 0 ? (
+        <p className="text-xs text-[#2B2620]/45 font-medium italic">No assessment forms attached yet.</p>
+      ) : (
+        <div className="space-y-2 divide-y divide-[#EADFCA]/30">
+          {attachments.map((att: any) => (
+            <div key={att.id} className="pt-2 flex items-center justify-between text-xs">
+              <div>
+                <a
+                  href={att.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-bold text-primary hover:underline block"
+                >
+                  📄 {att.name}
+                </a>
+                <span className="text-[10px] text-[#2B2620]/45 font-semibold">
+                  {att.fileType} • {new Date(att.uploadedAt).toLocaleDateString()}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => deleteAttachmentMutation.mutate(att.id)}
+                className="text-[10px] font-bold text-red-500 hover:underline cursor-pointer"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

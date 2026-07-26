@@ -16,7 +16,10 @@ const schema = z.object({
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Invalid start time'),
   appointmentType: z.string().min(1, 'Please select Appointment Type'),
   treatmentType: z.string().default('Physiotherapy Consultation'),
-  assignedSlotDuration: z.number().int().positive().default(30),
+  assignedSlotDuration: z.number().int().positive().default(15),
+  isRecurring: z.boolean().default(false),
+  frequency: z.enum(['DAILY', 'WEEKLY', 'BIWEEKLY']).default('WEEKLY'),
+  totalOccurrences: z.number().int().min(1).max(30).default(5),
   notes: z.string().optional(),
 });
 
@@ -40,16 +43,21 @@ export default function AddAppointmentModal({ onClose }: Props) {
   const [createPatientError, setCreatePatientError] = useState<string | null>(null);
 
   // Form setup
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, setValue, watch, formState: { errors } } = useForm<any>({
     resolver: zodResolver(schema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      startTime: '09:00',
+      startTime: '10:00',
       appointmentType: 'CONSULTATION',
       treatmentType: 'Physiotherapy Consultation',
-      assignedSlotDuration: 30,
+      assignedSlotDuration: 15,
+      isRecurring: false,
+      frequency: 'WEEKLY',
+      totalOccurrences: 5,
     },
   });
+
+  const watchIsRecurring = watch('isRecurring');
 
   const handleCreatePatient = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -391,6 +399,59 @@ export default function AddAppointmentModal({ onClose }: Props) {
                 <option value={60}>60 Minutes</option>
               </select>
             </div>
+          </div>
+
+          {/* Recurring Appointments Toggle */}
+          <div className="p-3.5 bg-white/[0.05] border border-white/15 rounded-2xl space-y-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs font-bold text-white">Recurring Appointments</p>
+                <p className="text-[10px] text-white/50">Schedule a multi-session recurring series</p>
+              </div>
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...register('isRecurring')}
+                  className="sr-only peer"
+                />
+                <div className="w-9 h-5 bg-white/20 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--primary)]"></div>
+              </label>
+            </div>
+
+            {watchIsRecurring && (
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10">
+                <div>
+                  <label className="block text-[10px] font-semibold text-white/70 mb-1">
+                    Frequency
+                  </label>
+                  <select
+                    {...register('frequency')}
+                    className="block w-full text-xs rounded-xl border border-white/15 bg-[#130E26] px-2.5 py-2 text-white font-semibold focus:outline-none focus:border-[var(--primary)]"
+                  >
+                    <option value="DAILY">Daily</option>
+                    <option value="WEEKLY">Weekly</option>
+                    <option value="BIWEEKLY">Bi-weekly</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-white/70 mb-1">
+                    Total Sessions
+                  </label>
+                  <select
+                    {...register('totalOccurrences', { valueAsNumber: true })}
+                    className="block w-full text-xs rounded-xl border border-white/15 bg-[#130E26] px-2.5 py-2 text-white font-semibold focus:outline-none focus:border-[var(--primary)]"
+                  >
+                    <option value={2}>2 Sessions</option>
+                    <option value={3}>3 Sessions</option>
+                    <option value={5}>5 Sessions</option>
+                    <option value={8}>8 Sessions</option>
+                    <option value={10}>10 Sessions</option>
+                    <option value={12}>12 Sessions</option>
+                  </select>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Booking Notes */}

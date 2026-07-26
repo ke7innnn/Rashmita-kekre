@@ -528,22 +528,14 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                             const pkgs = app.patient.sessionPackages;
                             if (!pkgs || pkgs.length === 0) return null;
                             const activePkg = pkgs[0];
-                            const remaining = activePkg.totalSessions - activePkg.sessionsUsed;
-                            if (remaining <= 2 && remaining > 0) {
-                              return (
-                                <span className="text-[9px] font-bold px-2 py-0.5 bg-[rgba(255,180,84,0.12)] text-[#FFB454] border border-[rgba(255,180,84,0.3)] rounded-full num-tabular">
-                                  {remaining} Left
-                                </span>
-                              );
-                            }
-                            if (remaining <= 0) {
-                              return (
-                                <span className="text-[9px] font-bold px-2 py-0.5 bg-[rgba(255,93,122,0.12)] text-[#FF5D7A] border border-[rgba(255,93,122,0.3)] rounded-full animate-pulse">
-                                  Exhausted
-                                </span>
-                              );
-                            }
-                            return null;
+                            const used = activePkg.sessionsUsed;
+                            const total = activePkg.totalSessions;
+                            const remaining = Math.max(0, total - used);
+                            return (
+                              <span className="text-[9px] font-bold px-2 py-0.5 bg-[rgba(18,214,196,0.12)] text-[#12D6C4] border border-[rgba(18,214,196,0.3)] rounded-full num-tabular">
+                                Session {used + 1}/{total} • {remaining} Left
+                              </span>
+                            );
                           })()}
                         </div>
                       </div>
