@@ -5,14 +5,14 @@ import { prisma } from '@/lib/db';
 import { z } from 'zod';
 
 const createPatientSchema = z.object({
-  fullName: z.string().min(1, 'Full name is required'),
+  fullName: z.string().trim().min(1, 'Full name is required'),
   gender: z.string().default('Female'),
   dateOfBirth: z.string().or(z.date()).optional().transform((val) => {
     if (!val) return new Date('1990-01-01');
     const d = new Date(val);
     return isNaN(d.getTime()) ? new Date('1990-01-01') : d;
   }),
-  phone: z.string().min(1, 'Phone number is required'),
+  phone: z.string().trim().min(10, 'Contact number must be at least 10 digits'),
   secondaryPhone: z.string().optional(),
   address: z.string().optional(),
   referringDoctor: z.string().optional(),
@@ -105,7 +105,17 @@ export async function POST(req: NextRequest) {
       const issueMsg = error.issues[0]?.message || 'Invalid request data';
       return NextResponse.json({ error: issueMsg, details: error.issues }, { status: 400 });
     }
+
     console.error('Error creating patient:', error);
-    return NextResponse.json({ error: error.message || 'Failed to create patient record' }, { status: 500 });
+
+    if (error?.code === 'P2002') {
+      return NextResponse.json({ 
+        error: 'A patient with this phone number is already registered in the system.' 
+      }, { status: 400 });
+    }
+
+    return NextResponse.json({ 
+      error: error.message?.split('\n')?.pop()?.trim() || 'Failed to create patient record' 
+    }, { status: 400 });
   }
 }

@@ -53,10 +53,18 @@ export default function AddAppointmentModal({ onClose }: Props) {
 
   const handleCreatePatient = async (e: React.MouseEvent) => {
     e.preventDefault();
-    if (!newPatientName.trim() || !newPatientPhone.trim()) {
-      setCreatePatientError('Full name and contact number are required.');
+    const cleanName = newPatientName.trim();
+    const cleanPhone = newPatientPhone.trim();
+
+    if (!cleanName) {
+      setCreatePatientError('Full name is required.');
       return;
     }
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setCreatePatientError('Valid 10-digit contact number is required.');
+      return;
+    }
+
     setIsCreatingPatient(true);
     setCreatePatientError(null);
 
@@ -65,9 +73,9 @@ export default function AddAppointmentModal({ onClose }: Props) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName: newPatientName.trim(),
-          phone: newPatientPhone.trim(),
-          gender: newPatientGender,
+          fullName: cleanName,
+          phone: cleanPhone,
+          gender: newPatientGender || 'Female',
           dateOfBirth: newPatientDob || '1990-01-01',
         }),
       });
