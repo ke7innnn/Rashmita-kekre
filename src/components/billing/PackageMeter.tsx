@@ -76,7 +76,7 @@ export default function PackageMeter({
   }
 
   return (
-    <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-3.5 select-none relative overflow-hidden">
+    <div className="bg-gradient-to-b from-white/[0.08] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-3.5 select-none relative overflow-hidden shadow-[0_16px_32px_rgba(0,0,0,0.4)]">
       {/* Background Ambient Glow for Warning/Status */}
       <div
         className={`absolute top-0 right-0 w-32 h-32 rounded-full blur-3xl opacity-10 pointer-events-none ${

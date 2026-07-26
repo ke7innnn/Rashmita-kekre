@@ -144,7 +144,7 @@ export default function InvoiceBuilderPage() {
         {/* Left Pane: Invoice Building (7 Columns) */}
         <div className="lg:col-span-7 space-y-6">
           {/* Patient Selection Card */}
-          <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-4">
+          <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
             <label className="text-xs font-bold uppercase tracking-wider text-white/60 block">1. Select Patient *</label>
 
             {selectedPatient ? (
@@ -210,7 +210,7 @@ export default function InvoiceBuilderPage() {
           </div>
 
           {/* Line Items Card */}
-          <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-4">
+          <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
             <div className="flex items-center justify-between">
               <label className="text-xs font-bold uppercase tracking-wider text-white/60 block">2. Invoice Lines</label>
               <button
@@ -300,7 +300,7 @@ export default function InvoiceBuilderPage() {
           </div>
 
           {/* Discount & Notes Card */}
-          <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-4">
+          <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-4 shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
             <label className="text-xs font-bold uppercase tracking-wider text-white/60 block">3. Discount & Notes</label>
 
             <div className="grid grid-cols-2 gap-4">
@@ -355,7 +355,7 @@ export default function InvoiceBuilderPage() {
 
         {/* Right Pane: Live Sticky Invoice Preview (5 Columns) */}
         <div className="lg:col-span-5 sticky top-6 space-y-4">
-          <div className="bg-[#0F0F14] border border-white/15 p-6 rounded-3xl space-y-6 shadow-2xl">
+          <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-6 rounded-3xl space-y-6 shadow-2xl">
             <div className="border-b border-white/10 pb-4">
               <span className="text-[9px] uppercase font-bold tracking-widest text-[#12D6C4] block">Live Preview</span>
               <h3 className="text-xl font-serif font-bold text-white mt-1">Health 360 Clinic</h3>

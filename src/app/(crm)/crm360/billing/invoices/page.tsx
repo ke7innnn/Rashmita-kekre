@@ -56,7 +56,7 @@ export default function InvoiceListPage() {
       </div>
 
       {/* Filter Bar & Animated Result Count */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-[#0F0F14] border border-white/12 p-3.5 rounded-2xl">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-4 rounded-3xl shadow-[0_16px_32px_rgba(0,0,0,0.4)]">
         {/* Status Filter Tabs */}
         <div className="flex flex-wrap items-center gap-1.5">
           {STATUS_FILTERS.map((tab) => {
@@ -66,7 +66,7 @@ export default function InvoiceListPage() {
                 key={tab.id}
                 type="button"
                 onClick={() => setSelectedStatus(tab.id)}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
+                className={`px-3.5 py-1.5 text-xs font-semibold rounded-xl transition-all cursor-pointer ${
                   isActive
                     ? 'bg-white text-black font-bold shadow-md'
                     : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -103,7 +103,7 @@ export default function InvoiceListPage() {
       </div>
 
       {/* Dense Invoice Table */}
-      <div className="bg-[#0F0F14] border border-white/12 rounded-2xl overflow-hidden shadow-xl">
+      <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 rounded-3xl overflow-hidden shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead className="bg-white/[0.04] border-b border-white/10 text-[10px] uppercase font-bold text-white/40 tracking-wider">

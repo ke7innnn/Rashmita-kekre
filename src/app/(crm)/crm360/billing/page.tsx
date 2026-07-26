@@ -60,7 +60,7 @@ export default function BillingOverviewPage() {
       {/* Top 3 Figures Strip (Quiet, typographically strong) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Figure 1: Outstanding */}
-        <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-1">
+        <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-1 shadow-[0_16px_32px_rgba(0,0,0,0.4)] hover:border-[#12D6C4]/40 transition-all">
           <span className="text-[9px] uppercase font-bold tracking-widest text-white/40 block">Outstanding Unpaid Balance</span>
           <p className="text-2xl font-bold num-tabular text-amber-300">
             {isLoading ? '...' : formatINR(outstanding)}
@@ -69,7 +69,7 @@ export default function BillingOverviewPage() {
         </div>
 
         {/* Figure 2: Collected This Month */}
-        <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-1">
+        <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-1 shadow-[0_16px_32px_rgba(0,0,0,0.4)] hover:border-[#12D6C4]/40 transition-all">
           <span className="text-[9px] uppercase font-bold tracking-widest text-white/40 block">Collected This Month</span>
           <p className="text-2xl font-bold num-tabular text-emerald-400">
             {isLoading ? '...' : formatINR(collectedThisMonth)}
@@ -78,7 +78,7 @@ export default function BillingOverviewPage() {
         </div>
 
         {/* Figure 3: Active Packages */}
-        <div className="bg-[#0F0F14] border border-white/12 p-5 rounded-2xl space-y-1">
+        <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 p-5 rounded-3xl space-y-1 shadow-[0_16px_32px_rgba(0,0,0,0.4)] hover:border-[#12D6C4]/40 transition-all">
           <span className="text-[9px] uppercase font-bold tracking-widest text-white/40 block">Active Packages Hold</span>
           <p className="text-2xl font-bold num-tabular text-white">
             {isLoading ? '...' : activePackagesCount} <span className="text-sm text-white/50 font-normal">Packages</span>
@@ -100,7 +100,7 @@ export default function BillingOverviewPage() {
             </Link>
           </div>
 
-          <div className="bg-[#0F0F14] border border-white/12 rounded-2xl overflow-hidden divide-y divide-white/10">
+          <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
             {isLoading ? (
               <div className="p-8 text-center text-xs text-white/40">Loading invoices...</div>
             ) : recentInvoices.length === 0 ? (
@@ -154,7 +154,7 @@ export default function BillingOverviewPage() {
         <div className="space-y-3">
           <h3 className="text-xs font-bold uppercase tracking-wider text-white/60">Patients with Outstanding</h3>
 
-          <div className="bg-[#0F0F14] border border-white/12 rounded-2xl overflow-hidden divide-y divide-white/10">
+          <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/15 rounded-3xl overflow-hidden divide-y divide-white/10 shadow-[0_20px_40px_rgba(0,0,0,0.45)]">
             {isLoading ? (
               <div className="p-8 text-center text-xs text-white/40">Loading balances...</div>
             ) : patientsWithOutstanding.length === 0 ? (

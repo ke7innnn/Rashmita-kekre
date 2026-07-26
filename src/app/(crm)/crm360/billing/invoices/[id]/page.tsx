@@ -136,7 +136,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Printable Invoice Container */}
-      <div className="bg-[#0F0F14] print:bg-white print:text-black border border-white/15 print:border-none p-8 rounded-3xl print:p-0 space-y-6 shadow-2xl print:shadow-none font-sans">
+      <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl print:bg-white print:text-black border border-white/15 print:border-none p-8 rounded-3xl print:p-0 space-y-6 shadow-[0_20px_40px_rgba(0,0,0,0.45)] print:shadow-none font-sans">
         {/* Clinic Header (Print & Screen) */}
         <div className="flex justify-between items-start border-b border-white/10 print:border-black/15 pb-6">
           <div>
@@ -249,12 +249,12 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
       {/* Record Payment Modal */}
       <AnimatePresence>
         {showPaymentModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#120D1F] border border-white/20 p-6 rounded-3xl max-w-md w-full space-y-5 shadow-2xl select-none"
+              className="bg-[#0E0A17]/85 backdrop-blur-3xl border border-white/20 p-6 rounded-3xl max-w-md w-full space-y-5 shadow-[0_25px_50px_rgba(0,0,0,0.6)] select-none"
             >
               <div className="flex justify-between items-center border-b border-white/10 pb-3">
                 <h3 className="text-lg font-serif font-bold text-white">Record Payment</h3>
