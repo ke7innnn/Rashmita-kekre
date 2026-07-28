@@ -6,7 +6,9 @@ import { signIn } from 'next-auth/react';
 
 // Hardcoded credentials & database fallback
 const USERS = [
-  { username: 'rashmita', password: 'rashmita123', name: 'Dr. Rashmita', role: 'admin' },
+  { username: 'rashmita', password: 'rashmita123', name: 'Dr. Rashmita Karvir Kekre', role: 'admin' },
+  { username: 'drgachchami', password: 'physio123', name: 'Dr. Gachchami', role: 'physio' },
+  { username: 'drpritee', password: 'physio123', name: 'Dr. Pritee', role: 'physio' },
   { username: 'physio', password: 'physio123', name: 'Physio Practitioner', role: 'physio' },
   { username: 'receptionist', password: 'receptionist123', name: 'Receptionist', role: 'physio' },
 ];
