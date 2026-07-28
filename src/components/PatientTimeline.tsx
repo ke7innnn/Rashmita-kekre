@@ -12,6 +12,7 @@ import {
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
 import CourseMeter from '@/components/billing/CourseMeter';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 
@@ -84,6 +85,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Sub-tab navigation state
   const [activeTab, setActiveTab] = useState<'documents' | 'rom' | 'billing'>('billing');
   const [isSellCourseModalOpen, setIsSellCourseModalOpen] = useState(false);
+
+  // WhatsApp real messaging states
+  const [showApptModal, setShowApptModal] = useState(false);
+  const [nextApptDate, setNextApptDate] = useState('');
+  const [nextApptTime, setNextApptTime] = useState('');
+  const [whatsappSending, setWhatsappSending] = useState<'appt' | 'missed' | null>(null);
+  const [whatsappSuccess, setWhatsappSuccess] = useState<'appt' | 'missed' | null>(null);
 
   // Custom modal states for Session Packages, Document Previewer, and Custom Confirm
   const [isAddingPackage, setIsAddingPackage] = useState(false);
@@ -644,54 +652,47 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     updatePatientMutation.mutate({ notes: currentNotes });
   };
 
-  // Patient Message Consent/Sent Trackers
-  const isPatientWelcomeSent = patient?.notes?.includes('[x] Patient Welcome Sent') || false;
-  const isPatientBookingSent = patient?.notes?.includes('[x] Patient Appointment Sent') || false;
-  const isPatientHEPSent = patient?.notes?.includes('[x] Patient HEP Sent') || false;
-  const isPatientFeedbackSent = patient?.notes?.includes('[x] Patient Feedback Sent') || false;
-
-  const handleTogglePatientWelcome = () => {
-    let currentNotes = patient.notes || '';
-    if (isPatientWelcomeSent) {
-      currentNotes = currentNotes.replace('[x] Patient Welcome Sent', '').trim();
+  // WhatsApp — Send Next Appointment Reminder
+  const handleSendNextApptReminder = async () => {
+    if (!nextApptDate || !nextApptTime) return;
+    setWhatsappSending('appt');
+    const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
+    const dateFormatted = new Date(nextApptDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    const [h, m] = nextApptTime.split(':');
+    const hour = parseInt(h);
+    const timeFormatted = `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+    const result = await sendWhatsAppNotification({
+      phone: patient.phone,
+      templateName: 'next_appointment_reminder',
+      params: [firstName, dateFormatted, timeFormatted],
+    });
+    setWhatsappSending(null);
+    if (result.success) {
+      setWhatsappSuccess('appt');
+      setShowApptModal(false);
+      setTimeout(() => setWhatsappSuccess(null), 4000);
     } else {
-      currentNotes = (currentNotes + '\n[x] Patient Welcome Sent').trim();
-      alert(`[WhatsApp SIMULATION]\nMessage sent to patient ${patient.fullName} (${patient.phone}):\n\n"Hi ${patient.fullName}, welcome to Health 360! We are excited to support you on your recovery journey. Your clinical case file has been successfully registered. Feel free to message us here if you have any questions."`);
+      alert('Failed to send WhatsApp message. Please check API credentials.');
     }
-    updatePatientMutation.mutate({ notes: currentNotes });
   };
 
-  const handleTogglePatientBooking = () => {
-    let currentNotes = patient.notes || '';
-    if (isPatientBookingSent) {
-      currentNotes = currentNotes.replace('[x] Patient Appointment Sent', '').trim();
+  // WhatsApp — Send Missed Appointment Notice
+  const handleSendMissedAppt = async () => {
+    if (!confirm(`Send missed appointment notice to ${patient.fullName}?`)) return;
+    setWhatsappSending('missed');
+    const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
+    const result = await sendWhatsAppNotification({
+      phone: patient.phone,
+      templateName: 'missed_appointment_notice',
+      params: [firstName],
+    });
+    setWhatsappSending(null);
+    if (result.success) {
+      setWhatsappSuccess('missed');
+      setTimeout(() => setWhatsappSuccess(null), 4000);
     } else {
-      currentNotes = (currentNotes + '\n[x] Patient Appointment Sent').trim();
-      alert(`[WhatsApp SIMULATION]\nMessage sent to patient ${patient.fullName} (${patient.phone}):\n\n"Dear ${patient.fullName}, your upcoming therapy session is confirmed. We look forward to seeing you. Please check your assigned timing in the portal or reply directly if you need to reschedule."`);
+      alert('Failed to send WhatsApp message. Please check API credentials.');
     }
-    updatePatientMutation.mutate({ notes: currentNotes });
-  };
-
-  const handleTogglePatientHEP = () => {
-    let currentNotes = patient.notes || '';
-    if (isPatientHEPSent) {
-      currentNotes = currentNotes.replace('[x] Patient HEP Sent', '').trim();
-    } else {
-      currentNotes = (currentNotes + '\n[x] Patient HEP Sent').trim();
-      alert(`[WhatsApp SIMULATION]\nMessage sent to patient ${patient.fullName} (${patient.phone}):\n\n"Hello ${patient.fullName}! This is a gentle reminder from Health 360 to perform your prescribed physical therapy exercises today. Consistent daily movement is key to your fast rehabilitation!"`);
-    }
-    updatePatientMutation.mutate({ notes: currentNotes });
-  };
-
-  const handleTogglePatientFeedback = () => {
-    let currentNotes = patient.notes || '';
-    if (isPatientFeedbackSent) {
-      currentNotes = currentNotes.replace('[x] Patient Feedback Sent', '').trim();
-    } else {
-      currentNotes = (currentNotes + '\n[x] Patient Feedback Sent').trim();
-      alert(`[WhatsApp SIMULATION]\nMessage sent to patient ${patient.fullName} (${patient.phone}):\n\n"Hi ${patient.fullName}, we hope you are feeling better after your session today. Please stay hydrated and rest the joint. Please let us know how your pain levels look tomorrow morning!"`);
-    }
-    updatePatientMutation.mutate({ notes: currentNotes });
   };
 
   const getStatusStyle = (status: AppointmentStatus) => {
@@ -1356,114 +1357,102 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               )}
             </div>
 
-            {/* Patient Outreach & Communication Section */}
+            {/* Patient WhatsApp Communication Section */}
             <div className="space-y-4 pt-6 border-t border-[#EADFCA]/60">
               <div className="flex justify-between items-center border-b border-[#EADFCA] pb-2">
                 <h4 className="text-base font-serif font-bold text-primary">Patient Communication & Outreach</h4>
                 <Share2 className="h-4.5 w-4.5 text-primary stroke-[1.75]" />
               </div>
-              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider -mt-2">Select a template to send outreach message directly to patient's WhatsApp</p>
+              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider -mt-2">Send WhatsApp messages directly to {patient?.fullName?.split(' ')[0]}'s number ({patient?.phone})</p>
 
-              <div className="bg-[#FAF6EF]/60 border border-[#EADFCA] p-4 rounded-2xl space-y-4.5 shadow-xxs">
-                {/* Onboarding Welcome Template */}
+              <div className="bg-[#FAF6EF]/60 border border-[#EADFCA] p-4 rounded-2xl space-y-3 shadow-xxs">
+
+                {/* 1. Next Appointment Reminder */}
                 <div className="space-y-2">
-                  <label className="flex items-start gap-3 text-xs font-semibold text-[#2B2620] cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isPatientWelcomeSent}
-                      onChange={handleTogglePatientWelcome}
-                      className="mt-1 rounded border-[#EADFCA] text-primary focus:ring-primary focus:outline-hidden"
-                    />
-                    <div className="space-y-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-xs text-primary">1. Welcome & Intake Greeting</span>
-                        <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                          isPatientWelcomeSent ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-foreground/5 text-foreground/40'
-                        }`}>
-                          {isPatientWelcomeSent ? 'Sent via WhatsApp' : 'Draft'}
-                        </span>
-                      </div>
-                      <p className="text-xxs bg-[#FFFCF6] border border-[#EADFCA]/40 p-2.5 rounded-xl text-[#2B2620]/75 leading-relaxed font-medium">
-                        "Hi {patient?.fullName}, welcome to Health 360! We are excited to support you on your recovery journey. Your clinical case file has been successfully registered. Feel free to message us here if you have any questions."
-                      </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-serif font-bold text-xs text-primary">📅 Next Appointment Reminder</p>
+                      <p className="text-xxs text-[#2B2620]/50 mt-0.5">Sends appointment date & time to patient's WhatsApp</p>
                     </div>
-                  </label>
+                    {whatsappSuccess === 'appt' && (
+                      <span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Sent!</span>
+                    )}
+                  </div>
+
+                  {!showApptModal ? (
+                    <button
+                      onClick={() => setShowApptModal(true)}
+                      className="w-full py-2.5 px-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm"
+                    >
+                      <Send className="h-3.5 w-3.5" />
+                      Send Next Appointment Reminder
+                    </button>
+                  ) : (
+                    <div className="space-y-2 bg-white/60 border border-[#EADFCA] rounded-xl p-3">
+                      <p className="text-xxs font-bold text-[#2B2620]/60 uppercase tracking-wider">Enter appointment details</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-[9px] font-semibold text-[#2B2620]/50 uppercase">Date</label>
+                          <input
+                            type="date"
+                            value={nextApptDate}
+                            onChange={(e) => setNextApptDate(e.target.value)}
+                            className="w-full text-xs border border-[#EADFCA] rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-primary mt-0.5"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[9px] font-semibold text-[#2B2620]/50 uppercase">Time</label>
+                          <input
+                            type="time"
+                            value={nextApptTime}
+                            onChange={(e) => setNextApptTime(e.target.value)}
+                            className="w-full text-xs border border-[#EADFCA] rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-primary mt-0.5"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={handleSendNextApptReminder}
+                          disabled={!nextApptDate || !nextApptTime || whatsappSending === 'appt'}
+                          className="flex-1 py-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
+                        >
+                          {whatsappSending === 'appt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                          {whatsappSending === 'appt' ? 'Sending...' : 'Send'}
+                        </button>
+                        <button
+                          onClick={() => setShowApptModal(false)}
+                          className="px-3 py-2 text-xs text-[#2B2620]/50 hover:text-[#2B2620] border border-[#EADFCA] rounded-lg cursor-pointer"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                {/* Appointment Confirmation Template */}
+                <div className="border-t border-[#EADFCA]/60" />
+
+                {/* 2. Missed Appointment Notice */}
                 <div className="space-y-2">
-                  <label className="flex items-start gap-3 text-xs font-semibold text-[#2B2620] cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isPatientBookingSent}
-                      onChange={handleTogglePatientBooking}
-                      className="mt-1 rounded border-[#EADFCA] text-primary focus:ring-primary focus:outline-hidden"
-                    />
-                    <div className="space-y-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-xs text-primary">2. Appointment Slot Confirmation</span>
-                        <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                          isPatientBookingSent ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-foreground/5 text-foreground/40'
-                        }`}>
-                          {isPatientBookingSent ? 'Sent via WhatsApp' : 'Draft'}
-                        </span>
-                      </div>
-                      <p className="text-xxs bg-[#FFFCF6] border border-[#EADFCA]/40 p-2.5 rounded-xl text-[#2B2620]/75 leading-relaxed font-medium">
-                        "Dear {patient?.fullName}, your upcoming therapy session is confirmed. We look forward to seeing you. Please check your assigned timing in the portal or reply directly if you need to reschedule."
-                      </p>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-serif font-bold text-xs text-primary">🚫 Missed Appointment Notice</p>
+                      <p className="text-xxs text-[#2B2620]/50 mt-0.5">Notifies patient they missed their session today</p>
                     </div>
-                  </label>
+                    {whatsappSuccess === 'missed' && (
+                      <span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Sent!</span>
+                    )}
+                  </div>
+                  <button
+                    onClick={handleSendMissedAppt}
+                    disabled={whatsappSending === 'missed'}
+                    className="w-full py-2.5 px-4 flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                  >
+                    {whatsappSending === 'missed' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    {whatsappSending === 'missed' ? 'Sending...' : 'Send Missed Appointment Notice'}
+                  </button>
                 </div>
 
-                {/* HEP Reminder Template */}
-                <div className="space-y-2">
-                  <label className="flex items-start gap-3 text-xs font-semibold text-[#2B2620] cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isPatientHEPSent}
-                      onChange={handleTogglePatientHEP}
-                      className="mt-1 rounded border-[#EADFCA] text-primary focus:ring-primary focus:outline-hidden"
-                    />
-                    <div className="space-y-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-xs text-primary">3. Home Exercise Program (HEP) Reminder</span>
-                        <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                          isPatientHEPSent ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-foreground/5 text-foreground/40'
-                        }`}>
-                          {isPatientHEPSent ? 'Sent via WhatsApp' : 'Draft'}
-                        </span>
-                      </div>
-                      <p className="text-xxs bg-[#FFFCF6] border border-[#EADFCA]/40 p-2.5 rounded-xl text-[#2B2620]/75 leading-relaxed font-medium">
-                        "Hello {patient?.fullName}! This is a gentle reminder from Health 360 to perform your prescribed physical therapy exercises today. Consistent daily movement is key to your fast rehabilitation!"
-                      </p>
-                    </div>
-                  </label>
-                </div>
-
-                {/* Post-Session Care Feedback Template */}
-                <div className="space-y-2">
-                  <label className="flex items-start gap-3 text-xs font-semibold text-[#2B2620] cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isPatientFeedbackSent}
-                      onChange={handleTogglePatientFeedback}
-                      className="mt-1 rounded border-[#EADFCA] text-primary focus:ring-primary focus:outline-hidden"
-                    />
-                    <div className="space-y-1 w-full">
-                      <div className="flex items-center justify-between">
-                        <span className="font-serif font-bold text-xs text-primary">4. Post-Session Care & Feedback</span>
-                        <span className={`text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-md ${
-                          isPatientFeedbackSent ? 'bg-primary/10 text-primary border border-primary/20' : 'bg-foreground/5 text-foreground/40'
-                        }`}>
-                          {isPatientFeedbackSent ? 'Sent via WhatsApp' : 'Draft'}
-                        </span>
-                      </div>
-                      <p className="text-xxs bg-[#FFFCF6] border border-[#EADFCA]/40 p-2.5 rounded-xl text-[#2B2620]/75 leading-relaxed font-medium">
-                        "Hi {patient?.fullName}, we hope you are feeling better after your session today. Please stay hydrated and rest the joint. Please let us know how your pain levels look tomorrow morning!"
-                      </p>
-                    </div>
-                  </label>
-                </div>
               </div>
             </div>
           </div>
