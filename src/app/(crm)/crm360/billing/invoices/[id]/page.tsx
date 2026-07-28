@@ -124,16 +124,23 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/10 print:border-black/20 pb-6">
           <div className="space-y-1">
             <h1 className="text-xl font-bold text-white print:text-black tracking-tight">
-              Health 360 Physiotherapy Clinic
+              Health360
             </h1>
             <p className="text-xs text-white/60 print:text-black/70">
-              Dr. Rashmita Karvir Kekre, B.P.Th. (M.I.A.P.), BCST
+              Physiotherapy and Craniosacral Therapy Clinic
+            </p>
+            <p className="text-xs text-white/60 print:text-black/70 pt-0.5 whitespace-pre-line font-medium">
+              Dr. Rashmita Karvir Kekre
+              <br />
+              B.PTh.(M.I.A.P.)
+              <br />
+              BCST
             </p>
             <p className="text-xs text-white/50 print:text-black/60 pt-1">
-              Shop No. 4, Sunrise Apartments, Carter Road, Bandra West, Mumbai, MH - 400050
+              Shop No.1, Amardeep Society, Om Nagar, Vasai (W).
             </p>
             <p className="text-xs text-white/50 print:text-black/60">
-              Phone: +91 98200 98200 · Email: info@health360physio.com
+              Phone: 8482812859 · Email: health360vasai@gmail.com
             </p>
           </div>
 

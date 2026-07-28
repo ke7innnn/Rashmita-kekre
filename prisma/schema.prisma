@@ -143,15 +143,16 @@ model TreatmentModality {
 
 model ClinicSettings {
   id                           String   @id @default("clinic_settings")
-  name                         String   @default("Health 360 Physiotherapy Clinic")
-  phone                        String   @default("+91 98200 98200")
-  email                        String   @default("info@health360physio.com")
-  address                      String   @default("Shop No. 4, Sunrise Apartments, Carter Road, Bandra West, Mumbai, MH - 400050")
+  name                         String   @default("Health360")
+  tagline                      String?  @default("Physiotherapy and Craniosacral Therapy Clinic")
+  phone                        String   @default("8482812859")
+  email                        String   @default("health360vasai@gmail.com")
+  address                      String   @default("Shop No.1, Amardeep Society, Om Nagar, Vasai (W).")
   primaryDoctor                String   @default("Dr. Rashmita Karvir Kekre")
-  doctorNameCredentials        String   @default("Dr. Rashmita Karvir Kekre, B.P.Th. (M.I.A.P.), BCST")
+  doctorNameCredentials        String   @default("Dr. Rashmita Karvir Kekre\nB.PTh.(M.I.A.P.)\nBCST")
   logoUrl                      String?
-  website                      String?  @default("www.health360physio.com")
-  upiId                        String?  @default("health360@upi")
+  website                      String?  @default("health360vasai@gmail.com")
+  upiId                        String?  @default("8482812859@upi")
   registrationNumber           String?
   workingHoursStart            String   @default("10:00")
   workingHoursEnd              String   @default("21:00")

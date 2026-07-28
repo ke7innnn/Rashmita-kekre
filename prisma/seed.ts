@@ -200,11 +200,13 @@ async function main() {
   await prisma.clinicSettings.create({
     data: {
       id: 'clinic_settings',
-      name: 'Health 360 Physiotherapy Clinic',
-      phone: '+919820098200',
-      email: 'contact@health360physio.com',
-      address: 'Shop No. 4, Sunrise Apartments, Carter Road, Bandra West, Mumbai, MH - 400050',
+      name: 'Health360',
+      tagline: 'Physiotherapy and Craniosacral Therapy Clinic',
+      phone: '8482812859',
+      email: 'health360vasai@gmail.com',
+      address: 'Shop No.1, Amardeep Society, Om Nagar, Vasai (W).',
       primaryDoctor: 'Dr. Rashmita Karvir Kekre',
+      doctorNameCredentials: 'Dr. Rashmita Karvir Kekre\nB.PTh.(M.I.A.P.)\nBCST',
       workingHoursStart: '09:00',
       workingHoursEnd: '18:00',
       slotDuration: 30,
