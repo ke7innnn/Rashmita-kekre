@@ -34,6 +34,15 @@ export default function CRMSidebar({ children }: Props) {
         const parsed = JSON.parse(session);
         setUser(parsed);
         setIsAuthenticated(true);
+
+        // Strict RBAC: Non-admin users are strictly restricted to Patients Directory & Attendance
+        const role = (parsed.role || '').toLowerCase();
+        const isAdmin = role === 'admin';
+        const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance');
+
+        if (!isAdmin && !isAllowedPath) {
+          router.replace('/crm360/patients');
+        }
       } catch (e) {
         localStorage.removeItem('h360_session');
         router.replace('/crm360/login');
@@ -53,24 +62,24 @@ export default function CRMSidebar({ children }: Props) {
   };
 
   const userRole = (user?.role || '').toLowerCase();
-  const isPhysio = userRole === 'physio' || userRole === 'receptionist';
+  const isAdmin = userRole === 'admin';
 
   const fullNavigation = [
-    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, roles: ['admin'] },
-    { href: '/crm360/appointments', name: 'Appointments', icon: Activity, roles: ['admin'] },
-    { href: '/crm360/patients', name: 'Patients Directory', icon: Users, roles: ['admin', 'physio', 'receptionist'] },
-    { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, roles: ['admin'] },
-    { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, roles: ['admin', 'physio', 'receptionist'] },
-    { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, roles: ['admin'] },
-    { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, roles: ['admin'] },
-    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, roles: ['admin'] },
-    { href: '/crm360/referrals', name: 'Referral Network', icon: Network, roles: ['admin'] },
-    { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings, roles: ['admin'] },
+    { href: '/crm360/patients', name: 'Patients Directory', icon: Users, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin'] },
+    { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin'] },
+    { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin'] },
+    { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
+    { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
+    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
+    { href: '/crm360/referrals', name: 'Referral Network', icon: Network, category: 'management', roles: ['admin'] },
+    { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings, category: 'management', roles: ['admin'] },
   ];
 
   const navigation = fullNavigation.filter(item => {
-    if (isPhysio) {
-      return item.roles.includes('physio') || item.roles.includes('receptionist');
+    if (!isAdmin) {
+      return item.href === '/crm360/patients' || item.href === '/crm360/attendance';
     }
     return true;
   });

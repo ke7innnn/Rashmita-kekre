@@ -47,7 +47,7 @@ export default function LoginPage() {
 
     localStorage.setItem('h360_session', JSON.stringify({ name: userMatch.name, role: userMatch.role, username: userMatch.username }));
     
-    if (userMatch.role === 'physio' || userMatch.role === 'receptionist') {
+    if (userMatch.role.toLowerCase() !== 'admin') {
       router.push('/crm360/patients');
     } else {
       router.push('/crm360');
