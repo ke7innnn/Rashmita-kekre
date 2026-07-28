@@ -127,9 +127,21 @@ export function amountInWords(value: number): string {
    TICK BOX
    ============================================================ */
 
-function TickBox({ label, checked }: { label: string; checked: boolean }) {
+function TickBox({ 
+  label, 
+  checked, 
+  onClick 
+}: { 
+  label: string; 
+  checked: boolean; 
+  onClick?: () => void;
+}) {
   return (
-    <span className="tickbox">
+    <span 
+      className={`tickbox ${onClick ? 'cursor-pointer hover:opacity-75 transition-opacity select-none' : ''}`} 
+      onClick={onClick}
+      title={onClick ? `Click to select ${label}` : undefined}
+    >
       <span className="tickbox__square">{checked ? '\u2713' : ''}</span>
       <span className="tickbox__label">{label}</span>
     </span>
@@ -143,14 +155,51 @@ function TickBox({ label, checked }: { label: string; checked: boolean }) {
 export default function ReceiptDocument({
   clinic,
   data,
+  onUpdateData,
+  onSelectPaymentMode,
 }: {
   clinic: ClinicProfile;
   data: ReceiptData;
+  onUpdateData?: (updated: Partial<ReceiptData>) => void;
+  onSelectPaymentMode?: (mode: PaymentMode) => void;
 }) {
   // Paper reads RECEIPT once money has been taken, INVOICE before that.
   const isReceipt = data.amountPaid > 0;
   const heading = isReceipt ? 'RECEIPT' : 'INVOICE';
   const numberLabel = isReceipt ? 'Receipt No.' : 'Invoice No.';
+
+  const handleTextChange = (field: keyof ReceiptData) => (e: React.FocusEvent<HTMLElement>) => {
+    if (!onUpdateData) return;
+    const text = e.currentTarget.innerText.trim();
+    onUpdateData({ [field]: text } as any);
+  };
+
+  const handleLineChange = (index: number, field: keyof ReceiptLine) => (e: React.FocusEvent<HTMLElement>) => {
+    if (!onUpdateData) return;
+    const text = e.currentTarget.innerText.trim();
+    const newLines = [...data.lines];
+    if (newLines[index]) {
+      const current = newLines[index];
+      let val: any = text;
+      if (field === 'quantity' || field === 'unitPrice' || field === 'lineTotal') {
+        val = Number(text.replace(/[^0-9.]/g, '')) || 0;
+      }
+      newLines[index] = { ...current, [field]: val };
+      if (field === 'quantity' || field === 'unitPrice') {
+        newLines[index].lineTotal = newLines[index].quantity * newLines[index].unitPrice;
+      }
+      const newTotal = newLines.reduce((acc, l) => acc + l.lineTotal, 0);
+      const newBalance = Math.max(0, newTotal - data.amountPaid);
+      onUpdateData({ lines: newLines, total: newTotal, subtotal: newTotal, balanceDue: newBalance });
+    }
+  };
+
+  const handlePaidChange = (e: React.FocusEvent<HTMLElement>) => {
+    if (!onUpdateData) return;
+    const val = Number(e.currentTarget.innerText.replace(/[^0-9.]/g, '')) || 0;
+    const newBalance = Math.max(0, data.total - val);
+    onUpdateData({ amountPaid: val, balanceDue: newBalance });
+  };
 
   return (
     <>
@@ -188,20 +237,48 @@ export default function ReceiptDocument({
         <div className="doc__meta">
           <div>
             <span className="meta__label">{numberLabel}:</span>{' '}
-            <span className="meta__value">{data.documentNumber}</span>
+            <span 
+              className="meta__value editable-field"
+              contentEditable={!!onUpdateData}
+              suppressContentEditableWarning
+              onBlur={handleTextChange('documentNumber')}
+            >
+              {data.documentNumber}
+            </span>
           </div>
           <div className="doc__headingWord">{heading}</div>
           <div className="doc__metaRight">
             <span className="meta__label">Date:</span>{' '}
-            <span className="meta__value">{data.issueDate}</span>
+            <span 
+              className="meta__value editable-field"
+              contentEditable={!!onUpdateData}
+              suppressContentEditableWarning
+              onBlur={handleTextChange('issueDate')}
+            >
+              {data.issueDate}
+            </span>
           </div>
         </div>
 
         {/* ---------- RECEIVED FROM ---------- */}
         <section className="doc__from">
-          <div className="field__label">Received From</div>
-          <div className="field__value">{data.patientName}</div>
-          <div className="field__sub">{data.patientPhone}</div>
+          <div className="field__label">{isReceipt ? 'Received From' : 'Billed To'}</div>
+          <div 
+            className="field__value editable-field"
+            contentEditable={!!onUpdateData}
+            suppressContentEditableWarning
+            onBlur={handleTextChange('patientName')}
+          >
+            {data.patientName}
+          </div>
+          <div 
+            className="field__sub editable-field"
+            contentEditable={!!onUpdateData}
+            suppressContentEditableWarning
+            onBlur={handleTextChange('patientPhone')}
+          >
+            {data.patientPhone}
+          </div>
         </section>
 
         {/* ---------- LINE ITEMS ---------- */}
@@ -215,11 +292,30 @@ export default function ReceiptDocument({
             </tr>
           </thead>
           <tbody>
-            {data.lines.map((line) => (
+            {data.lines.map((line, idx) => (
               <tr key={line.id}>
-                <td className="items__desc">{line.description}</td>
-                <td className="items__qty">{line.quantity}</td>
-                <td className="items__rate num">
+                <td 
+                  className="items__desc editable-field"
+                  contentEditable={!!onUpdateData}
+                  suppressContentEditableWarning
+                  onBlur={handleLineChange(idx, 'description')}
+                >
+                  {line.description}
+                </td>
+                <td 
+                  className="items__qty editable-field"
+                  contentEditable={!!onUpdateData}
+                  suppressContentEditableWarning
+                  onBlur={handleLineChange(idx, 'quantity')}
+                >
+                  {line.quantity}
+                </td>
+                <td 
+                  className="items__rate num editable-field"
+                  contentEditable={!!onUpdateData}
+                  suppressContentEditableWarning
+                  onBlur={handleLineChange(idx, 'unitPrice')}
+                >
                   {formatINR(line.unitPrice)}
                 </td>
                 <td className="items__amt num">{formatINR(line.lineTotal)}</td>
@@ -238,10 +334,10 @@ export default function ReceiptDocument({
         <section className="doc__bottom">
           <div className="doc__bottomLeft">
             <div className="modes">
-              <TickBox label="Cash" checked={data.paymentMode === 'CASH'} />
-              <TickBox label="UPI" checked={data.paymentMode === 'UPI'} />
-              <TickBox label="Cheque" checked={data.paymentMode === 'CHEQUE'} />
-              <TickBox label="Other" checked={data.paymentMode === 'OTHER'} />
+              <TickBox label="Cash" checked={data.paymentMode === 'CASH'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('CASH') : undefined} />
+              <TickBox label="UPI" checked={data.paymentMode === 'UPI'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('UPI') : undefined} />
+              <TickBox label="Cheque" checked={data.paymentMode === 'CHEQUE'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('CHEQUE') : undefined} />
+              <TickBox label="Other" checked={data.paymentMode === 'OTHER'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('OTHER') : undefined} />
             </div>
 
             {data.includesCourse && (
@@ -251,7 +347,14 @@ export default function ReceiptDocument({
               </p>
             )}
 
-            {data.notes && <p className="notes">{data.notes}</p>}
+            <p 
+              className="notes editable-field"
+              contentEditable={!!onUpdateData}
+              suppressContentEditableWarning
+              onBlur={handleTextChange('notes')}
+            >
+              {data.notes || (onUpdateData ? 'Click to add notes...' : '')}
+            </p>
           </div>
 
           <div className="doc__bottomRight">
@@ -265,7 +368,12 @@ export default function ReceiptDocument({
                 </tr>
                 <tr>
                   <td className="totals__label">Paid</td>
-                  <td className="totals__value num">
+                  <td 
+                    className="totals__value num editable-field"
+                    contentEditable={!!onUpdateData}
+                    suppressContentEditableWarning
+                    onBlur={handlePaidChange}
+                  >
                     {formatINR(data.amountPaid)}
                   </td>
                 </tr>
@@ -491,10 +599,29 @@ const CSS = `
 }
 .footer__dot { color: #aaa; }
 
+/* editable fields */
+.editable-field[contenteditable="true"] {
+  outline: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+  border-radius: 2px;
+}
+.editable-field[contenteditable="true"]:hover {
+  background-color: rgba(59, 130, 246, 0.08);
+  outline: 1px dashed rgba(59, 130, 246, 0.4);
+}
+.editable-field[contenteditable="true"]:focus {
+  background-color: rgba(59, 130, 246, 0.12);
+  outline: 1.5px solid #2563eb;
+}
+
 /* ---------- PRINT ---------- */
 @page { size: A4 portrait; margin: 14mm; }
 
 @media print {
+  .editable-field {
+    outline: none !important;
+    background: transparent !important;
+  }
   .doc {
     width: auto;
     min-height: 0;
