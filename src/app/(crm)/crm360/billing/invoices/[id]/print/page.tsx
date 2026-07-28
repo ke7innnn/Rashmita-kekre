@@ -3,9 +3,8 @@
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { Printer, Download, ArrowLeft, Loader2, MapPin, Phone, Mail } from 'lucide-react';
-import { formatCurrency } from '@/lib/formatters';
-import { amountInWords } from '@/lib/amountInWords';
+import { Printer, Download, ArrowLeft, Loader2 } from 'lucide-react';
+import ReceiptDocument, { ClinicProfile, ReceiptData, PaymentMode } from '@/components/billing/ReceiptDocument';
 
 export default function InvoicePrintPage({ 
   params,
@@ -73,46 +72,84 @@ export default function InvoicePrintPage({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-black font-sans">
-        <Loader2 className="w-8 h-8 animate-spin text-gray-500 mb-3" />
-        <p className="text-sm font-medium text-gray-600">Preparing receipt for print...</p>
+      <div className="min-h-screen bg-[#0A0711] flex flex-col items-center justify-center p-8 text-white font-sans">
+        <Loader2 className="w-8 h-8 animate-spin text-[var(--primary)] mb-3" />
+        <p className="text-sm font-medium text-white/70">Preparing receipt document...</p>
       </div>
     );
   }
 
   if (error || !invoice) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8 text-black font-sans">
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm mb-4">
+      <div className="min-h-screen bg-[#0A0711] flex flex-col items-center justify-center p-8 text-white font-sans">
+        <div className="p-4 bg-red-500/20 border border-red-500/30 text-red-300 rounded-xl text-sm mb-4">
           {error || 'Invoice not found'}
         </div>
-        <Link href="/crm360/billing/invoices" className="text-xs text-blue-600 underline">
+        <Link href="/crm360/billing/invoices" className="text-xs text-[var(--primary)] underline">
           Return to Invoice Directory
         </Link>
       </div>
     );
   }
 
+  // Clinic Profile Wiring
+  const clinic: ClinicProfile = {
+    name: 'Health360',
+    tagline: settings?.tagline || 'Physiotherapy and Craniosacral Therapy Clinic',
+    doctorName: 'Dr. Rashmita Karvir Kekre',
+    credentials: ['B.PTh.(M.I.A.P.)', 'BCST'],
+    address: 'Shop No.1, Amardeep Society, Om Nagar, Vasai (W).',
+    phone: '8482812859',
+    email: 'health360vasai@gmail.com',
+    logoUrl: settings?.logoUrl || null,
+  };
+
+  // Receipt Data Mapping
+  const subtotal = Number(invoice.subtotalAmount || 0);
   const total = Number(invoice.totalAmount || 0);
-  const paid = Number(invoice.paidAmount || 0);
-  const balance = Math.max(0, total - paid);
-  const isPaid = paid > 0 || invoice.status === 'PAID' || invoice.status === 'PARTIALLY_PAID';
-  const docHeading = isPaid ? 'RECEIPT' : 'INVOICE';
-  const numberLabel = isPaid ? 'Receipt No.:' : 'Invoice No.:';
-  const patientLabel = isPaid ? 'Received From' : 'Billed To';
+  const discount = Number(invoice.discountAmount || 0);
+  const amountPaid = Number(invoice.paidAmount || 0);
+  const balanceDue = Math.max(0, total - amountPaid);
 
-  const hasCourse = invoice.lines.some((l: any) => l.patientPackageId || l.description?.toLowerCase().includes('course') || l.description?.toLowerCase().includes('package'));
+  const rawMode = invoice.payments?.[0]?.paymentMode || (amountPaid > 0 ? 'UPI' : '');
+  const paymentModeMap: Record<string, PaymentMode> = {
+    cash: 'CASH',
+    upi: 'UPI',
+    cheque: 'CHEQUE',
+    other: 'OTHER',
+  };
+  const paymentMode: PaymentMode | null = paymentModeMap[rawMode.toLowerCase()] || null;
 
-  // Payment Mode Detection
-  const primaryPaymentMode = invoice.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI' : '');
-  const paymentModes = ['Cash', 'UPI', 'Cheque', 'Other'];
+  const includesCourse = invoice.lines.some((l: any) =>
+    l.patientPackageId ||
+    l.description?.toLowerCase().includes('course') ||
+    l.description?.toLowerCase().includes('package')
+  );
 
-  const clinicName = settings?.name || 'Health360';
-  const tagline = settings?.tagline || 'Physiotherapy and Craniosacral Therapy Clinic';
-  const clinicAddress = settings?.address || 'Shop No.1, Amardeep Society, Om Nagar, Vasai (W).';
-  const clinicPhone = settings?.phone || '8482812859';
-  const clinicEmail = settings?.email || 'health360vasai@gmail.com';
-  const logoUrl = settings?.logoUrl;
+  const receiptData: ReceiptData = {
+    documentNumber: invoice.invoiceNumber,
+    issueDate: new Date(invoice.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }),
+    patientName: invoice.patient?.fullName || 'Patient',
+    patientPhone: invoice.patient?.phone || '',
+    lines: invoice.lines.map((l: any) => ({
+      id: l.id,
+      description: l.description,
+      quantity: l.quantity,
+      unitPrice: Number(l.unitPrice || 0),
+      lineTotal: Number(l.totalPrice || 0),
+    })),
+    subtotal,
+    discount,
+    total,
+    amountPaid,
+    balanceDue,
+    paymentMode,
+    notes: invoice.notes || null,
+    includesCourse,
+  };
+
+  const isReceipt = amountPaid > 0;
+  const docHeading = isReceipt ? 'Receipt' : 'Invoice';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1A162B] via-[#0E0C1A] to-[#161226] print:bg-white text-black font-sans selection:bg-gray-200 relative overflow-hidden">
@@ -150,235 +187,14 @@ export default function InvoicePrintPage({
         </div>
       </div>
 
-      {/* Embedded Print CSS */}
-      <style jsx global>{`
-        @media print {
-          @page {
-            size: A4;
-            margin: 15mm;
-          }
-          html, body {
-            background: #ffffff !important;
-            color: #000000 !important;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-          }
-          .no-print {
-            display: none !important;
-          }
-          .print-container {
-            width: 100% !important;
-            max-width: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-            border: none !important;
-            border-radius: 0 !important;
-            transform: none !important;
-            animation: none !important;
-          }
-          .page-break-avoid {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-          thead {
-            display: table-header-group !important;
-          }
-          tr {
-            page-break-inside: avoid !important;
-            break-inside: avoid !important;
-          }
-        }
-      `}</style>
-
-      {/* Physical Receipt A4 Paper Preview Container */}
+      {/* Paper Canvas Container */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-        className="print-container relative z-10 max-w-[210mm] mx-auto my-10 print:my-0 bg-white p-[15mm] shadow-[0_25px_70px_rgba(0,0,0,0.85)] print:shadow-none border border-black/10 print:border-0 rounded-[2px] print:rounded-none text-black flex flex-col justify-between min-h-[270mm]"
+        className="relative z-10 max-w-[210mm] mx-auto my-10 print:my-0 shadow-[0_25px_70px_rgba(0,0,0,0.85)] print:shadow-none"
       >
-        <div>
-          {/* 1. HEADER BAND (Two Columns) */}
-          <div className="flex justify-between items-start gap-4">
-            {/* LEFT: Logo / Clinic Name & Tagline */}
-            <div className="space-y-1">
-              {logoUrl ? (
-                <img src={logoUrl} alt={clinicName} className="max-h-[20mm] object-contain mb-1" />
-              ) : (
-                <h1 className="text-[16pt] font-semibold tracking-tight text-black leading-tight">
-                  {clinicName}
-                </h1>
-              )}
-              <p className="text-[7.5pt] font-semibold uppercase tracking-wider text-black/70">
-                {tagline}
-              </p>
-            </div>
-
-            {/* RIGHT: Doctor Credentials on TWO lines */}
-            <div className="text-right shrink-0 leading-snug">
-              <h2 className="text-[11pt] font-semibold text-black">
-                Dr. Rashmita Karvir Kekre
-              </h2>
-              <p className="text-[9pt] text-black/90 font-medium">
-                B.PTh.(M.I.A.P.)
-              </p>
-              <p className="text-[9pt] text-black/90 font-medium">
-                BCST
-              </p>
-            </div>
-          </div>
-
-          {/* Thin Horizontal Rule */}
-          <div className="border-b border-black/20 my-3" />
-
-          {/* 2. META ROW & RECEIPT / INVOICE HEADING */}
-          <div className="flex justify-between items-baseline mb-4 text-[11pt]">
-            <div className="font-semibold text-black flex items-baseline gap-2">
-              <span className="text-[12pt] font-bold text-black">{docHeading}</span>
-              <span>{numberLabel} <strong className="font-bold">{invoice.invoiceNumber}</strong></span>
-            </div>
-            <div className="text-[10pt] text-black/80 font-medium">
-              Date: <span className="font-semibold">{new Date(invoice.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-            </div>
-          </div>
-
-          {/* 3. RECEIVED FROM / BILLED TO */}
-          <div className="mb-4 text-[9.5pt]">
-            <span className="text-[8.5pt] font-bold uppercase tracking-wider text-black/50 block mb-0.5">
-              {patientLabel}
-            </span>
-            <div className="text-[11pt] font-semibold text-black">{invoice.patient?.fullName}</div>
-            {invoice.patient?.phone && (
-              <div className="text-[9pt] text-black/70 font-medium">{invoice.patient.phone}</div>
-            )}
-          </div>
-
-          {/* 4. LINE ITEMS TABLE */}
-          <div className="my-4">
-            <table className="w-full text-left border-collapse table-fixed">
-              <thead>
-                <tr className="border-b border-black/30 text-[8.5pt] font-bold text-black/60 uppercase tracking-wider">
-                  <th className="py-2 pr-2 text-left" style={{ width: '55%' }}>Description</th>
-                  <th className="py-2 px-2 text-center" style={{ width: '10%' }}>Qty</th>
-                  <th className="py-2 px-2 text-right" style={{ width: '15%' }}>Unit Price</th>
-                  <th className="py-2 pl-2 text-right" style={{ width: '20%' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/10 text-[9.5pt]">
-                {invoice.lines.map((line: any) => (
-                  <tr key={line.id} className="page-break-avoid">
-                    <td className="py-[3mm] pr-2 font-medium text-black align-top break-words">
-                      {line.description}
-                      {line.isCoveredByPackage && (
-                        <span className="block text-[8pt] text-black/50 font-normal italic">
-                          (Covered by Course)
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-[3mm] px-2 text-center tabular-nums text-black/80 align-top">
-                      {line.quantity}
-                    </td>
-                    <td className="py-[3mm] px-2 text-right tabular-nums text-black/80 align-top">
-                      {line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.unitPrice)}
-                    </td>
-                    <td className="py-[3mm] pl-2 text-right font-bold tabular-nums text-black align-top">
-                      {line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.totalPrice)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* 5. AMOUNT IN WORDS */}
-          <div className="border-b border-black/20 pb-2.5 my-3 text-[9.5pt] italic text-black font-medium">
-            Amount: <span className="font-semibold text-black">{amountInWords(total)}</span>
-          </div>
-
-          {/* 6. BOTTOM BAND (Payment Mode & Terms Left | Total/Paid/Balance Box Right) */}
-          <div className="flex justify-between items-start gap-6 pt-2 page-break-avoid">
-            {/* LEFT: Payment Mode Tick Boxes & Course Expiry Terms */}
-            <div className="space-y-4 max-w-[55%]">
-              <div>
-                <span className="text-[8pt] font-bold uppercase tracking-wider text-black/50 block mb-1.5">
-                  Payment Mode
-                </span>
-                <div className="flex flex-wrap items-center gap-3 text-[9pt]">
-                  {paymentModes.map((mode) => {
-                    const isTicked = primaryPaymentMode.toLowerCase() === mode.toLowerCase() || (paid > 0 && mode === 'UPI' && !primaryPaymentMode);
-                    return (
-                      <div key={mode} className="flex items-center gap-1.5 font-medium text-black">
-                        <span className="w-3.5 h-3.5 border border-black/60 inline-flex items-center justify-center text-[9px] font-bold">
-                          {isTicked ? '✓' : ''}
-                        </span>
-                        <span>{mode}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {hasCourse && (
-                <div className="text-[8.5pt] text-black/80 leading-snug font-medium pt-1 border-t border-black/10">
-                  Package valid 45 days from date of purchase. Unused sessions are not refundable.
-                </div>
-              )}
-            </div>
-
-            {/* RIGHT: Bordered Box (3 Rows - Monochrome Weight Only) */}
-            <div className="w-[42%] border border-black/40 text-[9.5pt] divide-y divide-black/30">
-              <div className="flex justify-between px-3 py-1.5 text-black">
-                <span className="font-medium">Total</span>
-                <span className="tabular-nums font-semibold">{formatCurrency(total)}</span>
-              </div>
-              <div className="flex justify-between px-3 py-1.5 text-black">
-                <span className="font-medium">Paid</span>
-                <span className="tabular-nums font-semibold">{formatCurrency(paid)}</span>
-              </div>
-              <div className="flex justify-between px-3 py-2 text-black bg-black/[0.03]">
-                <span className="font-bold">Balance</span>
-                <span className="tabular-nums font-extrabold text-[11pt]">{formatCurrency(balance)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 7. SIGNATURE ROW & FOOTER BAND */}
-        <div className="mt-8 pt-4 page-break-avoid space-y-4">
-          {/* Signature Row */}
-          <div className="text-right">
-            <div className="w-[45mm] border-t border-black/60 ml-auto pt-1 text-center">
-              <span className="text-[8pt] font-medium text-black">By</span>
-            </div>
-          </div>
-
-          {/* Thank You Note */}
-          <div className="text-center text-[9pt] italic text-black/70 font-medium">
-            Thank You
-          </div>
-
-          {/* Footer Band with Middots & Inline Icons */}
-          <div className="border-t border-black/20 pt-3 text-[8.5pt] text-black/80 text-center flex flex-wrap items-center justify-center gap-x-2 gap-y-1">
-            <span className="flex items-center gap-1 font-medium">
-              <MapPin className="w-3 h-3 text-black/60 shrink-0" />
-              {clinicAddress}
-            </span>
-            <span className="text-black/40">·</span>
-            <span className="flex items-center gap-1 font-medium">
-              <Phone className="w-3 h-3 text-black/60 shrink-0" />
-              {clinicPhone}
-            </span>
-            <span className="text-black/40">·</span>
-            <span className="flex items-center gap-1 font-medium">
-              <Mail className="w-3 h-3 text-black/60 shrink-0" />
-              {clinicEmail}
-            </span>
-          </div>
-        </div>
+        <ReceiptDocument clinic={clinic} data={receiptData} />
       </motion.div>
     </div>
   );
