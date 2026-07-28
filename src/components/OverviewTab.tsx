@@ -323,7 +323,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                       key={idx}
                       animate={{ scaleY: [1, 2.5, 1] }}
                       transition={{ duration: 1, repeat: Infinity, delay: idx * 0.15 }}
-                      className="w-0.5 bg-[#12D6C4] h-2 rounded-full shadow-[0_0_6px_#12D6C4]"
+                      className="w-0.5 bg-white h-2 rounded-full shadow-[0_0_6px_rgba(255,255,255,0.5)]"
                     />
                   ))}
                 </div>
@@ -337,9 +337,9 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
         <div className="space-y-6 flex flex-col">
           
           {/* SPOTLIGHT KPI TILE */}
-          <GlassPanel accent="teal" className="p-6 flex flex-col justify-between shadow-[0_0_50px_-20px_rgba(18,214,196,0.35)] min-h-[150px] flex-1">
+          <GlassPanel accent="none" className="p-6 flex flex-col justify-between shadow-[0_0_50px_-20px_rgba(255,255,255,0.15)] min-h-[150px] flex-1">
             <div className="space-y-0.5">
-              <p className="eyebrow text-[#12D6C4]">
+              <p className="eyebrow text-white">
                 Glanceable Metrics
               </p>
               <h4 className="font-serif font-bold text-lg text-[#F5F3FA] leading-snug">
@@ -347,7 +347,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
               </h4>
             </div>
             <div className="mt-4">
-              <p className="text-5xl font-serif font-bold num-tabular text-[#12D6C4]">
+              <p className="text-5xl font-serif font-bold num-tabular text-white">
                 {appointmentsList.length}
               </p>
               <p className="text-[11px] text-[rgba(245,243,250,0.62)] mt-1 font-medium">
@@ -377,19 +377,19 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                     cy="18" 
                     r="15.915" 
                     fill="none" 
-                    stroke="#12D6C4" 
+                    stroke="#FFFFFF" 
                     strokeWidth="3.5" 
                     strokeDasharray={`${appointmentsList.length > 0 ? (completedCount / appointmentsList.length) * 100 : 0} ${100 - (appointmentsList.length > 0 ? (completedCount / appointmentsList.length) * 100 : 0)}`}
                   />
                 </svg>
-                <span className="text-xs font-serif font-bold num-tabular text-[#12D6C4]">
+                <span className="text-xs font-serif font-bold num-tabular text-white">
                   {appointmentsList.length > 0 ? Math.round((completedCount / appointmentsList.length) * 100) : 0}%
                 </span>
               </div>
 
               <div className="space-y-1.5 font-medium text-xs text-[rgba(245,243,250,0.7)]">
                 <div className="flex items-center gap-2">
-                  <span className="h-2 w-2 bg-[#12D6C4] rounded-full shadow-[0_0_6px_#12D6C4]" />
+                  <span className="h-2 w-2 bg-white rounded-full shadow-[0_0_6px_rgba(255,255,255,0.5)]" />
                   <span>Completed: {completedCount}</span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -412,7 +412,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                     Clinic Live Waitlist
                   </h4>
                 </div>
-                <span className="bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] text-[#12D6C4] text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
+                <span className="bg-white/10 border border-white/20 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shrink-0">
                   {waitlistList.length} Active
                 </span>
               </div>
@@ -442,7 +442,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                               setPromoteModality(entry.desiredTreatmentType);
                               setPromoteTime('12:00');
                             }}
-                            className="bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-colors cursor-pointer border-0 shadow-[0_0_10px_rgba(18,214,196,0.3)]"
+                            className="bg-white hover:bg-white/90 text-black text-[9px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg transition-colors cursor-pointer border-0 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
                           >
                             Promote
                           </button>
@@ -489,7 +489,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                                 });
                                 setPromotingEntryId(null);
                               }}
-                              className="px-2.5 py-1 bg-[#12D6C4] text-[#06231D] text-xs font-bold rounded-lg cursor-pointer border-0 shadow-[0_0_10px_rgba(18,214,196,0.3)]"
+                              className="px-2.5 py-1 bg-white text-black text-xs font-bold rounded-lg cursor-pointer border-0 shadow-[0_0_10px_rgba(255,255,255,0.3)]"
                             >
                               Confirm
                             </button>

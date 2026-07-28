@@ -148,9 +148,6 @@ export default function CRMSidebar({ children }: Props) {
                           <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-[var(--primary)]' : ''}`} />
                           {item.name}
                         </span>
-                        {isActive && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] z-10" />
-                        )}
                       </motion.div>
                     </Link>
                   );
@@ -193,9 +190,6 @@ export default function CRMSidebar({ children }: Props) {
                           <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-[var(--primary)]' : ''}`} />
                           {item.name}
                         </span>
-                        {isActive && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-[var(--primary)] shadow-[0_0_8px_var(--primary)] z-10" />
-                        )}
                       </motion.div>
                     </Link>
                   );

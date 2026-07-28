@@ -37,6 +37,8 @@ export async function GET(req: NextRequest) {
     const isSunday = targetDate.getDay() === 0;
     const isHoliday = isSunday || holidaysList.includes(dateStr);
 
+    const maxConcurrent = settings?.maxConcurrentPatientsPerSlot || 2;
+
     const appointments = await prisma.appointment.findMany({
       where: {
         date: targetDate,
@@ -49,9 +51,14 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const bookedSlots = appointments.map((a) => a.startTime);
+    const slotCounts: Record<string, number> = {};
+    appointments.forEach((a) => {
+      slotCounts[a.startTime] = (slotCounts[a.startTime] || 0) + 1;
+    });
 
-    return NextResponse.json({ bookedSlots, isHoliday, isSunday });
+    const bookedSlots = Object.keys(slotCounts).filter((time) => slotCounts[time] >= maxConcurrent);
+
+    return NextResponse.json({ bookedSlots, isHoliday, isSunday, maxConcurrent });
   } catch (error) {
     console.error('Error fetching booked slots:', error);
     return NextResponse.json({ bookedSlots: [], isHoliday: false, isSunday: false });
@@ -121,19 +128,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Cannot book appointments in the past.' }, { status: 400 });
     }
 
-    // 4. Double booking check
-    const existingAppointment = await prisma.appointment.findFirst({
+    // 4. Capacity check against maxConcurrentPatientsPerSlot (Default 2)
+    const maxCapacity = settings.maxConcurrentPatientsPerSlot || 2;
+    const existingCount = await prisma.appointment.count({
       where: {
         date: bookingDate,
         startTime,
         status: {
-          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS],
+          in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS, AppointmentStatus.COMPLETED],
         },
       },
     });
 
-    if (existingAppointment) {
-      return NextResponse.json({ error: 'This time slot is already booked.' }, { status: 400 });
+    if (existingCount >= maxCapacity) {
+      return NextResponse.json({ error: `This time slot is fully booked (${existingCount}/${maxCapacity} capacity reached).` }, { status: 400 });
     }
 
     // 5. Patient Lookup or Create

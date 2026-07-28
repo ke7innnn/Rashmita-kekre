@@ -48,6 +48,15 @@ async function main() {
   console.log('Start seeding...');
 
   // 1. Clean database
+  await prisma.payment.deleteMany();
+  await prisma.invoiceLine.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.patientPackage.deleteMany();
+  await prisma.treatmentPlan.deleteMany();
+  await prisma.consumableProduct.deleteMany();
+  await prisma.serviceCharge.deleteMany();
+  await prisma.staffDocument.deleteMany();
+  await prisma.staffInvite.deleteMany();
   await prisma.staffAttendance.deleteMany();
   await prisma.clinicHoliday.deleteMany();
   await prisma.user.deleteMany();
@@ -62,18 +71,120 @@ async function main() {
   await prisma.treatmentModality.deleteMany();
   await prisma.clinicSettings.deleteMany();
 
-  // 2. Create Users
+  // 2. Create Users (Admin + Physio Staff)
   const adminPassword = hashPassword('rashmita123');
   const physioPassword = hashPassword('physio123');
 
-  await prisma.user.createMany({
+  const adminUser = await prisma.user.create({
+    data: {
+      username: 'rashmita',
+      password: adminPassword,
+      role: Role.ADMIN,
+      email: 'dr.rashmita@health360.com',
+      phone: '+919820098200',
+      designation: 'Lead Physiotherapist & Founder'
+    }
+  });
+
+  const physio1 = await prisma.user.create({
+    data: {
+      username: 'drgachchami',
+      password: physioPassword,
+      role: Role.PHYSIO,
+      email: 'dr.gachchami@health360.com',
+      phone: '+919870011223',
+      designation: 'Senior Physiotherapist'
+    }
+  });
+
+  const physio2 = await prisma.user.create({
+    data: {
+      username: 'drpritee',
+      password: physioPassword,
+      role: Role.PHYSIO,
+      email: 'dr.pritee@health360.com',
+      phone: '+919870044556',
+      designation: 'Staff Physiotherapist'
+    }
+  });
+
+  // 2b. Seed Treatment Plans (Gold is the only active package)
+  const elitePlan = await prisma.treatmentPlan.create({
+    data: {
+      name: 'Elite',
+      description: '1 modality + exercises (deactivated)',
+      minModalities: 1,
+      maxModalities: 1,
+      includesExercise: true,
+      perSessionRate: 600,
+      packageRate: 500,
+      isActive: false,
+      displayOrder: 1
+    }
+  });
+
+  const goldPlan = await prisma.treatmentPlan.create({
+    data: {
+      name: 'Gold',
+      description: '2 modalities + exercises',
+      minModalities: 2,
+      maxModalities: 2,
+      includesExercise: true,
+      perSessionRate: 700,
+      packageRate: 650,
+      isActive: true,
+      displayOrder: 2
+    }
+  });
+
+  const diamondPlan = await prisma.treatmentPlan.create({
+    data: {
+      name: 'Diamond',
+      description: '2+ modalities + exercises (deactivated)',
+      minModalities: 3,
+      maxModalities: null,
+      includesExercise: true,
+      perSessionRate: 800,
+      packageRate: 700,
+      isActive: false,
+      displayOrder: 3
+    }
+  });
+
+  const exercisePlan = await prisma.treatmentPlan.create({
+    data: {
+      name: 'Only Exercise',
+      description: 'exercises only (deactivated)',
+      minModalities: 0,
+      maxModalities: 0,
+      includesExercise: true,
+      perSessionRate: 700,
+      packageRate: 650,
+      isActive: false,
+      displayOrder: 4
+    }
+  });
+
+  // 2c. Seed Consumable Products
+  await prisma.consumableProduct.createMany({
     data: [
-      { username: 'rashmita', password: adminPassword, role: Role.ADMIN },
-      { username: 'physio', password: physioPassword, role: Role.PHYSIO }
+      { name: 'K-Plast', unitPrice: 190, unit: 'packet', notes: 'Packet of 7 patches. One patch lasts 24 hours.' },
+      { name: 'Loop band', unitPrice: 200, unit: 'piece', notes: null }
     ]
   });
 
-  // 2b. Create Clinic Holidays
+  // 2d. Seed Service Charges
+  await prisma.serviceCharge.createMany({
+    data: [
+      { appointmentType: 'CONSULTATION', rate: 400, isBilledByPlan: false, requiresBillingChoice: false },
+      { appointmentType: 'CONSULTATION_TREATMENT', rate: 0, isBilledByPlan: true, requiresBillingChoice: false },
+      { appointmentType: 'TREATMENT', rate: 0, isBilledByPlan: true, requiresBillingChoice: false },
+      { appointmentType: 'FOLLOW_UP', rate: 0, isBilledByPlan: false, requiresBillingChoice: true },
+      { appointmentType: 'CRANIOSACRAL_THERAPY', rate: 1000, isBilledByPlan: false, requiresBillingChoice: false }
+    ]
+  });
+
+  // 2e. Create Clinic Holidays
   await prisma.clinicHoliday.createMany({
     data: [
       { date: new Date('2026-01-01T00:00:00.000Z'), name: 'New Year', repeatsAnnually: true },
@@ -97,6 +208,7 @@ async function main() {
       workingHoursStart: '09:00',
       workingHoursEnd: '18:00',
       slotDuration: 30,
+      maxConcurrentPatientsPerSlot: 2,
       holidays: '2026-08-15, 2026-10-02, 2026-12-25'
     }
   });

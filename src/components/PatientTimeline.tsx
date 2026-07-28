@@ -12,6 +12,8 @@ import {
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import CourseMeter from '@/components/billing/CourseMeter';
+import SellCourseModal from '@/components/billing/SellCourseModal';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -81,6 +83,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
   // Sub-tab navigation state
   const [activeTab, setActiveTab] = useState<'documents' | 'rom' | 'billing'>('billing');
+  const [isSellCourseModalOpen, setIsSellCourseModalOpen] = useState(false);
 
   // Custom modal states for Session Packages, Document Previewer, and Custom Confirm
   const [isAddingPackage, setIsAddingPackage] = useState(false);
@@ -1689,19 +1692,39 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               <h3 className="text-xl font-serif font-bold text-primary">Session Packages</h3>
               <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mt-0.5">Manage prepaid treatments and deduct visits</p>
             </div>
-            <button
-              onClick={() => {
-                setPackageName('');
-                setTotalSessions(10);
-                setSubNamesInput(Array(10).fill(''));
-                setIsAddingPackage(true);
-              }}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
-            >
-              <Plus className="h-4 w-4" />
-              Add New Package
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setIsSellCourseModalOpen(true)}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#12D6C4] hover:bg-[#009FC7] text-black text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4" />
+                Issue Treatment Course
+              </button>
+              <button
+                onClick={() => {
+                  setPackageName('');
+                  setTotalSessions(10);
+                  setSubNamesInput(Array(10).fill(''));
+                  setIsAddingPackage(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                Custom Package
+              </button>
+            </div>
           </div>
+
+          <SellCourseModal
+            isOpen={isSellCourseModalOpen}
+            onClose={() => setIsSellCourseModalOpen(false)}
+            patientId={patientId}
+            patientName={patient.fullName}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['patientPackages', patientId] });
+              queryClient.invalidateQueries({ queryKey: ['patient', patientId] });
+            }}
+          />
 
           {packages.length === 0 ? (
              <div className="p-16 text-center text-foreground/45 border border-dashed border-[#EADFCA] rounded-2xl font-bold bg-[#FFFCF6]">

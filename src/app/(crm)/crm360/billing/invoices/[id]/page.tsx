@@ -1,244 +1,252 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Printer, CreditCard, Check, AlertCircle, X, Slash, Loader2 } from 'lucide-react';
-import { formatINR, formatDateIN } from '@/lib/formatters';
+import { 
+  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building
+} from 'lucide-react';
+import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
+import RecordPaymentModal from '@/components/billing/RecordPaymentModal';
 
 export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const queryClient = useQueryClient();
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState<number>(0);
-  const [paymentMode, setPaymentMode] = useState<'Cash' | 'UPI' | 'Card' | 'Bank transfer'>('Cash');
-  const [referenceNumber, setReferenceNumber] = useState('');
-  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const { id } = use(params);
+  const [invoice, setInvoice] = useState<any>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [paymentModalOpen, setPaymentModalOpen] = useState<boolean>(false);
 
-  // Unwrap params using React.use
-  const { id } = React.use(params);
+  useEffect(() => {
+    fetchInvoice();
+  }, [id]);
 
-  const { data: invoice, isLoading } = useQuery({
-    queryKey: ['invoice-detail', id],
-    queryFn: async () => {
+  const fetchInvoice = async () => {
+    setLoading(true);
+    try {
       const res = await fetch(`/api/billing/invoices/${id}`);
-      if (!res.ok) throw new Error('Failed to fetch invoice details');
-      return res.json();
-    },
-  });
-
-  const recordPaymentMutation = useMutation({
-    mutationFn: async (payload: any) => {
-      const res = await fetch('/api/billing/payments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
+      if (!res.ok) throw new Error('Invoice not found');
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to record payment');
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoice-detail', id] });
-      queryClient.invalidateQueries({ queryKey: ['billing-overview'] });
-      setShowPaymentModal(false);
-      setPaymentError(null);
-    },
-    onError: (err: any) => {
-      setPaymentError(err.message || 'Error recording payment');
-    },
-  });
-
-  const cancelInvoiceMutation = useMutation({
-    mutationFn: async () => {
-      const res = await fetch(`/api/billing/invoices/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: 'CANCELLED' }),
-      });
-      if (!res.ok) throw new Error('Failed to cancel invoice');
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['invoice-detail', id] });
-    },
-  });
-
-  if (isLoading) {
-    return <div className="p-8 text-center text-xs text-white/50">Loading invoice details...</div>;
-  }
-
-  if (!invoice) {
-    return <div className="p-8 text-center text-xs text-rose-400 font-bold">Invoice not found.</div>;
-  }
-
-  const balance = Math.max(0, invoice.totalAmount - invoice.paidAmount);
-
-  const handleOpenPaymentModal = () => {
-    setPaymentAmount(balance);
-    setPaymentError(null);
-    setShowPaymentModal(true);
+      setInvoice(data);
+    } catch (e: any) {
+      setError(e.message || 'Failed to load invoice');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  return (
-    <div className="space-y-6 max-w-4xl mx-auto select-none">
-      {/* Screen Header Bar (Hidden in Print) */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-5 print:hidden">
-        <div className="flex items-center gap-3">
-          <Link href="/crm360/billing/invoices" className="p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white transition-colors">
-            <ArrowLeft size={16} />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-serif font-bold text-white tracking-tight flex items-center gap-2">
-              Invoice #{invoice.invoiceNumber}
-            </h1>
-            <p className="text-xs text-white/50 font-medium mt-0.5">Issued on {formatDateIN(invoice.date)}</p>
-          </div>
-        </div>
+  const handleCancelInvoice = async () => {
+    if (!confirm('Are you sure you want to cancel this invoice?')) return;
+    try {
+      const res = await fetch(`/api/billing/invoices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'cancel' })
+      });
+      if (res.ok) {
+        fetchInvoice();
+      }
+    } catch (e) {
+      console.error('Error cancelling invoice:', e);
+    }
+  };
 
-        {/* Action Controls */}
+  if (loading) {
+    return (
+      <div className="p-8 space-y-6 max-w-4xl mx-auto">
+        <div className="h-8 w-40 bg-white/5 animate-pulse rounded-lg" />
+        <div className="h-96 bg-white/[0.03] border border-white/10 animate-pulse rounded-2xl" />
+      </div>
+    );
+  }
+
+  if (error || !invoice) {
+    return (
+      <div className="p-8 max-w-md mx-auto text-center space-y-4">
+        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl text-rose-300 text-sm">
+          {error || 'Invoice not found'}
+        </div>
+        <Link href="/crm360/billing/invoices" className="text-xs text-[#12D6C4] underline">
+          Return to Invoice Directory
+        </Link>
+      </div>
+    );
+  }
+
+  const total = Number(invoice.totalAmount);
+  const paid = Number(invoice.paidAmount);
+  const balance = Math.max(0, total - paid);
+
+  return (
+    <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-6 selection:bg-[#12D6C4]/30 select-none">
+      {/* Screen Action Bar (Hidden in Print) */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
+        <div className="flex items-center gap-2 text-xs text-white/50">
+          <Link href="/crm360/billing/invoices" className="hover:text-white flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Invoices
+          </Link>
+        </div>
         <div className="flex items-center gap-3">
+          <Link
+            href={`/crm360/billing/invoices/${id}/print?autoprint=1`}
+            target="_blank"
+            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition flex items-center gap-2"
+          >
+            <Printer className="w-4 h-4" /> Print / PDF
+          </Link>
+
           {balance > 0 && invoice.status !== 'CANCELLED' && (
             <button
-              type="button"
-              onClick={handleOpenPaymentModal}
-              className="px-4 py-2 rounded-xl bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold transition-all shadow-lg flex items-center gap-1.5 cursor-pointer"
+              onClick={() => setPaymentModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
             >
-              <CreditCard size={15} />
-              Record Payment
+              <CreditCard className="w-4 h-4" /> Record Payment
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <Printer size={15} />
-            Print Receipt
-          </button>
-
           {invoice.status !== 'CANCELLED' && (
             <button
-              type="button"
-              onClick={() => cancelInvoiceMutation.mutate()}
-              className="px-3 py-2 rounded-xl border border-rose-500/30 text-rose-400 hover:bg-rose-500/10 text-xs font-semibold transition-all"
+              onClick={handleCancelInvoice}
+              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold transition flex items-center gap-1.5"
             >
-              Cancel
+              <XCircle className="w-4 h-4" /> Cancel
             </button>
           )}
         </div>
       </div>
 
       {/* Printable Invoice Container */}
-      <div className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl print:bg-white print:text-black border border-white/15 print:border-none p-8 rounded-3xl print:p-0 space-y-6 shadow-[0_20px_40px_rgba(0,0,0,0.45)] print:shadow-none font-sans">
-        {/* Clinic Header (Print & Screen) */}
-        <div className="flex justify-between items-start border-b border-white/10 print:border-black/15 pb-6">
-          <div>
-            <h2 className="text-2xl font-serif font-bold text-white print:text-black">Health 360 Physiotherapy Clinic</h2>
-            <p className="text-xs text-white/60 print:text-black/70 mt-1">123 Clinic Street, Mumbai, India</p>
-            <p className="text-xs text-white/60 print:text-black/70">Phone: +91 98765 43210 • Email: info@health360.com</p>
+      <div className="bg-[#0B0A10]/90 border border-white/10 print:border-0 print:bg-white print:text-black rounded-2xl p-6 md:p-8 shadow-2xl space-y-8 text-white">
+        {/* Clinic Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-6 border-b border-white/10 print:border-black/20 pb-6">
+          <div className="space-y-1">
+            <h1 className="text-xl font-bold text-white print:text-black tracking-tight">
+              Health 360 Physiotherapy Clinic
+            </h1>
+            <p className="text-xs text-white/60 print:text-black/70">
+              Dr. Rashmita Karvir Kekre, B.P.Th. (M.I.A.P.), BCST
+            </p>
+            <p className="text-xs text-white/50 print:text-black/60 pt-1">
+              Shop No. 4, Sunrise Apartments, Carter Road, Bandra West, Mumbai, MH - 400050
+            </p>
+            <p className="text-xs text-white/50 print:text-black/60">
+              Phone: +91 98200 98200 · Email: info@health360physio.com
+            </p>
           </div>
 
-          <div className="text-right">
-            <h3 className="text-xl font-mono font-bold text-white print:text-black">{invoice.invoiceNumber}</h3>
-            <div className="mt-2 flex justify-end print:hidden">
-              <InvoiceStatusPill status={invoice.status} dueDate={invoice.dueDate} />
+          <div className="sm:text-right space-y-1">
+            <span className="text-xs font-bold text-white print:text-black uppercase tracking-widest block">INVOICE</span>
+            <div className="text-lg font-bold text-white print:text-black tabular-nums">{invoice.invoiceNumber}</div>
+            <div className="text-xs text-white/60 print:text-black/70">
+              Date: {new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
-            <p className="text-xs text-white/50 print:text-black/60 mt-1">Date: {formatDateIN(invoice.date)}</p>
+            <div className="pt-1 print:hidden">
+              <InvoiceStatusPill status={invoice.status} />
+            </div>
           </div>
         </div>
 
         {/* Patient Details */}
-        <div className="bg-white/5 print:bg-gray-50 border border-white/10 print:border-gray-200 p-4 rounded-2xl">
-          <span className="text-[9px] uppercase font-bold tracking-widest text-white/40 print:text-black/50 block">Billed Patient</span>
-          <h4 className="text-base font-bold text-white print:text-black mt-0.5">{invoice.patient?.fullName}</h4>
-          <p className="text-xs text-white/60 print:text-black/70 font-mono">Contact: {invoice.patient?.phone}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-white/[0.03] print:bg-gray-50 border border-white/10 print:border-gray-200 rounded-xl">
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 print:text-black/50">Billed To</span>
+            <h3 className="text-sm font-bold text-white print:text-black mt-0.5">{invoice.patient?.fullName}</h3>
+            <p className="text-xs text-white/60 print:text-black/70">{invoice.patient?.phone}</p>
+          </div>
+          {invoice.patient?.address && (
+            <div className="sm:text-right">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 print:text-black/50">Address</span>
+              <p className="text-xs text-white/60 print:text-black/70 mt-0.5">{invoice.patient.address}</p>
+            </div>
+          )}
         </div>
 
         {/* Line Items Table */}
-        <table className="w-full text-left text-xs border-collapse">
-          <thead>
-            <tr className="border-b border-white/15 print:border-black/20 text-[10px] uppercase font-bold text-white/40 print:text-black/50 tracking-wider">
-              <th className="py-2.5 px-3">Description</th>
-              <th className="py-2.5 px-3 text-center">Qty</th>
-              <th className="py-2.5 px-3 text-right">Unit Price</th>
-              <th className="py-2.5 px-3 text-right">Total</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/10 print:divide-black/10 text-white/90 print:text-black">
-            {invoice.lines.map((line: any) => (
-              <tr key={line.id}>
-                <td className="py-3 px-3">
-                  <p className="font-bold">{line.description}</p>
-                  {line.isCoveredByPackage && (
-                    <span className="text-[9px] font-bold text-emerald-400 print:text-emerald-700 block mt-0.5">
-                      ✓ Covered by prepaid package
-                    </span>
-                  )}
-                </td>
-                <td className="py-3 px-3 text-center num-tabular">{line.quantity}</td>
-                <td className="py-3 px-3 text-right num-tabular">{formatINR(line.unitPrice)}</td>
-                <td className="py-3 px-3 text-right font-bold num-tabular">
-                  {line.isCoveredByPackage ? 'Covered' : formatINR(line.totalPrice)}
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-white/10 print:border-black/20 text-[11px] font-bold text-white/50 print:text-black/60 uppercase tracking-wider">
+                <th className="py-2.5 px-3">Description</th>
+                <th className="py-2.5 px-3 text-center">Qty</th>
+                <th className="py-2.5 px-3 text-right">Unit Price</th>
+                <th className="py-2.5 px-3 text-right">Amount</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-white/5 print:divide-gray-200 text-xs">
+              {invoice.lines.map((line: any) => (
+                <tr key={line.id}>
+                  <td className="py-3 px-3 font-medium text-white print:text-black">
+                    {line.description}
+                    {line.isCoveredByPackage && (
+                      <span className="ml-2 text-[10px] bg-emerald-500/20 text-emerald-300 print:text-emerald-700 px-1.5 py-0.5 rounded">
+                        Covered by Course
+                      </span>
+                    )}
+                  </td>
+                  <td className="py-3 px-3 text-center tabular-nums text-white/70 print:text-black">
+                    {line.quantity}
+                  </td>
+                  <td className="py-3 px-3 text-right tabular-nums text-white/70 print:text-black">
+                    {line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.unitPrice)}
+                  </td>
+                  <td className="py-3 px-3 text-right font-bold tabular-nums text-white print:text-black">
+                    {line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.totalPrice)}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {/* Summary & Totals Block */}
-        <div className="flex justify-end pt-4 border-t border-white/10 print:border-black/15">
-          <div className="w-64 space-y-2 text-xs">
-            <div className="flex justify-between text-white/60 print:text-black/70">
-              <span>Subtotal</span>
-              <span className="num-tabular font-bold">{formatINR(invoice.totalAmount + invoice.discountAmount)}</span>
-            </div>
+        {/* Totals Summary */}
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-4 border-t border-white/10 print:border-black/20">
+          <div className="text-xs text-white/50 print:text-black/60 space-y-1">
+            {invoice.notes && <p className="italic">Notes: {invoice.notes}</p>}
+            {invoice.lines.some((l: any) => l.patientPackageId || l.description?.toLowerCase().includes('course')) && (
+              <p className="text-[11px] text-amber-200/90 print:text-black font-medium pt-2 border-t border-white/5 print:border-black/10">
+                Terms: Package valid 45 days from date of purchase. Unused sessions are not refundable.
+              </p>
+            )}
+          </div>
 
-            {invoice.discountAmount > 0 && (
-              <div className="flex justify-between text-amber-300 print:text-amber-700">
+          <div className="w-full sm:w-64 space-y-2 text-xs">
+            {Number(invoice.discountAmount) > 0 && (
+              <div className="flex justify-between text-amber-300 print:text-amber-800">
                 <span>Discount</span>
-                <span className="num-tabular font-bold">- {formatINR(invoice.discountAmount)}</span>
+                <span className="tabular-nums font-semibold">- {formatCurrency(invoice.discountAmount)}</span>
               </div>
             )}
-
-            <div className="flex justify-between items-center text-sm font-bold text-white print:text-black border-t border-white/15 print:border-black/15 pt-2">
-              <span>Payable Total</span>
-              <span className="num-tabular text-base">{formatINR(invoice.totalAmount)}</span>
+            <div className="flex justify-between font-bold text-sm text-white print:text-black pt-1 border-t border-white/10 print:border-black/20">
+              <span>Total Amount</span>
+              <span className="tabular-nums text-[#12D6C4] print:text-black">{formatCurrency(total)}</span>
             </div>
-
-            <div className="flex justify-between text-emerald-400 print:text-emerald-700 font-semibold">
-              <span>Amount Paid</span>
-              <span className="num-tabular">{formatINR(invoice.paidAmount)}</span>
+            <div className="flex justify-between text-emerald-400 print:text-emerald-700">
+              <span>Paid Amount</span>
+              <span className="tabular-nums font-semibold">{formatCurrency(paid)}</span>
             </div>
-
-            <div className="flex justify-between items-center text-xs font-bold text-amber-300 print:text-black border-t border-white/10 print:border-black/10 pt-2">
+            <div className="flex justify-between font-bold text-amber-300 print:text-amber-800 pt-1 border-t border-white/10 print:border-black/20">
               <span>Balance Due</span>
-              <span className="num-tabular text-sm">{formatINR(balance)}</span>
+              <span className="tabular-nums">{formatCurrency(balance)}</span>
             </div>
           </div>
         </div>
 
-        {/* Payment History */}
+        {/* Payment History Log */}
         {invoice.payments && invoice.payments.length > 0 && (
-          <div className="pt-4 border-t border-white/10 print:border-black/15 space-y-2">
-            <span className="text-[9px] uppercase font-bold tracking-wider text-white/40 print:text-black/50 block">Payment History</span>
+          <div className="space-y-2 pt-4 border-t border-white/10 print:border-black/20">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white/50 print:text-black/60">Payment Transactions</h4>
             <div className="space-y-1.5 text-xs">
-              {invoice.payments.map((pmt: any) => (
-                <div key={pmt.id} className="flex justify-between items-center p-2 rounded-lg bg-white/5 print:bg-gray-50 text-white/80 print:text-black">
-                  <div>
-                    <span className="font-bold">{pmt.paymentMode}</span>
-                    {pmt.referenceNumber && <span className="text-[10px] text-white/40 print:text-black/50 ml-2 font-mono">Ref: {pmt.referenceNumber}</span>}
-                  </div>
-                  <div className="text-right">
-                    <span className="font-bold num-tabular text-emerald-400 print:text-emerald-700">{formatINR(pmt.amount)}</span>
-                    <span className="text-[10px] text-white/40 print:text-black/50 block num-tabular">{formatDateIN(pmt.date)}</span>
-                  </div>
+              {invoice.payments.map((p: any) => (
+                <div key={p.id} className="flex items-center justify-between p-2 bg-white/[0.02] print:bg-gray-100 rounded-lg text-white/70 print:text-black">
+                  <span>
+                    {new Date(p.date).toLocaleDateString('en-IN')} · {p.paymentMode} {p.referenceNumber ? `(Ref: ${p.referenceNumber})` : ''}
+                  </span>
+                  <span className="font-bold text-emerald-400 print:text-emerald-700 tabular-nums">
+                    + {formatCurrency(p.amount)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -247,114 +255,16 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
       </div>
 
       {/* Record Payment Modal */}
-      <AnimatePresence>
-        {showPaymentModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#0E0A17]/85 backdrop-blur-3xl border border-white/20 p-6 rounded-3xl max-w-md w-full space-y-5 shadow-[0_25px_50px_rgba(0,0,0,0.6)] select-none"
-            >
-              <div className="flex justify-between items-center border-b border-white/10 pb-3">
-                <h3 className="text-lg font-serif font-bold text-white">Record Payment</h3>
-                <button type="button" onClick={() => setShowPaymentModal(false)} className="text-white/40 hover:text-white">
-                  <X size={18} />
-                </button>
-              </div>
-
-              <div className="space-y-4 text-xs">
-                <div>
-                  <label className="text-[10px] font-bold text-white/50 uppercase block mb-1">Payment Amount (₹)</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={balance}
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(parseFloat(e.target.value) || 0)}
-                    className="w-full bg-white/5 border border-white/15 rounded-xl py-2.5 px-3 text-white font-mono font-bold text-sm focus:outline-none"
-                  />
-                  <div className="flex gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={() => setPaymentAmount(balance)}
-                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-bold text-white"
-                    >
-                      Full ({formatINR(balance)})
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setPaymentAmount(Math.round(balance / 2))}
-                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-[10px] font-bold text-white"
-                    >
-                      Half ({formatINR(Math.round(balance / 2))})
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-white/50 uppercase block mb-1">Payment Mode</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    {(['Cash', 'UPI', 'Card', 'Bank transfer'] as const).map((mode) => (
-                      <button
-                        key={mode}
-                        type="button"
-                        onClick={() => setPaymentMode(mode)}
-                        className={`py-2 px-3 rounded-xl border text-xs font-bold transition-all ${
-                          paymentMode === mode
-                            ? 'bg-white text-black border-white'
-                            : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
-                        }`}
-                      >
-                        {mode}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div>
-                  <label className="text-[10px] font-bold text-white/50 uppercase block mb-1">Reference Number (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. UPI Txn ID / Cheque No"
-                    value={referenceNumber}
-                    onChange={(e) => setReferenceNumber(e.target.value)}
-                    className="w-full bg-white/5 border border-white/15 rounded-xl py-2 px-3 text-white font-mono focus:outline-none"
-                  />
-                </div>
-
-                {paymentError && (
-                  <p className="text-xs text-rose-400 font-medium">{paymentError}</p>
-                )}
-              </div>
-
-              <div className="flex justify-end gap-3 pt-2 border-t border-white/10">
-                <button
-                  type="button"
-                  onClick={() => setShowPaymentModal(false)}
-                  className="px-4 py-2 rounded-xl bg-white/10 text-xs font-bold text-white hover:bg-white/20"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="button"
-                  disabled={recordPaymentMutation.isPending || paymentAmount <= 0}
-                  onClick={() => recordPaymentMutation.mutate({
-                    invoiceId: id,
-                    amount: paymentAmount,
-                    paymentMode,
-                    referenceNumber,
-                  })}
-                  className="px-5 py-2 rounded-xl bg-emerald-400 text-black text-xs font-bold hover:bg-emerald-300 disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
-                >
-                  {recordPaymentMutation.isPending && <Loader2 size={14} className="animate-spin" />}
-                  Confirm Payment
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <RecordPaymentModal
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+        invoiceId={invoice.id}
+        invoiceNumber={invoice.invoiceNumber}
+        patientName={invoice.patient?.fullName || 'Patient'}
+        totalAmount={total}
+        paidAmount={paid}
+        onPaymentSuccess={fetchInvoice}
+      />
     </div>
   );
 }

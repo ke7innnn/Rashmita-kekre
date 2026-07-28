@@ -1,6 +1,6 @@
 /**
- * Health 360 CRM — Currency & Number Formatters
- * Uses en-IN Indian Number Grouping (₹1,23,456.00)
+ * Money Formatting Utilities for Health 360 CRM
+ * Hard Requirement: Indian grouping (Intl.NumberFormat('en-IN')), ₹ currency symbol, tabular-nums.
  */
 
 const inrFormatter = new Intl.NumberFormat('en-IN', {
@@ -10,25 +10,32 @@ const inrFormatter = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 2,
 });
 
-/**
- * Format any number as Indian Rupee string (e.g., 123456 -> "₹1,23,456.00")
- */
-export function formatINR(amount: number | string | null | undefined): string {
-  const numeric = typeof amount === 'string' ? parseFloat(amount) : (amount ?? 0);
-  if (isNaN(numeric)) return '₹0.00';
-  return inrFormatter.format(numeric);
+export function formatCurrency(amount: number | string | { toString(): string } | null | undefined): string {
+  if (amount === null || amount === undefined) {
+    return inrFormatter.format(0);
+  }
+
+  const num = typeof amount === 'number' ? amount : parseFloat(amount.toString());
+  if (isNaN(num)) {
+    return inrFormatter.format(0);
+  }
+
+  return inrFormatter.format(num);
 }
 
-/**
- * Format date in clean Indian clinic format (e.g. 26/07/2026)
- */
-export function formatDateIN(dateInput: Date | string | null | undefined): string {
-  if (!dateInput) return '—';
-  const d = new Date(dateInput);
-  if (isNaN(d.getTime())) return '—';
-  return d.toLocaleDateString('en-IN', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+export function formatCurrencyCompact(amount: number | string | { toString(): string } | null | undefined): string {
+  if (amount === null || amount === undefined) {
+    return '₹0';
+  }
+
+  const num = typeof amount === 'number' ? amount : parseFloat(amount.toString());
+  if (isNaN(num)) {
+    return '₹0';
+  }
+
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0,
+  }).format(num);
 }

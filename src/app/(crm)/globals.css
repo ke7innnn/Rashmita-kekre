@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -16,8 +16,8 @@
   --text-3: rgba(245, 243, 250, 0.40);
 
   /* default aurora spectrum */
-  --aurora-teal: #12D6C4;
-  --aurora-cyan: #22B8FF;
+  --aurora-teal: #FFFFFF;
+  --aurora-cyan: #FFFFFF;
   --aurora-violet: #7B5CFF;
   --aurora-magenta: #E23FA6;
 
@@ -33,20 +33,20 @@
   --background: var(--bg-base);
   --foreground: var(--text);
   --card: var(--bg-raise);
-  --primary: var(--aurora-teal);
-  --primary-hover: #0FBDAE;
+  --primary: #FFFFFF;
+  --primary-hover: #E5E5E5;
   --accent: var(--aurora-violet);
-  --ring: var(--aurora-teal);
+  --ring: #FFFFFF;
 }
 
 /* Theme presets - same gradient design, custom color spectrums */
 [data-theme="aurora"], :root {
-  --aurora-teal: #12D6C4;
-  --aurora-cyan: #22B8FF;
+  --aurora-teal: #FFFFFF;
+  --aurora-cyan: #FFFFFF;
   --aurora-violet: #7B5CFF;
   --aurora-magenta: #E23FA6;
-  --primary: #12D6C4;
-  --primary-hover: #0FBDAE;
+  --primary: #FFFFFF;
+  --primary-hover: #E5E5E5;
   --accent: #7B5CFF;
   --positive: #19E3B1;
 }
@@ -105,22 +105,24 @@
   --color-border: var(--border);
   --color-ring: var(--aurora-teal);
 
-  --font-serif: "Space Grotesk", sans-serif;
-  --font-sans: "Space Grotesk", sans-serif;
-  --font-mono: "Space Grotesk", monospace;
+  --font-serif: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+*, body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, .font-serif, .font-sans, .font-mono {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 body {
   background-color: var(--bg-base);
   color: var(--text);
-  font-family: "Space Grotesk", sans-serif;
   -webkit-font-smoothing: antialiased;
   line-height: 1.625;
   letter-spacing: -0.01em;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Space Grotesk", sans-serif;
   font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.25;

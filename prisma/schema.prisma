@@ -142,30 +142,42 @@ model TreatmentModality {
 }
 
 model ClinicSettings {
-  id                  String   @id @default("clinic_settings")
-  name                String   @default("Health 360 Physiotherapy Clinic")
-  phone               String   @default("+919876543210")
-  email               String   @default("info@health360.com")
-  address             String   @default("123 Clinic Street, Mumbai, India")
-  primaryDoctor       String   @default("Dr. Rashmita Karvir Kekre")
-  workingHoursStart   String   @default("10:00")
-  workingHoursEnd     String   @default("21:00")
-  slotDuration        Int      @default(15)
-  holidays            String   @default("") // Comma-separated list for SQLite compatibility
-  isPubliclyVisible   Boolean  @default(true)
-  reminder24hTemplate String   @default("Hi {patient}, this is a reminder for your session tomorrow at {time}.")
-  reminder2hTemplate  String   @default("Hi {patient}, you have an appointment in 2 hours at {time}.")
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                           String   @id @default("clinic_settings")
+  name                         String   @default("Health 360 Physiotherapy Clinic")
+  phone                        String   @default("+91 98200 98200")
+  email                        String   @default("info@health360physio.com")
+  address                      String   @default("Shop No. 4, Sunrise Apartments, Carter Road, Bandra West, Mumbai, MH - 400050")
+  primaryDoctor                String   @default("Dr. Rashmita Karvir Kekre")
+  doctorNameCredentials        String   @default("Dr. Rashmita Karvir Kekre, B.P.Th. (M.I.A.P.), BCST")
+  logoUrl                      String?
+  website                      String?  @default("www.health360physio.com")
+  upiId                        String?  @default("health360@upi")
+  registrationNumber           String?
+  workingHoursStart            String   @default("10:00")
+  workingHoursEnd              String   @default("21:00")
+  slotDuration                 Int      @default(15)
+  maxConcurrentPatientsPerSlot Int      @default(2)
+  holidays                     String   @default("") // Comma-separated list for SQLite compatibility
+  isPubliclyVisible            Boolean  @default(true)
+  reminder24hTemplate          String   @default("Hi {patient}, this is a reminder for your session tomorrow at {time}.")
+  reminder2hTemplate           String   @default("Hi {patient}, you have an appointment in 2 hours at {time}.")
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
 }
 
 model User {
   id                   String            @id @default(cuid())
   username             String            @unique
   password             String
+  email                String?           @unique
+  phone                String?
+  designation          String?           @default("Physiotherapist")
   role                 Role              @default(PHYSIO)
+  isActive             Boolean           @default(true)
+  joinedDate           DateTime?         @default(now())
   assignedAppointments Appointment[]     @relation("PhysioAppointments")
   attendances          StaffAttendance[]
+  documents            StaffDocument[]
   createdAt            DateTime          @default(now())
   updatedAt            DateTime          @updatedAt
 }
@@ -181,6 +193,37 @@ model StaffAttendance {
   createdAt  DateTime  @default(now())
 
   @@index([userId, date])
+}
+
+model StaffInvite {
+  id          String   @id @default(cuid())
+  email       String
+  token       String   @unique
+  role        Role     @default(PHYSIO)
+  designation String
+  name        String
+  phone       String?
+  expiresAt   DateTime
+  isUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+}
+
+model StaffDocument {
+  id           String    @id @default(cuid())
+  userId       String
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fileName     String
+  fileUrl      String
+  fileSize     Int
+  mimeType     String
+  documentType String
+  issueDate    DateTime?
+  expiryDate   DateTime?
+  notes        String?
+  uploadedBy   String
+  uploadedAt   DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model ClinicHoliday {
@@ -324,35 +367,62 @@ enum PackageStatus {
   CANCELLED
 }
 
-model TreatmentPackage {
-  id              String           @id @default(cuid())
-  name            String
-  totalSessions   Int
-  price           Float
-  validityDays    Int              @default(30)
-  isActive        Boolean          @default(true)
-  patientPackages PatientPackage[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+model TreatmentPlan {
+  id               String           @id @default(cuid())
+  name             String           @unique
+  description      String?
+  minModalities    Int?
+  maxModalities    Int?
+  includesExercise Boolean          @default(true)
+  perSessionRate   Decimal          @db.Decimal(10, 2)
+  packageRate      Decimal          @db.Decimal(10, 2)
+  isActive         Boolean          @default(true)
+  displayOrder     Int              @default(0)
+  patientPackages  PatientPackage[]
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
 }
 
 model PatientPackage {
-  id                 String            @id @default(cuid())
-  patientId          String
-  patient            Patient           @relation(fields: [patientId], references: [id], onDelete: Cascade)
-  treatmentPackageId String?
-  treatmentPackage   TreatmentPackage? @relation(fields: [treatmentPackageId], references: [id])
-  packageName        String
-  totalSessions      Int
-  sessionsUsed       Int               @default(0)
-  price              Float
-  paidAmount         Float             @default(0)
-  status             PackageStatus     @default(ACTIVE)
-  purchaseDate       DateTime          @default(now())
-  expiryDate         DateTime?
-  invoiceLines       InvoiceLine[]
-  createdAt          DateTime          @default(now())
-  updatedAt          DateTime          @updatedAt
+  id            String        @id @default(cuid())
+  patientId     String
+  patient       Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  planId        String
+  plan          TreatmentPlan @relation(fields: [planId], references: [id])
+  daysPurchased Int
+  ratePerDay    Decimal       @db.Decimal(10, 2)
+  totalAmount   Decimal       @db.Decimal(10, 2)
+  sessionsUsed  Int           @default(0)
+  purchaseDate  DateTime      @default(now())
+  expiryDate    DateTime?
+  status        PackageStatus @default(ACTIVE)
+  invoiceId     String?
+  invoiceLines  InvoiceLine[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([patientId, status])
+}
+
+model ConsumableProduct {
+  id        String   @id @default(cuid())
+  name      String
+  unitPrice Decimal  @db.Decimal(10, 2)
+  unit      String?
+  notes     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ServiceCharge {
+  id                    String          @id @default(cuid())
+  appointmentType       AppointmentType @unique
+  rate                  Decimal         @db.Decimal(10, 2)
+  isBilledByPlan        Boolean         @default(false)
+  requiresBillingChoice Boolean         @default(false)
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 }
 
 model Invoice {
@@ -362,9 +432,9 @@ model Invoice {
   patient        Patient       @relation(fields: [patientId], references: [id], onDelete: Cascade)
   date           DateTime      @default(now())
   dueDate        DateTime?
-  totalAmount    Float
-  paidAmount     Float         @default(0)
-  discountAmount Float         @default(0)
+  totalAmount    Decimal       @db.Decimal(10, 2)
+  paidAmount     Decimal       @default(0) @db.Decimal(10, 2)
+  discountAmount Decimal       @default(0) @db.Decimal(10, 2)
   status         InvoiceStatus @default(PENDING)
   notes          String?
   lines          InvoiceLine[]
@@ -379,8 +449,8 @@ model InvoiceLine {
   invoice            Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   description        String
   quantity           Int             @default(1)
-  unitPrice          Float
-  totalPrice         Float
+  unitPrice          Decimal         @db.Decimal(10, 2)
+  totalPrice         Decimal         @db.Decimal(10, 2)
   isCoveredByPackage Boolean         @default(false)
   patientPackageId   String?
   patientPackage     PatientPackage? @relation(fields: [patientPackageId], references: [id])
@@ -390,7 +460,7 @@ model Payment {
   id              String   @id @default(cuid())
   invoiceId       String
   invoice         Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
-  amount          Float
+  amount          Decimal  @db.Decimal(10, 2)
   paymentMode     String   // "Cash", "UPI", "Card", "Bank transfer"
   referenceNumber String?
   date            DateTime @default(now())

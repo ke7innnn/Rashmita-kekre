@@ -2,80 +2,58 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, PieChart, Check, Slash, AlertTriangle } from 'lucide-react';
+import { Clock, PieChart, CheckCircle2, Slash, AlertCircle } from 'lucide-react';
 
 interface InvoiceStatusPillProps {
-  status: string;
-  dueDate?: Date | string | null;
-  paidAmount?: number;
-  totalAmount?: number;
+  status: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' | 'OVERDUE' | string;
+  className?: string;
 }
 
-export default function InvoiceStatusPill({
-  status,
-  dueDate,
-  paidAmount = 0,
-  totalAmount = 0,
-}: InvoiceStatusPillProps) {
-  // Derive OVERDUE status
-  let effectiveStatus = status;
-  if (status === 'PENDING' || status === 'PARTIALLY_PAID') {
-    if (dueDate) {
-      const due = new Date(dueDate);
-      if (!isNaN(due.getTime()) && due < new Date()) {
-        effectiveStatus = 'OVERDUE';
-      }
-    }
-  }
+export default function InvoiceStatusPill({ status, className = '' }: InvoiceStatusPillProps) {
+  const normStatus = (status || 'PENDING').toUpperCase();
 
-  const getConfig = () => {
-    switch (effectiveStatus) {
-      case 'PAID':
-        return {
-          bg: 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300',
-          icon: Check,
-          label: 'Paid',
-        };
-      case 'PARTIALLY_PAID':
-        return {
-          bg: 'bg-blue-500/15 border-blue-500/35 text-blue-300',
-          icon: PieChart,
-          label: 'Partially Paid',
-        };
-      case 'OVERDUE':
-        return {
-          bg: 'bg-rose-500/15 border-rose-500/35 text-rose-300',
-          icon: AlertTriangle,
-          label: 'Overdue',
-        };
-      case 'CANCELLED':
-        return {
-          bg: 'bg-white/10 border-white/20 text-white/50',
-          icon: Slash,
-          label: 'Cancelled',
-        };
-      case 'PENDING':
-      default:
-        return {
-          bg: 'bg-amber-500/15 border-amber-500/35 text-amber-300',
-          icon: Clock,
-          label: 'Pending',
-        };
-    }
+  let config = {
+    label: 'Pending',
+    bg: 'bg-amber-500/15 border-amber-500/30 text-amber-300',
+    icon: Clock
   };
 
-  const config = getConfig();
-  const Icon = config.icon;
+  if (normStatus === 'PARTIALLY_PAID') {
+    config = {
+      label: 'Partial',
+      bg: 'bg-blue-500/15 border-blue-500/30 text-blue-300',
+      icon: PieChart
+    };
+  } else if (normStatus === 'PAID') {
+    config = {
+      label: 'Paid',
+      bg: 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300',
+      icon: CheckCircle2
+    };
+  } else if (normStatus === 'CANCELLED') {
+    config = {
+      label: 'Cancelled',
+      bg: 'bg-white/10 border-white/20 text-white/50',
+      icon: Slash
+    };
+  } else if (normStatus === 'OVERDUE') {
+    config = {
+      label: 'Overdue',
+      bg: 'bg-rose-500/15 border-rose-500/30 text-rose-300',
+      icon: AlertCircle
+    };
+  }
+
+  const IconComponent = config.icon;
 
   return (
-    <motion.div
-      initial={false}
-      animate={{ opacity: 1, scale: 1 }}
+    <motion.span
+      layout
       transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-[10px] font-bold ${config.bg} select-none`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold tracking-wide uppercase ${config.bg} ${className}`}
     >
-      <Icon className="h-3 w-3 shrink-0" />
+      <IconComponent className="w-3.5 h-3.5 shrink-0" />
       <span>{config.label}</span>
-    </motion.div>
+    </motion.span>
   );
 }

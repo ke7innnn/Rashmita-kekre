@@ -1,104 +1,130 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { z } from 'zod';
+import { requireRole } from '@/lib/roleGate';
+import { Role } from '@prisma/client';
 
-const sellPackageSchema = z.object({
-  treatmentPackageId: z.string().optional(),
-  packageName: z.string().min(1, 'Package name is required'),
-  totalSessions: z.number().int().min(1),
-  price: z.number().min(0),
-  validityDays: z.number().int().min(1).default(30),
-});
-
-export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Server-side ADMIN role enforcement
-  const role = (session.user as any).role;
-  if (role === 'PHYSIO' || role === 'RECEPTIONIST') {
-    return NextResponse.json({ error: 'Forbidden. Billing access is restricted to ADMIN role.' }, { status: 403 });
-  }
-
-  const { id: patientId } = await params;
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { errorResponse } = await requireRole([Role.ADMIN]);
+  if (errorResponse) return errorResponse;
 
   try {
-    const json = await req.json();
-    const body = sellPackageSchema.parse(json);
+    const { id: patientId } = await params;
+    const packages = await prisma.patientPackage.findMany({
+      where: { patientId },
+      include: { plan: true },
+      orderBy: { purchaseDate: 'desc' }
+    });
 
-    const expiryDate = new Date();
-    expiryDate.setDate(expiryDate.getDate() + body.validityDays);
+    const now = new Date();
+    // Auto-expire packages past expiryDate
+    for (const pkg of packages) {
+      if (pkg.status === 'ACTIVE' && pkg.expiryDate && new Date(pkg.expiryDate) < now) {
+        await prisma.patientPackage.update({
+          where: { id: pkg.id },
+          data: { status: 'EXPIRED' }
+        });
+        pkg.status = 'EXPIRED';
+      }
+    }
 
-    // Create PatientPackage
+    const activePackage = packages.find(p => p.status === 'ACTIVE') || null;
+
+    return NextResponse.json({
+      activePackage,
+      allPackages: packages
+    });
+  } catch (error: any) {
+    console.error('Error fetching patient packages:', error);
+    return NextResponse.json({ error: 'Failed to fetch patient packages' }, { status: 500 });
+  }
+}
+
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+  const { errorResponse } = await requireRole([Role.ADMIN]);
+  if (errorResponse) return errorResponse;
+
+  try {
+    const { id: patientId } = await params;
+    const body = await req.json();
+    const { planId, daysPurchased, expiryDate, createInvoice = true } = body;
+
+    if (!planId || !daysPurchased || parseInt(daysPurchased) <= 0) {
+      return NextResponse.json({ error: 'Plan ID and valid days purchased are required' }, { status: 400 });
+    }
+
+    const plan = await prisma.treatmentPlan.findUnique({
+      where: { id: planId }
+    });
+
+    if (!plan) {
+      return NextResponse.json({ error: 'Treatment plan not found' }, { status: 404 });
+    }
+
+    const days = parseInt(daysPurchased);
+    // Rate Snapshot taken at purchase!
+    const rateSnapshot = Number(plan.packageRate);
+    const totalAmount = rateSnapshot * days;
+
+    // Automatic 45-day expiry calculation
+    const autoExpiryDate = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000);
+
+    // 1. Create PatientPackage record
     const patientPackage = await prisma.patientPackage.create({
       data: {
         patientId,
-        treatmentPackageId: body.treatmentPackageId || null,
-        packageName: body.packageName,
-        totalSessions: body.totalSessions,
+        planId,
+        daysPurchased: days,
+        ratePerDay: rateSnapshot,
+        totalAmount,
         sessionsUsed: 0,
-        price: body.price,
-        paidAmount: 0,
         status: 'ACTIVE',
         purchaseDate: new Date(),
-        expiryDate,
+        expiryDate: expiryDate ? new Date(expiryDate) : autoExpiryDate
       },
+      include: { plan: true, patient: true }
     });
 
-    // Also sync to legacy SessionPackage model for backwards compatibility in OPD dashboard
-    await prisma.sessionPackage.create({
-      data: {
-        patientId,
-        packageName: body.packageName,
-        totalSessions: body.totalSessions,
-        sessionsUsed: 0,
-        price: body.price,
-        paidAmount: 0,
-        paymentStatus: 'PENDING',
-        expiryDate,
-      },
-    });
+    let invoice = null;
+    if (createInvoice) {
+      // Generate invoice for course purchase
+      const count = await prisma.invoice.count();
+      const year = new Date().getFullYear();
+      const invoiceNumber = `INV-${year}-${(count + 1).toString().padStart(4, '0')}`;
 
-    // Generate corresponding invoice for package purchase
-    const year = new Date().getFullYear();
-    const count = await prisma.invoice.count();
-    const invoiceNumber = `INV-${year}-${(count + 1).toString().padStart(4, '0')}`;
+      invoice = await prisma.invoice.create({
+        data: {
+          invoiceNumber,
+          patientId,
+          totalAmount,
+          discountAmount: 0,
+          paidAmount: 0,
+          status: 'PENDING',
+          notes: `${plan.name} Treatment Course (${days} days @ ₹${rateSnapshot}/day)`,
+          lines: {
+            create: [
+              {
+                description: `${plan.name} Treatment Course (${days} days)`,
+                quantity: days,
+                unitPrice: rateSnapshot,
+                totalPrice: totalAmount,
+                isCoveredByPackage: false,
+                patientPackageId: patientPackage.id
+              }
+            ]
+          }
+        }
+      });
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        invoiceNumber,
-        patientId,
-        date: new Date(),
-        totalAmount: body.price,
-        paidAmount: 0,
-        discountAmount: 0,
-        status: body.price === 0 ? 'PAID' : 'PENDING',
-        notes: `Prepaid Package Purchase: ${body.packageName} (${body.totalSessions} Sessions)`,
-        lines: {
-          create: [
-            {
-              description: `Treatment Package: ${body.packageName} (${body.totalSessions} Sessions)`,
-              quantity: 1,
-              unitPrice: body.price,
-              totalPrice: body.price,
-              isCoveredByPackage: false,
-              patientPackageId: patientPackage.id,
-            },
-          ],
-        },
-      },
-    });
+      // Update package with invoiceId
+      await prisma.patientPackage.update({
+        where: { id: patientPackage.id },
+        data: { invoiceId: invoice.id }
+      });
+    }
 
     return NextResponse.json({ patientPackage, invoice }, { status: 201 });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid payload', details: error.issues }, { status: 400 });
-    }
-    console.error('Error selling package:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error purchasing course package:', error);
+    return NextResponse.json({ error: 'Failed to purchase course package' }, { status: 500 });
   }
 }

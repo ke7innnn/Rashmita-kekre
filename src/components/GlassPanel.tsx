@@ -23,10 +23,10 @@ export default function GlassPanel({
       case 'magenta':
         return 'hover:border-[rgba(226,63,166,0.3)] hover:shadow-[0_8px_32px_-8px_rgba(226,63,166,0.2)]';
       case 'teal':
-        return 'hover:border-[rgba(18,214,196,0.3)] hover:shadow-[0_8px_32px_-8px_rgba(18,214,196,0.2)]';
+        return 'hover:border-[rgba(255,255,255,0.3)] hover:shadow-[0_8px_32px_-8px_rgba(255,255,255,0.2)]';
       case 'none':
       default:
-        return 'hover:border-[rgba(255,255,255,0.16)] hover:shadow-[0_8px_32px_-8px_rgba(18,214,196,0.15)]';
+        return 'hover:border-[rgba(255,255,255,0.2)] hover:shadow-[0_8px_32px_-8px_rgba(255,255,255,0.15)]';
     }
   };
 

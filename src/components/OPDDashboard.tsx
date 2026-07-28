@@ -501,14 +501,11 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
               return (
                 <div
                   key={app.id}
-                  className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/20 rounded-3xl p-5 shadow-[0_20px_40px_rgba(0,0,0,0.45)] hover:border-[#12D6C4]/50 hover:shadow-[0_24px_48px_rgba(18,214,196,0.2)] transition-all duration-300 group relative overflow-hidden flex flex-col justify-between space-y-4"
+                  className="bg-gradient-to-b from-white/[0.09] to-white/[0.03] backdrop-blur-2xl border border-white/20 rounded-3xl p-5 shadow-[0_20px_40px_rgba(0,0,0,0.45)] hover:border-white/40 hover:shadow-[0_24px_48px_rgba(255,255,255,0.15)] transition-all duration-300 group relative overflow-hidden flex flex-col justify-between space-y-4"
                 >
-                  {/* Top Glowing Accent Line */}
-                  <div className={`absolute top-0 inset-x-0 h-1 bg-gradient-to-r ${config.gradient} shadow-[0_0_15px_rgba(18,214,196,0.5)]`} />
-
                   {/* Pulsing NEW Badge */}
                   {new Date(app.createdAt).getTime() > boardOpenedTime && (
-                    <span className="absolute top-3.5 right-3.5 flex h-5 px-2.5 items-center justify-center rounded-full bg-[#12D6C4] text-[8px] font-bold uppercase tracking-wider text-[#06231D] shadow-[0_0_12px_#12D6C4] animate-pulse z-10">
+                    <span className="absolute top-3.5 right-3.5 flex h-5 px-2.5 items-center justify-center rounded-full bg-white text-[8px] font-bold uppercase tracking-wider text-black shadow-[0_0_12px_rgba(255,255,255,0.5)] animate-pulse z-10">
                       New
                     </span>
                   )}
@@ -516,9 +513,14 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                   <div className="space-y-4">
                     {/* Header Row: Time Pill & Session Tracker */}
                     <div className="flex justify-between items-center gap-2 pb-3 border-b border-white/10">
-                      <div className="flex items-center gap-1.5 text-xs text-[#12D6C4] font-bold bg-[#12D6C4]/15 border border-[#12D6C4]/40 px-3 py-1 rounded-xl num-tabular shadow-[0_0_12px_rgba(18,214,196,0.2)]">
-                        <Clock className="h-3.5 w-3.5 stroke-[2]" />
-                        <span>{app.startTime} - {app.endTime}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 text-xs text-white font-bold bg-white/10 border border-white/20 px-3 py-1 rounded-xl num-tabular shadow-[0_0_12px_rgba(255,255,255,0.15)]">
+                          <Clock className="h-3.5 w-3.5 stroke-[2]" />
+                          <span>{app.startTime} - {app.endTime}</span>
+                        </div>
+                        <span className="text-[10px] font-bold text-white/60 bg-white/5 border border-white/10 px-2 py-0.5 rounded-lg num-tabular">
+                          {appointmentsList.filter((a: any) => a.startTime === app.startTime).length}/2
+                        </span>
                       </div>
 
                       {(() => {
@@ -543,7 +545,7 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                           {initials}
                         </div>
                         <div className="min-w-0">
-                          <h4 className="text-base font-bold text-white tracking-wide group-hover:text-[#12D6C4] transition-colors truncate">
+                          <h4 className="text-base font-bold text-white tracking-wide group-hover:text-white transition-colors truncate">
                             {app.patient.fullName}
                           </h4>
                           <div className="flex items-center gap-2 text-[10px] font-semibold text-white/60 uppercase tracking-wider mt-0.5">
@@ -562,13 +564,13 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                     {/* Treatment Glass Card */}
                     <div className="bg-white/[0.04] border border-white/12 p-3.5 rounded-2xl space-y-2">
                       <span className="text-[9px] uppercase font-bold tracking-wider text-white/50 block">Assigned Treatment</span>
-                      <span className="text-xs font-bold text-[#12D6C4] block leading-tight">{app.treatmentType}</span>
+                      <span className="text-xs font-bold text-white block leading-tight">{app.treatmentType}</span>
 
                       {/* Attached Indicators */}
                       {(app.notes || (app.assignedExercises && app.assignedExercises.length > 0)) && (
                         <div className="flex flex-wrap gap-1.5 pt-1 border-t border-white/10">
                           {app.notes && (
-                            <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-[#12D6C4]/15 text-[#12D6C4] border border-[#12D6C4]/30 rounded-md">
+                            <span className="inline-flex items-center gap-1 text-[9px] font-bold px-2 py-0.5 bg-white/10 text-white border border-white/20 rounded-md">
                               <FileText className="h-3 w-3 stroke-[2]" />
                               SOAP Attached
                             </span>

@@ -8,13 +8,20 @@ import { z } from 'zod';
 import { motion } from 'framer-motion';
 import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare, X, CalendarX, Palette, Check } from 'lucide-react';
 import GlassPanel from './GlassPanel';
+import BillingSettingsTab from './settings/BillingSettingsTab';
+import StaffSettingsTab from './settings/StaffSettingsTab';
  
 const settingsSchema = z.object({
   name: z.string().min(1, 'Name is required'),
-  phone: z.string().min(10, 'Valid contact phone required'),
+  phone: z.string().min(1, 'Valid contact phone required'),
   email: z.string().email('Valid email required'),
   address: z.string().min(1, 'Address is required'),
   primaryDoctor: z.string().min(1, 'Doctor name required'),
+  doctorNameCredentials: z.string().optional(),
+  logoUrl: z.string().optional(),
+  website: z.string().optional(),
+  upiId: z.string().optional(),
+  registrationNumber: z.string().optional(),
   workingHoursStart: z.string().regex(/^\d{2}:\d{2}$/, 'HH:MM format'),
   workingHoursEnd: z.string().regex(/^\d{2}:\d{2}$/, 'HH:MM format'),
   slotDuration: z.number().int().positive().default(30),
@@ -69,8 +76,9 @@ interface Props {
 }
  
 export default function SettingsTab({ user }: Props) {
+  const [activeTab, setActiveTab] = useState<'general' | 'billing' | 'staff'>('general');
   const queryClient = useQueryClient();
-  const isAdmin = user.role === 'admin';
+  const isAdmin = (user?.role || '').toLowerCase() === 'admin';
   const [holidayDates, setHolidayDates] = useState<string[]>([]);
   const [newHolidayDate, setNewHolidayDate] = useState('');
   const [activeTheme, setActiveTheme] = useState<string>('aurora');
@@ -108,6 +116,11 @@ export default function SettingsTab({ user }: Props) {
         email: settings.email,
         address: settings.address,
         primaryDoctor: settings.primaryDoctor,
+        doctorNameCredentials: settings.doctorNameCredentials || 'Dr. Rashmita Karvir Kekre, B.P.Th. (M.I.A.P.), BCST',
+        logoUrl: settings.logoUrl || '',
+        website: settings.website || 'www.health360physio.com',
+        upiId: settings.upiId || 'health360@upi',
+        registrationNumber: settings.registrationNumber || '',
         workingHoursStart: settings.workingHoursStart,
         workingHoursEnd: settings.workingHoursEnd,
         slotDuration: settings.slotDuration,
@@ -174,19 +187,20 @@ export default function SettingsTab({ user }: Props) {
   }
  
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 select-none animate-fadeIn">
+    <div className="space-y-6 select-none animate-fadeIn">
       {/* Title Header with Save Action */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div className="space-y-0.5">
-          <h3 className="text-3xl font-serif text-[#F5F3FA] font-bold">Clinic Configurations</h3>
+          <h3 className="text-3xl font-serif text-[#F5F3FA] font-bold">Clinic Settings</h3>
           <p className="text-xs text-[rgba(245,243,250,0.62)] mt-0.5 font-medium">
-            Configure working hours, color theme palette, message reminders, and public widget visibilities.
+            Manage general configurations, treatment plans, rate cards, and staff accounts
           </p>
         </div>
- 
-        {isAdmin && (
+
+        {activeTab === 'general' && isAdmin && (
           <motion.button
-            type="submit"
+            type="button"
+            onClick={handleSubmit(onSubmit)}
             whileTap={{ scale: 0.95 }}
             disabled={mutation.isPending}
             className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer focus:outline-hidden shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0 shrink-0"
@@ -200,6 +214,49 @@ export default function SettingsTab({ user }: Props) {
           </motion.button>
         )}
       </div>
+
+      {/* Sub-tab Navigation */}
+      <div className="flex items-center gap-2 border-b border-white/10 pb-3">
+        <button
+          type="button"
+          onClick={() => setActiveTab('general')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+            activeTab === 'general'
+              ? 'bg-[#12D6C4] text-black shadow-[0_0_15px_rgba(18,214,196,0.3)]'
+              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+          }`}
+        >
+          General & Profile
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('billing')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+            activeTab === 'billing'
+              ? 'bg-[#12D6C4] text-black shadow-[0_0_15px_rgba(18,214,196,0.3)]'
+              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+          }`}
+        >
+          Billing & Rates
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('staff')}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
+            activeTab === 'staff'
+              ? 'bg-[#12D6C4] text-black shadow-[0_0_15px_rgba(18,214,196,0.3)]'
+              : 'bg-white/5 text-white/70 hover:bg-white/10 hover:text-white'
+          }`}
+        >
+          Staff Management
+        </button>
+      </div>
+
+      {activeTab === 'billing' && <BillingSettingsTab />}
+      {activeTab === 'staff' && <StaffSettingsTab />}
+
+      {activeTab === 'general' && (
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
  
       {!isAdmin && (
         <div className="p-4 bg-[rgba(255,180,84,0.12)] border border-[rgba(255,180,84,0.3)] rounded-2xl flex gap-3 text-sm text-[#FFB454]">
@@ -384,6 +441,47 @@ export default function SettingsTab({ user }: Props) {
  
               <div>
                 <label className="eyebrow text-[9px] block mb-1.5">
+                  Doctor Name & Credentials (Letterhead Format)
+                </label>
+                <input
+                  type="text"
+                  disabled={!isAdmin}
+                  placeholder="e.g. Dr. Rashmita Karvir Kekre, B.P.Th. (M.I.A.P.), BCST"
+                  {...register('doctorNameCredentials')}
+                  className="block w-full text-xs glass-input p-2.5 font-medium"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="eyebrow text-[9px] block mb-1.5">
+                    Clinic Logo Image URL (PNG / SVG)
+                  </label>
+                  <input
+                    type="text"
+                    disabled={!isAdmin}
+                    placeholder="https://... /logo.png"
+                    {...register('logoUrl')}
+                    className="block w-full text-xs glass-input p-2.5 font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="eyebrow text-[9px] block mb-1.5">
+                    UPI Payment ID
+                  </label>
+                  <input
+                    type="text"
+                    disabled={!isAdmin}
+                    placeholder="health360@upi"
+                    {...register('upiId')}
+                    className="block w-full text-xs glass-input p-2.5 font-medium"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="eyebrow text-[9px] block mb-1.5">
                   Clinic Address
                 </label>
                 <textarea
@@ -547,5 +645,7 @@ export default function SettingsTab({ user }: Props) {
         </div>
       </div>
     </form>
-  );
+    )}
+  </div>
+);
 }

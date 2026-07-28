@@ -1,135 +1,137 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { z } from 'zod';
-
-const createInvoiceSchema = z.object({
-  patientId: z.string().min(1, 'Patient ID is required'),
-  date: z.string().optional().transform((val) => val ? new Date(val) : new Date()),
-  dueDate: z.string().optional().transform((val) => val ? new Date(val) : undefined),
-  discountAmount: z.number().min(0).default(0),
-  notes: z.string().optional(),
-  lines: z.array(z.object({
-    description: z.string().min(1, 'Line description is required'),
-    quantity: z.number().int().min(1).default(1),
-    unitPrice: z.number().min(0),
-    isCoveredByPackage: z.boolean().default(false),
-    patientPackageId: z.string().optional(),
-  })).min(1, 'At least one line item is required'),
-});
+import { requireRole } from '@/lib/roleGate';
+import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Server-side ADMIN role enforcement
-  const role = (session.user as any).role;
-  if (role === 'PHYSIO' || role === 'RECEPTIONIST') {
-    return NextResponse.json({ error: 'Forbidden. Billing access is restricted to ADMIN role.' }, { status: 403 });
-  }
-
-  const { searchParams } = new URL(req.url);
-  const status = searchParams.get('status');
-  const query = searchParams.get('query');
+  const { errorResponse } = await requireRole([Role.ADMIN]);
+  if (errorResponse) return errorResponse;
 
   try {
+    const { searchParams } = new URL(req.url);
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') || '';
+
     const where: any = {};
-    if (status && status !== 'ALL') {
+    if (status) {
       where.status = status;
     }
-    if (query) {
+    if (search) {
       where.OR = [
-        { invoiceNumber: { contains: query, mode: 'insensitive' } },
-        { patient: { fullName: { contains: query, mode: 'insensitive' } } },
-        { patient: { phone: { contains: query } } },
+        { invoiceNumber: { contains: search, mode: 'insensitive' } },
+        { patient: { fullName: { contains: search, mode: 'insensitive' } } },
+        { patient: { phone: { contains: search, mode: 'insensitive' } } }
       ];
     }
 
     const invoices = await prisma.invoice.findMany({
       where,
-      orderBy: { date: 'desc' },
+      orderBy: { createdAt: 'desc' },
       include: {
         patient: { select: { id: true, fullName: true, phone: true } },
         lines: true,
-        payments: true,
-      },
+        payments: true
+      }
     });
 
-    return NextResponse.json(invoices);
+    const formatted = invoices.map(inv => {
+      const now = new Date();
+      const isOverdue = inv.status !== 'PAID' && inv.status !== 'CANCELLED' && inv.dueDate && new Date(inv.dueDate) < now;
+      const derivedStatus = isOverdue ? 'OVERDUE' : inv.status;
+
+      const subtotalAmount = inv.lines.reduce((sum, line) => {
+        const lineVal = Number(line.totalPrice) || (Number(line.quantity) * Number(line.unitPrice));
+        return sum + (isNaN(lineVal) ? 0 : lineVal);
+      }, 0);
+
+      const discountAmount = Number(inv.discountAmount || 0);
+      const totalAmount = Math.max(0, subtotalAmount - discountAmount);
+
+      return {
+        ...inv,
+        subtotalAmount,
+        totalAmount,
+        status: derivedStatus,
+        rawStatus: inv.status
+      };
+    });
+
+    return NextResponse.json(formatted);
   } catch (error: any) {
     console.error('Error fetching invoices:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch invoices' }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Server-side ADMIN role enforcement
-  const role = (session.user as any).role;
-  if (role === 'PHYSIO' || role === 'RECEPTIONIST') {
-    return NextResponse.json({ error: 'Forbidden. Billing access is restricted to ADMIN role.' }, { status: 403 });
-  }
+  const { errorResponse } = await requireRole([Role.ADMIN]);
+  if (errorResponse) return errorResponse;
 
   try {
-    const json = await req.json();
-    const body = createInvoiceSchema.parse(json);
+    const body = await req.json();
+    const { patientId, lines, discountAmount = 0, notes, dueDate } = body;
 
-    // Compute line item totals server-side
-    let calculatedTotal = 0;
-    const processedLines = body.lines.map((line) => {
-      const lineTotal = line.isCoveredByPackage ? 0 : (line.quantity * line.unitPrice);
-      calculatedTotal += lineTotal;
+    if (!patientId || !lines || !Array.isArray(lines) || lines.length === 0) {
+      return NextResponse.json({ error: 'Patient ID and at least one line item are required' }, { status: 400 });
+    }
+
+    // Calculate total on server-side
+    let lineTotalSum = 0;
+    const invoiceLinesData = lines.map((l: any) => {
+      const q = Math.max(1, parseInt(l.quantity) || 1);
+      const price = parseFloat(l.unitPrice) || 0;
+      const tot = q * price;
+      lineTotalSum += tot;
       return {
-        description: line.description,
-        quantity: line.quantity,
-        unitPrice: line.unitPrice,
-        totalPrice: lineTotal,
-        isCoveredByPackage: line.isCoveredByPackage,
-        patientPackageId: line.patientPackageId || null,
+        description: l.description,
+        quantity: q,
+        unitPrice: price,
+        totalPrice: tot,
+        isCoveredByPackage: !!l.isCoveredByPackage,
+        patientPackageId: l.patientPackageId || null
       };
     });
 
-    const finalTotal = Math.max(0, calculatedTotal - body.discountAmount);
+    const discount = Math.max(0, parseFloat(discountAmount) || 0);
+    const finalTotal = Math.max(0, lineTotalSum - discount);
 
-    // Generate unique sequential invoice number (INV-2026-XXXX)
-    const year = new Date().getFullYear();
+    // Generate unique Invoice Number
     const count = await prisma.invoice.count();
+    const year = new Date().getFullYear();
     const invoiceNumber = `INV-${year}-${(count + 1).toString().padStart(4, '0')}`;
 
     const invoice = await prisma.invoice.create({
       data: {
         invoiceNumber,
-        patientId: body.patientId,
-        date: body.date,
-        dueDate: body.dueDate,
+        patientId,
         totalAmount: finalTotal,
-        discountAmount: body.discountAmount,
-        status: finalTotal === 0 ? 'PAID' : 'PENDING',
-        paidAmount: finalTotal === 0 ? 0 : 0,
-        notes: body.notes,
+        discountAmount: discount,
+        paidAmount: 0,
+        status: 'PENDING',
+        notes,
+        dueDate: dueDate ? new Date(dueDate) : null,
         lines: {
-          create: processedLines,
-        },
+          create: invoiceLinesData
+        }
       },
       include: {
-        patient: true,
-        lines: true,
-      },
+        patient: { select: { id: true, fullName: true, phone: true } },
+        lines: true
+      }
     });
 
-    return NextResponse.json(invoice, { status: 201 });
+    const subtotalAmount = invoice.lines.reduce((sum, line) => {
+      const lineVal = Number(line.totalPrice) || (Number(line.quantity) * Number(line.unitPrice));
+      return sum + (isNaN(lineVal) ? 0 : lineVal);
+    }, 0);
+
+    return NextResponse.json({
+      ...invoice,
+      subtotalAmount,
+      totalAmount: Math.max(0, subtotalAmount - Number(invoice.discountAmount || 0))
+    }, { status: 201 });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid invoice payload', details: error.issues }, { status: 400 });
-    }
     console.error('Error creating invoice:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to create invoice' }, { status: 500 });
   }
 }

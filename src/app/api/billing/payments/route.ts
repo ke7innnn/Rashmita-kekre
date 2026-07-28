@@ -1,76 +1,68 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { z } from 'zod';
-
-const paymentSchema = z.object({
-  invoiceId: z.string().min(1, 'Invoice ID is required'),
-  amount: z.number().positive('Amount must be positive'),
-  paymentMode: z.enum(['Cash', 'UPI', 'Card', 'Bank transfer']),
-  referenceNumber: z.string().optional(),
-  date: z.string().optional().transform((val) => val ? new Date(val) : new Date()),
-});
+import { requireRole } from '@/lib/roleGate';
+import { Role } from '@prisma/client';
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Server-side ADMIN role enforcement
-  const role = (session.user as any).role;
-  if (role === 'PHYSIO' || role === 'RECEPTIONIST') {
-    return NextResponse.json({ error: 'Forbidden. Billing access is restricted to ADMIN role.' }, { status: 403 });
-  }
+  const { errorResponse } = await requireRole([Role.ADMIN]);
+  if (errorResponse) return errorResponse;
 
   try {
-    const json = await req.json();
-    const body = paymentSchema.parse(json);
+    const body = await req.json();
+    const { invoiceId, amount, paymentMode, referenceNumber, date } = body;
+
+    if (!invoiceId || !amount || parseFloat(amount) <= 0) {
+      return NextResponse.json({ error: 'Valid invoice ID and payment amount are required' }, { status: 400 });
+    }
 
     const invoice = await prisma.invoice.findUnique({
-      where: { id: body.invoiceId },
+      where: { id: invoiceId }
     });
 
     if (!invoice) {
       return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
     }
 
-    const newPaidAmount = invoice.paidAmount + body.amount;
-    const isFullyPaid = newPaidAmount >= invoice.totalAmount;
-    const newStatus = isFullyPaid ? 'PAID' : 'PARTIALLY_PAID';
+    const pAmount = parseFloat(amount);
+    const currentPaid = Number(invoice.paidAmount);
+    const newPaidTotal = currentPaid + pAmount;
+    const invTotal = Number(invoice.totalAmount);
 
-    // Record Payment & update Invoice in a transaction
+    let newStatus = invoice.status;
+    if (newPaidTotal >= invTotal) {
+      newStatus = 'PAID';
+    } else if (newPaidTotal > 0) {
+      newStatus = 'PARTIALLY_PAID';
+    }
+
+    // Transaction to add payment record and update invoice status
     const [payment, updatedInvoice] = await prisma.$transaction([
       prisma.payment.create({
         data: {
-          invoiceId: body.invoiceId,
-          amount: body.amount,
-          paymentMode: body.paymentMode,
-          referenceNumber: body.referenceNumber,
-          date: body.date,
-        },
+          invoiceId,
+          amount: pAmount,
+          paymentMode: paymentMode || 'Cash',
+          referenceNumber: referenceNumber || null,
+          date: date ? new Date(date) : new Date()
+        }
       }),
       prisma.invoice.update({
-        where: { id: body.invoiceId },
+        where: { id: invoiceId },
         data: {
-          paidAmount: newPaidAmount,
-          status: newStatus,
+          paidAmount: newPaidTotal,
+          status: newStatus
         },
         include: {
           patient: true,
           lines: true,
-          payments: { orderBy: { date: 'desc' } },
-        },
-      }),
+          payments: { orderBy: { date: 'desc' } }
+        }
+      })
     ]);
 
     return NextResponse.json({ payment, invoice: updatedInvoice }, { status: 201 });
   } catch (error: any) {
-    if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Invalid payment payload', details: error.issues }, { status: 400 });
-    }
     console.error('Error recording payment:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to record payment' }, { status: 500 });
   }
 }

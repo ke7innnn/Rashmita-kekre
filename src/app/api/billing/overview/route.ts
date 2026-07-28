@@ -1,97 +1,139 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { requireRole } from '@/lib/roleGate';
+import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
-  // Server-side ADMIN role enforcement
-  const role = (session.user as any).role;
-  if (role === 'PHYSIO' || role === 'RECEPTIONIST') {
-    return NextResponse.json({ error: 'Forbidden. Billing access is restricted to ADMIN role.' }, { status: 403 });
-  }
+  const { errorResponse } = await requireRole([Role.ADMIN]);
+  if (errorResponse) return errorResponse;
 
   try {
-    // Total unpaid outstanding across all patients
-    const pendingInvoices = await prisma.invoice.findMany({
+    // 1. Outstanding total across all pending/partially paid invoices
+    const invoices = await prisma.invoice.findMany({
       where: { status: { in: ['PENDING', 'PARTIALLY_PAID'] } },
-      select: { totalAmount: true, paidAmount: true },
+      select: { totalAmount: true, paidAmount: true, status: true, dueDate: true }
     });
 
-    const outstanding = pendingInvoices.reduce((acc, inv) => acc + (inv.totalAmount - inv.paidAmount), 0);
+    let totalOutstanding = 0;
+    let overdueCount = 0;
+    const now = new Date();
 
-    // Collected this month
+    invoices.forEach(inv => {
+      const outstanding = Number(inv.totalAmount) - Number(inv.paidAmount);
+      if (outstanding > 0) {
+        totalOutstanding += outstanding;
+      }
+      if (inv.dueDate && new Date(inv.dueDate) < now) {
+        overdueCount++;
+      }
+    });
+
+    // 2. Collected this month
     const startOfMonth = new Date();
     startOfMonth.setDate(1);
     startOfMonth.setHours(0, 0, 0, 0);
 
-    const monthPayments = await prisma.payment.aggregate({
+    const paymentsThisMonth = await prisma.payment.aggregate({
       where: { date: { gte: startOfMonth } },
-      _sum: { amount: true },
+      _sum: { amount: true }
     });
+    const totalCollectedThisMonth = Number(paymentsThisMonth._sum.amount || 0);
 
-    const collectedThisMonth = monthPayments._sum.amount || 0;
-
-    // Active packages count & total remaining sessions
+    // 3. Active courses (count + total days remaining)
     const activePackages = await prisma.patientPackage.findMany({
       where: { status: 'ACTIVE' },
-      select: { totalSessions: true, sessionsUsed: true },
+      select: { daysPurchased: true, sessionsUsed: true }
     });
 
-    const activePackagesCount = activePackages.length;
-    const remainingSessionsCount = activePackages.reduce((acc, pkg) => acc + (pkg.totalSessions - pkg.sessionsUsed), 0);
+    const activeCoursesCount = activePackages.length;
+    let totalDaysRemaining = 0;
+    activePackages.forEach(pkg => {
+      const rem = pkg.daysPurchased - pkg.sessionsUsed;
+      if (rem > 0) totalDaysRemaining += rem;
+    });
 
-    // Recent invoices (8 dense rows)
+    // 4. Recent invoices (8 rows)
     const recentInvoices = await prisma.invoice.findMany({
       take: 8,
-      orderBy: { date: 'desc' },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        patient: { select: { id: true, fullName: true, phone: true } }
+      }
+    });
+
+    // 5. Patients with outstanding balances (highest first)
+    const allUnpaidInvoices = await prisma.invoice.findMany({
+      where: { status: { in: ['PENDING', 'PARTIALLY_PAID'] } },
+      include: { patient: { select: { id: true, fullName: true, phone: true } } }
+    });
+
+    const patientBalanceMap: Record<string, { patient: any; balance: number; invoiceCount: number }> = {};
+
+    allUnpaidInvoices.forEach(inv => {
+      const bal = Number(inv.totalAmount) - Number(inv.paidAmount);
+      if (bal > 0) {
+        if (!patientBalanceMap[inv.patientId]) {
+          patientBalanceMap[inv.patientId] = {
+            patient: inv.patient,
+            balance: 0,
+            invoiceCount: 0
+          };
+        }
+        patientBalanceMap[inv.patientId].balance += bal;
+        patientBalanceMap[inv.patientId].invoiceCount += 1;
+      }
+    });
+
+    const outstandingPatients = Object.values(patientBalanceMap).sort((a, b) => b.balance - a.balance);
+
+    // 6. Expiring Packages (Active packages expiring within 14 days with unused days)
+    const fourteenDaysFromNow = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    const expiringPackagesRaw = await prisma.patientPackage.findMany({
+      where: {
+        status: 'ACTIVE',
+        expiryDate: {
+          not: null,
+          lte: fourteenDaysFromNow
+        }
+      },
       include: {
         patient: { select: { id: true, fullName: true, phone: true } },
+        plan: { select: { name: true } }
       },
+      orderBy: { expiryDate: 'asc' }
     });
 
-    // Patients with outstanding balances, sorted highest first
-    const patients = await prisma.patient.findMany({
-      where: {
-        invoices: {
-          some: { status: { in: ['PENDING', 'PARTIALLY_PAID'] } },
-        },
-      },
-      include: {
-        invoices: {
-          where: { status: { in: ['PENDING', 'PARTIALLY_PAID'] } },
-          select: { totalAmount: true, paidAmount: true },
-        },
-      },
-    });
-
-    const patientsWithOutstanding = patients
-      .map((p) => {
-        const balance = p.invoices.reduce((sum, inv) => sum + (inv.totalAmount - inv.paidAmount), 0);
+    const expiringPackages = expiringPackagesRaw
+      .map(pkg => {
+        const remainingDays = pkg.daysPurchased - pkg.sessionsUsed;
+        const daysToExpiry = Math.ceil((new Date(pkg.expiryDate!).getTime() - now.getTime()) / (1000 * 3600 * 24));
         return {
-          id: p.id,
-          fullName: p.fullName,
-          phone: p.phone,
-          outstandingBalance: balance,
+          id: pkg.id,
+          patient: pkg.patient,
+          planName: pkg.plan?.name || 'Treatment Course',
+          daysPurchased: pkg.daysPurchased,
+          sessionsUsed: pkg.sessionsUsed,
+          remainingDays,
+          daysToExpiry,
+          expiryDate: pkg.expiryDate
         };
       })
-      .filter((p) => p.outstandingBalance > 0)
-      .sort((a, b) => b.outstandingBalance - a.outstandingBalance);
+      .filter(pkg => pkg.remainingDays > 0 && pkg.daysToExpiry >= 0);
 
     return NextResponse.json({
-      outstanding,
-      collectedThisMonth,
-      activePackagesCount,
-      remainingSessionsCount,
+      metrics: {
+        totalOutstanding,
+        totalCollectedThisMonth,
+        activeCoursesCount,
+        totalDaysRemaining,
+        overdueCount
+      },
       recentInvoices,
-      patientsWithOutstanding,
+      outstandingPatients,
+      expiringPackages
     });
   } catch (error: any) {
-    console.error('Error fetching billing overview:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    console.error('Error in /api/billing/overview:', error);
+    return NextResponse.json({ error: 'Failed to fetch billing overview' }, { status: 500 });
   }
 }
