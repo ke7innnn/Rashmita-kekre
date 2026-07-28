@@ -150,7 +150,7 @@ model ClinicSettings {
   address                      String   @default("Shop No.1, Amardeep Society, Om Nagar, Vasai (W).")
   primaryDoctor                String   @default("Dr. Rashmita Karvir Kekre")
   doctorNameCredentials        String   @default("Dr. Rashmita Karvir Kekre\nB.PTh.(M.I.A.P.)\nBCST")
-  logoUrl                      String?
+  logoUrl                      String?  @default("/logo/rklogo.png")
   website                      String?  @default("health360vasai@gmail.com")
   upiId                        String?  @default("8482812859@upi")
   registrationNumber           String?

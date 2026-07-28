@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
         address: 'Shop No.1, Amardeep Society, Om Nagar, Vasai (W).',
         primaryDoctor: 'Dr. Rashmita Karvir Kekre',
         doctorNameCredentials: 'Dr. Rashmita Karvir Kekre\nB.PTh.(M.I.A.P.)\nBCST',
+        logoUrl: '/logo/rklogo.png',
         website: 'health360vasai@gmail.com',
         upiId: '8482812859@upi'
       },
@@ -25,6 +26,7 @@ export async function GET(req: NextRequest) {
         address: 'Shop No.1, Amardeep Society, Om Nagar, Vasai (W).',
         primaryDoctor: 'Dr. Rashmita Karvir Kekre',
         doctorNameCredentials: 'Dr. Rashmita Karvir Kekre\nB.PTh.(M.I.A.P.)\nBCST',
+        logoUrl: '/logo/rklogo.png',
         website: 'health360vasai@gmail.com',
         upiId: '8482812859@upi'
       }
@@ -32,7 +34,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: 'ClinicSettings database row updated successfully with real Vasai data!',
+      message: 'ClinicSettings database row updated successfully with real Vasai data and logoUrl!',
       settings: updated
     });
   } catch (e: any) {

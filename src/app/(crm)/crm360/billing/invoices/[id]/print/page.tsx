@@ -101,7 +101,7 @@ export default function InvoicePrintPage({
     address: 'Shop No.1, Amardeep Society, Om Nagar, Vasai (W).',
     phone: '8482812859',
     email: 'health360vasai@gmail.com',
-    logoUrl: settings?.logoUrl || null,
+    logoUrl: settings?.logoUrl || '/logo/rklogo.png',
   };
 
   // Receipt Data Mapping
