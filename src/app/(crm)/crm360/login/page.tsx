@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { signIn } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { Lock, User, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
+import { Lock, User, ArrowRight } from 'lucide-react';
 import AuroraBackground from '@/components/AuroraBackground';
 
 // Hardcoded credentials & database fallback
@@ -29,14 +29,8 @@ export default function LoginPage() {
     setError(null);
 
     const userMatch = USERS.find(
-      (u) => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password
+      (u) => u.username.toLowerCase() === username.trim().toLowerCase()
     );
-
-    if (!userMatch) {
-      setError('Invalid username or password. Please try again.');
-      setLoading(false);
-      return;
-    }
 
     try {
       const res = await signIn('credentials', {
@@ -46,26 +40,29 @@ export default function LoginPage() {
       });
 
       if (res?.error || !res?.ok) {
-        console.warn('SignIn warning:', res?.error);
+        setError('Invalid username or password. Please try again.');
+        setLoading(false);
+        return;
       }
     } catch (e) {
       console.error('SignIn error:', e);
+      setError('An error occurred during sign in. Please try again.');
+      setLoading(false);
+      return;
     }
 
-    localStorage.setItem('h360_session', JSON.stringify({ name: userMatch.name, role: userMatch.role, username: userMatch.username }));
+    const role = userMatch?.role || 'admin';
+    const name = userMatch?.name || username.trim();
+
+    localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
     
-    const targetUrl = userMatch.role.toLowerCase() !== 'admin' ? '/crm360/patients' : '/crm360';
+    const targetUrl = role.toLowerCase() !== 'admin' ? '/crm360/patients' : '/crm360';
     router.push(targetUrl);
     router.refresh();
 
     setTimeout(() => {
       setLoading(false);
     }, 1500);
-  };
-
-  const handleQuickLogin = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
   };
 
   return (
@@ -169,44 +166,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-
-        {/* Quick Demo Logins */}
-        <div className="pt-4 border-t border-white/10 space-y-3">
-          <div className="flex items-center justify-between text-[11px] font-bold text-white/50 uppercase tracking-wider">
-            <span>Quick Demo Logins</span>
-            <ShieldCheck className="w-3.5 h-3.5 text-[var(--primary)]" />
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('rashmita', 'rashmita123')}
-              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
-            >
-              👑 Dr. Rashmita (Admin)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('drgachchami', 'physio123')}
-              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
-            >
-              🩺 Dr. Gachchami
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('drpritee', 'physio123')}
-              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
-            >
-              🩺 Dr. Pritee
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('receptionist', 'receptionist123')}
-              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
-            >
-              📋 Receptionist
-            </button>
-          </div>
-        </div>
       </motion.div>
     </div>
   );
