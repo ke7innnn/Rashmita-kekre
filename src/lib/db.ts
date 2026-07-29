@@ -3,7 +3,13 @@ import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 
 const connectionString = process.env.DATABASE_URL;
-const pool = new Pool({ connectionString });
+
+// SSL configuration required for Supabase Free Tier and Vercel serverless deployment
+const isSupabase = connectionString?.includes('supabase') || connectionString?.includes('pooler');
+const pool = new Pool({
+  connectionString,
+  ssl: isSupabase || process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : undefined,
+});
 const adapter = new PrismaPg(pool);
 
 let prisma: PrismaClient;
