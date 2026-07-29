@@ -63,10 +63,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleQuickLogin = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-  };
+
 
   return (
     <div className="relative min-h-screen bg-[#0A0711] text-[#F5F3FA] font-sans antialiased flex items-center justify-center p-4 selection:bg-primary/20 overflow-hidden">
@@ -170,43 +167,7 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Quick Credentials Pills for Fast Access */}
-        <div className="pt-2 border-t border-white/10 space-y-2.5">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-white/40">
-            <span>Quick Demo Logins</span>
-            <ShieldCheck className="w-3 h-3 text-[var(--primary)]" />
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('rashmita', 'rashmita123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
-            >
-              👑 Dr. Rashmita (Admin)
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('drgachchami', 'physio123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
-            >
-              🩺 Dr. Gachchami
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('drpritee', 'physio123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
-            >
-              🩺 Dr. Pritee
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickLogin('receptionist', 'receptionist123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
-            >
-              📋 Receptionist
-            </button>
-          </div>
-        </div>
+
       </motion.div>
     </div>
   );
