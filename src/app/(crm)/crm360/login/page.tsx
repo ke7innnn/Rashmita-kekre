@@ -39,23 +39,28 @@ export default function LoginPage() {
     }
 
     try {
-      await signIn('credentials', {
+      const res = await signIn('credentials', {
         username: username.trim(),
         password: password,
         redirect: false,
       });
+
+      if (res?.error || !res?.ok) {
+        console.warn('SignIn warning:', res?.error);
+      }
     } catch (e) {
-      // Ignore NextAuth error if offline
+      console.error('SignIn error:', e);
     }
 
     localStorage.setItem('h360_session', JSON.stringify({ name: userMatch.name, role: userMatch.role, username: userMatch.username }));
     
-    if (userMatch.role.toLowerCase() !== 'admin') {
-      router.push('/crm360/patients');
-    } else {
-      router.push('/crm360');
-    }
+    const targetUrl = userMatch.role.toLowerCase() !== 'admin' ? '/crm360/patients' : '/crm360';
+    router.push(targetUrl);
     router.refresh();
+
+    setTimeout(() => {
+      setLoading(false);
+    }, 1500);
   };
 
   const handleQuickLogin = (u: string, p: string) => {
@@ -165,38 +170,38 @@ export default function LoginPage() {
           </button>
         </form>
 
-        {/* Quick Credentials Pills for Fast Access */}
-        <div className="pt-2 border-t border-white/10 space-y-2.5">
-          <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-white/40">
+        {/* Quick Demo Logins */}
+        <div className="pt-4 border-t border-white/10 space-y-3">
+          <div className="flex items-center justify-between text-[11px] font-bold text-white/50 uppercase tracking-wider">
             <span>Quick Demo Logins</span>
-            <ShieldCheck className="w-3 h-3 text-[var(--primary)]" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[var(--primary)]" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2 text-xs">
             <button
               type="button"
               onClick={() => handleQuickLogin('rashmita', 'rashmita123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
+              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
             >
               👑 Dr. Rashmita (Admin)
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('drgachchami', 'physio123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
+              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
             >
               🩺 Dr. Gachchami
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('drpritee', 'physio123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
+              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
             >
               🩺 Dr. Pritee
             </button>
             <button
               type="button"
               onClick={() => handleQuickLogin('receptionist', 'receptionist123')}
-              className="px-2.5 py-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 border border-white/10 text-[11px] font-semibold text-white/80 hover:text-white transition text-left truncate"
+              className="p-2.5 rounded-xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all text-left text-white/80 font-medium cursor-pointer"
             >
               📋 Receptionist
             </button>

@@ -3,6 +3,14 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import { prisma } from './db';
 import { verifyPassword } from './password';
 
+const HARDCODED_USERS = [
+  { username: 'rashmita', password: 'rashmita123', name: 'Dr. Rashmita Karvir Kekre', role: 'ADMIN' },
+  { username: 'drgachchami', password: 'physio123', name: 'Dr. Gachchami', role: 'PHYSIO' },
+  { username: 'drpritee', password: 'physio123', name: 'Dr. Pritee', role: 'PHYSIO' },
+  { username: 'physio', password: 'physio123', name: 'Physio Practitioner', role: 'PHYSIO' },
+  { username: 'receptionist', password: 'receptionist123', name: 'Receptionist', role: 'RECEPTIONIST' },
+];
+
 export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
@@ -24,25 +32,34 @@ export const authOptions: NextAuthOptions = {
             where: { username: credentials.username }
           });
 
-          if (!user) {
-            throw new Error('Invalid username or password.');
+          if (user) {
+            const isValid = verifyPassword(credentials.password, user.password);
+            if (isValid) {
+              return {
+                id: user.id,
+                name: user.username,
+                role: user.role,
+              };
+            }
           }
-
-          const isValid = verifyPassword(credentials.password, user.password);
-
-          if (!isValid) {
-            throw new Error('Invalid username or password.');
-          }
-
-          return {
-            id: user.id,
-            name: user.username,
-            role: user.role,
-          };
         } catch (error) {
-          console.error('Auth error:', error);
-          return null;
+          console.error('Prisma Auth error, attempting fallback:', error);
         }
+
+        // Fallback check against hardcoded demo users
+        const fallbackUser = HARDCODED_USERS.find(
+          (u) => u.username.toLowerCase() === credentials.username.trim().toLowerCase() && u.password === credentials.password
+        );
+
+        if (fallbackUser) {
+          return {
+            id: fallbackUser.username,
+            name: fallbackUser.name,
+            role: fallbackUser.role,
+          };
+        }
+
+        return null;
       },
     }),
   ],
@@ -63,7 +80,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/crm360/login',
   },
-  secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-only',
+  secret: process.env.NEXTAUTH_SECRET || 'your-nextauth-secret-key-12345',
 };
