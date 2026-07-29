@@ -20,18 +20,23 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
-          const user = await prisma.user.findUnique({
-            where: { username: credentials.username }
+          const user = await prisma.user.findFirst({
+            where: {
+              username: {
+                equals: credentials.username.trim(),
+                mode: 'insensitive',
+              },
+            },
           });
 
           if (!user) {
-            throw new Error('Invalid username or password.');
+            return null;
           }
 
           const isValid = verifyPassword(credentials.password, user.password);
 
           if (!isValid) {
-            throw new Error('Invalid username or password.');
+            return null;
           }
 
           return {
@@ -63,7 +68,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: '/login',
+    signIn: '/crm360/login',
   },
   secret: process.env.NEXTAUTH_SECRET || 'fallback-secret-for-development-only',
 };

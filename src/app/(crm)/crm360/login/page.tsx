@@ -28,34 +28,39 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const userMatch = USERS.find(
-      (u) => u.username.toLowerCase() === username.trim().toLowerCase() && u.password === password
-    );
-
-    if (!userMatch) {
-      setError('Invalid username or password. Please try again.');
-      setLoading(false);
-      return;
-    }
-
     try {
-      await signIn('credentials', {
+      const res = await signIn('credentials', {
         username: username.trim(),
         password: password,
         redirect: false,
       });
-    } catch (e) {
-      // Ignore NextAuth error if offline
-    }
 
-    localStorage.setItem('h360_session', JSON.stringify({ name: userMatch.name, role: userMatch.role, username: userMatch.username }));
-    
-    if (userMatch.role.toLowerCase() !== 'admin') {
-      router.push('/crm360/patients');
-    } else {
-      router.push('/crm360');
+      if (res?.error || !res?.ok) {
+        setError('Invalid username or password. Please try again.');
+        setLoading(false);
+        return;
+      }
+
+      const userMatch = USERS.find(
+        (u) => u.username.toLowerCase() === username.trim().toLowerCase()
+      );
+
+      const name = userMatch?.name || username.trim();
+      const role = userMatch?.role || (username.trim().toLowerCase() === 'rashmita' ? 'admin' : 'physio');
+
+      localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
+      
+      if (role.toLowerCase() !== 'admin') {
+        router.push('/crm360/patients');
+      } else {
+        router.push('/crm360');
+      }
+      router.refresh();
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please try again.');
+      setLoading(false);
     }
-    router.refresh();
   };
 
   const handleQuickLogin = (u: string, p: string) => {
