@@ -23,6 +23,101 @@ export default function CRMSidebar({ children }: Props) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<any>({ name: 'Loading', role: 'Staff' });
 
+  // Clock Attendance State
+  const [isClockedIn, setIsClockedIn] = useState<boolean>(false);
+  const [clockLoading, setClockLoading] = useState<boolean>(false);
+  const [clockInTime, setClockInTime] = useState<string | null>(null);
+  const [elapsedMins, setElapsedMins] = useState<number>(0);
+  const [showStaffPopup, setShowStaffPopup] = useState<boolean>(false);
+
+  // Smart Staff Members Roster Data
+  const staffMembers = [
+    { id: '1', name: 'Dr. Rashmita Karvir Kekre', role: 'Lead Physiotherapist', status: 'On Duty', isOnline: true, avatar: 'RK' },
+    { id: '2', name: 'Dr. Ananya Verma', role: 'Senior Physiotherapist', status: 'On Duty', isOnline: true, avatar: 'AV' },
+    { id: '3', name: 'Priya Sharma', role: 'Clinical Receptionist', status: 'On Duty', isOnline: true, avatar: 'PS' },
+    { id: '4', name: 'Rahul Deshmukh', role: 'Physio Assistant', status: 'On Shift', isOnline: true, avatar: 'RD' },
+  ];
+
+  // Fetch current attendance status
+  const fetchAttendanceStatus = async (username: string) => {
+    try {
+      const res = await fetch(`/api/attendance?username=${encodeURIComponent(username)}`);
+      if (res.ok) {
+        const data = await res.json();
+        setIsClockedIn(!!data.isClockedIn);
+        if (data.activeRecord?.clockInAt) {
+          setClockInTime(data.activeRecord.clockInAt);
+        } else {
+          setClockInTime(null);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to fetch attendance:', e);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.username || user?.name) {
+      fetchAttendanceStatus(user.username || 'rashmita');
+    }
+  }, [user]);
+
+  // Live timer for elapsed shift duration
+  useEffect(() => {
+    let interval: any;
+    if (isClockedIn && clockInTime) {
+      const updateTimer = () => {
+        const start = new Date(clockInTime).getTime();
+        const now = Date.now();
+        const diff = Math.max(0, Math.floor((now - start) / 60000));
+        setElapsedMins(diff);
+      };
+      updateTimer();
+      interval = setInterval(updateTimer, 30000);
+    } else {
+      setElapsedMins(0);
+    }
+    return () => clearInterval(interval);
+  }, [isClockedIn, clockInTime]);
+
+  const handleClockToggle = async () => {
+    setClockLoading(true);
+    try {
+      const action = isClockedIn ? 'clockOut' : 'clockIn';
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action,
+          username: user?.username || 'rashmita',
+        }),
+      });
+
+      if (res.ok) {
+        setIsClockedIn(!isClockedIn);
+        if (!isClockedIn) {
+          setClockInTime(new Date().toISOString());
+        } else {
+          setClockInTime(null);
+        }
+        await fetchAttendanceStatus(user?.username || 'rashmita');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to toggle clock status');
+      }
+    } catch (err) {
+      console.error('Clock toggle error:', err);
+    } finally {
+      setClockLoading(false);
+    }
+  };
+
+  const formatShiftTime = (mins: number) => {
+    const hrs = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${String(hrs).padStart(2, '0')}h ${String(m).padStart(2, '0')}m`;
+  };
+
   useEffect(() => {
     if (pathname === '/crm360/login') return;
     const session = localStorage.getItem('h360_session');
@@ -65,9 +160,9 @@ export default function CRMSidebar({ children }: Props) {
   const isAdmin = userRole === 'admin';
 
   const fullNavigation = [
+    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/patients', name: 'Patients Directory', icon: Users, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
-    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin'] },
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin'] },
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin'] },
     { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
@@ -79,7 +174,7 @@ export default function CRMSidebar({ children }: Props) {
 
   const navigation = fullNavigation.filter(item => {
     if (!isAdmin) {
-      return item.href === '/crm360/patients' || item.href === '/crm360/attendance';
+      return item.href === '/crm360' || item.href === '/crm360/patients' || item.href === '/crm360/attendance';
     }
     return true;
   });
@@ -208,22 +303,96 @@ export default function CRMSidebar({ children }: Props) {
           </nav>
         </div>
 
-        <div className="space-y-3.5 pt-4">
-          {/* AI Copilot Promotion Card (Matches Boost with AI card) */}
-          <div className="bg-white/[0.03] border border-white/10 p-3.5 rounded-2xl space-y-2.5">
-            <div className="flex items-center gap-2 text-white">
-              <Sparkles className="h-4 w-4 text-[var(--primary)] shrink-0" />
-              <span className="text-xs font-bold">Boost with AI</span>
+        <div className="space-y-3 pt-3">
+          {/* Smart Staff Members Roster Widget */}
+          <div className="bg-white/[0.03] border border-white/10 p-3 rounded-2xl space-y-2.5 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Staff On Duty</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowStaffPopup(!showStaffPopup)}
+                className="text-[9px] font-mono text-[var(--primary)] hover:underline cursor-pointer"
+              >
+                {showStaffPopup ? 'Hide' : 'View All'}
+              </button>
             </div>
-            <p className="text-[10px] text-white/50 leading-relaxed font-medium">
-              AI-powered SOAP notes, instant speech insights, and tools.
-            </p>
+
+            {/* Smart Staff Avatars Stack */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+              {staffMembers.map((staff) => (
+                <div 
+                  key={staff.id} 
+                  className="relative group shrink-0"
+                  title={`${staff.name} — ${staff.role} (${staff.status})`}
+                >
+                  <div className="h-7 w-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-[10px] text-white">
+                    {staff.avatar}
+                  </div>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 border border-[#0B0A10]" />
+                </div>
+              ))}
+            </div>
+
+            {/* Expandable Smart Staff List */}
+            {showStaffPopup && (
+              <div className="space-y-1.5 pt-2 border-t border-white/10 max-h-40 overflow-y-auto">
+                {staffMembers.map((staff) => (
+                  <div key={staff.id} className="flex items-center justify-between text-xs py-1">
+                    <div className="truncate pr-2">
+                      <p className="text-[11px] font-bold text-white leading-tight truncate">{staff.name}</p>
+                      <p className="text-[9px] text-white/50 truncate">{staff.role}</p>
+                    </div>
+                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">
+                      {staff.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Dedicated Clock In / Clock Out Card */}
+          <div className="bg-white/[0.04] border border-white/10 p-3 rounded-2xl space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">My Shift Status</span>
+              <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                isClockedIn 
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                  : 'bg-white/10 text-white/50'
+              }`}>
+                {isClockedIn ? `Clocked In • ${formatShiftTime(elapsedMins)}` : 'Clocked Out'}
+              </span>
+            </div>
+
             <button
               type="button"
-              onClick={() => router.push('/crm360/analytics')}
-              className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[var(--primary)] to-cyan-400 text-black font-bold text-xs shadow-lg hover:brightness-110 transition-all cursor-pointer"
+              onClick={handleClockToggle}
+              disabled={clockLoading}
+              className={`w-full py-2.5 px-3 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg ${
+                isClockedIn 
+                  ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)]' 
+                  : 'bg-[var(--primary)] hover:brightness-110 text-black shadow-[0_0_15px_rgba(18,214,196,0.3)]'
+              }`}
             >
-              Explore Copilot
+              {clockLoading ? (
+                <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : isClockedIn ? (
+                <>
+                  <LogOut className="h-4 w-4 stroke-[2]" />
+                  <span>Clock Out Now</span>
+                </>
+              ) : (
+                <>
+                  <Clock className="h-4 w-4 stroke-[2]" />
+                  <span>Clock In Now</span>
+                </>
+              )}
             </button>
           </div>
 
@@ -260,15 +429,34 @@ export default function CRMSidebar({ children }: Props) {
                 className="h-9 w-9 object-contain relative z-10"
               />
             </div>
-            <h1 className="text-lg font-serif font-semibold text-[#F5F3FA]">Health 360</h1>
+            <div>
+              <h1 className="text-base font-serif font-semibold text-[#F5F3FA]">Health 360</h1>
+              <p className="text-[9px] text-white/40">4 Staff On Duty</p>
+            </div>
           </div>
 
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[#F5F3FA] cursor-pointer"
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Quick Clock Out Button for Mobile */}
+            <button
+              onClick={handleClockToggle}
+              disabled={clockLoading}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+                isClockedIn
+                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                  : 'bg-[var(--primary)] text-black'
+              }`}
+            >
+              {isClockedIn ? <LogOut size={13} /> : <Clock size={13} />}
+              <span>{isClockedIn ? 'Clock Out' : 'Clock In'}</span>
+            </button>
+
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-2 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[#F5F3FA] cursor-pointer"
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          </div>
         </header>
 
         {/* Mobile Dropdown Navigation */}

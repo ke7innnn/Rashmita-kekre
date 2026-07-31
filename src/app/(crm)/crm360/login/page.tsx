@@ -56,7 +56,7 @@ export default function LoginPage() {
 
     localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
     
-    const targetUrl = role.toLowerCase() !== 'admin' ? '/crm360/patients' : '/crm360';
+    const targetUrl = '/crm360';
     router.push(targetUrl);
     router.refresh();
 

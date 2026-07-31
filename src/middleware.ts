@@ -23,11 +23,12 @@ export async function middleware(req: NextRequest) {
     const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
 
     if (isPhysio) {
-      const allowedPaths = ['/crm360/attendance', '/crm360/patients'];
-      const isAllowed = allowedPaths.some(p => pathname.startsWith(p));
+      const allowedPaths = ['/crm360', '/crm360/attendance', '/crm360/patients'];
+      const isExactOverview = pathname === '/crm360';
+      const isAllowed = isExactOverview || allowedPaths.some(p => p !== '/crm360' && pathname.startsWith(p));
       if (!isAllowed) {
-        const patientsUrl = new URL('/crm360/patients', req.url);
-        return NextResponse.redirect(patientsUrl);
+        const overviewUrl = new URL('/crm360', req.url);
+        return NextResponse.redirect(overviewUrl);
       }
     }
   }

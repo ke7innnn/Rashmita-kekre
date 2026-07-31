@@ -6,13 +6,24 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Award, Calendar, 
   ArrowRight, ShieldCheck, HeartPulse, UserCheck, ChevronRight,
-  Clock, Sparkles, Plus, Check, Trash2, ArrowUpRight, Share2, Send,
+  Clock, Sparkles, Plus, Check, CheckCircle, Trash2, ArrowUpRight, Share2, Send,
   Maximize2, TrendingUp, BarChart3, X
 } from 'lucide-react';
 import GlassPanel from './GlassPanel';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
+
+const CLINICAL_QUOTES = [
+  "“Wherever the art of Medicine is loved, there is also a love of Humanity.” — Hippocrates",
+  "“Movement is medicine for creating change in physical and mental health.” — Carol Welch",
+  "“To cure sometimes, to relieve often, to comfort always.” — E. L. Trudeau",
+  "“The art of healing comes from nature, not from the physician.” — Paracelsus",
+  "“The great physician treats the patient, not just the disease.” — William Osler",
+  "“Restoring movement, vitality, and strength — one session at a time.”",
+  "“Precision clinical care meets compassionate patient recovery.”",
+  "“Small daily physical recovery milestones build lifelong vitality.”"
+];
 
 interface Props {
   onVoiceAgentClick?: () => void;
@@ -24,6 +35,13 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
   const [promoteTime, setPromoteTime] = useState('11:00');
   const [promoteModality, setPromoteModality] = useState('Physiotherapy');
   const [showDemandModal, setShowDemandModal] = useState(false);
+  const [quoteIndex, setQuoteIndex] = useState(0);
+
+  // Cycle quote or pick based on day
+  React.useEffect(() => {
+    const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / (1000 * 60 * 60 * 24));
+    setQuoteIndex(dayOfYear % CLINICAL_QUOTES.length);
+  }, []);
 
   // Fetch today's appointments
   const todayStr = new Date().toISOString().split('T')[0];
@@ -93,9 +111,10 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
 
   const getDynamicGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Good Morning, Dr. Rashmita 👋';
-    if (hour >= 12 && hour < 17) return 'Good Afternoon, Dr. Rashmita 👋';
-    return 'Good Evening, Dr. Rashmita 👋';
+    if (hour >= 5 && hour < 12) return 'Good Morning, Dr. Rashmita';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon, Dr. Rashmita';
+    if (hour >= 17 && hour < 22) return 'Good Evening, Dr. Rashmita';
+    return 'Working Late, Dr. Rashmita';
   };
 
   const getFormattedDate = () => {
@@ -107,6 +126,11 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
     });
   };
 
+  const totalToday = appointmentsList.length;
+  const contextLine = totalToday > 0
+    ? `${totalToday} appointment${totalToday === 1 ? '' : 's'} today · ${waitingCount > 0 ? `${waitingCount} waiting in reception` : `${completedCount} completed`}`
+    : 'No appointments scheduled today — clear day';
+
   return (
     <div className="space-y-6 select-none animate-fadeIn">
       {/* 2-Column Dashboard Shell for Bento Grid */}
@@ -115,81 +139,205 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
         {/* LEFT COLUMN (2/3 width on desktop) */}
         <div className="lg:col-span-2 space-y-6 flex flex-col justify-between">
           
-          {/* CENTERPIECE HERO CARD */}
-          <GlassPanel accent="teal" className="p-6 flex flex-col justify-between relative overflow-hidden min-h-[280px] flex-1">
+          {/* CENTERPIECE HERO CARD — Primary Practice Welcome Desk */}
+          <GlassPanel accent="teal" className="p-6 md:p-7 flex flex-col justify-between relative overflow-hidden flex-1 space-y-6">
             
-            {/* Abstract vector 3D sculpture in centerpiece */}
-            <div className="absolute right-4 top-4 bottom-4 w-1/3 hidden md:block pointer-events-none opacity-40">
-              <svg viewBox="0 0 200 200" className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
-                <motion.path 
-                  d="M 50,100 C 50,60 140,50 150,100 C 160,150 50,150 50,100" 
-                  fill="url(#tealGlowGrad)" 
-                  animate={{ scale: [1, 1.05, 0.98, 1], rotate: [0, 90, 180, 270, 360] }}
-                  transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
-                />
-                <motion.circle 
-                  cx="100" 
-                  cy="100" 
-                  r="20" 
-                  fill="var(--aurora-teal)"
-                  opacity="0.8"
-                  animate={{ scale: [0.9, 1.1, 0.9], y: [0, -4, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                />
+            {/* 3D Holographic Gyroscope Sculpture — Moved Leftwards into Card Area */}
+            <div className="absolute right-8 lg:right-12 top-1 w-40 h-40 lg:w-44 lg:h-44 hidden lg:flex items-center justify-center pointer-events-none z-0 opacity-65 select-none overflow-hidden">
+              {/* Harmonized Ambient Glow */}
+              <motion.div
+                animate={{ scale: [0.95, 1.08, 0.95], opacity: [0.2, 0.4, 0.2] }}
+                transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                className="absolute w-32 h-32 rounded-full blur-2xl pointer-events-none"
+                style={{
+                  background: 'radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.02) 60%, transparent 80%)',
+                }}
+              />
+
+              <svg viewBox="0 0 240 240" className="w-full h-full relative z-10 overflow-visible" xmlns="http://www.w3.org/2000/svg">
                 <defs>
-                  <linearGradient id="tealGlowGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="var(--aurora-teal)" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="var(--aurora-violet)" stopOpacity="0.1" />
+                  <linearGradient id="holoRingGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.85" />
+                    <stop offset="50%" stopColor="#FFFFFF" stopOpacity="0.35" />
+                    <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.05" />
                   </linearGradient>
+
+                  <linearGradient id="holoRingGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.75" />
+                    <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0.15" />
+                  </linearGradient>
+
+                  <radialGradient id="holoCoreGlow" cx="50%" cy="50%" r="50%">
+                    <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.95" />
+                    <stop offset="45%" stopColor="#FFFFFF" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="transparent" stopOpacity="0" />
+                  </radialGradient>
                 </defs>
+
+                {/* Outer Orbiting Gyro Ring 1 */}
+                <motion.g
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 25, repeat: Infinity, ease: 'linear' }}
+                  style={{ transformOrigin: '120px 120px' }}
+                >
+                  <ellipse cx="120" cy="120" rx="95" ry="38" fill="none" stroke="url(#holoRingGrad1)" strokeWidth="1.5" strokeDasharray="6 8" opacity="0.75" />
+                  <circle cx="215" cy="120" r="3.5" fill="#FFFFFF" />
+                  <circle cx="25" cy="120" r="2.5" fill="#FFFFFF" opacity="0.7" />
+                </motion.g>
+
+                {/* Counter-rotating Gyro Ring 2 */}
+                <motion.g
+                  animate={{ rotate: -360 }}
+                  transition={{ duration: 18, repeat: Infinity, ease: 'linear' }}
+                  style={{ transformOrigin: '120px 120px' }}
+                >
+                  <ellipse cx="120" cy="120" rx="42" ry="92" fill="none" stroke="url(#holoRingGrad2)" strokeWidth="1.75" strokeDasharray="10 6" opacity="0.8" />
+                  <circle cx="120" cy="212" r="3.5" fill="#FFFFFF" />
+                </motion.g>
+
+                {/* Diagonal Orbit Ring 3 */}
+                <motion.g
+                  animate={{ rotate: 360, scale: [0.98, 1.04, 0.98] }}
+                  transition={{ rotate: { duration: 32, repeat: Infinity, ease: 'linear' }, scale: { duration: 4, repeat: Infinity, ease: 'easeInOut' } }}
+                  style={{ transformOrigin: '120px 120px' }}
+                >
+                  <ellipse cx="120" cy="120" rx="78" ry="78" fill="none" stroke="#FFFFFF" strokeWidth="1" opacity="0.2" strokeDasharray="2 12" />
+                </motion.g>
+
+                {/* Pulsing Core Orb */}
+                <motion.circle
+                  cx="120"
+                  cy="120"
+                  r="30"
+                  fill="url(#holoCoreGlow)"
+                  animate={{ scale: [0.85, 1.15, 0.85], opacity: [0.7, 0.95, 0.7] }}
+                  transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                />
+
+                {/* Inner Glowing Nucleus */}
+                <motion.circle
+                  cx="120"
+                  cy="120"
+                  r="11"
+                  fill="#FFFFFF"
+                  animate={{ scale: [1, 0.9, 1] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+
+                {/* Floating Ambient Particles */}
+                {[
+                  { cx: 80, cy: 70, r: 2, delay: 0 },
+                  { cx: 160, cy: 80, r: 2.5, delay: 1 },
+                  { cx: 170, cy: 160, r: 1.5, delay: 2 },
+                  { cx: 75, cy: 155, r: 2, delay: 1.5 },
+                ].map((p, idx) => (
+                  <motion.circle
+                    key={idx}
+                    cx={p.cx}
+                    cy={p.cy}
+                    r={p.r}
+                    fill="#FFFFFF"
+                    animate={{ y: [0, -6, 0], opacity: [0.3, 0.8, 0.3], scale: [0.8, 1.2, 0.8] }}
+                    transition={{ duration: 3 + idx, repeat: Infinity, delay: p.delay, ease: 'easeInOut' }}
+                  />
+                ))}
               </svg>
             </div>
 
-            <div className="space-y-2 max-w-md relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1.5 text-[10px] eyebrow px-3 py-1 bg-[rgba(255,255,255,0.04)] text-primary border border-primary/30 rounded-full">
-                  <Sparkles className="h-3 w-3" />
-                  Practice Overview • {getFormattedDate()}
+            {/* TOP ROW: Dynamic Time-Aware Welcome Title */}
+            <div className="relative z-10 space-y-2.5 max-w-sm sm:max-w-md lg:max-w-[68%] text-left">
+              <div>
+                <span 
+                  onClick={() => setQuoteIndex((prev) => (prev + 1) % CLINICAL_QUOTES.length)}
+                  className="inline-flex items-center gap-2 text-[11px] font-sans italic tracking-wide px-3.5 py-1 bg-white/[0.05] hover:bg-white/[0.08] text-white/90 border border-white/20 rounded-full shadow-sm cursor-pointer transition-all group"
+                  title="Click to cycle quote"
+                >
+                  <Sparkles className="w-3 h-3 text-[#19E3B1] shrink-0 group-hover:rotate-12 transition-transform" />
+                  <span className="truncate">{CLINICAL_QUOTES[quoteIndex]}</span>
                 </span>
               </div>
-              <h3 className="text-2xl md:text-3xl font-sans font-bold tracking-tight text-[#F5F3FA] mt-1.5">
-                {getDynamicGreeting()}
-              </h3>
-              <p className="text-xs text-[rgba(245,243,250,0.62)] leading-relaxed font-medium mt-1">
-                {appointmentsList.length > 0 
-                  ? `You have ${appointmentsList.length} patient session${appointmentsList.length === 1 ? '' : 's'} scheduled for today. ${waitingCount > 0 ? `${waitingCount} patient${waitingCount === 1 ? ' is' : 's are'} currently waiting in the lounge.` : 'No patients currently waiting in lounge.'}`
-                  : 'Welcome to your clinic desk. All session logs, waitlist queues, and AI triage streams are active and ready.'
-                }
-              </p>
+
+              <div>
+                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F5F3FA] leading-tight">
+                  {getDynamicGreeting()}
+                </h3>
+                <p className="text-xs text-[#F5F3FA]/65 leading-relaxed font-medium mt-1.5">
+                  {appointmentsList.length > 0
+                    ? `You have ${appointmentsList.length} patient session${appointmentsList.length === 1 ? '' : 's'} scheduled for today. ${waitingCount > 0 ? `${waitingCount} patient${waitingCount === 1 ? ' is' : 's are'} currently waiting in reception.` : 'No patients currently waiting in lounge.'}`
+                    : 'Welcome to your clinic desk. All session logs, waitlist queues, and AI triage streams are active and ready.'
+                  }
+                </p>
+              </div>
             </div>
 
-            {/* Today's Daily Intake Checklist */}
-            <div className="space-y-3 relative z-10 w-full mt-6 border-t border-[rgba(255,255,255,0.08)] pt-4">
+            {/* MIDDLE ROW: Symmetrical 3-Column Mini KPI Bar */}
+            <div className="relative z-10 grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
+              <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 flex items-center gap-3 text-left">
+                <div className="w-8 h-8 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center text-white shrink-0">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-[10px] font-mono text-white/40 uppercase tracking-wider truncate">Intake</p>
+                  <p className="text-sm font-bold text-white truncate">{appointmentsList.length} Sessions</p>
+                </div>
+              </div>
+
+              <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 flex items-center gap-3 text-left">
+                <div className="w-8 h-8 rounded-xl bg-[#FFB454]/15 border border-[#FFB454]/30 flex items-center justify-center text-[#FFB454] shrink-0">
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-[10px] font-mono text-white/40 uppercase tracking-wider truncate">Lounge Queue</p>
+                  <p className="text-sm font-bold text-[#FFB454] truncate">{waitingCount} Waiting</p>
+                </div>
+              </div>
+
+              <div className="bg-white/[0.04] border border-white/10 rounded-xl p-3 flex items-center gap-3 text-left">
+                <div className="w-8 h-8 rounded-xl bg-[#19E3B1]/15 border border-[#19E3B1]/30 flex items-center justify-center text-[#19E3B1] shrink-0">
+                  <CheckCircle className="w-4 h-4" />
+                </div>
+                <div className="text-left min-w-0">
+                  <p className="text-[10px] font-mono text-white/40 uppercase tracking-wider truncate">Completed</p>
+                  <p className="text-sm font-bold text-[#19E3B1] truncate">{completedCount} Done</p>
+                </div>
+              </div>
+            </div>
+
+            {/* BOTTOM ROW: Today's Daily Intake Checklist */}
+            <div className="relative z-10 w-full border-t border-white/10 pt-4 space-y-3">
               <div className="flex justify-between items-center px-1">
-                <h4 className="eyebrow flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-[#12D6C4]" />
+                <h4 className="text-xs font-mono font-bold tracking-wider text-white/90 uppercase flex items-center gap-2">
+                  <Activity className="h-4 w-4 text-white" />
                   Today's Intake Checklist ({appointmentsList.length} scheduled)
                 </h4>
               </div>
 
-              <div className="max-h-[180px] overflow-y-auto space-y-2 pr-1 select-none">
+              <div className="max-h-[170px] overflow-y-auto space-y-2 pr-1 select-none">
                 {appointmentsList.length === 0 ? (
-                  <div className="p-5 text-center bg-[rgba(255,255,255,0.02)] rounded-xl border border-[rgba(255,255,255,0.06)]">
-                    <p className="text-xs text-[rgba(245,243,250,0.4)] italic font-medium">No appointments registered for today.</p>
+                  <div className="p-4 text-center bg-white/[0.02] rounded-2xl border border-white/08 flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-left">
+                      <div className="w-8 h-8 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white/40">
+                        <Calendar className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-semibold text-white/70">No appointments registered for today</p>
+                        <p className="text-[10px] font-mono text-white/40">All intake slots clear and available</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   appointmentsList.map((app: any) => {
                     const status = app.status;
                     return (
-                      <div key={app.id} className="flex justify-between items-center p-3 border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] rounded-xl gap-4 transition-colors">
+                      <div key={app.id} className="flex justify-between items-center p-3 border border-white/10 bg-white/[0.03] hover:bg-white/[0.06] rounded-xl gap-4 transition-all">
                         <div className="flex items-center gap-3 truncate w-[75%]">
                           {/* Time tag */}
-                          <span className="text-[11px] num-tabular font-bold text-[#12D6C4] bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] px-2.5 py-1 rounded-lg shrink-0">
+                          <span className="text-[11px] font-mono font-bold text-white bg-white/10 border border-white/20 px-2.5 py-1 rounded-lg shrink-0">
                             {app.startTime}
                           </span>
                           <div className="truncate">
                             <p className="text-xs font-bold text-[#F5F3FA] truncate">{app.patient?.fullName || 'Patient'}</p>
-                            <p className="eyebrow text-[9px] mt-0.5">{app.treatmentType}</p>
+                            <p className="text-[10px] font-mono text-white/40 mt-0.5">{app.treatmentType}</p>
                           </div>
                         </div>
 
@@ -197,20 +345,20 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
                           {status === 'SCHEDULED' ? (
                             <button
                               onClick={() => checkInMutation.mutate(app.id)}
-                              className="bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-[10px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(18,214,196,0.3)] border-0"
+                              className="bg-white hover:bg-white/90 text-black text-[10px] font-bold uppercase tracking-wider px-3.5 py-1.5 rounded-xl transition-all cursor-pointer shadow-[0_0_15px_rgba(255,255,255,0.25)] border-0"
                             >
                               Check In
                             </button>
                           ) : status === 'WAITING' ? (
-                            <span className="text-[10px] font-bold uppercase text-[#FFB454] bg-[rgba(255,180,84,0.12)] border border-[rgba(255,180,84,0.3)] px-2.5 py-1 rounded-full">
+                            <span className="text-[10px] font-bold uppercase text-[#FFB454] bg-[#FFB454]/15 border border-[#FFB454]/30 px-2.5 py-1 rounded-full">
                               Waiting
                             </span>
                           ) : status === 'IN_PROGRESS' ? (
-                            <span className="text-[10px] font-bold uppercase text-[#19E3B1] bg-[rgba(25,227,177,0.12)] border border-[rgba(25,227,177,0.3)] px-2.5 py-1 rounded-full">
+                            <span className="text-[10px] font-bold uppercase text-[#19E3B1] bg-[#19E3B1]/15 border border-[#19E3B1]/30 px-2.5 py-1 rounded-full">
                               In Progress
                             </span>
                           ) : (
-                            <span className="text-[10px] font-bold uppercase text-[rgba(245,243,250,0.4)] bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] px-2.5 py-1 rounded-full">
+                            <span className="text-[10px] font-bold uppercase text-white/40 bg-white/5 border border-white/10 px-2.5 py-1 rounded-full">
                               Completed
                             </span>
                           )}

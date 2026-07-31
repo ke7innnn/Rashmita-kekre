@@ -28,6 +28,38 @@ interface Props {
   modalities?: any[];
 }
 
+const TIME_SLOTS_12H = [
+  { label: '07:00 AM', value: '07:00' },
+  { label: '07:30 AM', value: '07:30' },
+  { label: '08:00 AM', value: '08:00' },
+  { label: '08:30 AM', value: '08:30' },
+  { label: '09:00 AM', value: '09:00' },
+  { label: '09:30 AM', value: '09:30' },
+  { label: '10:00 AM', value: '10:00' },
+  { label: '10:30 AM', value: '10:30' },
+  { label: '11:00 AM', value: '11:00' },
+  { label: '11:30 AM', value: '11:30' },
+  { label: '12:00 PM', value: '12:00' },
+  { label: '12:30 PM', value: '12:30' },
+  { label: '01:00 PM', value: '13:00' },
+  { label: '01:30 PM', value: '13:30' },
+  { label: '02:00 PM', value: '14:00' },
+  { label: '02:30 PM', value: '14:30' },
+  { label: '03:00 PM', value: '15:00' },
+  { label: '03:30 PM', value: '15:30' },
+  { label: '04:00 PM', value: '16:00' },
+  { label: '04:30 PM', value: '16:30' },
+  { label: '05:00 PM', value: '17:00' },
+  { label: '05:30 PM', value: '17:30' },
+  { label: '06:00 PM', value: '18:00' },
+  { label: '06:30 PM', value: '18:30' },
+  { label: '07:00 PM', value: '19:00' },
+  { label: '07:30 PM', value: '19:30' },
+  { label: '08:00 PM', value: '20:00' },
+  { label: '08:30 PM', value: '20:30' },
+  { label: '09:00 PM', value: '21:00' },
+];
+
 export default function AddAppointmentModal({ onClose }: Props) {
   const queryClient = useQueryClient();
   const [patientSearch, setPatientSearch] = useState('');
@@ -38,7 +70,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
   const [newPatientName, setNewPatientName] = useState('');
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [newPatientGender, setNewPatientGender] = useState('Female');
-  const [newPatientDob, setNewPatientDob] = useState('1990-01-01');
+  const [newPatientAge, setNewPatientAge] = useState('35');
   const [isCreatingPatient, setIsCreatingPatient] = useState(false);
   const [createPatientError, setCreatePatientError] = useState<string | null>(null);
 
@@ -47,7 +79,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
     resolver: zodResolver(schema),
     defaultValues: {
       date: new Date().toISOString().split('T')[0],
-      startTime: '10:00',
+      startTime: '08:00',
       appointmentType: 'CONSULTATION',
       treatmentType: 'Physiotherapy Consultation',
       assignedSlotDuration: 15,
@@ -76,6 +108,11 @@ export default function AddAppointmentModal({ onClose }: Props) {
     setIsCreatingPatient(true);
     setCreatePatientError(null);
 
+    const parsedAge = parseInt(newPatientAge, 10);
+    const calculatedDob = !isNaN(parsedAge) && parsedAge > 0
+      ? `${new Date().getFullYear() - parsedAge}-01-01`
+      : '1990-01-01';
+
     try {
       const res = await fetch('/api/patients', {
         method: 'POST',
@@ -84,7 +121,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
           fullName: cleanName,
           phone: cleanPhone,
           gender: newPatientGender || 'Female',
-          dateOfBirth: newPatientDob || '1990-01-01',
+          dateOfBirth: calculatedDob,
         }),
       });
 
@@ -251,11 +288,12 @@ export default function AddAppointmentModal({ onClose }: Props) {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-semibold text-white/60 mb-0.5">Date of Birth</label>
+                  <label className="block text-[10px] font-semibold text-white/60 mb-0.5">Age (Years)</label>
                   <input
-                    type="date"
-                    value={newPatientDob}
-                    onChange={(e) => setNewPatientDob(e.target.value)}
+                    type="number"
+                    placeholder="E.g. 35"
+                    value={newPatientAge}
+                    onChange={(e) => setNewPatientAge(e.target.value)}
                     className="w-full text-xs bg-white/[0.07] border border-white/15 px-3 py-1.5 rounded-xl text-white font-semibold focus:outline-none focus:border-[var(--primary)] backdrop-blur-md"
                   />
                 </div>
@@ -369,35 +407,22 @@ export default function AddAppointmentModal({ onClose }: Props) {
               {errors.date?.message && <p className="text-xs text-rose-400 mt-1">{errors.date.message as string}</p>}
             </div>
 
-            {/* Start Time */}
+            {/* Start Time (12-Hour Format) */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
-                Start Time
-              </label>
-              <input
-                type="time"
-                {...register('startTime')}
-                className="block w-full text-sm rounded-xl border border-white/15 bg-white/[0.07] backdrop-blur-md px-3 py-2 text-white focus:border-[var(--primary)] focus:outline-none font-semibold"
-              />
-              {errors.startTime?.message && <p className="text-xs text-rose-400 mt-1">{errors.startTime.message as string}</p>}
-            </div>
-          </div>
-
-          <div>
-            {/* Duration */}
-            <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
-                Duration (min)
+                Start Time (12H)
               </label>
               <select
-                {...register('assignedSlotDuration', { valueAsNumber: true })}
-                className="block w-full text-sm rounded-xl border border-white/15 bg-[#130E26] px-3 py-2.5 text-white focus:border-[var(--primary)] focus:outline-none font-semibold"
+                {...register('startTime')}
+                className="block w-full text-sm rounded-xl border border-white/15 bg-[#130E26] px-3 py-2 text-white focus:border-[var(--primary)] focus:outline-none font-semibold cursor-pointer"
               >
-                <option value={15}>15 Minutes</option>
-                <option value={30}>30 Minutes</option>
-                <option value={45}>45 Minutes</option>
-                <option value={60}>60 Minutes</option>
+                {TIME_SLOTS_12H.map((slot) => (
+                  <option key={slot.value} value={slot.value}>
+                    {slot.label}
+                  </option>
+                ))}
               </select>
+              {errors.startTime?.message && <p className="text-xs text-rose-400 mt-1">{errors.startTime.message as string}</p>}
             </div>
           </div>
 

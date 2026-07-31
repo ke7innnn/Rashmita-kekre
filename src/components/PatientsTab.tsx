@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Plus, User, Phone, MapPin, Tag, FileText, 
-  Calendar, Check, AlertCircle, X, Loader2, ChevronRight 
+  Calendar, Check, AlertCircle, X, Loader2, ChevronRight,
+  Table as TableIcon, LayoutGrid
 } from 'lucide-react';
 import PatientTimeline from './PatientTimeline';
 import CreatePatientModal from './CreatePatientModal';
@@ -22,6 +23,7 @@ export default function PatientsTab({
 }: PatientsTabProps = {}) {
   const queryClient = useQueryClient();
   const [search, setSearch] = useState('');
+  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
   
   const [localSelectedPatientId, localSetSelectedPatientId] = useState<string | null>(null);
   const selectedPatientId = propSelectedPatientId !== undefined ? propSelectedPatientId : localSelectedPatientId;
@@ -58,6 +60,34 @@ export default function PatientsTab({
             </div>
 
             <div className="flex items-center gap-3">
+              {/* View Switcher: Table vs Grid */}
+              <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl gap-1">
+                <button
+                  onClick={() => setViewMode('table')}
+                  title="Tabular View"
+                  className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === 'table' 
+                      ? 'bg-white text-black shadow-sm' 
+                      : 'text-[rgba(245,243,250,0.6)] hover:text-white'
+                  }`}
+                >
+                  <TableIcon className="h-4 w-4 stroke-[2]" />
+                  <span className="hidden sm:inline text-[11px]">Table</span>
+                </button>
+                <button
+                  onClick={() => setViewMode('grid')}
+                  title="Grid View"
+                  className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                    viewMode === 'grid' 
+                      ? 'bg-white text-black shadow-sm' 
+                      : 'text-[rgba(245,243,250,0.6)] hover:text-white'
+                  }`}
+                >
+                  <LayoutGrid className="h-4 w-4 stroke-[2]" />
+                  <span className="hidden sm:inline text-[11px]">Grid</span>
+                </button>
+              </div>
+
               <div className="relative flex-1 md:flex-initial">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(245,243,250,0.4)] stroke-[2]" />
                 <input
@@ -81,7 +111,7 @@ export default function PatientsTab({
             </div>
           </GlassPanel>
 
-          {/* Grid view of Patient Cards */}
+          {/* Directory Content */}
           {isLoading ? (
             <div className="flex justify-center py-20 bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] rounded-2xl">
               <Loader2 className="h-8 w-8 text-white animate-spin" />
@@ -92,7 +122,115 @@ export default function PatientsTab({
               <h4 className="text-sm font-semibold text-[rgba(245,243,250,0.62)]">No patients found.</h4>
               <p className="text-xs text-[rgba(245,243,250,0.4)] mt-1 font-medium">Try adjusting your search criteria or register a new patient.</p>
             </GlassPanel>
+          ) : viewMode === 'table' ? (
+            /* TABULAR FORMAT VIEW - MATCHING EXACT SKETCH LAYOUT */
+            <GlassPanel className="overflow-hidden p-0 border border-white/10">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="border-b border-white/10 bg-white/[0.03] text-[rgba(245,243,250,0.5)] font-mono text-[10px] uppercase tracking-wider">
+                      <th className="py-3.5 px-4 font-semibold text-center w-12">SR. No.</th>
+                      <th className="py-3.5 px-4 font-semibold">Registered On</th>
+                      <th className="py-3.5 px-5 font-semibold">Name</th>
+                      <th className="py-3.5 px-4 font-semibold text-center">Age</th>
+                      <th className="py-3.5 px-4 font-semibold">Gender</th>
+                      <th className="py-3.5 px-4 font-semibold">Cont No.</th>
+                      <th className="py-3.5 px-4 font-semibold">Referring Doctor</th>
+                      <th className="py-3.5 px-4 font-semibold">Diagnosis</th>
+                      <th className="py-3.5 px-5 font-semibold text-right">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/[0.06] font-medium text-[rgba(245,243,250,0.85)]">
+                    {patients.map((p: any, index: number) => {
+                      const initials = p.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                      const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
+                      const regDate = p.createdAt 
+                        ? new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+                        : '—';
+                      const diagnosis = p.presentingComplaint || p.treatmentModalityAssigned || '—';
+
+                      return (
+                        <tr 
+                          key={p.id}
+                          onClick={() => setSelectedPatientId(p.id)}
+                          className="hover:bg-white/[0.04] transition-colors cursor-pointer group"
+                        >
+                          {/* SR. No. */}
+                          <td className="py-3.5 px-4 text-center font-mono text-xs text-[rgba(245,243,250,0.5)]">
+                            {index + 1}
+                          </td>
+
+                          {/* Registered On */}
+                          <td className="py-3.5 px-4 text-xs font-mono text-[rgba(245,243,250,0.7)] whitespace-nowrap">
+                            {regDate}
+                          </td>
+
+                          {/* Name */}
+                          <td className="py-3.5 px-5">
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-full bg-white/10 text-white flex items-center justify-center font-serif text-xs font-bold border border-white/20 shrink-0">
+                                {initials}
+                              </div>
+                              <div>
+                                <span className="font-serif font-bold text-sm text-[#F5F3FA] group-hover:text-white transition-colors block">
+                                  {p.fullName}
+                                </span>
+                              </div>
+                            </div>
+                          </td>
+
+                          {/* Age */}
+                          <td className="py-3.5 px-4 text-center font-mono text-xs text-[rgba(245,243,250,0.85)]">
+                            {age} Yrs
+                          </td>
+
+                          {/* Gender */}
+                          <td className="py-3.5 px-4 text-xs text-[rgba(245,243,250,0.75)]">
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[11px] font-mono">
+                              {p.gender}
+                            </span>
+                          </td>
+
+                          {/* Cont No. */}
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-1.5 text-xs text-[rgba(245,243,250,0.7)]">
+                              <Phone className="h-3.5 w-3.5 text-white/60 shrink-0 stroke-[1.75]" />
+                              <span className="num-tabular font-mono text-xs">{p.phone}</span>
+                            </div>
+                          </td>
+
+                          {/* Referring Doctor */}
+                          <td className="py-3.5 px-4 text-xs text-[rgba(245,243,250,0.75)]">
+                            {p.referringDoctor || 'Direct'}
+                          </td>
+
+                          {/* Diagnosis */}
+                          <td className="py-3.5 px-4 text-xs text-[rgba(245,243,250,0.75)] max-w-[200px] truncate">
+                            {diagnosis}
+                          </td>
+
+                          {/* Action */}
+                          <td className="py-3.5 px-5 text-right">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPatientId(p.id);
+                              }}
+                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/70 group-hover:text-white bg-white/5 group-hover:bg-white/15 px-3 py-1.5 rounded-lg transition-all border border-white/10"
+                            >
+                              <span>Case File</span>
+                              <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </GlassPanel>
           ) : (
+            /* GRID FORMAT VIEW */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {patients.map((p: any) => {
                 const initials = p.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
@@ -156,3 +294,4 @@ export default function PatientsTab({
     </div>
   );
 }
+

@@ -302,31 +302,18 @@ export default function CreatePatientModal({
                     />
                   </div>
 
-                  {/* Age and DOB */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Age
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="E.g., 35"
-                        {...register('ageYears')}
-                        onChange={handleAgeChange}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                        Date of Birth
-                      </label>
-                      <input
-                        type="date"
-                        {...register('dateOfBirth')}
-                        onChange={handleDobChange}
-                        className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs cursor-text"
-                      />
-                    </div>
+                  {/* Age */}
+                  <div className="space-y-1">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                      Age (Years)
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="E.g., 35"
+                      {...register('ageYears')}
+                      onChange={handleAgeChange}
+                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
+                    />
                   </div>
                 </div>
 
