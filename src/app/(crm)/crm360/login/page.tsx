@@ -64,8 +64,6 @@ export default function LoginPage() {
   };
 
 
->>>>>>> dc4ee544b5c4ac389ee5ea314b09a6f90669dd6e
-
   return (
     <div className="relative min-h-screen bg-[#0A0711] text-[#F5F3FA] font-sans antialiased flex items-center justify-center p-4 selection:bg-primary/20 overflow-hidden">
       {/* Dynamic Aurora Ambient Background */}
