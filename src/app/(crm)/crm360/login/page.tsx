@@ -165,11 +165,6 @@ export default function LoginPage() {
             )}
           </button>
         </form>
-<<<<<<< HEAD
-=======
-
-
->>>>>>> dc4ee544b5c4ac389ee5ea314b09a6f90669dd6e
       </motion.div>
     </div>
   );
