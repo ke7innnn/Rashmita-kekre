@@ -28,10 +28,6 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const userMatch = USERS.find(
-      (u) => u.username.toLowerCase() === username.trim().toLowerCase()
-    );
-
     try {
       const res = await signIn('credentials', {
         username: username.trim(),
@@ -44,26 +40,31 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-    } catch (e) {
-      console.error('SignIn error:', e);
-      setError('An error occurred during sign in. Please try again.');
+
+      const userMatch = USERS.find(
+        (u) => u.username.toLowerCase() === username.trim().toLowerCase()
+      );
+
+      const name = userMatch?.name || username.trim();
+      const role = userMatch?.role || (username.trim().toLowerCase() === 'rashmita' ? 'admin' : 'physio');
+
+      localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
+      
+      if (role.toLowerCase() !== 'admin') {
+        router.push('/crm360/patients');
+      } else {
+        router.push('/crm360');
+      }
+      router.refresh();
+    } catch (err: any) {
+      console.error('Login error:', err);
+      setError('An error occurred during login. Please try again.');
       setLoading(false);
-      return;
     }
-
-    const role = userMatch?.role || 'admin';
-    const name = userMatch?.name || username.trim();
-
-    localStorage.setItem('h360_session', JSON.stringify({ name, role, username: username.trim() }));
-    
-    const targetUrl = '/crm360';
-    router.push(targetUrl);
-    router.refresh();
-
-    setTimeout(() => {
-      setLoading(false);
-    }, 1500);
   };
+
+
+>>>>>>> dc4ee544b5c4ac389ee5ea314b09a6f90669dd6e
 
   return (
     <div className="relative min-h-screen bg-[#0A0711] text-[#F5F3FA] font-sans antialiased flex items-center justify-center p-4 selection:bg-primary/20 overflow-hidden">
@@ -166,6 +167,11 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+<<<<<<< HEAD
+=======
+
+
+>>>>>>> dc4ee544b5c4ac389ee5ea314b09a6f90669dd6e
       </motion.div>
     </div>
   );
