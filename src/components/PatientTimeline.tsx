@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -132,15 +132,14 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     recipientName: string;
     phone: string;
     messagePreview: string;
-    onConfirm: () => void;
   }>({
     isOpen: false,
     title: '',
     recipientName: '',
     phone: '',
     messagePreview: '',
-    onConfirm: () => {},
   });
+  const whatsappConfirmActionRef = useRef<(() => void) | null>(null);
 
   const handleTotalSessionsChange = (val: number) => {
     setTotalSessions(val);
@@ -682,13 +681,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const timeFormatted = `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
     const preview = `Hi ${firstName}, this is a reminder for your upcoming session at Health 360 Clinic on ${dateFormatted} at ${timeFormatted}.`;
 
+    whatsappConfirmActionRef.current = () => handleSendNextApptReminder();
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Confirm Sending Appointment Reminder',
       recipientName: patient.fullName,
       phone: patient.phone,
       messagePreview: preview,
-      onConfirm: () => handleSendNextApptReminder(),
     });
   };
 
@@ -720,13 +719,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
     const preview = `Hi ${firstName}, we noticed you missed your scheduled session today at Health 360 Clinic. Please get in touch with us to reschedule.`;
 
+    whatsappConfirmActionRef.current = () => handleSendMissedAppt();
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Confirm Sending Missed Appointment Notice',
       recipientName: patient.fullName,
       phone: patient.phone,
       messagePreview: preview,
-      onConfirm: () => handleSendMissedAppt(),
     });
   };
 
@@ -749,19 +748,19 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
   const triggerHandoutShareConfirm = (handout: any) => {
     const preview = `Hi ${patient.fullName?.split(' ')[0] || 'Patient'}, Dr. Rashmita has shared a clinical education handout with you: "${handout.title}" (${handout.category}).`;
+    whatsappConfirmActionRef.current = () => {
+      shareHandoutMutation.mutate({
+        patientId,
+        handoutId: handout.id,
+        sentVia: 'whatsapp',
+      });
+    };
     setConfirmWhatsappModal({
       isOpen: true,
       title: `Confirm Sharing Handout: ${handout.title}`,
       recipientName: patient.fullName,
       phone: patient.phone,
       messagePreview: preview,
-      onConfirm: () => {
-        shareHandoutMutation.mutate({
-          patientId,
-          handoutId: handout.id,
-          sentVia: 'whatsapp',
-        });
-      },
     });
   };
 
@@ -2514,79 +2513,82 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         )}
       </AnimatePresence>
 
-      {/* WhatsApp Safety Confirmation Interlock Modal (Portaled directly to document.body for true viewport centering without scrolling) */}
-      <AnimatePresence>
-        {confirmWhatsappModal.isOpen && isMounted && createPortal(
-          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
-            <div
-              className="fixed inset-0 bg-black/80 backdrop-blur-md"
-              onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
-            />
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative bg-[#0B0A10] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4 backdrop-blur-2xl"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-                <div className="p-2.5 bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] rounded-xl shrink-0">
-                  <Send className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="text-base font-serif font-bold text-white leading-tight">
-                    {confirmWhatsappModal.title}
-                  </h3>
-                  <p className="text-[11px] text-white/60 font-medium mt-0.5">
-                    Review message preview before dispatching to WhatsApp.
-                  </p>
-                </div>
+      {/* WhatsApp Safety Confirmation Interlock Modal — portaled to document.body */}
+      {confirmWhatsappModal.isOpen && isMounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
+          <motion.div
+            key="wa-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
+          />
+          <motion.div
+            key="wa-modal"
+            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="relative bg-[#0B0A10] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
+              <div className="p-2.5 bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] rounded-xl shrink-0">
+                <Send className="w-5 h-5" />
               </div>
+              <div>
+                <h3 className="text-base font-serif font-bold text-white leading-tight">
+                  {confirmWhatsappModal.title}
+                </h3>
+                <p className="text-[11px] text-white/60 font-medium mt-0.5">
+                  Review message preview before dispatching to WhatsApp.
+                </p>
+              </div>
+            </div>
 
-              {/* Recipient Details */}
-              <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-1 text-xs">
-                <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">Recipient</span>
-                <span className="font-bold text-white block">
-                  {confirmWhatsappModal.recipientName} ({confirmWhatsappModal.phone})
-                </span>
-              </div>
+            {/* Recipient Details */}
+            <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-1 text-xs">
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">Recipient</span>
+              <span className="font-bold text-white block">
+                {confirmWhatsappModal.recipientName} ({confirmWhatsappModal.phone})
+              </span>
+            </div>
 
-              {/* Message Body Preview */}
-              <div className="space-y-1">
-                <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider block">
-                  Message Text Preview:
-                </span>
-                <div className="p-3.5 bg-black/60 border border-emerald-500/30 rounded-xl text-xs text-white/90 font-mono leading-relaxed max-h-36 overflow-y-auto">
-                  {confirmWhatsappModal.messagePreview}
-                </div>
+            {/* Message Body Preview */}
+            <div className="space-y-1">
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider block">
+                Message Text Preview:
+              </span>
+              <div className="p-3.5 bg-black/60 border border-emerald-500/30 rounded-xl text-xs text-white/90 font-mono leading-relaxed max-h-36 overflow-y-auto">
+                {confirmWhatsappModal.messagePreview}
               </div>
+            </div>
 
-              {/* Modal Actions */}
-              <div className="flex items-center gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
-                  className="flex-1 py-2.5 px-4 bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold rounded-xl transition cursor-pointer"
-                >
-                  Cancel (Do Not Send)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const action = confirmWhatsappModal.onConfirm;
-                    setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }));
-                    action();
-                  }}
-                  className="flex-1 py-2.5 px-4 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5"
-                >
-                  <Send className="w-3.5 h-3.5" /> Confirm & Send
-                </button>
-              </div>
-            </motion.div>
-          </div>,
-          document.body
-        )}
-      </AnimatePresence>
+            {/* Modal Actions */}
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
+                className="flex-1 py-2.5 px-4 bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                Cancel (Do Not Send)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const action = whatsappConfirmActionRef.current;
+                  setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }));
+                  whatsappConfirmActionRef.current = null;
+                  if (action) action();
+                }}
+                className="flex-1 py-2.5 px-4 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5"
+              >
+                <Send className="w-3.5 h-3.5" /> Confirm & Send
+              </button>
+            </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
