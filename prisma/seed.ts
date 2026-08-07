@@ -123,6 +123,20 @@ async function main() {
     }
   });
 
+  const cstPlan = await prisma.treatmentPlan.create({
+    data: {
+      name: 'Craniosacral Therapy (CST / BCST)',
+      description: 'SomatoEmotional & Craniosacral Bio-Dynamic Session',
+      minModalities: 1,
+      maxModalities: 1,
+      includesExercise: true,
+      perSessionRate: 1500,
+      packageRate: 1200,
+      isActive: true,
+      displayOrder: 1
+    }
+  });
+
   const goldPlan = await prisma.treatmentPlan.create({
     data: {
       name: 'Gold',

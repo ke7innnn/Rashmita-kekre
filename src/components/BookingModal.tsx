@@ -32,6 +32,8 @@ export default function BookingModal({ onClose }: BookingPageProps) {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [gender, setGender] = useState('Female');
+  const [age, setAge] = useState('35');
   const [concern, setConcern] = useState('');
 
   const [nameError, setNameError] = useState(false);
@@ -184,14 +186,22 @@ export default function BookingModal({ onClose }: BookingPageProps) {
 
         await confirmationResult.confirm(otp);
 
+        const parsedAge = parseInt(age, 10);
+        const calculatedDob = !isNaN(parsedAge) && parsedAge > 0
+          ? `${new Date().getFullYear() - parsedAge}-01-01`
+          : '1990-01-01';
+
         const payload = {
           fullName: name,
           phone: phone.replace(/\D/g, '').slice(-10),
-          gender: 'Female',
-          date: dateKey(selectedDate),
+          gender: gender || 'Female',
+          dateOfBirth: calculatedDob,
+          date: dateKey(selectedDate!),
           startTime: selectedTime,
-          treatmentType: concern || 'Physiotherapy Consultation',
-          notes: `Inbound online booking request. Reason/concern: ${concern || 'Not specified'}`,
+          treatmentType: activeServiceTab === 'craniosacral' ? 'Craniosacral Therapy (CST)' : (concern || 'Physiotherapy Consultation'),
+          presentingComplaint: concern || 'Online Booking Intake',
+          diagnosis: concern || '',
+          notes: `Inbound online booking request. Diagnosis/Reason: ${concern || 'Not specified'}. Age: ${age || 'N/A'}. Gender: ${gender}`,
         };
 
         const res = await fetch(`${CRM_API_URL}/api/public/book`, {
@@ -249,7 +259,7 @@ export default function BookingModal({ onClose }: BookingPageProps) {
     dayInfo.windows.forEach(win => {
       const startMin = toMinutes(win.start);
       const endMin = toMinutes(win.end);
-      for (let t = startMin; t < endMin; t += 30) {
+      for (let t = startMin; t < endMin; t += 15) {
         slots.push(t);
       }
     });
@@ -361,38 +371,63 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                       </span>
                     </div>
 
-                    <div className="booking-slots-grid">
-                      {isLoadingSlots ? (
-                        <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '16px 0', color: 'var(--h360-ink-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                          <Loader2 className="animate-spin" size={16} /> Loading available slots...
+                    {isLoadingSlots ? (
+                      <div style={{ textAlign: 'center', padding: '24px 0', color: 'var(--h360-ink-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                        <Loader2 className="animate-spin" size={18} /> Loading available slots...
+                      </div>
+                    ) : isDateClosed ? (
+                      <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--h360-ink-soft)' }}>
+                        <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: '#fff0f0', border: '1px solid #ffcccc', borderRadius: '12px', padding: '16px 24px' }}>
+                          <span style={{ fontSize: '22px' }}>🚫</span>
+                          <span style={{ fontWeight: 700, fontSize: '13px', color: '#cc3333' }}>{dateClosedReason}</span>
+                          <span style={{ fontSize: '11px', color: '#888' }}>Please choose a different date above.</span>
                         </div>
-                      ) : isDateClosed ? (
-                        <div style={{ gridColumn: 'span 3', textAlign: 'center', padding: '20px 0', color: 'var(--h360-ink-soft)' }}>
-                          <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px', background: '#fff0f0', border: '1px solid #ffcccc', borderRadius: '12px', padding: '16px 24px' }}>
-                            <span style={{ fontSize: '22px' }}>🚫</span>
-                            <span style={{ fontWeight: 700, fontSize: '13px', color: '#cc3333' }}>{dateClosedReason}</span>
-                            <span style={{ fontSize: '11px', color: '#888' }}>Please choose a different date above.</span>
-                          </div>
-                        </div>
-                      ) : getAllSlotsForDay().map((t, idx) => {
-                        const timeStr = pad(Math.floor(t / 60)) + ":" + pad(t % 60);
-                        const displayTime = fmtTime(t);
-                        const isBooked = bookedSlots.includes(timeStr);
-                        const isSelected = selectedTime === timeStr;
+                      </div>
+                    ) : (() => {
+                      const allSlots = getAllSlotsForDay();
+                      const morningSlots = allSlots.filter((t) => t < 12 * 60);
+                      const afternoonSlots = allSlots.filter((t) => t >= 12 * 60 && t < 16 * 60);
+                      const eveningSlots = allSlots.filter((t) => t >= 16 * 60);
 
+                      const renderSlotGroup = (title: string, slots: number[]) => {
+                        if (slots.length === 0) return null;
                         return (
-                          <button
-                            key={idx}
-                            type="button"
-                            className={`booking-slot-chip ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
-                            disabled={isBooked}
-                            onClick={() => setSelectedTime(timeStr)}
-                          >
-                            {displayTime}
-                          </button>
+                          <div key={title} style={{ marginBottom: '16px' }}>
+                            <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'rgba(43, 38, 32, 0.55)', marginBottom: '8px' }}>
+                              {title}
+                            </div>
+                            <div className="booking-slots-grid">
+                              {slots.map((t, idx) => {
+                                const timeStr = pad(Math.floor(t / 60)) + ":" + pad(t % 60);
+                                const displayTime = fmtTime(t);
+                                const isBooked = bookedSlots.includes(timeStr);
+                                const isSelected = selectedTime === timeStr;
+
+                                return (
+                                  <button
+                                    key={idx}
+                                    type="button"
+                                    className={`booking-slot-chip ${isBooked ? 'booked' : ''} ${isSelected ? 'selected' : ''}`}
+                                    disabled={isBooked}
+                                    onClick={() => setSelectedTime(timeStr)}
+                                  >
+                                    {displayTime}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
                         );
-                      })}
-                    </div>
+                      };
+
+                      return (
+                        <>
+                          {renderSlotGroup('🌅 Morning Slots', morningSlots)}
+                          {renderSlotGroup('☀️ Afternoon Slots', afternoonSlots)}
+                          {renderSlotGroup('🌙 Evening Slots', eveningSlots)}
+                        </>
+                      );
+                    })()}
                   </div>
 
                   {/* Patient Details Unlock Form */}
@@ -443,8 +478,40 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                           <p className="booking-field-error-text">Enter a valid 10-digit phone number.</p>
                         </div>
 
+                        {/* Gender & Age Row */}
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                          <div className="booking-field-group">
+                            <label className="booking-field-label" htmlFor="h360Gender">Gender</label>
+                            <select
+                              id="h360Gender"
+                              value={gender}
+                              onChange={(e) => setGender(e.target.value)}
+                              className="booking-pill-select"
+                              disabled={isSubmitting}
+                            >
+                              <option value="Female">Female</option>
+                              <option value="Male">Male</option>
+                              <option value="Other">Other</option>
+                            </select>
+                          </div>
+
+                          <div className="booking-field-group">
+                            <label className="booking-field-label" htmlFor="h360Age">Age (Years)</label>
+                            <input
+                              type="number"
+                              id="h360Age"
+                              placeholder="E.g. 35"
+                              value={age}
+                              onChange={(e) => setAge(e.target.value)}
+                              className="booking-pill-input"
+                              disabled={isSubmitting}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Reason for Visit / Diagnosis Type */}
                         <div className="booking-field-group">
-                          <label className="booking-field-label" htmlFor="h360Concern">Reason for visit</label>
+                          <label className="booking-field-label" htmlFor="h360Concern">Reason for Visit / Diagnosis Type</label>
                           <select
                             id="h360Concern"
                             value={concern}
@@ -452,13 +519,17 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                             className="booking-pill-select"
                             disabled={isSubmitting}
                           >
-                            <option value="">Select concern type</option>
-                            <option>Back pain</option>
-                            <option>Neck and shoulder</option>
-                            <option>Knee or joint</option>
-                            <option>Sports injury</option>
-                            <option>Post-surgery recovery</option>
-                            <option>Other</option>
+                            <option value="">Select concern / diagnosis type</option>
+                            <option value="Low Back Pain">Low Back Pain</option>
+                            <option value="Knee Osteoarthritis">Knee Osteoarthritis / Joint Pain</option>
+                            <option value="Cervical Spondylosis">Cervical Spondylosis / Neck & Shoulder</option>
+                            <option value="Shoulder Impingement">Shoulder Impingement / Frozen Shoulder</option>
+                            <option value="Sciatica">Sciatica / Disc Herniation</option>
+                            <option value="Post-Op Rehab">Post-Surgery Recovery</option>
+                            <option value="Sports Injury">Sports Injury & Rehab</option>
+                            <option value="Craniosacral Therapy (CST)">Craniosacral Therapy (CST)</option>
+                            <option value="General Pain & Wellness">General Pain & Wellness</option>
+                            <option value="Other">Other</option>
                           </select>
                         </div>
 
@@ -567,8 +638,8 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                       
                       <div className="cst-cta-buttons">
                         <a href="tel:+919833333333" className="cst-primary-btn">
-                          <Phone size={18} />
-                          Call Clinic Desk (+91 98333 33333)
+                          <Phone size={16} />
+                          Call Desk: +91 98333 33333
                         </a>
 
                         <a 

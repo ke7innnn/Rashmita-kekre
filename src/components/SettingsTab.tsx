@@ -24,7 +24,7 @@ const settingsSchema = z.object({
   registrationNumber: z.string().optional(),
   workingHoursStart: z.string().regex(/^\d{2}:\d{2}$/, 'HH:MM format'),
   workingHoursEnd: z.string().regex(/^\d{2}:\d{2}$/, 'HH:MM format'),
-  slotDuration: z.number().int().positive().default(30),
+  slotDuration: z.number().int().positive().default(15),
   isPubliclyVisible: z.boolean().default(true),
   reminder24hTemplate: z.string().optional(),
   reminder2hTemplate: z.string().optional(),

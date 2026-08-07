@@ -39,13 +39,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid date parameter' }, { status: 400 });
   }
 
-  const targetDate = new Date(validation.data.date);
-  targetDate.setHours(0, 0, 0, 0);
+  const dateStr = validation.data.date;
+  const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+  const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
   try {
     let appointments = await prisma.appointment.findMany({
       where: {
-        date: targetDate,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
       },
       include: {
         patient: {

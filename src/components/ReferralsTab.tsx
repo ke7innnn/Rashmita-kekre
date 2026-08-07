@@ -42,7 +42,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   // State to hold manually added doctors from localStorage
   const [customDoctors, setCustomDoctors] = useState<any[]>([]);
 
-  useEffect(() => {
+  const loadCustomDoctors = () => {
     const list = localStorage.getItem('custom_referral_doctors');
     if (list) {
       try {
@@ -51,6 +51,12 @@ export default function ReferralsTab({ onViewPatient }: Props) {
         console.error('Error parsing custom doctors list:', e);
       }
     }
+  };
+
+  useEffect(() => {
+    loadCustomDoctors();
+    window.addEventListener('custom-doctors-updated', loadCustomDoctors);
+    return () => window.removeEventListener('custom-doctors-updated', loadCustomDoctors);
   }, []);
 
   // Fetch all patients to build the referrers mapping

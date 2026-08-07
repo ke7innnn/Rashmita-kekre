@@ -6,7 +6,7 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, Loader2 } from 'lucide-react';
+import { Check, X, Loader2, UserPlus, Building2, Plus } from 'lucide-react';
 import SearchableDropdown from './SearchableDropdown';
 
 function calculateAgeFromDob(dobString: string) {
@@ -48,6 +48,36 @@ function calculateDobFromAge(years: number, months: number) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+const DEFAULT_DIAGNOSIS_OPTIONS = [
+  'Low Back Pain',
+  'Knee Osteoarthritis',
+  'Cervical Spondylosis',
+  'Shoulder Impingement',
+  'Frozen Shoulder',
+  'Sciatica / Lumbar Radiculopathy',
+  'Post-Op Rehabilitation',
+  'ACL Reconstruction / Injury',
+  'Sports Injury & Recovery',
+  'Muscle Strain / Sprain',
+  'Ankle Sprain',
+  'Tennis Elbow / Golfer\'s Elbow',
+  'Stroke Rehabilitation',
+  'Bell\'s Palsy / Facial Palsy',
+  'General Musculoskeletal Pain',
+  'Postural Dysfunction',
+  'Ergonomic Strain',
+  'Geriatric Care & Mobility'
+];
+
+const POPULAR_DIAGNOSES = [
+  'Low Back Pain',
+  'Knee Osteoarthritis',
+  'Cervical Spondylosis',
+  'Shoulder Impingement',
+  'Post-Op Rehab',
+  'Sciatica'
+];
+
 const createPatientSchema = z.object({
   fullName: z.string().min(1, 'Patient Name is required'),
   gender: z.string().min(1, 'Gender is required'),
@@ -58,6 +88,7 @@ const createPatientSchema = z.object({
   language: z.string().default('English'),
   address: z.string().optional(),
   referringDoctor: z.string().optional(),
+  diagnosisReason: z.string().optional(),
   ageYears: z.any().optional(),
 });
 
@@ -81,6 +112,13 @@ export default function CreatePatientModal({
   
   // Custom doctors from localStorage
   const [customDoctors, setCustomDoctors] = useState<any[]>([]);
+
+  // Quick Add Referral Doctor Sub-form State
+  const [showQuickAddDoctor, setShowQuickAddDoctor] = useState(false);
+  const [quickDocName, setQuickDocName] = useState('');
+  const [quickDocSpecialty, setQuickDocSpecialty] = useState('Orthopedics');
+  const [quickDocClinic, setQuickDocClinic] = useState('');
+  const [quickDocEmail, setQuickDocEmail] = useState('');
 
   useEffect(() => {
     if (isOpen) {
@@ -112,14 +150,15 @@ export default function CreatePatientModal({
     ...patients.map((p: any) => p.referringDoctor).filter(Boolean)
   ])).sort();
 
-  const { register, handleSubmit, reset, setValue, control, formState: { errors } } = useForm<any>({
+  const { register, handleSubmit, reset, setValue, control, watch, formState: { errors } } = useForm<any>({
     resolver: zodResolver(createPatientSchema),
     defaultValues: {
       phoneCountryCode: '+91',
       gender: 'Female',
       language: 'English',
       fullName: prefilledName,
-      referringDoctor: prefilledReferringDoctor
+      referringDoctor: prefilledReferringDoctor,
+      diagnosisReason: ''
     }
   });
 
@@ -131,9 +170,14 @@ export default function CreatePatientModal({
         gender: 'Female',
         language: 'English',
         fullName: prefilledName,
-        referringDoctor: prefilledReferringDoctor
+        referringDoctor: prefilledReferringDoctor,
+        diagnosisReason: ''
       });
       setShowAddressInput(false);
+      setShowQuickAddDoctor(false);
+      setQuickDocName('');
+      setQuickDocClinic('');
+      setQuickDocEmail('');
     }
   }, [isOpen, prefilledName, prefilledReferringDoctor, reset]);
 
@@ -176,19 +220,33 @@ export default function CreatePatientModal({
     }
   };
 
-  const handleCreateNewDoctor = (doctorName: string) => {
-    const formattedName = doctorName.startsWith('Dr.') ? doctorName.trim() : `Dr. ${doctorName.trim()}`;
+  const saveNewReferringDoctor = (name: string, specialty?: string, clinic?: string, email?: string) => {
+    if (!name || !name.trim()) return;
+    const cleanName = name.trim();
+    const formattedName = cleanName.startsWith('Dr.') || cleanName.toLowerCase().includes('clinic') || cleanName.toLowerCase().includes('hospital') || cleanName.toLowerCase().includes('direct')
+      ? cleanName
+      : `Dr. ${cleanName}`;
     const newDoc = {
       name: formattedName,
-      specialty: 'General Practice',
-      clinic: 'General Clinic',
-      email: `${formattedName.toLowerCase().replace(/[\\s\\.]+/g, '')}@email.com`
+      specialty: specialty || 'General Practice',
+      clinic: clinic || 'General Clinic',
+      email: email?.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
     };
     const updated = [...customDoctors.filter(d => d.name !== formattedName), newDoc];
     setCustomDoctors(updated);
     localStorage.setItem('custom_referral_doctors', JSON.stringify(updated));
     localStorage.setItem(`referral_doctor_metadata:${formattedName}`, JSON.stringify(newDoc));
+    window.dispatchEvent(new Event('custom-doctors-updated'));
     setValue('referringDoctor', formattedName);
+    setShowQuickAddDoctor(false);
+    setQuickDocName('');
+    setQuickDocClinic('');
+    setQuickDocEmail('');
+  };
+
+  const handleCreateNewDoctor = (doctorName: string) => {
+    setQuickDocName(doctorName);
+    setShowQuickAddDoctor(true);
   };
 
   const onSubmit = (data: any) => {
@@ -199,7 +257,8 @@ export default function CreatePatientModal({
       phone: `${data.phoneCountryCode}${data.phoneLocal}`,
       address: data.address || '',
       referringDoctor: data.referringDoctor || '',
-      presentingComplaint: 'Created via detailed patient intake form',
+      presentingComplaint: data.diagnosisReason || 'Detailed patient intake form',
+      diagnosis: data.diagnosisReason || '',
       treatmentModalityAssigned: '',
       tags: [],
       notes: '',
@@ -352,11 +411,23 @@ export default function CreatePatientModal({
                     </select>
                   </div>
 
-                  {/* Referring Doctor Dropdown */}
-                  <div className="space-y-1 relative z-50">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
-                      Referring Doctor
-                    </label>
+                  {/* Referred By Section */}
+                  <div className="space-y-2 relative z-50">
+                    <div className="flex justify-between items-center">
+                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 flex items-center gap-1">
+                        <UserPlus className="h-3 w-3 text-primary stroke-[2]" />
+                        Referred By (Referral Source)
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowQuickAddDoctor(!showQuickAddDoctor)}
+                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                      >
+                        <Plus className="h-3 w-3" />
+                        {showQuickAddDoctor ? 'Cancel' : 'Quick Add Referrer'}
+                      </button>
+                    </div>
+
                     <Controller
                       name="referringDoctor"
                       control={control}
@@ -366,11 +437,138 @@ export default function CreatePatientModal({
                           value={field.value}
                           onChange={field.onChange}
                           onCreateNew={handleCreateNewDoctor}
-                          placeholder="Select or add doctor..."
-                          createLabel="Create doctor"
+                          placeholder="Select or search referral doctor/source..."
+                          createLabel="Add referral doctor"
                         />
                       )}
                     />
+
+                    {/* Quick Add Referral Sub-Form */}
+                    <AnimatePresence>
+                      {showQuickAddDoctor && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="overflow-hidden bg-[#FAF6EF] border border-[#EADFCA] p-3.5 rounded-2xl space-y-2.5 shadow-sm mt-2"
+                        >
+                          <div className="flex items-center justify-between border-b border-[#EADFCA]/60 pb-1.5">
+                            <span className="text-xs font-bold text-[#2B2620] flex items-center gap-1.5">
+                              <Building2 className="h-3.5 w-3.5 text-primary" /> Quick Add Referral Partner
+                            </span>
+                            <span className="text-[10px] text-[#2B2620]/50 font-medium">Appears in Referrals Tab</span>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div>
+                              <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Doctor / Partner Name *</label>
+                              <input
+                                type="text"
+                                placeholder="E.g. Dr. Ramesh Gupta"
+                                value={quickDocName}
+                                onChange={(e) => setQuickDocName(e.target.value)}
+                                className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-3 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Specialty</label>
+                                <select
+                                  value={quickDocSpecialty}
+                                  onChange={(e) => setQuickDocSpecialty(e.target.value)}
+                                  className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-2 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden cursor-pointer"
+                                >
+                                  <option value="Orthopedics & Joint Care">Orthopedics</option>
+                                  <option value="Neurology & Rehabilitation">Neurology</option>
+                                  <option value="Rheumatology Specialists">Rheumatology</option>
+                                  <option value="Sports Medicine & Rehab">Sports Medicine</option>
+                                  <option value="General Practice">General Practice</option>
+                                  <option value="Cardiology">Cardiology</option>
+                                  <option value="Clinic / Hospital Direct">Clinic / Direct</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Clinic / Hospital</label>
+                                <input
+                                  type="text"
+                                  placeholder="E.g. City Ortho Centre"
+                                  value={quickDocClinic}
+                                  onChange={(e) => setQuickDocClinic(e.target.value)}
+                                  className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-3 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Contact Email / Phone (Optional)</label>
+                              <input
+                                type="text"
+                                placeholder="e.g. dr.ramesh@clinic.com"
+                                value={quickDocEmail}
+                                onChange={(e) => setQuickDocEmail(e.target.value)}
+                                className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-3 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden"
+                              />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={() => setShowQuickAddDoctor(false)}
+                                className="px-3 py-1 text-xs font-semibold text-[#2B2620]/60 hover:bg-black/5 rounded-lg"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => saveNewReferringDoctor(quickDocName, quickDocSpecialty, quickDocClinic, quickDocEmail)}
+                                className="px-3 py-1 text-xs font-bold bg-primary text-white rounded-lg hover:bg-[#3C5040] shadow-xs cursor-pointer"
+                              >
+                                Save & Select Referrer
+                              </button>
+                            </div>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Diagnosis Reason Selection */}
+                  <div className="space-y-1 relative z-40">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                      Diagnosis / Reason for Visit
+                    </label>
+                    <Controller
+                      name="diagnosisReason"
+                      control={control}
+                      render={({ field }) => (
+                        <SearchableDropdown
+                          options={DEFAULT_DIAGNOSIS_OPTIONS}
+                          value={field.value}
+                          onChange={field.onChange}
+                          onCreateNew={(customVal) => field.onChange(customVal)}
+                          placeholder="Select or search diagnosis..."
+                          createLabel="Use custom diagnosis"
+                        />
+                      )}
+                    />
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {POPULAR_DIAGNOSES.map((diag) => (
+                        <button
+                          key={diag}
+                          type="button"
+                          onClick={() => setValue('diagnosisReason', diag)}
+                          className={`text-[10px] px-2 py-0.5 rounded-full border transition-all cursor-pointer font-medium ${
+                            watch('diagnosisReason') === diag
+                              ? 'bg-primary text-white border-primary shadow-xs font-semibold'
+                              : 'bg-[#FAF6EF]/60 text-[#2B2620]/75 border-[#EADFCA] hover:bg-[#FAF6EF] hover:border-primary/40'
+                          }`}
+                        >
+                          {diag}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Address Accordion Bar */}

@@ -147,7 +147,7 @@ export default function PatientsTab({
                       const regDate = p.createdAt 
                         ? new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                         : '—';
-                      const diagnosis = p.presentingComplaint || p.treatmentModalityAssigned || '—';
+                      const diagnosis = p.diagnosis || p.presentingComplaint || p.treatmentModalityAssigned || '—';
 
                       return (
                         <tr 

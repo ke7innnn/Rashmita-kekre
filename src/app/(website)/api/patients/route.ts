@@ -28,6 +28,7 @@ const createPatientSchema = z.object({
   address: z.string().optional(),
   referringDoctor: z.string().optional(),
   presentingComplaint: z.string().optional(),
+  diagnosis: z.string().optional(),
   treatmentModalityAssigned: z.string().optional(),
   tags: z.array(z.string()).optional().default([]),
   notes: z.string().optional(),
@@ -98,6 +99,7 @@ export async function POST(req: NextRequest) {
     if (body.address) dataToCreate.address = body.address;
     if (body.referringDoctor) dataToCreate.referringDoctor = body.referringDoctor;
     if (body.presentingComplaint) dataToCreate.presentingComplaint = body.presentingComplaint;
+    if (body.diagnosis) dataToCreate.diagnosis = body.diagnosis;
     if (body.treatmentModalityAssigned) dataToCreate.treatmentModalityAssigned = body.treatmentModalityAssigned;
     if (body.notes) dataToCreate.notes = body.notes;
 

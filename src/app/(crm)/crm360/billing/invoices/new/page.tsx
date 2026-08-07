@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowLeft, Search, Plus, Trash2, Check, AlertCircle, FileText, Sparkles, User, ShoppingBag, Calendar, AlertTriangle
@@ -16,6 +16,8 @@ import CountUpNumber from '@/components/billing/CountUpNumber';
 
 export default function InvoiceBuilderPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const patientIdParam = searchParams.get('patientId');
 
   // Patients & Selection
   const [patients, setPatients] = useState<any[]>([]);
@@ -58,7 +60,14 @@ export default function InvoiceBuilderPage() {
         fetch('/api/billing/consumables')
       ]);
 
-      if (patientsRes.ok) setPatients(await patientsRes.json());
+      if (patientsRes.ok) {
+        const patientList = await patientsRes.json();
+        setPatients(patientList);
+        if (patientIdParam) {
+          const match = patientList.find((p: any) => p.id === patientIdParam);
+          if (match) setSelectedPatient(match);
+        }
+      }
       if (plansRes.ok) setPlans(await plansRes.json());
       if (consumablesRes.ok) setConsumables(await consumablesRes.json());
     } catch (e) {
@@ -574,11 +583,49 @@ export default function InvoiceBuilderPage() {
                 </div>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const cstPlan = plans.find(p => p.name.toLowerCase().includes('cst') || p.name.toLowerCase().includes('craniosacral'));
+                      if (cstPlan) {
+                        addTreatmentPlanLine(cstPlan);
+                      } else {
+                        addManualLine();
+                        const newLines = [...lines];
+                        const lastIndex = newLines.length;
+                        setLines([
+                          ...lines,
+                          {
+                            id: `line-cst-${Date.now()}`,
+                            description: 'Craniosacral Therapy (CST / BCST) Session',
+                            quantity: 1,
+                            unitPrice: 1500,
+                            totalPrice: 1500,
+                            isCoveredByPackage: false,
+                          }
+                        ]);
+                      }
+                    }}
+                    className="p-3 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 rounded-xl text-left transition flex flex-col justify-between group cursor-pointer"
+                  >
+                    <div>
+                      <span className="text-xs font-bold text-emerald-300 group-hover:text-emerald-200 transition">
+                        + CST Session
+                      </span>
+                      <p className="text-[10px] text-emerald-200/60 mt-0.5 line-clamp-1">
+                        Craniosacral Therapy / BCST
+                      </p>
+                    </div>
+                    <div className="mt-2 text-xs font-bold text-emerald-300 tabular-nums">
+                      ₹1,500.00
+                    </div>
+                  </button>
+
                   {plans.map(plan => (
                     <button
                       key={plan.id}
                       onClick={() => addTreatmentPlanLine(plan)}
-                      className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-xl text-left transition flex flex-col justify-between group"
+                      className="p-3 bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 rounded-xl text-left transition flex flex-col justify-between group cursor-pointer"
                     >
                       <div>
                         <span className="text-xs font-bold text-white group-hover:text-white transition">

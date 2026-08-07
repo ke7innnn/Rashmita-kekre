@@ -71,6 +71,8 @@ export default function AddAppointmentModal({ onClose }: Props) {
   const [newPatientPhone, setNewPatientPhone] = useState('');
   const [newPatientGender, setNewPatientGender] = useState('Female');
   const [newPatientAge, setNewPatientAge] = useState('35');
+  const [newPatientDiagnosis, setNewPatientDiagnosis] = useState('');
+  const [newPatientReferrer, setNewPatientReferrer] = useState('');
   const [isCreatingPatient, setIsCreatingPatient] = useState(false);
   const [createPatientError, setCreatePatientError] = useState<string | null>(null);
 
@@ -122,6 +124,9 @@ export default function AddAppointmentModal({ onClose }: Props) {
           phone: cleanPhone,
           gender: newPatientGender || 'Female',
           dateOfBirth: calculatedDob,
+          presentingComplaint: newPatientDiagnosis.trim() || 'Direct Consultation Intake',
+          diagnosis: newPatientDiagnosis.trim() || '',
+          referringDoctor: newPatientReferrer.trim() || '',
         }),
       });
 
@@ -295,6 +300,28 @@ export default function AddAppointmentModal({ onClose }: Props) {
                     value={newPatientAge}
                     onChange={(e) => setNewPatientAge(e.target.value)}
                     className="w-full text-xs bg-white/[0.07] border border-white/15 px-3 py-1.5 rounded-xl text-white font-semibold focus:outline-none focus:border-[var(--primary)] backdrop-blur-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-white/60 mb-0.5">Diagnosis / Reason for Visit</label>
+                  <input
+                    type="text"
+                    placeholder="E.g. Low Back Pain, Knee Osteoarthritis..."
+                    value={newPatientDiagnosis}
+                    onChange={(e) => setNewPatientDiagnosis(e.target.value)}
+                    className="w-full text-xs bg-white/[0.07] border border-white/15 px-3 py-2 rounded-xl text-white font-semibold placeholder-white/40 focus:outline-none focus:border-[var(--primary)] backdrop-blur-md"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-semibold text-white/60 mb-0.5">Referred By (Referral Doctor / Source)</label>
+                  <input
+                    type="text"
+                    placeholder="E.g. Dr. Amit Sharma, Patel Neuro..."
+                    value={newPatientReferrer}
+                    onChange={(e) => setNewPatientReferrer(e.target.value)}
+                    className="w-full text-xs bg-white/[0.07] border border-white/15 px-3 py-2 rounded-xl text-white font-semibold placeholder-white/40 focus:outline-none focus:border-[var(--primary)] backdrop-blur-md"
                   />
                 </div>
 

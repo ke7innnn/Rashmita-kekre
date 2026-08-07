@@ -6,11 +6,18 @@ import { AppointmentStatus, AppointmentSource } from '@prisma/client';
 const publicBookingSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
-  gender: z.string().default('Female'), // Default gender if not provided
-  dateOfBirth: z.string().optional().transform((val) => (val ? new Date(val) : new Date('1990-01-01'))),
+  gender: z.string().optional().default('Female'),
+  dateOfBirth: z.union([z.string(), z.date()]).optional().transform((val) => {
+    if (!val) return new Date('1990-01-01');
+    if (val instanceof Date) return val;
+    const d = new Date(val);
+    return isNaN(d.getTime()) ? new Date('1990-01-01') : d;
+  }),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
   treatmentType: z.string().min(1, 'Treatment type is required'),
+  presentingComplaint: z.string().optional(),
+  diagnosis: z.string().optional(),
   notes: z.string().optional(),
   otp: z.string().optional(),
 });
@@ -23,8 +30,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ bookedSlots: [], isHoliday: false });
     }
 
-    const targetDate = new Date(dateStr);
-    targetDate.setHours(0, 0, 0, 0);
+    const startOfDay = new Date(`${dateStr}T00:00:00.000Z`);
+    const endOfDay = new Date(`${dateStr}T23:59:59.999Z`);
 
     const settings = await prisma.clinicSettings.findUnique({
       where: { id: 'clinic_settings' },
@@ -34,6 +41,7 @@ export async function GET(req: NextRequest) {
       ? settings.holidays.split(',').map((h) => h.trim()).filter(Boolean) 
       : [];
 
+    const targetDate = new Date(dateStr + 'T00:00:00');
     const isSunday = targetDate.getDay() === 0;
     const isHoliday = isSunday || holidaysList.includes(dateStr);
 
@@ -41,19 +49,39 @@ export async function GET(req: NextRequest) {
 
     const appointments = await prisma.appointment.findMany({
       where: {
-        date: targetDate,
+        date: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
         status: {
           in: [AppointmentStatus.SCHEDULED, AppointmentStatus.WAITING, AppointmentStatus.IN_PROGRESS, AppointmentStatus.COMPLETED],
         },
       },
       select: {
         startTime: true,
+        endTime: true,
+        assignedSlotDuration: true,
       },
     });
 
+    const toMinutes = (hhmm: string) => {
+      const [h, m] = hhmm.split(':').map(Number);
+      return (isNaN(h) ? 0 : h) * 60 + (isNaN(m) ? 0 : m);
+    };
+    const pad = (n: number) => (n < 10 ? '0' + n : '' + n);
+
     const slotCounts: Record<string, number> = {};
     appointments.forEach((a) => {
-      slotCounts[a.startTime] = (slotCounts[a.startTime] || 0) + 1;
+      if (!a.startTime) return;
+      const startMin = toMinutes(a.startTime);
+      const duration = a.assignedSlotDuration || 15;
+      const calculatedEndMin = startMin + duration;
+      const endMin = a.endTime ? Math.max(toMinutes(a.endTime), calculatedEndMin) : calculatedEndMin;
+
+      for (let t = startMin; t < endMin; t += 15) {
+        const timeStr = `${pad(Math.floor(t / 60))}:${pad(t % 60)}`;
+        slotCounts[timeStr] = (slotCounts[timeStr] || 0) + 1;
+      }
     });
 
     const bookedSlots = Object.keys(slotCounts).filter((time) => slotCounts[time] >= maxConcurrent);
@@ -154,17 +182,19 @@ export async function POST(req: NextRequest) {
         data: {
           fullName: body.fullName,
           phone: body.phone,
-          gender: body.gender,
+          gender: body.gender || 'Female',
           dateOfBirth: body.dateOfBirth,
-          presentingComplaint: 'Booked via Website. Modality assigned at intake.',
+          presentingComplaint: body.presentingComplaint || body.treatmentType || 'Booked via Website.',
+          diagnosis: body.diagnosis || body.presentingComplaint || '',
           tags: 'website-lead',
         },
       });
     }
 
-    // Calculate end time based on settings or default 30 mins
+    // Calculate end time based on settings or default 15 mins
+    const slotDuration = settings?.slotDuration || 15;
     const [hours, minutes] = startTime.split(':').map(Number);
-    const endMinutes = minutes + settings.slotDuration;
+    const endMinutes = minutes + slotDuration;
     const endHours = hours + Math.floor(endMinutes / 60);
     const finalMinutes = endMinutes % 60;
     const endTime = `${String(endHours).padStart(2, '0')}:${String(finalMinutes).padStart(2, '0')}`;
@@ -177,7 +207,7 @@ export async function POST(req: NextRequest) {
         startTime,
         endTime,
         treatmentType: body.treatmentType,
-        assignedSlotDuration: settings.slotDuration,
+        assignedSlotDuration: slotDuration,
         source: AppointmentSource.WEBSITE,
         notes: body.notes || 'Inbound online web booking.',
       },

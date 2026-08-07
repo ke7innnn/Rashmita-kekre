@@ -159,7 +159,7 @@ export async function POST(req: NextRequest) {
       const settings = await prisma.clinicSettings.findUnique({
         where: { id: 'clinic_settings' },
       });
-      const slotDuration = settings?.slotDuration || 30;
+      const slotDuration = settings?.slotDuration || 15;
 
       // Calculate end time
       const [hours, minutes] = startTime.split(':').map(Number);

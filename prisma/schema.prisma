@@ -76,6 +76,9 @@ model Patient {
   feedback                  Feedback[]
   waitlists                 Waitlist[]
   sentHandouts              SentHandout[]
+  referralSourceId          String?
+  referralSource            ReferralSource?  @relation(fields: [referralSourceId], references: [id])
+  assessments               Assessment[]
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
 }
@@ -467,3 +470,417 @@ model Payment {
   date            DateTime @default(now())
   createdAt       DateTime @default(now())
 }
+
+enum SnapshotScope {
+  CLINIC
+  PHYSIO
+}
+
+enum InsightPeriodType {
+  WEEKLY
+  MONTHLY
+}
+
+enum InsightCategory {
+  CAPACITY
+  ADHERENCE
+  RETENTION
+  REVENUE
+  RELIABILITY
+  PACKAGE
+  STAFF
+}
+
+enum InsightSeverity {
+  INFO
+  NOTICE
+  IMPORTANT
+  URGENT
+}
+
+enum InsightActionType {
+  WHATSAPP_BOOKING_LINK
+  WHATSAPP_PAYMENT_REMINDER
+  VAPI_CHECKIN_CALL
+  OFFER_SLOT_TO_WAITLIST
+  MARK_FOR_DISCHARGE_REVIEW
+  NO_ACTION
+}
+
+enum InsightStatus {
+  NEW
+  ACTED
+  DISMISSED
+  SNOOZED
+}
+
+model MetricSnapshot {
+  id                        String        @id @default(cuid())
+  date                      DateTime      @db.Date
+  scope                     SnapshotScope @default(CLINIC)
+  physioId                  String?
+  chairHoursAvailable       Float         @default(0)
+  chairHoursBooked          Float         @default(0)
+  utilizationPct            Float         @default(0)
+  sessionsDelivered         Int           @default(0)
+  noShowCount               Int           @default(0)
+  lateCancelCount           Int           @default(0)
+  appointmentsBooked        Int           @default(0)
+  rebookRatePct             Float         @default(0)
+  newPatients               Int           @default(0)
+  activePatients            Int           @default(0)
+  lapsed30                  Int           @default(0)
+  lapsed60                  Int           @default(0)
+  lapsed90                  Int           @default(0)
+  packagesActive            Int           @default(0)
+  packageSessionsRemaining  Int           @default(0)
+  packagesExpiring14d       Int           @default(0)
+  deferredRevenuePaise      BigInt        @default(0)
+  realizedRevenuePaise      BigInt        @default(0)
+  arOutstandingPaise        BigInt        @default(0)
+  arOver30Paise             BigInt        @default(0)
+  arOver60Paise             BigInt        @default(0)
+  revenuePerChairHourPaise  BigInt        @default(0)
+  tierMixJson               String        @default("{}")
+  createdAt                 DateTime      @default(now())
+
+  @@unique([date, scope, physioId])
+}
+
+model Insight {
+  id                   String            @id @default(cuid())
+  periodType           InsightPeriodType @default(WEEKLY)
+  periodStart          DateTime
+  periodEnd            DateTime
+  ruleKey              String
+  category             InsightCategory
+  severity             InsightSeverity   @default(INFO)
+  title                String
+  body                 String
+  evidenceJson         String
+  entityIdsJson        String            @default("[]")
+  estimatedImpactPaise BigInt?
+  actionType           InsightActionType? @default(NO_ACTION)
+  actionPayloadJson    String?
+  status               InsightStatus     @default(NEW)
+  snoozedUntil         DateTime?
+  actedAt              DateTime?
+  actedByUserId        String?
+  outcomeMetricKey     String?
+  outcomeBaselineJson  String?
+  outcomeMeasuredJson  String?
+  actionLogs           InsightActionLog[]
+  createdAt            DateTime          @default(now())
+}
+
+model InsightActionLog {
+  id          String   @id @default(cuid())
+  insightId   String
+  insight     Insight  @relation(fields: [insightId], references: [id], onDelete: Cascade)
+  userId      String
+  actionType  String
+  payloadJson String
+  result      String   @default("SUCCESS")
+  createdAt   DateTime @default(now())
+
+  @@index([insightId])
+}
+
+model MonthlyReview {
+  id              String   @id @default(cuid())
+  periodStart     DateTime
+  periodEnd       DateTime
+  whatChangedJson String
+  whatsWorkingMd  String
+  tipsJson        String
+  followUpJson    String
+  pdfUrl          String?
+  deliveredAt     DateTime?
+  generatedAt     DateTime @default(now())
+}
+
+enum AssessmentType {
+  INITIAL
+  REASSESSMENT
+  DISCHARGE
+}
+
+enum AssessmentStatus {
+  DRAFT
+  COMPLETED
+  SIGNED
+  AMENDED
+}
+
+enum AssessmentSource {
+  CLINICIAN
+  PATIENT_INTAKE
+  MIXED
+}
+
+enum OccupationCategory {
+  SEDENTARY_DESK
+  MANUAL_LABOUR
+  STANDING_ROLE
+  ATHLETE
+  HOMEMAKER
+  STUDENT
+  RETIRED
+  OTHER
+}
+
+enum OnsetType {
+  ACUTE
+  SUB_ACUTE
+  CHRONIC
+}
+
+enum DiurnalVariation {
+  WORSE_MORNING
+  WORSE_NIGHT
+  CONSTANT
+  VARIABLE
+}
+
+enum PostureState {
+  NORMAL
+  ALTERED
+}
+
+enum GaitPattern {
+  NORMAL
+  ANTALGIC
+  DEVIATED
+  NON_AMBULATORY
+}
+
+enum TendernessGrade {
+  NONE
+  GRADE_I
+  GRADE_II
+  GRADE_III
+  GRADE_IV
+}
+
+enum DermatomeState {
+  INTACT
+  ALTERED
+}
+
+enum TestSide {
+  LEFT
+  RIGHT
+  BILATERAL
+}
+
+enum TestResult {
+  POSITIVE
+  NEGATIVE
+  INCONCLUSIVE
+  NOT_TESTED
+}
+
+enum PrognosisRating {
+  EXCELLENT
+  GOOD
+  FAIR
+  POOR
+}
+
+enum GoalHorizon {
+  SHORT
+  LONG
+}
+
+enum GoalStatus {
+  OPEN
+  MET
+  PARTIAL
+  NOT_MET
+}
+
+enum ReferralSourceCategory {
+  SELF_DIRECT
+  ORTHOPAEDIC
+  GENERAL_PHYSICIAN
+  GYM_TRAINER
+  SPORTS_CLUB
+  EXISTING_PATIENT
+  ONLINE
+  OTHER
+}
+
+model ReferralSource {
+  id           String                 @id @default(cuid())
+  name         String
+  category     ReferralSourceCategory @default(SELF_DIRECT)
+  contactName  String?
+  contactPhone String?
+  notes        String?
+  isActive     Boolean                @default(true)
+  createdAt    DateTime               @default(now())
+  patients     Patient[]
+  assessments  Assessment[]
+}
+
+model Assessment {
+  id                          String                @id @default(cuid())
+  patientId                   String
+  patient                     Patient               @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  physioId                    String
+  type                        AssessmentType        @default(INITIAL)
+  status                      AssessmentStatus      @default(DRAFT)
+  source                      AssessmentSource      @default(CLINICIAN)
+  parentAssessmentId          String?
+  parentAssessment            Assessment?           @relation("AssessmentHistory", fields: [parentAssessmentId], references: [id])
+  childAssessments            Assessment[]          @relation("AssessmentHistory")
+  assessmentDate              DateTime              @default(now())
+  occupation                  String?
+  occupationCategory          OccupationCategory?
+  referralSourceId            String?
+  referralSource              ReferralSource?       @relation(fields: [referralSourceId], references: [id])
+  provisionalDiagnosis        String?
+  chiefComplaint              String?
+  onset                       OnsetType?
+  onsetDate                   DateTime?
+  daysSinceOnset              Int?
+  mechanismOfInjury           String?
+  painSiteRegions             String?
+  painTypes                   String?
+  vasRest                     Int?
+  vasActivity                 Int?
+  vasBest                     Int?
+  vasWorst                    Int?
+  aggravatingFactors          String?
+  easingFactors               String?
+  diurnalVariation            DiurnalVariation?
+  pmh                         String?
+  investigations              String?
+  redFlagWeightLoss           Boolean               @default(false)
+  redFlagBowelBladder         Boolean               @default(false)
+  redFlagSaddleAnaesthesia    Boolean               @default(false)
+  redFlagNightPain            Boolean               @default(false)
+  redFlagAcknowledgedAt       DateTime?
+  redFlagDecisionNote         String?
+  redFlagAcknowledgedByUserId String?
+  posture                     PostureState?
+  postureNotes                String?
+  gait                        GaitPattern?
+  gaitNotes                   String?
+  localInspection             String?
+  tendernessGrade             TendernessGrade?
+  tendernessSiteRegions       String?
+  spasm                       Boolean               @default(false)
+  spasmSite                   String?
+  dermatomesState             DermatomeState?
+  dermatomesLevels            String?
+  myotomesJson                String?
+  reflexesJson                String?
+  functionalLimitations       String?
+  ptDiagnosis                 String?
+  prognosis                   PrognosisRating?
+  narrativeJson               String?
+  consentCapturedAt           DateTime?
+  signedAt                    DateTime?
+  signedByUserId              String?
+  createdAt                   DateTime              @default(now())
+  updatedAt                   DateTime              @updatedAt
+  romMeasurements             RomMeasurement[]
+  specialTestResults          SpecialTestResult[]
+  goals                       AssessmentGoal[]
+  amendments                  AssessmentAmendment[]
+
+  @@index([patientId])
+  @@index([physioId])
+}
+
+model RomMeasurement {
+  id              String     @id @default(cuid())
+  assessmentId    String
+  assessment      Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  region          String
+  movement        String
+  aromRight       Int?
+  aromLeft        Int?
+  promRight       Int?
+  promLeft        Int?
+  mmtRight        Int?
+  mmtLeft         Int?
+  painOnMovement  Boolean    @default(false)
+  sortOrder       Int        @default(0)
+
+  @@index([assessmentId])
+}
+
+model SpecialTestResult {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  testId       String?
+  testName     String
+  side         TestSide   @default(BILATERAL)
+  result       TestResult @default(NOT_TESTED)
+  note         String?
+
+  @@index([assessmentId])
+}
+
+model SpecialTest {
+  id              String  @id @default(cuid())
+  name            String
+  region          String
+  isCustom        Boolean @default(false)
+  createdByUserId String?
+}
+
+model NormativeRom {
+  id            String @id @default(cuid())
+  region        String
+  movement      String
+  normalDegrees Int
+  source        String @default("Magee Orthopedic Physical Assessment")
+}
+
+model AssessmentGoal {
+  id            String      @id @default(cuid())
+  assessmentId  String
+  assessment    Assessment  @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  horizon       GoalHorizon @default(SHORT)
+  text          String
+  metricKey     String?
+  baselineValue String?
+  targetValue   String?
+  targetDate    DateTime
+  status        GoalStatus  @default(OPEN)
+  reviewedAt    DateTime?
+
+  @@index([assessmentId])
+}
+
+model AssessmentAmendment {
+  id           String     @id @default(cuid())
+  assessmentId String
+  assessment   Assessment @relation(fields: [assessmentId], references: [id], onDelete: Cascade)
+  userId       String
+  reason       String
+  changesJson  String
+  createdAt    DateTime   @default(now())
+
+  @@index([assessmentId])
+}
+
+model ConditionTerm {
+  id            String @id @default(cuid())
+  canonicalName String
+  synonymsJson  String
+  bodyRegion    String
+}
+
+model AssessmentAuditLog {
+  id           String   @id @default(cuid())
+  assessmentId String?
+  userId       String
+  action       String
+  timestamp    DateTime @default(now())
+}
+

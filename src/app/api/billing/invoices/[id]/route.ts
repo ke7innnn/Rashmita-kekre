@@ -62,7 +62,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
   try {
     const { id } = await params;
     const body = await req.json();
-    const { action } = body;
+    const { action, status, notes, discountAmount, lines } = body;
 
     if (action === 'cancel') {
       const updated = await prisma.invoice.update({
@@ -73,7 +73,43 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json(updated);
     }
 
-    return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
+    const updateData: any = {};
+    if (status) updateData.status = status;
+    if (notes !== undefined) updateData.notes = notes;
+    if (discountAmount !== undefined) updateData.discountAmount = Number(discountAmount);
+
+    if (lines && Array.isArray(lines)) {
+      for (const line of lines) {
+        if (line.id) {
+          const qty = Number(line.quantity) || 1;
+          const uPrice = line.isCoveredByPackage ? 0 : Number(line.unitPrice) || 0;
+          const tPrice = qty * uPrice;
+          await prisma.invoiceLine.update({
+            where: { id: line.id },
+            data: {
+              description: line.description,
+              quantity: qty,
+              unitPrice: uPrice,
+              totalPrice: tPrice,
+            }
+          });
+        }
+      }
+
+      const allLines = await prisma.invoiceLine.findMany({ where: { invoiceId: id } });
+      const subtotal = allLines.reduce((sum, l) => sum + Number(l.totalPrice), 0);
+      const disc = discountAmount !== undefined ? Number(discountAmount) : 0;
+      updateData.subtotalAmount = subtotal;
+      updateData.totalAmount = Math.max(0, subtotal - disc);
+    }
+
+    const updated = await prisma.invoice.update({
+      where: { id },
+      data: updateData,
+      include: { patient: true, lines: true, payments: true }
+    });
+
+    return NextResponse.json(updated);
   } catch (error: any) {
     console.error('Error updating invoice:', error);
     return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });

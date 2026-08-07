@@ -169,9 +169,9 @@ export default function VoiceAgentTab() {
                   patientId: targetId,
                   date: targetDate.toISOString().split('T')[0],
                   startTime: '15:00',
-                  endTime: '15:30',
+                  endTime: '15:15',
                   treatmentType: targetPatient.treatmentModalityAssigned || 'Manual Therapy & Joint Mobilization',
-                  assignedSlotDuration: 30,
+                  assignedSlotDuration: 15,
                   source: 'PHONE_AI_AGENT',
                   notes: 'Auto-booked by AI Outbound Rebooking Dialer.'
                 })

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -168,6 +168,8 @@ export default function CRMSidebar({ children }: Props) {
     { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
+    { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio'] },
+    { href: '/crm360/insights', name: 'Insights & Action Queue', icon: Sparkles, category: 'management', roles: ['admin'] },
     { href: '/crm360/referrals', name: 'Referral Network', icon: Network, category: 'management', roles: ['admin'] },
     { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings, category: 'management', roles: ['admin'] },
   ];
@@ -204,7 +206,7 @@ export default function CRMSidebar({ children }: Props) {
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
-                <div className="absolute inset-0 rounded-full bg-[var(--primary)] blur-md opacity-40 animate-pulse transition-colors duration-500" />
+                <div className="absolute inset-0 rounded-full bg-[var(--primary)] blur-md opacity-30 transition-colors duration-500" />
                 <img 
                   src="/logo/rklogo.png" 
                   alt="Health 360 Icon" 
@@ -304,58 +306,6 @@ export default function CRMSidebar({ children }: Props) {
         </div>
 
         <div className="space-y-3 pt-3">
-          {/* Smart Staff Members Roster Widget */}
-          <div className="bg-white/[0.03] border border-white/10 p-3 rounded-2xl space-y-2.5 relative">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1.5">
-                <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                </span>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/70">Staff On Duty</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setShowStaffPopup(!showStaffPopup)}
-                className="text-[9px] font-mono text-[var(--primary)] hover:underline cursor-pointer"
-              >
-                {showStaffPopup ? 'Hide' : 'View All'}
-              </button>
-            </div>
-
-            {/* Smart Staff Avatars Stack */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
-              {staffMembers.map((staff) => (
-                <div 
-                  key={staff.id} 
-                  className="relative group shrink-0"
-                  title={`${staff.name} — ${staff.role} (${staff.status})`}
-                >
-                  <div className="h-7 w-7 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-[10px] text-white">
-                    {staff.avatar}
-                  </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full bg-emerald-500 border border-[#0B0A10]" />
-                </div>
-              ))}
-            </div>
-
-            {/* Expandable Smart Staff List */}
-            {showStaffPopup && (
-              <div className="space-y-1.5 pt-2 border-t border-white/10 max-h-40 overflow-y-auto">
-                {staffMembers.map((staff) => (
-                  <div key={staff.id} className="flex items-center justify-between text-xs py-1">
-                    <div className="truncate pr-2">
-                      <p className="text-[11px] font-bold text-white leading-tight truncate">{staff.name}</p>
-                      <p className="text-[9px] text-white/50 truncate">{staff.role}</p>
-                    </div>
-                    <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 shrink-0">
-                      {staff.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
 
           {/* Dedicated Clock In / Clock Out Card */}
           <div className="bg-white/[0.04] border border-white/10 p-3 rounded-2xl space-y-2">
@@ -422,7 +372,7 @@ export default function CRMSidebar({ children }: Props) {
         <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[rgba(18,13,31,0.8)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.08)] sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
-              <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-40 animate-pulse" />
+              <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-30" />
               <img 
                 src="/logo/rklogo.png" 
                 alt="Health 360 Icon" 

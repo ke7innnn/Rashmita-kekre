@@ -3,7 +3,7 @@
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
 import { 
-  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building
+  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building, Edit3, Save, Plus, Loader2
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
@@ -16,9 +16,24 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState<string | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState<boolean>(false);
 
+  // Quick Edit States
+  const [isEditing, setIsEditing] = useState<boolean>(false);
+  const [editStatus, setEditStatus] = useState<string>('DRAFT');
+  const [editNotes, setEditNotes] = useState<string>('');
+  const [editLines, setEditLines] = useState<any[]>([]);
+  const [savingEdit, setSavingEdit] = useState<boolean>(false);
+
   useEffect(() => {
     fetchInvoice();
   }, [id]);
+
+  useEffect(() => {
+    if (invoice) {
+      setEditStatus(invoice.rawStatus || invoice.status || 'DRAFT');
+      setEditNotes(invoice.notes || '');
+      setEditLines(invoice.lines ? invoice.lines.map((l: any) => ({ ...l })) : []);
+    }
+  }, [invoice, isEditing]);
 
   const fetchInvoice = async () => {
     setLoading(true);
@@ -51,6 +66,28 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
       }
     } catch (e) {
       console.error('Error cancelling invoice:', e);
+    }
+  };
+
+  const handleSaveQuickEdit = async () => {
+    setSavingEdit(true);
+    try {
+      const res = await fetch(`/api/billing/invoices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          status: editStatus,
+          notes: editNotes,
+          lines: editLines,
+        }),
+      });
+      if (!res.ok) throw new Error('Failed to save changes');
+      await fetchInvoice();
+      setIsEditing(false);
+    } catch (err: any) {
+      alert(err.message || 'Error saving invoice changes');
+    } finally {
+      setSavingEdit(false);
     }
   };
 
@@ -89,11 +126,35 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Invoices
           </Link>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href={invoice.patientId ? `/crm360/billing/invoices/new?patientId=${invoice.patientId}` : `/crm360/billing/invoices/new`}
+            className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+          >
+            <Plus className="w-4 h-4" /> + Generate New Invoice
+          </Link>
+
+          <button
+            onClick={() => setIsEditing(!isEditing)}
+            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${isEditing ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
+          >
+            <Edit3 className="w-4 h-4" /> {isEditing ? 'Cancel Edit' : 'Quick Edit'}
+          </button>
+
+          {isEditing && (
+            <button
+              onClick={handleSaveQuickEdit}
+              disabled={savingEdit}
+              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+            >
+              {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Changes
+            </button>
+          )}
+
           <Link
             href={`/crm360/billing/invoices/${id}/print?autoprint=1`}
             target="_blank"
-            className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition flex items-center gap-2"
+            className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition flex items-center gap-2"
           >
             <Printer className="w-4 h-4" /> Print / PDF
           </Link>
@@ -101,7 +162,7 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
           {balance > 0 && invoice.status !== 'CANCELLED' && (
             <button
               onClick={() => setPaymentModalOpen(true)}
-              className="px-4 py-2 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
             >
               <CreditCard className="w-4 h-4" /> Record Payment
             </button>
@@ -151,7 +212,24 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               Date: {new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
             </div>
             <div className="pt-1 print:hidden">
-              <InvoiceStatusPill status={invoice.status} />
+              {isEditing ? (
+                <div className="flex items-center justify-end gap-2">
+                  <span className="text-[10px] font-bold text-amber-300 uppercase">Status:</span>
+                  <select
+                    value={editStatus}
+                    onChange={(e) => setEditStatus(e.target.value)}
+                    className="text-xs bg-[#12101B] border border-white/20 text-white rounded-lg px-2 py-1 font-bold focus:outline-none cursor-pointer"
+                  >
+                    <option value="DRAFT">DRAFT</option>
+                    <option value="UNPAID">UNPAID</option>
+                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PAID">PAID</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                  </select>
+                </div>
+              ) : (
+                <InvoiceStatusPill status={invoice.status} />
+              )}
             </div>
           </div>
         </div>
@@ -183,24 +261,66 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 print:divide-gray-200 text-xs">
-              {invoice.lines.map((line: any) => (
-                <tr key={line.id}>
+              {(isEditing ? editLines : invoice.lines).map((line: any, idx: number) => (
+                <tr key={line.id || idx}>
                   <td className="py-3 px-3 font-medium text-white print:text-black">
-                    {line.description}
-                    {line.isCoveredByPackage && (
-                      <span className="ml-2 text-[10px] bg-emerald-500/20 text-emerald-300 print:text-emerald-700 px-1.5 py-0.5 rounded">
-                        Covered by Course
-                      </span>
+                    {isEditing ? (
+                      <input
+                        type="text"
+                        value={line.description}
+                        onChange={(e) => {
+                          const updated = [...editLines];
+                          updated[idx].description = e.target.value;
+                          setEditLines(updated);
+                        }}
+                        className="w-full text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white focus:outline-none"
+                      />
+                    ) : (
+                      <>
+                        {line.description}
+                        {line.isCoveredByPackage && (
+                          <span className="ml-2 text-[10px] bg-emerald-500/20 text-emerald-300 print:text-emerald-700 px-1.5 py-0.5 rounded">
+                            Covered by Course
+                          </span>
+                        )}
+                      </>
                     )}
                   </td>
                   <td className="py-3 px-3 text-center tabular-nums text-white/70 print:text-black">
-                    {line.quantity}
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        min="1"
+                        value={line.quantity}
+                        onChange={(e) => {
+                          const updated = [...editLines];
+                          updated[idx].quantity = Math.max(1, parseInt(e.target.value, 10) || 1);
+                          setEditLines(updated);
+                        }}
+                        className="w-16 text-center text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white focus:outline-none"
+                      />
+                    ) : (
+                      line.quantity
+                    )}
                   </td>
                   <td className="py-3 px-3 text-right tabular-nums text-white/70 print:text-black">
-                    {line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.unitPrice)}
+                    {isEditing ? (
+                      <input
+                        type="number"
+                        value={line.unitPrice}
+                        onChange={(e) => {
+                          const updated = [...editLines];
+                          updated[idx].unitPrice = parseFloat(e.target.value) || 0;
+                          setEditLines(updated);
+                        }}
+                        className="w-24 text-right text-xs bg-white/10 border border-white/20 rounded px-2 py-1 text-white focus:outline-none"
+                      />
+                    ) : (
+                      line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.unitPrice)
+                    )}
                   </td>
                   <td className="py-3 px-3 text-right font-bold tabular-nums text-white print:text-black">
-                    {line.isCoveredByPackage ? '₹0.00' : formatCurrency(line.totalPrice)}
+                    {formatCurrency(Number(line.quantity || 1) * Number(line.unitPrice || 0))}
                   </td>
                 </tr>
               ))}
@@ -210,8 +330,20 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
 
         {/* Totals Summary */}
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4 pt-4 border-t border-white/10 print:border-black/20">
-          <div className="text-xs text-white/50 print:text-black/60 space-y-1">
-            {invoice.notes && <p className="italic">Notes: {invoice.notes}</p>}
+          <div className="text-xs text-white/50 print:text-black/60 space-y-1 w-full sm:max-w-md">
+            {isEditing ? (
+              <div className="space-y-1">
+                <label className="text-[10px] font-bold uppercase text-white/60">Invoice Notes</label>
+                <textarea
+                  value={editNotes}
+                  onChange={(e) => setEditNotes(e.target.value)}
+                  rows={2}
+                  className="w-full text-xs bg-white/10 border border-white/20 rounded-xl p-2 text-white focus:outline-none"
+                />
+              </div>
+            ) : (
+              invoice.notes && <p className="italic">Notes: {invoice.notes}</p>
+            )}
             {invoice.lines.some((l: any) => l.patientPackageId || l.description?.toLowerCase().includes('course')) && (
               <p className="text-[11px] text-amber-200/90 print:text-black font-medium pt-2 border-t border-white/5 print:border-black/10">
                 Terms: Package valid 45 days from date of purchase. Unused sessions are not refundable.

@@ -83,7 +83,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [isUploadingToSupabase, setIsUploadingToSupabase] = useState(false);
 
   // Sub-tab navigation state
-  const [activeTab, setActiveTab] = useState<'documents' | 'rom' | 'billing'>('billing');
+  const [activeTab, setActiveTab] = useState<'documents' | 'rom' | 'billing' | 'assessments'>('billing');
   const [isSellCourseModalOpen, setIsSellCourseModalOpen] = useState(false);
 
   // WhatsApp real messaging states
@@ -870,7 +870,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             </div>
           </div>
 
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                window.location.href = `/crm360/assessments/new?patientId=${patientId}`;
+              }}
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden shadow-xs whitespace-nowrap"
+            >
+              <FileText className="h-4 w-4 stroke-[1.75]" />
+              + Initial Assessment
+            </motion.button>
+
             {/* Dictate SOAP Note button (Prevent Wrap) */}
             <motion.button
               whileTap={{ scale: 0.95 }}
@@ -1018,6 +1029,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           }`}
         >
           Session Packages & Billing
+        </button>
+        <button
+          onClick={() => setActiveTab('assessments')}
+          className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+            activeTab === 'assessments'
+              ? 'bg-primary text-background shadow-xs'
+              : 'text-[#2B2620]/60 hover:bg-[#FAF6EF]'
+          }`}
+        >
+          Initial Assessments
         </button>
       </div>
 
@@ -1921,6 +1942,71 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               })}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Initial Assessments Tab */}
+      {activeTab === 'assessments' && (
+        <div className="p-6 space-y-6 max-w-6xl mx-auto w-full animate-fadeIn">
+          <div className="flex items-center justify-between border-b border-[#EADFCA] pb-4">
+            <div>
+              <h3 className="text-base font-serif font-bold text-[#2B2620]">Patient Digital Assessments</h3>
+              <p className="text-xs text-[#2B2620]/60 font-semibold mt-0.5">
+                Structured clinical evaluations, ROM/MMT measurements, and red flag safety logs.
+              </p>
+            </div>
+            <a
+              href={`/crm360/assessments/new?patientId=${patientId}`}
+              className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="h-4 w-4" /> + New Initial Assessment
+            </a>
+          </div>
+
+          <div className="space-y-3">
+            {patient?.assessments && patient.assessments.length > 0 ? (
+              patient.assessments.map((a: any) => (
+                <div
+                  key={a.id}
+                  className="p-4 bg-[#FAF6EF]/60 border border-[#EADFCA] rounded-2xl flex items-center justify-between gap-4"
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-primary/20 text-primary border border-primary/30 rounded-md">
+                        {a.type}
+                      </span>
+                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#2B2620]/10 text-[#2B2620]/70 rounded-md">
+                        {a.status}
+                      </span>
+                    </div>
+                    <h4 className="text-sm font-serif font-bold text-[#2B2620]">
+                      {a.ptDiagnosis || a.provisionalDiagnosis || 'Clinical Assessment'}
+                    </h4>
+                    <p className="text-xs text-[#2B2620]/60 font-medium">
+                      Date: {new Date(a.assessmentDate).toLocaleDateString()}
+                    </p>
+                  </div>
+
+                  <a
+                    href={`/crm360/assessments/${a.id}`}
+                    className="px-3.5 py-2 bg-[#2B2620] hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0"
+                  >
+                    View Details
+                  </a>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center bg-[#FAF6EF]/30 border border-dashed border-[#EADFCA] rounded-2xl text-xs text-[#2B2620]/50 space-y-2">
+                <p>No initial assessments logged for this patient yet.</p>
+                <a
+                  href={`/crm360/assessments/new?patientId=${patientId}`}
+                  className="text-primary font-bold hover:underline block pt-1"
+                >
+                  + Click to create first Initial Assessment
+                </a>
+              </div>
+            )}
+          </div>
         </div>
       )}
 

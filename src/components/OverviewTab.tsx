@@ -94,7 +94,7 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
           startTime,
           endTime,
           treatmentType,
-          assignedSlotDuration: 30
+          assignedSlotDuration: 15
         }),
       });
       return res.json();

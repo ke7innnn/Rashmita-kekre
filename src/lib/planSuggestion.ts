@@ -23,6 +23,13 @@ export function suggestPlanFromModalities<T extends TreatmentPlanBasic>(
 ): T | null {
   if (!plans || plans.length === 0) return null;
 
+  const modStr = Array.isArray(modalities) ? modalities.join(' ').toLowerCase() : (modalities || '').toLowerCase();
+
+  if (modStr.includes('cst') || modStr.includes('craniosacral')) {
+    const cst = plans.find(p => p.name.toLowerCase().includes('cst') || p.name.toLowerCase().includes('craniosacral'));
+    if (cst) return cst;
+  }
+
   // Always suggest the active Gold plan (or first active plan)
   const gold = plans.find(p => p.name.toLowerCase() === 'gold');
   return gold || plans[0] || null;
