@@ -825,16 +825,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const initials = patient.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   return (
-    <div className="flex-1 flex flex-col bg-[#FFFCF6] select-none">
+    <div className="flex-1 flex flex-col bg-[#0B0A10]/90 border border-white/20 rounded-3xl p-6 shadow-2xl backdrop-blur-xl text-white select-none">
       {/* Header Profile Summary */}
-      <div className="p-6 border-b border-[#EADFCA] bg-[#FFFCF6] flex flex-col gap-4 shrink-0">
+      <div className="pb-6 border-b border-white/10 flex flex-col gap-4 shrink-0">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
             {onBack && (
               <motion.button 
                 whileTap={{ scale: 0.95 }}
                 onClick={onBack} 
-                className="p-2 rounded-xl hover:bg-[#FAF6EF] border border-[#EADFCA] mt-1 shrink-0 cursor-pointer focus:outline-hidden"
+                className="p-2 rounded-xl hover:bg-white/10 border border-white/20 text-white mt-1 shrink-0 cursor-pointer focus:outline-hidden"
               >
                 <ArrowLeft className="h-4 w-4" />
               </motion.button>
@@ -843,27 +843,27 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             {/* Initials Avatar Badge (Fixed Size) */}
             <div 
               style={{ width: '56px', height: '56px', minWidth: '56px', minHeight: '56px', fontSize: '20px' }}
-              className="rounded-full bg-primary/10 border border-[#EADFCA] flex items-center justify-center font-serif text-primary font-bold shrink-0 shadow-inner"
+              className="rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center font-serif text-emerald-300 font-bold shrink-0 shadow-inner"
             >
               {initials}
             </div>
 
             <div className="space-y-1">
-              <h2 className="text-3xl font-serif font-bold text-[#2B2620] tracking-wide leading-none">{patient.fullName}</h2>
+              <h2 className="text-3xl font-serif font-bold text-white tracking-wide leading-none">{patient.fullName}</h2>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-[#FAF6EF] text-[#2B2620]/60 border border-[#EADFCA] rounded-full">
+                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
                   {patient.gender}
                 </span>
-                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-[#FAF6EF] text-[#2B2620]/60 border border-[#EADFCA] rounded-full">
+                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
                   {new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} Years Old
                 </span>
-                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-[#FAF6EF] text-[#2B2620]/60 border border-[#EADFCA] rounded-full">
+                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
                   Intake: {new Date(patient.intakeDate).toLocaleDateString()}
                 </span>
-                <span className="inline-block text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 bg-primary text-background rounded-full shadow-xxs">
+                <span className="inline-block text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 bg-emerald-500 text-white rounded-full shadow-xxs">
                   Cadence: {patient.expectedCadence}
                 </span>
-                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-[#FAF6EF] text-[#2B2620]/60 border border-[#EADFCA] rounded-full">
+                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
                   Language: {patient.language || 'English'}
                 </span>
               </div>
@@ -876,7 +876,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               onClick={() => {
                 window.location.href = `/crm360/assessments/new?patientId=${patientId}`;
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden shadow-xs whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md whitespace-nowrap"
             >
               <FileText className="h-4 w-4 stroke-[1.75]" />
               + Initial Assessment
@@ -886,7 +886,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsDictating(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden shadow-xs whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md whitespace-nowrap"
             >
               <Mic className="h-4 w-4 stroke-[1.75]" />
               Dictate SOAP
@@ -896,20 +896,20 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
         {/* Demographics details (Consolidated Borders) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold mt-1">
-          <div className="flex items-center gap-3.5 text-[#2B2620]/75 bg-[#FAF6EF]/60 border border-[#EADFCA] p-3 rounded-xl shadow-xxs">
-            <Phone className="h-4 w-4 text-primary shrink-0 stroke-[1.75]" />
+          <div className="flex items-center gap-3.5 text-white/80 bg-white/5 border border-white/10 p-3 rounded-xl">
+            <Phone className="h-4 w-4 text-emerald-400 shrink-0 stroke-[1.75]" />
             <div>
               <p className="font-bold">{patient.phone}</p>
-              {patient.secondaryPhone && <p className="text-[10px] text-foreground/45 mt-0.5">Sec: {patient.secondaryPhone}</p>}
+              {patient.secondaryPhone && <p className="text-[10px] text-white/50 mt-0.5">Sec: {patient.secondaryPhone}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-3.5 text-[#2B2620]/75 bg-[#FAF6EF]/60 border border-[#EADFCA] p-3 rounded-xl shadow-xxs">
-            <MapPin className="h-4 w-4 text-primary shrink-0 stroke-[1.75]" />
+          <div className="flex items-center gap-3.5 text-white/80 bg-white/5 border border-white/10 p-3 rounded-xl">
+            <MapPin className="h-4 w-4 text-emerald-400 shrink-0 stroke-[1.75]" />
             <span className="truncate" title={patient.address}>{patient.address || 'No address registered'}</span>
           </div>
-          <div className="flex items-center gap-3.5 text-[#2B2620]/75 bg-[#FAF6EF]/60 border border-[#EADFCA] p-3 rounded-xl shadow-xxs">
-            <Activity className="h-4 w-4 text-primary shrink-0 stroke-[1.75]" />
-            <span className="truncate">Modality: <strong className="text-primary font-bold">{patient.treatmentModalityAssigned || 'None'}</strong></span>
+          <div className="flex items-center gap-3.5 text-white/80 bg-white/5 border border-white/10 p-3 rounded-xl">
+            <Activity className="h-4 w-4 text-emerald-400 shrink-0 stroke-[1.75]" />
+            <span className="truncate">Modality: <strong className="text-emerald-400 font-bold">{patient.treatmentModalityAssigned || 'None'}</strong></span>
           </div>
         </div>
 
@@ -999,13 +999,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       </div>
 
       {/* Sub-tab Switcher */}
-      <div className="flex border-b border-[#EADFCA] bg-[#FAF6EF]/30 px-6 py-2.5 gap-4 shrink-0 overflow-x-auto">
+      <div className="flex border-b border-white/10 bg-white/5 px-6 py-2.5 gap-4 shrink-0 overflow-x-auto my-4 rounded-2xl">
         <button
           onClick={() => setActiveTab('documents')}
           className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'documents'
-              ? 'bg-primary text-background shadow-xs'
-              : 'text-[#2B2620]/60 hover:bg-[#FAF6EF]'
+              ? 'bg-white text-black shadow-md font-extrabold'
+              : 'text-white/60 hover:text-white hover:bg-white/10'
           }`}
         >
           Documents & Case Files
@@ -1014,8 +1014,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           onClick={() => setActiveTab('rom')}
           className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'rom'
-              ? 'bg-primary text-background shadow-xs'
-              : 'text-[#2B2620]/60 hover:bg-[#FAF6EF]'
+              ? 'bg-white text-black shadow-md font-extrabold'
+              : 'text-white/60 hover:text-white hover:bg-white/10'
           }`}
         >
           Clinical ROM & Referrals
@@ -1024,8 +1024,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           onClick={() => setActiveTab('billing')}
           className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'billing'
-              ? 'bg-primary text-background shadow-xs'
-              : 'text-[#2B2620]/60 hover:bg-[#FAF6EF]'
+              ? 'bg-white text-black shadow-md font-extrabold'
+              : 'text-white/60 hover:text-white hover:bg-white/10'
           }`}
         >
           Session Packages & Billing
@@ -1034,8 +1034,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           onClick={() => setActiveTab('assessments')}
           className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'assessments'
-              ? 'bg-primary text-background shadow-xs'
-              : 'text-[#2B2620]/60 hover:bg-[#FAF6EF]'
+              ? 'bg-white text-black shadow-md font-extrabold'
+              : 'text-white/60 hover:text-white hover:bg-white/10'
           }`}
         >
           Initial Assessments
@@ -1697,17 +1697,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       {/* Billing & Packages Tab */}
       {activeTab === 'billing' && (
         <div className="p-6 space-y-6 max-w-4xl mx-auto w-full animate-fadeIn">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-4 border-b border-[#EADFCA] pb-4">
+          <div className="flex items-center justify-between mb-4 flex-wrap gap-4 border-b border-white/10 pb-4">
             <div>
-              <h3 className="text-xl font-serif font-bold text-primary">Session Packages</h3>
-              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mt-0.5">Manage prepaid treatments and deduct visits</p>
+              <h3 className="text-xl font-serif font-bold text-white">Session Packages</h3>
+              <p className="text-xxs text-white/50 font-bold uppercase tracking-wider mt-0.5">Manage prepaid treatments and deduct visits</p>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setIsSellCourseModalOpen(true)}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-[#12D6C4] hover:bg-[#009FC7] text-black text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-400 hover:bg-emerald-500 text-black text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-4 w-4 text-black" />
                 Issue Treatment Course
               </button>
               <button
@@ -1717,7 +1717,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   setSubNamesInput(Array(10).fill(''));
                   setIsAddingPackage(true);
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xxs cursor-pointer"
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 Custom Package
@@ -1737,7 +1737,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           />
 
           {packages.length === 0 ? (
-             <div className="p-16 text-center text-foreground/45 border border-dashed border-[#EADFCA] rounded-2xl font-bold bg-[#FFFCF6]">
+             <div className="p-16 text-center text-white/40 border border-dashed border-white/15 rounded-3xl font-bold bg-white/5">
                No active session packages for this patient.
              </div>
           ) : (
@@ -1769,11 +1769,11 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 const balance = price - paid;
 
                 return (
-                  <div key={pkg.id} className="bg-[#FFFCF6] border border-[#EADFCA] rounded-2xl p-5 shadow-xxs flex flex-col justify-between">
+                  <div key={pkg.id} className="bg-white/5 border border-white/15 rounded-2xl p-5 shadow-xl flex flex-col justify-between">
                     <div>
                       {/* Package Title and Delete */}
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-sm font-bold text-[#2B2620]">{pkg.packageName}</h4>
+                        <h4 className="text-sm font-bold text-white">{pkg.packageName}</h4>
                         <div className="flex items-center gap-2">
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border uppercase tracking-wider ${
                             pkg.paymentStatus === 'PAID' ? 'bg-primary/10 text-primary border-primary/20' :
