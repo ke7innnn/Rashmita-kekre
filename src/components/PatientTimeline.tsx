@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -49,6 +50,9 @@ const getDisplayUrl = (url: string) => {
 
 export default function PatientTimeline({ patientId, onBack }: Props) {
   const queryClient = useQueryClient();
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => { setIsMounted(true); }, []);
+
   const [expandedCallId, setExpandedCallId] = useState<string | null>(null);
 
   // Dictation States
@@ -2510,19 +2514,19 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         )}
       </AnimatePresence>
 
-      {/* WhatsApp Safety Confirmation Interlock Modal */}
+      {/* WhatsApp Safety Confirmation Interlock Modal (Portaled directly to document.body for true viewport centering without scrolling) */}
       <AnimatePresence>
-        {confirmWhatsappModal.isOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
+        {confirmWhatsappModal.isOpen && isMounted && createPortal(
+          <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
             <div
-              className="absolute inset-0 bg-black/70 backdrop-blur-md"
+              className="fixed inset-0 bg-black/80 backdrop-blur-md"
               onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
             />
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 15 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="bg-[#0B0A10] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-10 text-left space-y-4 backdrop-blur-2xl"
+              className="relative bg-[#0B0A10] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4 backdrop-blur-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="flex items-center gap-3 border-b border-white/10 pb-3">
@@ -2579,7 +2583,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 </button>
               </div>
             </motion.div>
-          </div>
+          </div>,
+          document.body
         )}
       </AnimatePresence>
     </div>
