@@ -1281,70 +1281,70 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
       {/* ROM & Referrals Checklist Tab */}
       {activeTab === 'rom' && (
-        <div className="p-6 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn grid grid-cols-1 md:grid-cols-2 gap-8 divide-x-0 md:divide-x divide-[#EADFCA]">
+        <div className="p-6 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn grid grid-cols-1 md:grid-cols-2 gap-8 divide-x-0 md:divide-x divide-white/10">
           {/* Left panel: Referring Doctor & Checklist */}
           <div className="space-y-6 md:pr-8">
-            <h3 className="text-lg font-serif font-bold text-primary border-b border-[#EADFCA]/60 pb-2">Referring Doctor & Onboarding</h3>
+            <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor & Onboarding</h3>
             
             {patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? (
-              <div className="bg-[#FAF6EF]/60 border border-[#EADFCA] p-5 rounded-2xl space-y-4 shadow-xxs">
+              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-4 shadow-xl">
                 <div>
-                  <p className="text-[10px] font-bold text-foreground/45 uppercase tracking-wider">Referrer Doctor Name</p>
-                  <h4 className="text-base font-serif font-bold text-primary mt-0.5">{patient.referringDoctor}</h4>
+                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Referrer Doctor Name</p>
+                  <h4 className="text-base font-serif font-bold text-emerald-400 mt-0.5">{patient.referringDoctor}</h4>
                 </div>
 
-                <div className="space-y-3.5 pt-1 border-t border-[#EADFCA]/40">
-                  <h5 className="text-[9px] font-bold text-foreground/40 uppercase tracking-wider">Onboarding Checklist</h5>
+                <div className="space-y-3.5 pt-1 border-t border-white/10">
+                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist</h5>
                   
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-[#2B2620] cursor-pointer">
+                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer">
                     <input 
                       type="checkbox" 
                       checked={isThankYouSent}
                       onChange={handleToggleThankYou}
-                      className="mt-0.5 rounded border-[#EADFCA] text-primary focus:ring-primary focus:outline-hidden"
+                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
                     />
                     <div className="space-y-0.5">
-                      <p className={isThankYouSent ? 'line-through text-foreground/45' : ''}>Thank-You Note Sent</p>
-                      <p className="text-[9px] text-foreground/40 font-semibold leading-none">Send greeting note to referring doctor</p>
+                      <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note Sent</p>
+                      <p className="text-[9px] text-white/50 font-semibold leading-none">Send greeting note to referring doctor</p>
                     </div>
                   </label>
 
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-[#2B2620] cursor-pointer">
+                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer">
                     <input 
                       type="checkbox" 
                       checked={isDischargeSent}
                       onChange={handleToggleDischarge}
-                      className="mt-0.5 rounded border-[#EADFCA] text-primary focus:ring-primary focus:outline-hidden"
+                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
                     />
                     <div className="space-y-0.5">
-                      <p className={isDischargeSent ? 'line-through text-foreground/45' : ''}>Discharge Summary Sent</p>
-                      <p className="text-[9px] text-foreground/40 font-semibold leading-none">Send final progress report to referring doctor</p>
+                      <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary Sent</p>
+                      <p className="text-[9px] text-white/50 font-semibold leading-none">Send final progress report to referring doctor</p>
                     </div>
                   </label>
                 </div>
               </div>
             ) : (
-              <div className="bg-[#FAF6EF]/40 border border-[#EADFCA] p-5 rounded-2xl">
-                <p className="text-xs text-foreground/40 font-semibold">Patient registered as Direct Intake. No referring doctor checklist required.</p>
+              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
+                <p className="text-xs text-white/50 font-semibold">Patient registered as Direct Intake. No referring doctor checklist required.</p>
               </div>
             )}
 
             {/* Handout Shared History */}
-            <div className="space-y-4 pt-4 border-t border-[#EADFCA]/60">
-              <div className="flex justify-between items-center border-b border-[#EADFCA] pb-2">
-                <h4 className="text-base font-serif font-bold text-primary">Patient Handouts Library</h4>
-                <Share2 className="h-4.5 w-4.5 text-primary stroke-[1.75]" />
+            <div className="space-y-4 pt-4 border-t border-white/10">
+              <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                <h4 className="text-base font-serif font-bold text-white">Patient Handouts Library</h4>
+                <Share2 className="h-4.5 w-4.5 text-emerald-400 stroke-[1.75]" />
               </div>
 
               {handouts.length === 0 ? (
-                <p className="text-xs text-foreground/50 italic font-medium">No education files in library.</p>
+                <p className="text-xs text-white/50 italic font-medium">No education files in library.</p>
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                   {handouts.map((h: any) => (
-                    <div key={h.id} className="p-3 border border-[#EADFCA] rounded-xl bg-[#FAF6EF] flex justify-between items-center gap-3">
+                    <div key={h.id} className="p-3 border border-white/10 rounded-xl bg-white/5 flex justify-between items-center gap-3">
                       <div className="truncate">
-                        <p className="text-xs font-serif font-bold text-[#2B2620] truncate">{h.title}</p>
-                        <p style={{ fontSize: '9px', lineHeight: '12px' }} className="text-[#2B2620]/50 font-bold uppercase mt-1">{h.category} • {h.fileType}</p>
+                        <p className="text-xs font-serif font-bold text-white truncate">{h.title}</p>
+                        <p style={{ fontSize: '9px', lineHeight: '12px' }} className="text-white/50 font-bold uppercase mt-1">{h.category} • {h.fileType}</p>
                       </div>
                       <motion.button
                         whileTap={{ scale: 0.9 }}
@@ -1353,7 +1353,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           handoutId: h.id,
                           sentVia: 'whatsapp',
                         })}
-                        className="p-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors cursor-pointer border-0"
+                        className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-colors cursor-pointer border border-emerald-500/30"
                         title="Share via WhatsApp"
                       >
                         <Send className="h-3.5 w-3.5" />
@@ -1364,13 +1364,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               )}
 
               {patient.sentHandouts && patient.sentHandouts.length > 0 && (
-                <div className="space-y-3 pt-4 border-t border-[#EADFCA]/60">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-foreground/45">Sent Handout History</h4>
+                <div className="space-y-3 pt-4 border-t border-white/10">
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/50">Sent Handout History</h4>
                   <div className="space-y-2">
                     {patient.sentHandouts.map((sent: any) => (
-                      <div key={sent.id} className="p-2 border border-[#EADFCA] bg-[#FAF6EF]/50 rounded-xl text-xxs font-semibold text-[#2B2620]">
+                      <div key={sent.id} className="p-2 border border-white/10 bg-white/5 rounded-xl text-xxs font-semibold text-white">
                         <p className="font-bold">{sent.handout.title}</p>
-                        <p className="text-foreground/45 mt-0.5">Shared via {sent.sentVia} on {new Date(sent.sentAt).toLocaleDateString()}</p>
+                        <p className="text-white/50 mt-0.5">Shared via {sent.sentVia} on {new Date(sent.sentAt).toLocaleDateString()}</p>
                       </div>
                     ))}
                   </div>
@@ -1379,70 +1379,72 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             </div>
 
             {/* Patient WhatsApp Communication Section */}
-            <div className="space-y-4 pt-6 border-t border-[#EADFCA]/60">
-              <div className="flex justify-between items-center border-b border-[#EADFCA] pb-2">
-                <h4 className="text-base font-serif font-bold text-primary">Patient Communication & Outreach</h4>
-                <Share2 className="h-4.5 w-4.5 text-primary stroke-[1.75]" />
+            <div className="space-y-4 pt-6 border-t border-white/10">
+              <div className="flex justify-between items-center border-b border-white/10 pb-2">
+                <h4 className="text-base font-serif font-bold text-white">Patient Communication & Outreach</h4>
+                <Share2 className="h-4.5 w-4.5 text-emerald-400 stroke-[1.75]" />
               </div>
-              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider -mt-2">Send WhatsApp messages directly to {patient?.fullName?.split(' ')[0]}'s number ({patient?.phone})</p>
+              <p className="text-xxs text-white/50 font-bold uppercase tracking-wider -mt-2">Send WhatsApp messages directly to {patient?.fullName?.split(' ')[0]}'s number ({patient?.phone})</p>
 
-              <div className="bg-[#FAF6EF]/60 border border-[#EADFCA] p-4 rounded-2xl space-y-3 shadow-xxs">
+              <div className="bg-white/5 border border-white/15 p-5 rounded-2xl space-y-4 shadow-xl backdrop-blur-xl">
 
                 {/* 1. Next Appointment Reminder */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-serif font-bold text-xs text-primary">📅 Next Appointment Reminder</p>
-                      <p className="text-xxs text-[#2B2620]/50 mt-0.5">Sends appointment date & time to patient's WhatsApp</p>
+                      <p className="font-serif font-bold text-xs text-white flex items-center gap-1.5">
+                        📅 Next Appointment Reminder
+                      </p>
+                      <p className="text-xs text-white/70 font-medium mt-0.5">Sends appointment date & time directly to patient's WhatsApp</p>
                     </div>
                     {whatsappSuccess === 'appt' && (
-                      <span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Sent!</span>
+                      <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full">✓ Sent!</span>
                     )}
                   </div>
 
                   {!showApptModal ? (
                     <button
                       onClick={() => setShowApptModal(true)}
-                      className="w-full py-2.5 px-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm"
+                      className="w-full py-3 px-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-[#25D366]/20"
                     >
-                      <Send className="h-3.5 w-3.5" />
+                      <Send className="h-4 w-4" />
                       Send Next Appointment Reminder
                     </button>
                   ) : (
-                    <div className="space-y-2 bg-white/60 border border-[#EADFCA] rounded-xl p-3">
-                      <p className="text-xxs font-bold text-[#2B2620]/60 uppercase tracking-wider">Enter appointment details</p>
+                    <div className="space-y-3 bg-black/40 border border-white/15 rounded-xl p-3.5">
+                      <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Enter appointment details</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[9px] font-semibold text-[#2B2620]/50 uppercase">Date</label>
+                          <label className="text-[10px] font-semibold text-white/60 uppercase">Date</label>
                           <input
                             type="date"
                             value={nextApptDate}
                             onChange={(e) => setNextApptDate(e.target.value)}
-                            className="w-full text-xs border border-[#EADFCA] rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-primary mt-0.5"
+                            className="w-full text-xs border border-white/20 rounded-lg px-2.5 py-2 bg-white/10 text-white focus:outline-none focus:border-emerald-400 mt-0.5"
                           />
                         </div>
                         <div>
-                          <label className="text-[9px] font-semibold text-[#2B2620]/50 uppercase">Time</label>
+                          <label className="text-[10px] font-semibold text-white/60 uppercase">Time</label>
                           <input
                             type="time"
                             value={nextApptTime}
                             onChange={(e) => setNextApptTime(e.target.value)}
-                            className="w-full text-xs border border-[#EADFCA] rounded-lg px-2 py-1.5 bg-white focus:outline-none focus:ring-1 focus:ring-primary mt-0.5"
+                            className="w-full text-xs border border-white/20 rounded-lg px-2.5 py-2 bg-white/10 text-white focus:outline-none focus:border-emerald-400 mt-0.5"
                           />
                         </div>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 pt-1">
                         <button
                           onClick={handleSendNextApptReminder}
                           disabled={!nextApptDate || !nextApptTime || whatsappSending === 'appt'}
                           className="flex-1 py-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
                         >
-                          {whatsappSending === 'appt' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                          {whatsappSending === 'appt' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
                           {whatsappSending === 'appt' ? 'Sending...' : 'Send'}
                         </button>
                         <button
                           onClick={() => setShowApptModal(false)}
-                          className="px-3 py-2 text-xs text-[#2B2620]/50 hover:text-[#2B2620] border border-[#EADFCA] rounded-lg cursor-pointer"
+                          className="px-3 py-2 text-xs text-white/60 hover:text-white border border-white/20 rounded-lg cursor-pointer"
                         >
                           Cancel
                         </button>
@@ -1451,25 +1453,27 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   )}
                 </div>
 
-                <div className="border-t border-[#EADFCA]/60" />
+                <div className="border-t border-white/10" />
 
                 {/* 2. Missed Appointment Notice */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-serif font-bold text-xs text-primary">🚫 Missed Appointment Notice</p>
-                      <p className="text-xxs text-[#2B2620]/50 mt-0.5">Notifies patient they missed their session today</p>
+                      <p className="font-serif font-bold text-xs text-white flex items-center gap-1.5">
+                        🚫 Missed Appointment Notice
+                      </p>
+                      <p className="text-xs text-white/70 font-medium mt-0.5">Notifies patient they missed their scheduled session today</p>
                     </div>
                     {whatsappSuccess === 'missed' && (
-                      <span className="text-[9px] font-bold text-green-600 bg-green-50 border border-green-200 px-2 py-0.5 rounded-full">✓ Sent!</span>
+                      <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full">✓ Sent!</span>
                     )}
                   </div>
                   <button
                     onClick={handleSendMissedAppt}
                     disabled={whatsappSending === 'missed'}
-                    className="w-full py-2.5 px-4 flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-sm disabled:opacity-50"
+                    className="w-full py-3 px-4 flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-500/20 disabled:opacity-50"
                   >
-                    {whatsappSending === 'missed' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                    {whatsappSending === 'missed' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     {whatsappSending === 'missed' ? 'Sending...' : 'Send Missed Appointment Notice'}
                   </button>
                 </div>
