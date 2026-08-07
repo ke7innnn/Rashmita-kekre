@@ -95,6 +95,17 @@
   --positive: #3B82F6;
 }
 
+[data-theme="rosegold"] {
+  --aurora-teal: #B76E79;
+  --aurora-cyan: #E8B4B8;
+  --aurora-violet: #D4A574;
+  --aurora-magenta: #C9A0A0;
+  --primary: #B76E79;
+  --primary-hover: #9E5A64;
+  --accent: #D4A574;
+  --positive: #B76E79;
+}
+
 @theme inline {
   --color-background: var(--bg-base);
   --color-foreground: var(--text);

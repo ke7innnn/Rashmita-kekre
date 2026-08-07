@@ -66,6 +66,13 @@ const themesList = [
     gradient: 'from-[#3B82F6] via-[#06B6D4] to-[#8B5CF6]',
     colors: ['#3B82F6', '#06B6D4', '#8B5CF6'],
   },
+  {
+    id: 'rosegold',
+    name: 'Obsidian Rose',
+    desc: 'Rose Gold, Warm Blush & Champagne',
+    gradient: 'from-[#B76E79] via-[#E8B4B8] to-[#D4A574]',
+    colors: ['#B76E79', '#E8B4B8', '#D4A574'],
+  },
 ];
  
 interface Props {
