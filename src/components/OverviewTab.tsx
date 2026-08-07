@@ -111,12 +111,12 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
   const completedCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.COMPLETED).length;
   const waitingCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.WAITING).length;
 
-  const getDynamicGreeting = () => {
+  const getTimeGreeting = () => {
     const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return 'Good Morning, Dr. Rashmita';
-    if (hour >= 12 && hour < 17) return 'Good Afternoon, Dr. Rashmita';
-    if (hour >= 17 && hour < 22) return 'Good Evening, Dr. Rashmita';
-    return 'Working Late, Dr. Rashmita';
+    if (hour >= 5 && hour < 12) return 'Good Morning,';
+    if (hour >= 12 && hour < 17) return 'Good Afternoon,';
+    if (hour >= 17 && hour < 22) return 'Good Evening,';
+    return 'Working Late,';
   };
 
   const getFormattedDate = () => {
@@ -260,8 +260,12 @@ export default function OverviewTab({ onVoiceAgentClick }: Props) {
               </div>
 
               <div>
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold tracking-tight text-[#F5F3FA] leading-tight">
-                  {getDynamicGreeting()}
+                <h3 className="text-2xl sm:text-3xl md:text-4xl tracking-tight text-[#F5F3FA] leading-tight">
+                  <span style={{ fontFamily: '"Playfair Display", Georgia, serif', fontStyle: 'italic', fontWeight: 500 }}>
+                    {getTimeGreeting()}
+                  </span>
+                  {' '}
+                  <span className="font-bold">Dr. Rashmita</span>
                 </h3>
                 <p className="text-xs text-[#F5F3FA]/65 leading-relaxed font-medium mt-1.5">
                   {appointmentsList.length > 0
