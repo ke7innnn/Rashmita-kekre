@@ -62,13 +62,13 @@ export default function BodyChartPicker({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-        {/* Silhouette Interactive Map */}
-        <div className="relative w-full max-w-[260px] mx-auto aspect-[1/2] bg-white/[0.02] border border-white/10 rounded-2xl p-2 flex items-center justify-center overflow-hidden">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1fr] gap-6 items-start">
+        {/* Silhouette Interactive Map — square aspect to match the 1024×1024 image */}
+        <div className="relative w-full max-w-[420px] mx-auto aspect-square bg-gradient-to-b from-white/[0.04] to-white/[0.01] border border-white/10 rounded-2xl overflow-hidden">
           <img
             src={SILHOUETTE_IMAGE_PATH}
             alt="Body Silhouette Diagram"
-            className="w-full h-full object-contain opacity-80"
+            className="absolute inset-0 w-full h-full object-contain opacity-80 pointer-events-none select-none"
           />
           {bodyConditions.map((condition) => {
             const selected = isSelected(condition.id);
@@ -104,7 +104,7 @@ export default function BodyChartPicker({
               Tap points on the body diagram to mark pain sites or radiation paths.
             </p>
           ) : (
-            <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
               {selectedRegions.map((r) => (
                 <div
                   key={r.id}
