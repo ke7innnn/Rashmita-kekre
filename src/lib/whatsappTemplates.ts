@@ -70,7 +70,11 @@ export async function sendWhatsAppNotification({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ phone, templateName, params, message }),
     });
-    return await res.json();
+    const data = await res.json();
+    if (data.success && data.waUrl && typeof window !== 'undefined') {
+      window.open(data.waUrl, '_blank');
+    }
+    return data;
   } catch (err: any) {
     console.error('Failed to send WhatsApp notification:', err);
     return { success: false, error: err.message };
