@@ -138,7 +138,7 @@ export default function AssessmentPrintPage({ params }: { params: Promise<{ id: 
             <div className="grid grid-cols-2 gap-4">
               {scalesList.map((scale: any) => (
                 <div key={scale.scaleId} className="border-b border-gray-100 py-1 space-y-0.5">
-                  <div><strong>{scale.name}:</strong> <span className="font-mono font-bold text-gray-800">{scale.score}{scale.maxScore ? `/${scale.maxScore}` : ''}{scale.percent !== undefined ? ` (${scale.percent}%)` : ''}</span></div>
+                  <div><strong>{scale.name}:</strong> <span className="font-serif font-bold text-gray-800">{scale.score}{scale.maxScore ? `/${scale.maxScore}` : ''}{scale.percent !== undefined ? ` (${scale.percent}%)` : ''}</span></div>
                   <div className="text-[10px] text-gray-500">Interpretation: {scale.interpretation}</div>
                 </div>
               ))}

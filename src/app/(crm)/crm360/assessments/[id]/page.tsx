@@ -305,7 +305,7 @@ export default function AssessmentDetailPage({ params }: { params: Promise<{ id:
                     <div key={scale.scaleId} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
                       <div className="flex justify-between font-bold">
                         <span className="text-white">{scale.name}</span>
-                        <span className="text-emerald-400 font-mono">
+                        <span className="text-emerald-400 font-serif">
                           {scale.score}
                           {scale.maxScore ? ` / ${scale.maxScore}` : ''}
                           {scale.percent !== undefined ? ` (${scale.percent}%)` : ''}
@@ -316,7 +316,7 @@ export default function AssessmentDetailPage({ params }: { params: Promise<{ id:
                       </div>
 
                       {prev && (
-                        <div className="pt-2 border-t border-white/5 space-y-1 text-[10px] font-mono">
+                        <div className="pt-2 border-t border-white/5 space-y-1 text-[10px] font-serif">
                           <div className="flex justify-between text-white/40">
                             <span>Previous Score:</span>
                             <span>{prev.score}{prev.maxScore ? `/${prev.maxScore}` : ''}</span>

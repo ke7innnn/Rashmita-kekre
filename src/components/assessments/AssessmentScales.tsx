@@ -122,7 +122,7 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
         {/* Real-time score calculator preview bar */}
         <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex justify-between items-center">
           <span className="font-bold text-emerald-400">Current Calculated Score:</span>
-          <span className="text-sm font-mono font-bold text-white">
+          <span className="text-sm font-serif font-bold text-white">
             {currentCalculation.score}
             {currentCalculation.maxScore ? ` / ${currentCalculation.maxScore}` : ''}
             {currentCalculation.percent !== undefined ? ` (${currentCalculation.percent}%)` : ''}
@@ -338,7 +338,7 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
                   <div className="mt-3 p-3 bg-white/5 border border-white/10 rounded-xl space-y-1.5 animate-fade-in">
                     <div className="flex justify-between items-center">
                       <span className="font-medium text-white/60">Current Score:</span>
-                      <span className="font-bold text-emerald-400 font-mono">
+                      <span className="font-bold text-emerald-400 font-serif">
                         {completed.score}
                         {completed.maxScore ? ` / ${completed.maxScore}` : ''}
                         {completed.percent !== undefined ? ` (${completed.percent}%)` : ''}
@@ -353,7 +353,7 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
 
                     {/* Comparison with previous */}
                     {previous && (
-                      <div className="mt-2 pt-2 border-t border-white/5 space-y-1 font-mono text-[10px]">
+                      <div className="mt-2 pt-2 border-t border-white/5 space-y-1 font-serif text-[10px]">
                         <div className="flex justify-between text-white/50">
                           <span>Previous ({previous.date}):</span>
                           <span>
@@ -392,7 +392,7 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
 
                 {/* Show only previous score if not yet completed today */}
                 {!completed && previous && (
-                  <div className="mt-2 text-[10px] text-white/40 font-mono">
+                  <div className="mt-2 text-[10px] text-white/40 font-serif">
                     Last Score ({previous.date}): <span className="text-white/70">{previous.score}{previous.maxScore ? `/${previous.maxScore}` : ''}</span> {previous.interpretation && `(${previous.interpretation})`}
                   </div>
                 )}
