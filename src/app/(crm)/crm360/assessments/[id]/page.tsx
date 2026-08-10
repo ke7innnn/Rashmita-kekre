@@ -277,7 +277,70 @@ export default function AssessmentDetailPage({ params }: { params: Promise<{ id:
           </div>
         </div>
 
-        {/* Section 5: Amendments Audit Trail */}
+        {/* Section 5: Assessment Scales */}
+        {assessment.scalesJson && (() => {
+          let scalesList: any[] = [];
+          try {
+            scalesList = JSON.parse(assessment.scalesJson);
+          } catch(e) {}
+
+          if (scalesList.length === 0) return null;
+
+          let parentScales: any[] = [];
+          try {
+            if (assessment.parentAssessment?.scalesJson) {
+              parentScales = JSON.parse(assessment.parentAssessment.scalesJson);
+            }
+          } catch(e) {}
+
+          return (
+            <div className="space-y-3 border-t border-white/10 pt-6">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-white/10 pb-1">
+                5. Standardized Assessment Scales
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {scalesList.map((scale: any) => {
+                  const prev = parentScales.find(p => p.scaleId === scale.scaleId);
+                  return (
+                    <div key={scale.scaleId} className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
+                      <div className="flex justify-between font-bold">
+                        <span className="text-white">{scale.name}</span>
+                        <span className="text-emerald-400 font-mono">
+                          {scale.score}
+                          {scale.maxScore ? ` / ${scale.maxScore}` : ''}
+                          {scale.percent !== undefined ? ` (${scale.percent}%)` : ''}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-white/50">
+                        Interpretation: <span className="font-semibold text-white/80">{scale.interpretation}</span>
+                      </div>
+
+                      {prev && (
+                        <div className="pt-2 border-t border-white/5 space-y-1 text-[10px] font-mono">
+                          <div className="flex justify-between text-white/40">
+                            <span>Previous Score:</span>
+                            <span>{prev.score}{prev.maxScore ? `/${prev.maxScore}` : ''}</span>
+                          </div>
+                          {typeof scale.score === 'number' && typeof prev.score === 'number' && (
+                            <div className="flex justify-between">
+                              <span>Change:</span>
+                              <span className={scale.score < prev.score ? 'text-emerald-400 font-bold' : scale.score > prev.score ? 'text-rose-400' : 'text-white/60'}>
+                                {scale.score - prev.score > 0 ? '+' : ''}
+                                {scale.score - prev.score} points ({scale.score < prev.score ? 'Improved' : scale.score > prev.score ? 'Worse' : 'No change'})
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* Section 6: Amendments Audit Trail */}
         {isSigned && (
           <div className="space-y-4 border-t border-white/10 pt-6">
             <div className="flex justify-between items-center">

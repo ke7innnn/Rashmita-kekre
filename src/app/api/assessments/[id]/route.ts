@@ -126,6 +126,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       ptDiagnosis,
       prognosis,
       narrativeJson,
+      scalesJson,
       romMeasurements = [],
       specialTestResults = [],
       goals = [],
@@ -212,6 +213,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         ptDiagnosis,
         prognosis,
         narrativeJson,
+        scalesJson: typeof scalesJson === 'object' ? JSON.stringify(scalesJson) : scalesJson,
         signedAt: isSigningNow ? new Date() : existing.signedAt,
         signedByUserId: isSigningNow ? currentUserId : existing.signedByUserId,
 

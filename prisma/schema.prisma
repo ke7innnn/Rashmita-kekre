@@ -765,6 +765,7 @@ model Assessment {
   redFlagAcknowledgedByUserId String?
   posture                     PostureState?
   postureNotes                String?
+  postureExtraNotes           String?
   gait                        GaitPattern?
   gaitNotes                   String?
   localInspection             String?
@@ -780,6 +781,7 @@ model Assessment {
   ptDiagnosis                 String?
   prognosis                   PrognosisRating?
   narrativeJson               String?
+  scalesJson                  String?
   consentCapturedAt           DateTime?
   signedAt                    DateTime?
   signedByUserId              String?

@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, FileText, AlertTriangle, Activity, Dumbbell, ShieldAlert, 
-  Target, CheckCircle2, ChevronLeft, ChevronRight, Save, Mic, Lock, ArrowLeft
+  Target, CheckCircle2, ChevronLeft, ChevronRight, Save, Mic, Lock, ArrowLeft,
+  ClipboardList
 } from 'lucide-react';
 import BodyChartPicker, { SelectedRegion } from './BodyChartPicker';
 import RomGrid, { RomItem } from './RomGrid';
 import SpecialTestsPicker, { SpecialTestResultItem } from './SpecialTestsPicker';
+import AssessmentScales from './AssessmentScales';
 import RedFlagBanner from './RedFlagBanner';
 import DictationButton from './DictationButton';
 
@@ -26,8 +28,9 @@ const STEPS = [
   { id: 4, title: 'Objective', icon: Activity },
   { id: 5, title: 'ROM / MMT', icon: Dumbbell },
   { id: 6, title: 'Tests', icon: ShieldAlert },
-  { id: 7, title: 'Diagnosis', icon: CheckCircle2 },
-  { id: 8, title: 'Goals & Review', icon: Target },
+  { id: 7, title: 'Scales', icon: ClipboardList },
+  { id: 8, title: 'Diagnosis', icon: CheckCircle2 },
+  { id: 9, title: 'Goals & Review', icon: Target },
 ];
 
 export default function AssessmentForm({
@@ -79,6 +82,7 @@ export default function AssessmentForm({
   // Objective
   const [posture, setPosture] = useState<'NORMAL' | 'ALTERED'>('NORMAL');
   const [postureNotes, setPostureNotes] = useState('');
+  const [postureExtraNotes, setPostureExtraNotes] = useState('');
   const [gait, setGait] = useState<'NORMAL' | 'ANTALGIC' | 'DEVIATED' | 'NON_AMBULATORY'>('NORMAL');
   const [gaitNotes, setGaitNotes] = useState('');
   const [localInspection, setLocalInspection] = useState<string[]>([]);
@@ -95,6 +99,8 @@ export default function AssessmentForm({
   // Assessment & Goals
   const [ptDiagnosis, setPtDiagnosis] = useState('');
   const [prognosis, setPrognosis] = useState<'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR'>('GOOD');
+  const [scalesJson, setScalesJson] = useState<string | null>(null);
+  const [pastAssessments, setPastAssessments] = useState<any[]>([]);
   const [shortGoals, setShortGoals] = useState<Array<{ text: string; targetValue: string; targetDate: string }>>([
     { text: 'Reduce Activity VAS pain score below 3/10', targetValue: '<3 VAS', targetDate: new Date(Date.now() + 14 * 24 * 3600 * 1000).toISOString().slice(0, 10) }
   ]);
@@ -106,6 +112,24 @@ export default function AssessmentForm({
     fetchPatientsAndReferrals();
     restoreDraft();
   }, []);
+
+  useEffect(() => {
+    if (patientId) {
+      fetchPastAssessments(patientId);
+    }
+  }, [patientId]);
+
+  const fetchPastAssessments = async (pid: string) => {
+    try {
+      const res = await fetch(`/api/assessments?patientId=${pid}`);
+      if (res.ok) {
+        const data = await res.json();
+        setPastAssessments(data);
+      }
+    } catch (e) {
+      console.error('Failed to fetch past assessments:', e);
+    }
+  };
 
   // Autosave every 5 seconds
   useEffect(() => {
@@ -133,7 +157,8 @@ export default function AssessmentForm({
       patientId, type, occupation, occupationCategory, provisionalDiagnosis,
       chiefComplaint, onset, onsetDate, mechanismOfInjury, painSiteRegions,
       vasRest, vasActivity, vasBest, vasWorst, redFlagWeightLoss, redFlagBowelBladder,
-      redFlagSaddleAnaesthesia, redFlagNightPain, redFlagDecisionNote, ptDiagnosis, prognosis
+      redFlagSaddleAnaesthesia, redFlagNightPain, redFlagDecisionNote, ptDiagnosis, prognosis,
+      scalesJson
     };
     localStorage.setItem('h360_assessment_draft', JSON.stringify(draftData));
     setLastSavedTime(new Date().toLocaleTimeString());
@@ -146,6 +171,7 @@ export default function AssessmentForm({
         const d = JSON.parse(saved);
         if (d.chiefComplaint) setChiefComplaint(d.chiefComplaint);
         if (d.ptDiagnosis) setPtDiagnosis(d.ptDiagnosis);
+        if (d.scalesJson) setScalesJson(d.scalesJson);
       } catch (e) {}
     }
   };
@@ -203,6 +229,7 @@ export default function AssessmentForm({
       redFlagDecisionNote,
       posture,
       postureNotes,
+      postureExtraNotes,
       gait,
       gaitNotes,
       localInspection,
@@ -213,6 +240,7 @@ export default function AssessmentForm({
       functionalLimitations,
       ptDiagnosis,
       prognosis,
+      scalesJson,
       romMeasurements,
       specialTestResults,
       goals: [
@@ -285,7 +313,7 @@ export default function AssessmentForm({
       </div>
 
       {/* Step Navigation Wizard Bar */}
-      <div className="grid grid-cols-4 sm:grid-cols-8 gap-1 bg-white/5 p-1.5 border border-white/10 rounded-2xl">
+      <div className="grid grid-cols-3 sm:grid-cols-9 gap-1 bg-white/5 p-1.5 border border-white/10 rounded-2xl">
         {STEPS.map(s => {
           const Icon = s.icon;
           const isActive = currentStep === s.id;
@@ -535,6 +563,32 @@ export default function AssessmentForm({
                     </button>
                   ))}
                 </div>
+
+                {/* Quick Notes & Extra Notes — visible when ALTERED is selected */}
+                {posture === 'ALTERED' && (
+                  <div className="mt-3 space-y-3 animate-[fadeSlideDown_0.3s_ease-out]">
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-amber-400/80 block mb-1">Quick Notes</label>
+                      <textarea
+                        value={postureNotes}
+                        onChange={(e) => setPostureNotes(e.target.value)}
+                        placeholder="e.g. Forward head posture, elevated right shoulder…"
+                        rows={2}
+                        className="w-full p-2.5 bg-white/10 border border-amber-400/30 rounded-xl text-white text-xs placeholder-white/30 resize-none focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold uppercase text-amber-400/80 block mb-1">Extra Notes</label>
+                      <textarea
+                        value={postureExtraNotes}
+                        onChange={(e) => setPostureExtraNotes(e.target.value)}
+                        placeholder="Additional observations, compensatory patterns, related findings…"
+                        rows={3}
+                        className="w-full p-2.5 bg-white/10 border border-amber-400/30 rounded-xl text-white text-xs placeholder-white/30 resize-none focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition"
+                      />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div>
@@ -598,11 +652,23 @@ export default function AssessmentForm({
           </div>
         )}
 
-        {/* STEP 7: Assessment & Prognosis */}
+        {/* STEP 7: Scales */}
         {currentStep === 7 && (
+          <div className="space-y-4">
+            <h3 className="text-base font-serif font-bold text-white border-b border-white/10 pb-2">7. Standardized Assessment Scales</h3>
+            <AssessmentScales
+              value={scalesJson}
+              onChange={setScalesJson}
+              previousAssessments={pastAssessments}
+            />
+          </div>
+        )}
+
+        {/* STEP 8: Assessment & Prognosis */}
+        {currentStep === 8 && (
           <div className="space-y-4 text-xs">
             <div className="flex justify-between items-center border-b border-white/10 pb-2">
-              <h3 className="text-base font-serif font-bold text-white">7. Physiotherapy Diagnosis & Impairments</h3>
+              <h3 className="text-base font-serif font-bold text-white">8. Physiotherapy Diagnosis & Impairments</h3>
               <DictationButton onTranscript={(txt) => setPtDiagnosis(ptDiagnosis ? `${ptDiagnosis} ${txt}` : txt)} />
             </div>
 
@@ -617,30 +683,14 @@ export default function AssessmentForm({
               />
             </div>
 
-            <div>
-              <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">Prognosis Rating</label>
-              <div className="flex gap-2">
-                {(['EXCELLENT', 'GOOD', 'FAIR', 'POOR'] as const).map(p => (
-                  <button
-                    key={p}
-                    type="button"
-                    onClick={() => setPrognosis(p)}
-                    className={`flex-1 py-2.5 rounded-xl text-xs font-bold border transition ${
-                      prognosis === p ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/10 text-white/60 border-white/15'
-                    }`}
-                  >
-                    {p}
-                  </button>
-                ))}
-              </div>
-            </div>
+
           </div>
         )}
 
-        {/* STEP 8: Goals & Review */}
-        {currentStep === 8 && (
+        {/* STEP 9: Goals & Review */}
+        {currentStep === 9 && (
           <div className="space-y-6 text-xs">
-            <h3 className="text-base font-serif font-bold text-white border-b border-white/10 pb-2">8. Treatment Goals & Final Review</h3>
+            <h3 className="text-base font-serif font-bold text-white border-b border-white/10 pb-2">9. Treatment Goals & Final Review</h3>
 
             {/* Short-Term Goals (1-2 weeks) */}
             <div className="space-y-3 p-4 bg-white/5 border border-white/10 rounded-2xl">
@@ -673,11 +723,42 @@ export default function AssessmentForm({
               ))}
             </div>
 
+            {/* Long-Term Goals (4-6 weeks) */}
+            <div className="space-y-3 p-4 bg-white/5 border border-white/10 rounded-2xl">
+              <span className="text-[10px] font-bold uppercase text-emerald-400 block">Long-Term Goals (4–6 Weeks):</span>
+              {longGoals.map((g, i) => (
+                <div key={i} className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <input
+                    type="text"
+                    placeholder="Goal description..."
+                    value={g.text}
+                    onChange={(e) => {
+                      const next = [...longGoals];
+                      next[i].text = e.target.value;
+                      setLongGoals(next);
+                    }}
+                    className="sm:col-span-2 p-2.5 bg-white/10 border border-white/20 rounded-xl text-white"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Target metric (e.g. Full AROM)"
+                    value={g.targetValue}
+                    onChange={(e) => {
+                      const next = [...longGoals];
+                      next[i].targetValue = e.target.value;
+                      setLongGoals(next);
+                    }}
+                    className="p-2.5 bg-white/10 border border-white/20 rounded-xl text-white font-mono"
+                  />
+                </div>
+              ))}
+            </div>
+
             {/* Final Action Bar */}
             <div className="pt-4 border-t border-white/10 flex justify-between items-center">
               <button
                 type="button"
-                onClick={() => setCurrentStep(7)}
+                onClick={() => setCurrentStep(8)}
                 className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-xl text-white text-xs font-bold"
               >
                 Back

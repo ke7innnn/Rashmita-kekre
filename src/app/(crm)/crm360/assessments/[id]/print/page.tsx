@@ -121,10 +121,36 @@ export default function AssessmentPrintPage({ params }: { params: Promise<{ id: 
         </div>
       </div>
 
+      {/* Assessment Scales */}
+      {assessment.scalesJson && (() => {
+        let scalesList: any[] = [];
+        try {
+          scalesList = JSON.parse(assessment.scalesJson);
+        } catch(e) {}
+
+        if (scalesList.length === 0) return null;
+
+        return (
+          <div className="border border-gray-300 rounded-lg p-4 mb-6 space-y-2 text-xs">
+            <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-gray-200 pb-1">
+              5. Standardized Assessment Scales
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              {scalesList.map((scale: any) => (
+                <div key={scale.scaleId} className="border-b border-gray-100 py-1 space-y-0.5">
+                  <div><strong>{scale.name}:</strong> <span className="font-mono font-bold text-gray-800">{scale.score}{scale.maxScore ? `/${scale.maxScore}` : ''}{scale.percent !== undefined ? ` (${scale.percent}%)` : ''}</span></div>
+                  <div className="text-[10px] text-gray-500">Interpretation: {scale.interpretation}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* PT Diagnosis & Goals */}
       <div className="border border-gray-300 rounded-lg p-4 mb-6 space-y-2 text-xs">
         <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-gray-200 pb-1">
-          5. Assessment & Goals
+          6. Assessment & Goals
         </h2>
         <p><strong>PT Diagnosis:</strong> {assessment.ptDiagnosis || 'N/A'}</p>
         <p><strong>Prognosis:</strong> {assessment.prognosis || 'GOOD'}</p>

@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { NORMATIVE_ROM_PRESETS } from '@/lib/assessments/seedData';
-import { Plus, Trash2, RotateCcw } from 'lucide-react';
+import { Plus, Trash2, RotateCcw, X } from 'lucide-react';
 
 export interface RomItem {
   id?: string;
@@ -23,25 +23,72 @@ interface RomGridProps {
   baselineItems?: RomItem[]; // Passed during reassessment for side-by-side comparison
 }
 
-const REGION_PRESETS = [
+const DEFAULT_REGION_PRESETS = [
   'Cervical', 'Shoulder', 'Elbow', 'Wrist/Hand',
   'Lumbar', 'Hip', 'Knee', 'Ankle/Foot'
 ];
 
 export default function RomGrid({ items, onChange, baselineItems }: RomGridProps) {
+  const [customRegions, setCustomRegions] = useState<string[]>([]);
+  const [showCustomInput, setShowCustomInput] = useState(false);
+  const [customInputValue, setCustomInputValue] = useState('');
+
+  const allPresets = [...DEFAULT_REGION_PRESETS, ...customRegions];
+
+  const addCustomRegion = () => {
+    const trimmed = customInputValue.trim();
+    if (trimmed && !allPresets.some(r => r.toLowerCase() === trimmed.toLowerCase())) {
+      setCustomRegions(prev => [...prev, trimmed]);
+      setCustomInputValue('');
+      setShowCustomInput(false);
+    }
+  };
+
+  const removeCustomRegion = (region: string) => {
+    setCustomRegions(prev => prev.filter(r => r !== region));
+  };
+
+  const handleCustomKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addCustomRegion();
+    } else if (e.key === 'Escape') {
+      setShowCustomInput(false);
+      setCustomInputValue('');
+    }
+  };
+
   const populatePreset = (region: string) => {
     const presets = NORMATIVE_ROM_PRESETS.filter(p => p.region === region);
-    const newItems: RomItem[] = presets.map(p => ({
-      region: p.region,
-      movement: p.movement,
-      aromRight: null,
-      aromLeft: null,
-      promRight: null,
-      promLeft: null,
-      mmtRight: null,
-      mmtLeft: null,
-      painOnMovement: false,
-    }));
+
+    let newItems: RomItem[];
+    if (presets.length > 0) {
+      // Known region with normative data
+      newItems = presets.map(p => ({
+        region: p.region,
+        movement: p.movement,
+        aromRight: null,
+        aromLeft: null,
+        promRight: null,
+        promLeft: null,
+        mmtRight: null,
+        mmtLeft: null,
+        painOnMovement: false,
+      }));
+    } else {
+      // Custom region — add a blank row with the custom region name
+      newItems = [{
+        region,
+        movement: 'Flexion',
+        aromRight: null,
+        aromLeft: null,
+        promRight: null,
+        promLeft: null,
+        mmtRight: null,
+        mmtLeft: null,
+        painOnMovement: false,
+      }];
+    }
 
     // Merge without duplicating existing movements
     const existingKeys = new Set(items.map(i => `${i.region}-${i.movement}`));
@@ -98,8 +145,8 @@ export default function RomGrid({ items, onChange, baselineItems }: RomGridProps
         <span className="text-[10px] font-bold uppercase tracking-wider text-white/50 block">
           Quick Auto-Populate Region Presets:
         </span>
-        <div className="flex flex-wrap gap-2">
-          {REGION_PRESETS.map(r => (
+        <div className="flex flex-wrap gap-2 items-center">
+          {DEFAULT_REGION_PRESETS.map(r => (
             <button
               key={r}
               type="button"
@@ -109,6 +156,65 @@ export default function RomGrid({ items, onChange, baselineItems }: RomGridProps
               + {r}
             </button>
           ))}
+
+          {/* Custom region buttons */}
+          {customRegions.map(r => (
+            <span key={r} className="inline-flex items-center gap-0">
+              <button
+                type="button"
+                onClick={() => populatePreset(r)}
+                className="px-3 py-1.5 rounded-l-xl bg-amber-500/20 hover:bg-amber-500/30 text-xs font-bold text-amber-300 border border-amber-400/30 transition cursor-pointer"
+              >
+                + {r}
+              </button>
+              <button
+                type="button"
+                onClick={() => removeCustomRegion(r)}
+                className="px-1.5 py-1.5 rounded-r-xl bg-amber-500/10 hover:bg-red-500/20 text-amber-400/60 hover:text-red-400 border border-l-0 border-amber-400/30 transition cursor-pointer"
+                title={`Remove ${r}`}
+              >
+                <X size={12} />
+              </button>
+            </span>
+          ))}
+
+          {/* Add Custom button / input */}
+          {showCustomInput ? (
+            <div className="inline-flex items-center gap-1">
+              <input
+                type="text"
+                value={customInputValue}
+                onChange={(e) => setCustomInputValue(e.target.value)}
+                onKeyDown={handleCustomKeyDown}
+                onBlur={() => { if (!customInputValue.trim()) setShowCustomInput(false); }}
+                placeholder="Region name…"
+                autoFocus
+                className="w-32 px-3 py-1.5 rounded-xl bg-white/10 border border-emerald-400/40 text-xs font-bold text-white placeholder-white/30 focus:outline-none focus:border-emerald-400/70 focus:ring-1 focus:ring-emerald-400/30 transition"
+              />
+              <button
+                type="button"
+                onClick={addCustomRegion}
+                className="px-2 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-400/30 text-xs font-bold transition cursor-pointer"
+              >
+                Add
+              </button>
+              <button
+                type="button"
+                onClick={() => { setShowCustomInput(false); setCustomInputValue(''); }}
+                className="px-1.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white/60 text-xs transition cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowCustomInput(true)}
+              className="px-3 py-1.5 rounded-xl bg-white/5 hover:bg-emerald-500/10 border border-dashed border-white/20 hover:border-emerald-400/40 text-xs font-bold text-white/40 hover:text-emerald-400 transition cursor-pointer"
+            >
+              + Custom
+            </button>
+          )}
         </div>
       </div>
 
