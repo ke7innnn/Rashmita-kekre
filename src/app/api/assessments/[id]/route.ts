@@ -36,13 +36,6 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: 'Assessment not found' }, { status: 404 });
     }
 
-    // RBAC: PHYSIO role can only view their assigned patients' assessments
-    if (!isAdmin && currentUserId && assessment.physioId !== currentUserId) {
-      if (assessment.patient?.assignedProtocolId !== currentUserId) {
-        return NextResponse.json({ error: 'Forbidden: Access restricted to assigned physio' }, { status: 403 });
-      }
-    }
-
     // Record audit log
     await prisma.assessmentAuditLog.create({
       data: {

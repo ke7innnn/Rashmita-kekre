@@ -4,8 +4,10 @@ import { requireRole } from '@/lib/roleGate';
 import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
-  const { errorResponse } = await requireRole([Role.ADMIN]);
+  const { errorResponse, role } = await requireRole([Role.ADMIN, Role.PHYSIO]);
   if (errorResponse) return errorResponse;
+
+  const isAdmin = role === Role.ADMIN;
 
   try {
     // 1. Outstanding total across all pending/partially paid invoices
@@ -123,7 +125,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       metrics: {
         totalOutstanding,
-        totalCollectedThisMonth,
+        totalCollectedThisMonth: isAdmin ? totalCollectedThisMonth : null,
         activeCoursesCount,
         totalDaysRemaining,
         overdueCount

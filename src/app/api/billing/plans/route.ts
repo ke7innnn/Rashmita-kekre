@@ -4,7 +4,7 @@ import { requireRole } from '@/lib/roleGate';
 import { Role } from '@prisma/client';
 
 export async function GET(req: NextRequest) {
-  const { errorResponse } = await requireRole([Role.ADMIN]);
+  const { errorResponse } = await requireRole([Role.ADMIN, Role.PHYSIO]);
   if (errorResponse) return errorResponse;
 
   try {
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PUT(req: NextRequest) {
-  const { errorResponse } = await requireRole([Role.ADMIN]);
+  const { errorResponse } = await requireRole([Role.ADMIN, Role.PHYSIO]);
   if (errorResponse) return errorResponse;
 
   try {

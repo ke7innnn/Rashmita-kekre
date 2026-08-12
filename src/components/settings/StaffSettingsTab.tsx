@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
-  Users, UserPlus, Shield, Clock, FileText, AlertTriangle, AlertCircle, Copy, Check, ExternalLink, Power
+  Users, UserPlus, Shield, Clock, FileText, AlertTriangle, AlertCircle, Copy, Check, ExternalLink, Power, Trash2
 } from 'lucide-react';
 
 export default function StaffSettingsTab() {
@@ -11,6 +11,9 @@ export default function StaffSettingsTab() {
   const [invites, setInvites] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [showInviteModal, setShowInviteModal] = useState<boolean>(false);
+  const [showDeleteConfirmModal, setShowDeleteConfirmModal] = useState<boolean>(false);
+  const [staffToDelete, setStaffToDelete] = useState<{ id: string; username: string } | null>(null);
+  const [deleting, setDeleting] = useState<boolean>(false);
 
   // Invite Form state
   const [name, setName] = useState<string>('');
@@ -40,6 +43,35 @@ export default function StaffSettingsTab() {
       console.error('Error fetching staff list:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleRemoveStaff = (id: string, username: string) => {
+    setStaffToDelete({ id, username });
+    setShowDeleteConfirmModal(true);
+  };
+
+  const confirmRemoveStaff = async () => {
+    if (!staffToDelete) return;
+    setDeleting(true);
+
+    try {
+      const res = await fetch(`/api/staff/${staffToDelete.id}`, {
+        method: 'DELETE'
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to remove staff member');
+      }
+
+      setShowDeleteConfirmModal(false);
+      setStaffToDelete(null);
+      fetchStaff();
+    } catch (err: any) {
+      alert(err.message || 'Error removing staff member');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -99,16 +131,24 @@ export default function StaffSettingsTab() {
             Accounts for Dr. Gachchami Ghaiwat, Dr. Pritee Yadav, and staff members
           </p>
         </div>
-        <button
-          onClick={() => {
-            setGeneratedLink(null);
-            setError(null);
-            setShowInviteModal(true);
-          }}
-          className="px-4 py-2 rounded-xl bg-[#12D6C4] hover:bg-[#009FC7] text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 shadow-[0_0_15px_rgba(18,214,196,0.3)]"
-        >
-          <UserPlus className="w-4 h-4" /> Add Staff Member
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/crm360/staff/new"
+            className="px-4 py-2 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-2 shadow-[0_0_15px_rgba(255,255,255,0.1)]"
+          >
+            <UserPlus className="w-4 h-4" /> Add New Employee
+          </Link>
+          <button
+            onClick={() => {
+              setGeneratedLink(null);
+              setError(null);
+              setShowInviteModal(true);
+            }}
+            className="px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold uppercase tracking-wider transition flex items-center gap-2"
+          >
+            Invite via Link
+          </button>
+        </div>
       </div>
 
       {/* Staff Members List */}
@@ -123,7 +163,7 @@ export default function StaffSettingsTab() {
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-white">{member.username}</h4>
                   <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${
-                    member.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-blue-500/20 text-blue-300 border-blue-500/30'
+                    member.role === 'ADMIN' ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'bg-[#12D6C4]/15 text-[#12D6C4] border-[#12D6C4]/25'
                   }`}>
                     {member.role}
                   </span>
@@ -156,6 +196,13 @@ export default function StaffSettingsTab() {
               >
                 <FileText className="w-3.5 h-3.5 text-[#12D6C4]" /> Profile & Documents ({member._count?.documents || 0})
               </Link>
+              <button
+                onClick={() => handleRemoveStaff(member.id, member.username)}
+                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-300 transition"
+                title="Remove Staff Member"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         ))}
@@ -261,6 +308,50 @@ export default function StaffSettingsTab() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+      {/* Custom Delete Confirmation Modal */}
+      {showDeleteConfirmModal && staffToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+          <div className="bg-[#0F0D16] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-5 shadow-2xl text-center">
+            <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-rose-400">
+              <AlertTriangle className="w-6 h-6" />
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-base font-bold text-white">Remove Staff Member</h3>
+              <p className="text-xs text-white/60 leading-relaxed">
+                Are you sure you want to remove staff member <span className="text-[#12D6C4] font-semibold">"{staffToDelete.username}"</span>? All their documents and attendance records will be deleted permanently.
+              </p>
+            </div>
+
+            <div className="flex gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowDeleteConfirmModal(false);
+                  setStaffToDelete(null);
+                }}
+                className="flex-1 py-2.5 rounded-xl border border-white/10 text-xs font-semibold text-white/70 hover:bg-white/5 transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmRemoveStaff}
+                disabled={deleting}
+                className="flex-1 py-2.5 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition disabled:opacity-50 flex items-center justify-center gap-1.5"
+              >
+                {deleting ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                    Removing...
+                  </>
+                ) : (
+                  'Remove Staff'
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}

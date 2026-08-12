@@ -23,7 +23,7 @@ export async function middleware(req: NextRequest) {
     const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
 
     if (isPhysio) {
-      const allowedPaths = ['/crm360', '/crm360/attendance', '/crm360/patients'];
+      const allowedPaths = ['/crm360', '/crm360/attendance', '/crm360/patients', '/crm360/assessments', '/crm360/billing'];
       const isExactOverview = pathname === '/crm360';
       const isAllowed = isExactOverview || allowedPaths.some(p => p !== '/crm360' && pathname.startsWith(p));
       if (!isAllowed) {
@@ -44,7 +44,7 @@ export async function middleware(req: NextRequest) {
     const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
 
     if (isPhysio) {
-      const allowedApiPrefixes = ['/api/attendance', '/api/patients', '/api/appointments', '/api/modalities', '/api/settings'];
+      const allowedApiPrefixes = ['/api/attendance', '/api/patients', '/api/appointments', '/api/modalities', '/api/settings', '/api/assessments', '/api/billing'];
       const isAllowedApi = allowedApiPrefixes.some(p => pathname.startsWith(p));
 
       if (!isAllowedApi) {

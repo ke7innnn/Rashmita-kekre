@@ -175,7 +175,14 @@ model User {
   password             String
   email                String?           @unique
   phone                String?
+  fullName             String?
+  dateOfBirth          DateTime?
+  employeeId           String?           @unique
   designation          String?           @default("Physiotherapist")
+  department           String?
+  employmentType       String?           @default("Full-Time")
+  profilePhotoUrl      String?
+  aadhaarNumber        String?
   role                 Role              @default(PHYSIO)
   isActive             Boolean           @default(true)
   joinedDate           DateTime?         @default(now())

@@ -15,9 +15,18 @@ export default function BillingOverviewPage() {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean>(true);
 
   useEffect(() => {
     fetchOverviewData();
+    const sessionStr = localStorage.getItem('h360_session');
+    if (sessionStr) {
+      try {
+        const parsed = JSON.parse(sessionStr);
+        const role = (parsed.role || '').toLowerCase();
+        setIsAdmin(role === 'admin');
+      } catch (e) {}
+    }
   }, []);
 
   const fetchOverviewData = async () => {
@@ -25,11 +34,6 @@ export default function BillingOverviewPage() {
     setError(null);
     try {
       const res = await fetch('/api/billing/overview');
-      if (res.status === 403) {
-        setError('Forbidden. Only ADMIN users have access to Billing.');
-        setLoading(false);
-        return;
-      }
       if (!res.ok) throw new Error('Failed to fetch billing data');
       const json = await res.json();
       setData(json);
@@ -65,6 +69,7 @@ export default function BillingOverviewPage() {
   }
 
   const { metrics, recentInvoices = [], outstandingPatients = [] } = data || {};
+  const showMonthlyCollected = isAdmin && metrics?.totalCollectedThisMonth !== null && metrics?.totalCollectedThisMonth !== undefined;
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto selection:bg-white/30 select-none">
@@ -95,8 +100,8 @@ export default function BillingOverviewPage() {
         </div>
       </div>
 
-      {/* Top 3 Typographically Strong Metrics with Stagger & CountUp */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+      {/* Top Metrics Grid with Dynamic Column Layout based on Role */}
+      <div className={`grid grid-cols-1 ${showMonthlyCollected ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5`}>
         {/* Metric 1: Outstanding */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
@@ -122,30 +127,32 @@ export default function BillingOverviewPage() {
           </div>
         </motion.div>
 
-        {/* Metric 2: Collected This Month */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.06, duration: 0.32, ease: 'easeOut' }}
-          className="p-6 rounded-2xl bg-[#0B0A10]/80 border border-white/10 relative overflow-hidden group"
-        >
-          <div className="flex justify-between items-start">
-            <span className="text-xs font-semibold uppercase tracking-wider text-white/50">
-              Collected This Month
-            </span>
-            <span className="p-2 rounded-xl bg-white/10 text-white border border-white/20">
-              <TrendingUp className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
-              <CountUpNumber value={Number(metrics?.totalCollectedThisMonth || 0)} currency duration={500} />
+        {/* Metric 2: Collected This Month (Admin Only) */}
+        {showMonthlyCollected && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06, duration: 0.32, ease: 'easeOut' }}
+            className="p-6 rounded-2xl bg-[#0B0A10]/80 border border-white/10 relative overflow-hidden group"
+          >
+            <div className="flex justify-between items-start">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white/50">
+                Collected This Month
+              </span>
+              <span className="p-2 rounded-xl bg-white/10 text-white border border-white/20">
+                <TrendingUp className="w-4 h-4" />
+              </span>
             </div>
-            <p className="text-xs text-white/40 mt-1.5">
-              Recorded payments in {new Date().toLocaleString('default', { month: 'long' })}
-            </p>
-          </div>
-        </motion.div>
+            <div className="mt-4">
+              <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
+                <CountUpNumber value={Number(metrics?.totalCollectedThisMonth || 0)} currency duration={500} />
+              </div>
+              <p className="text-xs text-white/40 mt-1.5">
+                Recorded payments in {new Date().toLocaleString('default', { month: 'long' })}
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Metric 3: Active Courses */}
         <motion.div
@@ -158,7 +165,7 @@ export default function BillingOverviewPage() {
             <span className="text-xs font-semibold uppercase tracking-wider text-white/50">
               Active Courses
             </span>
-            <span className="p-2 rounded-xl bg-blue-500/10 text-blue-300 border border-blue-500/20">
+            <span className="p-2 rounded-xl bg-[#12D6C4]/10 text-[#12D6C4] border border-[#12D6C4]/20">
               <Users className="w-4 h-4" />
             </span>
           </div>

@@ -16,17 +16,10 @@ export async function GET(req: NextRequest) {
     const isAdmin = (user as any)?.role === 'ADMIN' || (user as any)?.role === 'admin';
     const currentUserId = (user as any)?.id || (user as any)?.username;
 
-    // RBAC: PHYSIO role can only access their assigned patients' assessments
+    // RBAC: All authorized staff & physio employees can view digital assessments
     const where: any = {};
     if (patientId) where.patientId = patientId;
     if (physioId) where.physioId = physioId;
-
-    if (!isAdmin && currentUserId) {
-      where.OR = [
-        { physioId: currentUserId },
-        { patient: { assignedProtocolId: currentUserId } }
-      ];
-    }
 
     const assessments = await prisma.assessment.findMany({
       where,
