@@ -68,13 +68,32 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const json = await req.json();
 
     const dataToUpdate: any = {};
-    if (json.notes !== undefined) dataToUpdate.notes = json.notes;
-    if (json.assignedProtocolId !== undefined) dataToUpdate.assignedProtocolId = json.assignedProtocolId;
-    if (json.currentProtocolStep !== undefined) dataToUpdate.currentProtocolStep = json.currentProtocolStep;
-    if (json.treatmentModalityAssigned !== undefined) dataToUpdate.treatmentModalityAssigned = json.treatmentModalityAssigned;
+    if (json.fullName !== undefined) dataToUpdate.fullName = json.fullName;
+    if (json.gender !== undefined) dataToUpdate.gender = json.gender;
+    if (json.dateOfBirth !== undefined) {
+      dataToUpdate.dateOfBirth = json.dateOfBirth ? new Date(json.dateOfBirth) : new Date('1990-01-01');
+    }
+    if (json.phone !== undefined) dataToUpdate.phone = json.phone;
+    if (json.secondaryPhone !== undefined) dataToUpdate.secondaryPhone = json.secondaryPhone;
+    if (json.email !== undefined) dataToUpdate.email = json.email;
+    if (json.thirdPartyUid !== undefined) dataToUpdate.thirdPartyUid = json.thirdPartyUid;
+    if (json.bloodGroup !== undefined) dataToUpdate.bloodGroup = json.bloodGroup;
+    if (json.parentSpouseCaretakerName !== undefined) dataToUpdate.parentSpouseCaretakerName = json.parentSpouseCaretakerName;
+    if (json.dateOfMarriage !== undefined) {
+      dataToUpdate.dateOfMarriage = json.dateOfMarriage ? new Date(json.dateOfMarriage) : null;
+    }
+    if (json.address !== undefined) dataToUpdate.address = json.address;
     if (json.referringDoctor !== undefined) dataToUpdate.referringDoctor = json.referringDoctor;
     if (json.presentingComplaint !== undefined) dataToUpdate.presentingComplaint = json.presentingComplaint;
     if (json.diagnosis !== undefined) dataToUpdate.diagnosis = json.diagnosis;
+    if (json.treatmentModalityAssigned !== undefined) dataToUpdate.treatmentModalityAssigned = json.treatmentModalityAssigned;
+    if (json.notes !== undefined) dataToUpdate.notes = json.notes;
+    if (json.assignedProtocolId !== undefined) dataToUpdate.assignedProtocolId = json.assignedProtocolId;
+    if (json.currentProtocolStep !== undefined) dataToUpdate.currentProtocolStep = json.currentProtocolStep;
+    if (json.expectedCadence !== undefined) dataToUpdate.expectedCadence = json.expectedCadence;
+    if (json.tags !== undefined) {
+      dataToUpdate.tags = Array.isArray(json.tags) ? json.tags.join(', ') : (json.tags || '');
+    }
 
     // Attachments simulation support
     if (json.attachment) {

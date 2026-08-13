@@ -56,6 +56,11 @@ model Patient {
   dateOfBirth               DateTime
   phone                     String
   secondaryPhone            String?
+  email                     String?
+  thirdPartyUid             String?
+  bloodGroup                String?
+  parentSpouseCaretakerName String?
+  dateOfMarriage            DateTime?
   address                   String?
   referringDoctor           String?
   presentingComplaint       String?

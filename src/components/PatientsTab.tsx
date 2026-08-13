@@ -6,10 +6,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Plus, User, Phone, MapPin, Tag, FileText, 
   Calendar, Check, AlertCircle, X, Loader2, ChevronRight,
-  Table as TableIcon, LayoutGrid
+  Table as TableIcon, LayoutGrid, Edit2
 } from 'lucide-react';
 import PatientTimeline from './PatientTimeline';
 import CreatePatientModal from './CreatePatientModal';
+import EditPatientModal from './EditPatientModal';
 import GlassPanel from './GlassPanel';
 
 interface PatientsTabProps {
@@ -30,6 +31,7 @@ export default function PatientsTab({
   const setSelectedPatientId = propSetSelectedPatientId !== undefined ? propSetSelectedPatientId : localSetSelectedPatientId;
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingPatient, setEditingPatient] = useState<any | null>(null);
 
   // 1. Fetch Patients
   const { data: patients = [], isLoading } = useQuery({
@@ -210,17 +212,31 @@ export default function PatientsTab({
                           </td>
 
                           {/* Action */}
-                          <td className="py-3.5 px-5 text-right">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedPatientId(p.id);
-                              }}
-                              className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/70 group-hover:text-white bg-white/5 group-hover:bg-white/15 px-3 py-1.5 rounded-lg transition-all border border-white/10"
-                            >
-                              <span>Case File</span>
-                              <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
-                            </button>
+                          <td className="py-3.5 px-5 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingPatient(p);
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/70 hover:text-white bg-white/5 hover:bg-white/15 px-2.5 py-1.5 rounded-lg transition-all border border-white/10 cursor-pointer"
+                                title="Quick Edit Patient Details"
+                              >
+                                <Edit2 className="h-3 w-3" />
+                                <span>Quick Edit</span>
+                              </button>
+
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPatientId(p.id);
+                                }}
+                                className="inline-flex items-center gap-1 text-[11px] font-semibold text-white/70 group-hover:text-white bg-white/5 group-hover:bg-white/15 px-3 py-1.5 rounded-lg transition-all border border-white/10 cursor-pointer"
+                              >
+                                <span>Case File</span>
+                                <ChevronRight className="h-3.5 w-3.5 group-hover:translate-x-0.5 transition-transform" />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -245,18 +261,31 @@ export default function PatientsTab({
                   >
                     <div className="space-y-4">
                       {/* Name and avatar header */}
-                      <div className="flex items-center gap-3">
-                        <div className="p-[1.5px] rounded-full border border-white/30 shrink-0">
-                          <div className="h-11 w-11 rounded-full bg-white/10 text-white flex items-center justify-center font-serif text-sm font-bold">
-                            {initials}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3 truncate">
+                          <div className="p-[1.5px] rounded-full border border-white/30 shrink-0">
+                            <div className="h-11 w-11 rounded-full bg-white/10 text-white flex items-center justify-center font-serif text-sm font-bold">
+                              {initials}
+                            </div>
+                          </div>
+                          <div className="truncate">
+                            <h4 className="text-base font-serif font-bold text-[#F5F3FA] tracking-wide truncate group-hover:text-white transition-colors leading-snug">
+                              {p.fullName}
+                            </h4>
+                            <p className="eyebrow text-[9px] mt-0.5">{p.gender} • {age} Yrs</p>
                           </div>
                         </div>
-                        <div className="truncate">
-                          <h4 className="text-base font-serif font-bold text-[#F5F3FA] tracking-wide truncate group-hover:text-white transition-colors leading-snug">
-                            {p.fullName}
-                          </h4>
-                          <p className="eyebrow text-[9px] mt-0.5">{p.gender} • {age} Yrs</p>
-                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingPatient(p);
+                          }}
+                          className="p-1.5 rounded-lg bg-white/5 hover:bg-white/20 text-white/70 hover:text-white transition border border-white/10 shrink-0"
+                          title="Quick Edit Patient Details"
+                        >
+                          <Edit2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
 
                       {/* Modality segment */}
@@ -275,7 +304,7 @@ export default function PatientsTab({
                     </div>
 
                     {/* Footer link indicator */}
-                    <div className="mt-5 pt-3 border-t border-[rgba(255,255,255,0.08)] flex justify-between items-center eyebrow text-[10px] text-[rgba(245,243,250,0.4)] group-hover:text-white transition-colors pl-1">
+                    <div className="mt-5 pt-3 border-t border-[rgba(255,255,255,0.08)] flex justify-between items-center text-[10px] text-[rgba(245,243,250,0.4)] group-hover:text-white transition-colors pl-1">
                       <span>View Case File</span>
                       <ChevronRight className="h-4 w-4 transform group-hover:translate-x-1 transition-transform stroke-[2]" />
                     </div>
@@ -290,6 +319,12 @@ export default function PatientsTab({
       <CreatePatientModal 
         isOpen={isCreateModalOpen} 
         onClose={() => setIsCreateModalOpen(false)} 
+      />
+
+      <EditPatientModal
+        isOpen={!!editingPatient}
+        patient={editingPatient}
+        onClose={() => setEditingPatient(null)}
       />
     </div>
   );

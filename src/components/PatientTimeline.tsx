@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
 import CourseMeter from '@/components/billing/CourseMeter';
 import SellCourseModal from '@/components/billing/SellCourseModal';
+import EditPatientModal from '@/components/EditPatientModal';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -168,6 +169,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Manual Add/Edit Timeline states
   const [isAddingSession, setIsAddingSession] = useState(false);
   const [isAddingCall, setIsAddingCall] = useState(false);
+  const [isEditPatientModalOpen, setIsEditPatientModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{ id: string; type: 'APPOINTMENT' | 'CALL_LOG'; data: any } | null>(null);
 
   // Form states for Session (Appointment)
@@ -940,6 +942,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           </div>
 
           <div className="shrink-0 flex items-center gap-2">
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsEditPatientModalOpen(true)}
+              className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md whitespace-nowrap"
+              title="Quick edit patient details & demographics"
+            >
+              <Edit2 className="h-4 w-4 stroke-[1.75]" />
+              Quick Edit
+            </motion.button>
+
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => {
@@ -2587,6 +2599,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         </div>,
         document.body
       )}
+
+      {/* Quick Edit Patient Modal */}
+      <EditPatientModal
+        isOpen={isEditPatientModalOpen}
+        patient={patient}
+        onClose={() => setIsEditPatientModalOpen(false)}
+      />
     </div>
   );
 }
