@@ -767,30 +767,30 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const getStatusStyle = (status: AppointmentStatus) => {
     switch (status) {
       case AppointmentStatus.COMPLETED:
-        return 'bg-[#E2ECE9] text-[#4E6551] border-[#4E6551]';
+        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
       case AppointmentStatus.IN_PROGRESS:
-        return 'bg-[#FAF6EF] text-[#D98353] border-[#D98353]';
+        return 'bg-amber-500/20 text-amber-300 border border-amber-500/30';
       case AppointmentStatus.WAITING:
-        return 'bg-[#FCE2DB] text-[#D98353] border-[#D98353]';
+        return 'bg-orange-500/20 text-orange-300 border border-orange-500/30';
       case AppointmentStatus.SCHEDULED:
-        return 'bg-[#FAF6EF] text-[#2B2620]/70 border-[#EADFCA]';
+        return 'bg-white/10 text-white/70 border border-white/20';
       case AppointmentStatus.NO_SHOW:
-        return 'bg-rose-50 text-rose-700 border-rose-200';
+        return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
       default:
-        return 'bg-[#FAF6EF] text-[#2B2620]/50 border-[#EADFCA]';
+        return 'bg-white/5 text-white/50 border border-white/10';
     }
   };
 
   const getCallOutcomeStyle = (outcome: CallOutcome) => {
     switch (outcome) {
       case CallOutcome.BOOKED:
-        return 'bg-[#E2ECE9] text-[#4E6551] border-[#4E6551]';
+        return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30';
       case CallOutcome.FOLLOW_UP_NEEDED:
-        return 'bg-[#FCE2DB] text-[#D98353] border-[#D98353]';
+        return 'bg-orange-500/20 text-orange-300 border border-orange-500/30';
       case CallOutcome.CANCELLED:
-        return 'bg-rose-50 text-rose-700 border-rose-200';
+        return 'bg-rose-500/20 text-rose-300 border border-rose-500/30';
       default:
-        return 'bg-[#FAF6EF] text-[#2B2620]/50 border-[#EADFCA]';
+        return 'bg-white/5 text-white/50 border border-white/10';
     }
   };
 
@@ -945,7 +945,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               onClick={() => {
                 window.location.href = `/crm360/assessments/new?patientId=${patientId}`;
               }}
-              className="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md whitespace-nowrap"
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md whitespace-nowrap"
             >
               <FileText className="h-4 w-4 stroke-[1.75]" />
               + Initial Assessment
@@ -987,37 +987,37 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-[10px] font-semibold mt-1">
             {/* Email */}
             {patient.email && (
-              <div className="flex flex-col gap-0.5 bg-[#FAF6EF]/40 border border-[#EADFCA] p-2.5 rounded-xl shadow-xxs">
-                <span className="text-[#2B2620]/45 font-bold uppercase tracking-wider">Email</span>
-                <span className="text-[#2B2620] truncate" title={patient.email}>{patient.email}</span>
+              <div className="flex flex-col gap-0.5 bg-white/5 border border-white/10 p-2.5 rounded-xl">
+                <span className="text-white/40 font-bold uppercase tracking-wider">Email</span>
+                <span className="text-white truncate" title={patient.email}>{patient.email}</span>
               </div>
             )}
             {/* Third Party UID */}
             {patient.thirdPartyUid && (
-              <div className="flex flex-col gap-0.5 bg-[#FAF6EF]/40 border border-[#EADFCA] p-2.5 rounded-xl shadow-xxs">
-                <span className="text-[#2B2620]/45 font-bold uppercase tracking-wider">Third Party UID</span>
-                <span className="text-[#2B2620] truncate">{patient.thirdPartyUid}</span>
+              <div className="flex flex-col gap-0.5 bg-white/5 border border-white/10 p-2.5 rounded-xl">
+                <span className="text-white/40 font-bold uppercase tracking-wider">Third Party UID</span>
+                <span className="text-white truncate">{patient.thirdPartyUid}</span>
               </div>
             )}
             {/* Blood Group */}
             {patient.bloodGroup && (
-              <div className="flex flex-col gap-0.5 bg-[#FAF6EF]/40 border border-[#EADFCA] p-2.5 rounded-xl shadow-xxs">
-                <span className="text-[#2B2620]/45 font-bold uppercase tracking-wider">Blood Group</span>
-                <span className="text-primary font-bold">{patient.bloodGroup}</span>
+              <div className="flex flex-col gap-0.5 bg-white/5 border border-white/10 p-2.5 rounded-xl">
+                <span className="text-white/40 font-bold uppercase tracking-wider">Blood Group</span>
+                <span className="text-emerald-400 font-bold">{patient.bloodGroup}</span>
               </div>
             )}
             {/* Caretaker */}
             {patient.parentSpouseCaretakerName && (
-              <div className="col-span-2 flex flex-col gap-0.5 bg-[#FAF6EF]/40 border border-[#EADFCA] p-2.5 rounded-xl shadow-xxs">
-                <span className="text-[#2B2620]/45 font-bold uppercase tracking-wider">Guardian / Caretaker Name</span>
-                <span className="text-[#2B2620] truncate">{patient.parentSpouseCaretakerName}</span>
+              <div className="col-span-2 flex flex-col gap-0.5 bg-white/5 border border-white/10 p-2.5 rounded-xl">
+                <span className="text-white/40 font-bold uppercase tracking-wider">Guardian / Caretaker Name</span>
+                <span className="text-white truncate">{patient.parentSpouseCaretakerName}</span>
               </div>
             )}
             {/* Marriage Details */}
             {patient.dateOfMarriage && (
-              <div className="col-span-2 flex flex-col gap-0.5 bg-[#FAF6EF]/40 border border-[#EADFCA] p-2.5 rounded-xl shadow-xxs">
-                <span className="text-[#2B2620]/45 font-bold uppercase tracking-wider">Marriage Details</span>
-                <span className="text-[#2B2620] truncate">
+              <div className="col-span-2 flex flex-col gap-0.5 bg-white/5 border border-white/10 p-2.5 rounded-xl">
+                <span className="text-white/40 font-bold uppercase tracking-wider">Marriage Details</span>
+                <span className="text-white truncate">
                   {`Married on ${new Date(patient.dateOfMarriage).toLocaleDateString()}`}
                 </span>
               </div>
@@ -1027,25 +1027,25 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
         {/* Active Treatment Protocol Tracker */}
         {activeProtocol && (
-          <div className="bg-[#FAF6EF] border border-[#EADFCA] p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-1">
-              <p className="text-[10px] font-bold text-foreground/40 uppercase tracking-wider flex items-center gap-1">
-                <Award className="h-3.5 w-3.5 text-primary stroke-[1.75]" />
+              <p className="text-[10px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1">
+                <Award className="h-3.5 w-3.5 text-[#12D6C4] stroke-[1.75]" />
                 Active Clinical Protocol
               </p>
-              <h4 className="font-serif font-bold text-sm text-[#2B2620]">
+              <h4 className="font-serif font-bold text-sm text-white">
                 {activeProtocol.name} — Step {patient.currentProtocolStep + 1} of {protocolSteps.length}
               </h4>
               <div className="flex items-center gap-2 flex-wrap">
                 {protocolSteps.map((step: string, idx: number) => (
                   <React.Fragment key={idx}>
-                    {idx > 0 && <span className="text-[10px] text-foreground/30">→</span>}
+                    {idx > 0 && <span className="text-[10px] text-white/30">→</span>}
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                       idx === patient.currentProtocolStep 
-                        ? 'bg-primary text-background border-transparent' 
+                        ? 'bg-[#12D6C4] text-black border-transparent' 
                         : idx < patient.currentProtocolStep
-                        ? 'bg-[#E2ECE9] text-primary border-primary/20 line-through'
-                        : 'bg-[#FFFCF6] text-[#2B2620]/45 border-[#EADFCA]'
+                        ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30 line-through'
+                        : 'bg-white/5 text-white/50 border-white/10'
                     }`}>
                       {step}
                     </span>
@@ -1058,7 +1058,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               <motion.button
                 whileTap={{ scale: 0.95 }}
                 onClick={handleProtocolAdvance}
-                className="text-[10px] font-bold uppercase tracking-wider text-primary hover:text-[#3C5040] bg-background border border-[#EADFCA] px-3.5 py-2 rounded-xl transition-colors cursor-pointer focus:outline-hidden"
+                className="text-[10px] font-bold uppercase tracking-wider text-white hover:text-white bg-white/10 border border-white/20 px-3.5 py-2 rounded-xl transition-colors cursor-pointer focus:outline-hidden"
               >
                 Advance to Next Step
               </motion.button>
@@ -1117,16 +1117,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       {activeTab === 'documents' && (
         <div className="p-6 space-y-8 max-w-6xl mx-auto w-full animate-fadeIn">
           {/* Header section with Create Folder and Path details */}
-          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-[#EADFCA] pb-4">
+          <div className="flex items-center justify-between flex-wrap gap-4 border-b border-white/10 pb-4">
             <div>
-              <h3 className="text-xl font-serif font-bold text-primary">Case Documents Explorer</h3>
-              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mt-0.5">Clinical files, prescriptions & lab results</p>
+              <h3 className="text-xl font-serif font-bold text-white">Case Documents Explorer</h3>
+              <p className="text-xxs text-white/40 font-bold uppercase tracking-wider mt-0.5">Clinical files, prescriptions & lab results</p>
             </div>
             <div className="flex items-center gap-3">
               {currentPath.length > 0 && (
                 <button
                   onClick={() => setCurrentPath(currentPath.slice(0, -1))}
-                  className="flex items-center gap-1.5 px-3 py-1.5 hover:bg-[#FAF6EF] border border-[#EADFCA] text-[#2B2620]/75 text-xs font-bold rounded-xl cursor-pointer"
+                  className="flex items-center gap-1.5 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-bold rounded-xl cursor-pointer transition-colors"
                 >
                   <ArrowLeft className="h-3.5 w-3.5" />
                   Back
@@ -1137,7 +1137,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   setIsCreatingFolder(true);
                   setIsUploadingFile(false);
                 }}
-                className="flex items-center gap-1.5 px-3.5 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl shadow-xxs cursor-pointer"
+                className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
               >
                 <FolderPlus className="h-4 w-4" />
                 New Folder
@@ -1146,20 +1146,20 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           </div>
 
           {/* Folder Path Breadcrumbs */}
-          <div className="flex items-center gap-2 text-xs font-semibold text-[#2B2620] bg-[#FAF6EF]/60 border border-[#EADFCA] px-4 py-2.5 rounded-xl shadow-xxs">
-            <Folder className="h-4 w-4 text-primary shrink-0 fill-primary/10" />
+          <div className="flex items-center gap-2 text-xs font-semibold text-white/70 bg-white/5 border border-white/10 px-4 py-2.5 rounded-xl">
+            <Folder className="h-4 w-4 text-[#12D6C4] shrink-0 fill-[#12D6C4]/10" />
             <button 
               onClick={() => setCurrentPath([])}
-              className="hover:text-primary transition-colors cursor-pointer text-[#2B2620]/45"
+              className="hover:text-white transition-colors cursor-pointer text-white/40 font-semibold"
             >
               Root
             </button>
             {currentPath.map((folder, index) => (
               <React.Fragment key={index}>
-                <span className="text-[#EADFCA]/80">/</span>
+                <span className="text-white/30">/</span>
                 <button 
                   onClick={() => setCurrentPath(currentPath.slice(0, index + 1))}
-                  className="hover:text-primary transition-colors cursor-pointer max-w-[120px] truncate text-[#2B2620]"
+                  className="hover:text-white transition-colors cursor-pointer max-w-[120px] truncate text-white font-bold"
                 >
                   {folder}
                 </button>
@@ -1168,36 +1168,36 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           </div>
 
           {/* Large Simulated Upload Dropzone Panel (Big Area) */}
-          <div className="border-2 border-dashed border-[#EADFCA] hover:border-primary/60 bg-[#FAF6EF]/20 hover:bg-[#FAF6EF]/40 transition-all rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-center cursor-pointer shadow-xxs relative">
-            <div className="p-4 bg-primary/10 rounded-2xl text-primary">
+          <div className="border-2 border-dashed border-white/15 hover:border-[#12D6C4]/50 bg-white/[0.02] hover:bg-white/[0.04] transition-all rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-center cursor-pointer relative">
+            <div className="p-4 bg-[#12D6C4]/15 rounded-2xl text-[#12D6C4]">
               <Plus className="h-8 w-8 stroke-[2]" />
             </div>
             <div>
-              <h4 className="text-base font-serif font-bold text-[#2B2620] mb-1">Simulate Medical Document Intake</h4>
-              <p className="text-xs text-[#2B2620]/60 max-w-md mx-auto">
+              <h4 className="text-base font-serif font-bold text-white mb-1">Simulate Medical Document Intake</h4>
+              <p className="text-xs text-white/50 max-w-md mx-auto">
                 Select clinical files (Prescriptions, MRI scans, X-rays, lab reports) to register in the patient's record folder.
               </p>
             </div>
 
-            <div className="w-full max-w-lg mt-3 bg-[#FFFCF6] border border-[#EADFCA] rounded-2xl p-5 text-left space-y-4 shadow-sm cursor-default" onClick={(e) => e.stopPropagation()}>
-              <h5 className="font-serif font-bold text-xs text-[#2B2620] border-b border-[#EADFCA]/40 pb-1.5">Document Details</h5>
+            <div className="w-full max-w-lg mt-3 bg-[#0B0A10]/95 border border-white/10 rounded-2xl p-5 text-left space-y-4 shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()}>
+              <h5 className="font-serif font-bold text-xs text-white border-b border-white/10 pb-2">Document Details</h5>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[10px] font-bold text-[#2B2620]/50 block mb-1 uppercase tracking-wider">File Display Name</label>
+                  <label className="text-[10px] font-bold text-white/50 block mb-1 uppercase tracking-wider">File Display Name</label>
                   <input 
                     type="text" 
                     placeholder="e.g. Left Knee X-Ray Report"
                     value={uploadFileName}
                     onChange={(e) => setUploadFileName(e.target.value)}
-                    className="text-xs bg-transparent border border-[#EADFCA] bg-[#FFFCF6] rounded-xl p-2.5 w-full text-[#2B2620] font-semibold focus:outline-hidden"
+                    className="text-xs bg-white/[0.04] border border-white/10 rounded-xl p-2.5 w-full text-white font-semibold focus:outline-none focus:border-[#12D6C4] transition"
                   />
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-[#2B2620]/50 block mb-1 uppercase tracking-wider">Report Category</label>
+                  <label className="text-[10px] font-bold text-white/50 block mb-1 uppercase tracking-wider">Report Category</label>
                   <select
                     value={uploadFileType}
                     onChange={(e) => setUploadFileType(e.target.value)}
-                    className="text-xs bg-transparent border border-[#EADFCA] bg-[#FFFCF6] rounded-xl p-2.5 w-full text-[#2B2620] font-bold focus:outline-hidden"
+                    className="text-xs bg-[#0B0A10] border border-white/10 rounded-xl p-2.5 w-full text-white font-bold focus:outline-none focus:border-[#12D6C4] transition"
                   >
                     <option value="PDF">PDF Report</option>
                     <option value="X-Ray">X-Ray Image</option>
@@ -1208,18 +1208,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 </div>
               </div>
               <div>
-                <label className="text-[10px] font-bold text-[#2B2620]/50 block mb-1 uppercase tracking-wider">Select File</label>
+                <label className="text-[10px] font-bold text-white/50 block mb-1 uppercase tracking-wider">Select File</label>
                 <input 
                   type="file" 
                   onChange={(e) => setUploadFileObj(e.target.files?.[0] || null)}
-                  className="text-xs w-full text-[#2B2620] font-semibold file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-colors"
+                  className="text-xs w-full text-white/70 font-semibold file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#12D6C4]/15 file:text-[#12D6C4] hover:file:bg-[#12D6C4]/25 transition-colors"
                 />
               </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#EADFCA]/40">
+              <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
                 <button 
                   onClick={handleUploadFile}
                   disabled={!uploadFileObj || !uploadFileName.trim() || isUploadingToSupabase}
-                  className="px-4 py-2 bg-primary hover:bg-[#3C5040] disabled:opacity-50 text-background text-xs font-bold rounded-xl cursor-pointer transition-colors shadow-xxs flex items-center gap-1.5"
+                  className="px-4 py-2 bg-white hover:bg-white/90 disabled:opacity-50 text-black text-xs font-bold rounded-xl cursor-pointer transition-all shadow-md flex items-center gap-1.5"
                 >
                   {isUploadingToSupabase && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
                   {isUploadingToSupabase ? 'Uploading...' : 'Upload & Scan File'}
@@ -1230,17 +1230,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
           {/* Folder creation form */}
           {isCreatingFolder && (
-            <div className="flex gap-3 items-center bg-[#FAF6EF]/60 p-3 border border-[#EADFCA]/70 rounded-2xl shadow-xxs">
+            <div className="flex gap-3 items-center bg-white/5 p-3.5 border border-white/10 rounded-2xl shadow-xl">
               <input 
                 type="text" 
                 placeholder="Folder name..."
                 value={newFolderName}
                 onChange={(e) => setNewFolderName(e.target.value)}
-                className="text-xs bg-transparent border-0 outline-hidden focus:ring-0 p-2 w-full text-[#2B2620] font-semibold focus:outline-hidden"
+                className="text-xs bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2 w-full text-white font-semibold focus:outline-none focus:border-[#12D6C4]"
               />
               <button 
                 onClick={handleCreateFolder}
-                className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer transition-colors whitespace-nowrap shadow-xxs"
+                className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer transition-colors whitespace-nowrap"
               >
                 Create Folder
               </button>
@@ -1249,7 +1249,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   setIsCreatingFolder(false);
                   setNewFolderName('');
                 }}
-                className="px-4 py-2 hover:bg-[#FAF6EF] border border-[#EADFCA] text-[#2B2620]/60 text-xs font-bold rounded-xl cursor-pointer whitespace-nowrap"
+                className="px-4 py-2 hover:bg-white/10 border border-white/10 text-white/70 text-xs font-bold rounded-xl cursor-pointer whitespace-nowrap"
               >
                 Cancel
               </button>
@@ -1258,13 +1258,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
           {/* Documents Grid View (Huge Card Placeholders) */}
           <div>
-            <h4 className="text-xs font-bold uppercase tracking-wider text-foreground/45 mb-4">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-white/40 mb-4">
               Folder Contents ({currentFolders.length} folders, {files.length} documents)
             </h4>
 
             {currentFolders.length === 0 && files.length === 0 ? (
-              <div className="bg-[#FAF6EF]/40 border border-[#EADFCA] rounded-3xl p-12 text-center">
-                <p className="text-sm text-foreground/50 italic font-medium">This folder is currently empty.</p>
+              <div className="bg-white/5 border border-white/10 rounded-3xl p-12 text-center">
+                <p className="text-sm text-white/40 italic font-medium">This folder is currently empty.</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -1273,13 +1273,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   <div 
                     key={folder}
                     onClick={() => setCurrentPath([...currentPath, folder])}
-                    className="group bg-[#FFFCF6] border border-[#EADFCA] hover:border-primary rounded-2xl p-6 flex flex-col items-center justify-center gap-3.5 cursor-pointer transition-all shadow-xs hover:shadow-md hover:-translate-y-0.5"
+                    className="group bg-[#0B0A10]/80 border border-white/10 hover:border-[#12D6C4]/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-3.5 cursor-pointer transition-all shadow-xl hover:-translate-y-0.5"
                   >
-                    <div className="p-4 bg-primary/10 rounded-2xl text-primary group-hover:scale-105 transition-all">
-                      <Folder className="h-10 w-10 fill-primary/10" />
+                    <div className="p-4 bg-[#12D6C4]/10 rounded-2xl text-[#12D6C4] group-hover:scale-105 transition-all">
+                      <Folder className="h-10 w-10 fill-[#12D6C4]/10" />
                     </div>
-                    <span className="font-serif font-bold text-sm text-[#2B2620] truncate text-center w-full px-2">{folder}</span>
-                    <span className="text-[10px] text-[#2B2620]/50 font-bold uppercase tracking-wide">Directory Folder</span>
+                    <span className="font-serif font-bold text-sm text-white truncate text-center w-full px-2">{folder}</span>
+                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-wide">Directory Folder</span>
                   </div>
                 ))}
 
@@ -1290,7 +1290,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     onClick={() => setViewingDoc(file)}
                     whileHover={{ y: -3 }}
                     whileTap={{ scale: 0.98 }}
-                    className="group bg-[#FFFCF6] border border-[#EADFCA] hover:border-primary rounded-2xl p-6 flex flex-col items-center justify-center gap-3.5 cursor-pointer transition-all shadow-sm hover:shadow-md relative overflow-hidden"
+                    className="group bg-[#0B0A10]/80 border border-white/10 hover:border-[#12D6C4]/50 rounded-2xl p-6 flex flex-col items-center justify-center gap-3.5 cursor-pointer transition-all shadow-xl relative overflow-hidden"
                   >
                     {/* Delete file button */}
                     <button
@@ -1307,36 +1307,36 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           }
                         });
                       }}
-                      className="absolute top-3 right-3 p-1 rounded-lg hover:bg-red-50 text-[#2B2620]/40 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                      className="absolute top-3 right-3 p-1 rounded-lg hover:bg-rose-500/20 text-white/40 hover:text-rose-400 transition-colors opacity-0 group-hover:opacity-100"
                       title="Delete document"
                     >
                       <X className="h-4 w-4" />
                     </button>
 
                     <div className={`p-4 rounded-2xl group-hover:scale-105 transition-all ${
-                      file.fileType === 'Prescription' ? 'bg-orange-500/10 text-orange-600' :
-                      file.fileType === 'MRI' ? 'bg-indigo-500/10 text-indigo-600' :
-                      file.fileType === 'X-Ray' ? 'bg-cyan-500/10 text-cyan-600' :
-                      'bg-primary/10 text-primary'
+                      file.fileType === 'Prescription' ? 'bg-orange-500/15 text-orange-400' :
+                      file.fileType === 'MRI' ? 'bg-indigo-500/15 text-indigo-400' :
+                      file.fileType === 'X-Ray' ? 'bg-cyan-500/15 text-cyan-400' :
+                      'bg-[#12D6C4]/15 text-[#12D6C4]'
                     }`}>
                       <FileText className="h-10 w-10 stroke-[1.75]" />
                     </div>
                     <div className="text-center w-full px-2 space-y-1">
-                      <p className="font-serif font-bold text-sm text-[#2B2620] truncate w-full" title={file.displayName}>
+                      <p className="font-serif font-bold text-sm text-white truncate w-full" title={file.displayName}>
                         {file.displayName}
                       </p>
                       <div className="flex items-center justify-center gap-1.5 flex-wrap">
                         <span className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${
-                          file.fileType === 'Prescription' ? 'bg-orange-500/15 text-orange-700 border border-orange-500/20' :
-                          file.fileType === 'MRI' ? 'bg-indigo-500/15 text-indigo-700 border border-indigo-500/20' :
-                          file.fileType === 'X-Ray' ? 'bg-cyan-500/15 text-cyan-700 border border-cyan-500/20' :
-                          'bg-primary/15 text-primary border border-primary/20'
+                          file.fileType === 'Prescription' ? 'bg-orange-500/20 text-orange-300 border border-orange-500/30' :
+                          file.fileType === 'MRI' ? 'bg-indigo-500/20 text-indigo-300 border border-indigo-500/30' :
+                          file.fileType === 'X-Ray' ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' :
+                          'bg-[#12D6C4]/20 text-[#12D6C4] border border-[#12D6C4]/30'
                         }`}>
                           {file.fileType}
                         </span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] font-bold text-primary tracking-wider uppercase mt-2">
+                    <div className="flex items-center gap-1 text-[10px] font-bold text-[#12D6C4] tracking-wider uppercase mt-2">
                       <FileDown className="h-4 w-4" />
                       View File
                     </div>
@@ -1549,29 +1549,29 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
           {/* Right panel: ROM progress */}
           <div className="space-y-6 md:pl-8">
-            <div className="flex justify-between items-center border-b border-[#EADFCA]/60 pb-2">
-              <h3 className="text-lg font-serif font-bold text-primary">ROM Joint Progress</h3>
+            <div className="flex justify-between items-center border-b border-white/10 pb-2">
+              <h3 className="text-lg font-serif font-bold text-white">ROM Joint Progress</h3>
               <motion.button
                 whileTap={{ scale: 0.9 }}
                 onClick={() => setIsRomUploading(true)}
-                className="p-1 text-primary hover:bg-[#FAF6EF] rounded-lg border border-[#EADFCA] cursor-pointer"
+                className="p-1 text-[#12D6C4] hover:bg-white/10 rounded-lg border border-white/10 cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
               </motion.button>
             </div>
 
             {romFiles.length === 0 ? (
-              <div className="bg-[#FAF6EF]/40 border border-[#EADFCA] p-6 rounded-2xl text-center">
-                <p className="text-xs text-foreground/50 italic font-semibold">No joint ROM photos logged yet.</p>
+              <div className="bg-white/5 border border-white/10 p-6 rounded-2xl text-center">
+                <p className="text-xs text-white/50 italic font-semibold">No joint ROM photos logged yet.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-4">
                 {romFiles.map((file: any) => {
                   const isBefore = file.name.toLowerCase().includes('before');
                   return (
-                    <div key={file.id} className="relative rounded-2xl overflow-hidden border border-[#EADFCA] bg-[#FAF6EF] shadow-xxs">
+                    <div key={file.id} className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#0B0A10] shadow-xl">
                       <img src={getDisplayUrl(file.url)} alt={file.name} className="w-full h-32 object-cover" />
-                      <div className="absolute inset-x-0 bottom-0 bg-black/60 px-3 py-2 flex items-center justify-between text-[10px] font-bold text-white">
+                      <div className="absolute inset-x-0 bottom-0 bg-black/70 px-3 py-2 flex items-center justify-between text-[10px] font-bold text-white">
                         <span className="truncate max-w-[70%]">{file.name.split('_')[1] || 'Joint'}</span>
                         <span className={`px-2 py-0.5 rounded-md ${isBefore ? 'bg-orange-500' : 'bg-emerald-500'}`}>
                           {isBefore ? 'Before' : 'After'}
@@ -1590,19 +1590,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {isDictating && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsDictating(false)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsDictating(false)} />
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="relative bg-card border border-[#EADFCA] w-full max-w-xl rounded-3xl shadow-[0_24px_50px_rgba(42,38,32,0.15)] overflow-hidden flex flex-col z-10"
-              style={{ backgroundColor: '#FFFCF6', borderColor: '#EADFCA' }}
+              className="relative bg-[#0F0D16] border border-white/10 w-full max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 text-white"
             >
               {/* Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b border-[#EADFCA]/60">
-                <h3 className="text-xl font-serif font-bold text-[#2B2620]">AI Dictation & SOAP Writer</h3>
-                <button onClick={() => setIsDictating(false)} className="p-1 rounded-full hover:bg-[#FAF6EF] text-[#2B2620]/50 hover:text-[#2B2620] cursor-pointer">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-white/10">
+                <h3 className="text-xl font-serif font-bold text-white">AI Dictation & SOAP Writer</h3>
+                <button onClick={() => setIsDictating(false)} className="p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white cursor-pointer">
                   <X className="h-5 w-5" />
                 </button>
               </div>
@@ -1613,39 +1612,39 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={startMockDictation}
-                    className="flex flex-col items-center justify-center bg-primary/10 border border-primary/20 rounded-full h-16 w-16 text-primary hover:bg-primary/20 transition-all cursor-pointer focus:outline-hidden"
+                    className="flex flex-col items-center justify-center bg-[#12D6C4]/15 border border-[#12D6C4]/30 rounded-full h-16 w-16 text-[#12D6C4] hover:bg-[#12D6C4]/25 transition-all cursor-pointer focus:outline-hidden"
                   >
                     <Mic className="h-6 w-6 animate-pulse" />
                   </motion.button>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60">Raw Session Transcript</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50">Raw Session Transcript</label>
                   <textarea
                     rows={4}
                     value={dictatedText}
                     onChange={(e) => setDictatedText(e.target.value)}
                     placeholder="Click the microphone or type raw symptoms, observations, and treatment outcomes..."
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] p-3 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold leading-relaxed"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] p-3 text-white focus:border-[#12D6C4] outline-none font-semibold leading-relaxed"
                   />
                 </div>
 
                 {soapPreview ? (
                   <div className="space-y-2">
-                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60">Structured SOAP Note Preview</label>
-                    <div className="bg-[#FAF6EF] border border-[#EADFCA] p-4 rounded-xl text-[11px] leading-relaxed max-h-48 overflow-y-auto font-mono text-[#2B2620] whitespace-pre-wrap">
+                    <label className="text-xxs font-bold uppercase tracking-wider text-white/50">Structured SOAP Note Preview</label>
+                    <div className="bg-black/40 border border-white/10 p-4 rounded-xl text-[11px] leading-relaxed max-h-48 overflow-y-auto font-mono text-white/90 whitespace-pre-wrap">
                       {soapPreview}
                     </div>
                   </div>
                 ) : null}
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     onClick={() => {
                       setDictatedText('');
                       setSoapPreview('');
                     }}
-                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden"
+                    className="px-4 py-2 border border-white/10 hover:bg-white/5 text-white/70 text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden"
                   >
                     Clear
                   </button>
@@ -1653,7 +1652,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     <motion.button
                       whileTap={{ scale: 0.95 }}
                       onClick={saveSoapNote}
-                      className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden flex items-center gap-1.5"
+                      className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden flex items-center gap-1.5 shadow-md"
                     >
                       <Check className="h-3.5 w-3.5" />
                       Save & Append Note
@@ -1663,7 +1662,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                       whileTap={{ scale: 0.95 }}
                       onClick={generateSOAPNote}
                       disabled={isSoapGenerating || !dictatedText}
-                      className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden flex items-center gap-1.5"
+                      className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden flex items-center gap-1.5 shadow-md disabled:opacity-50"
                     >
                       {isSoapGenerating ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
                       Generate SOAP
@@ -1680,19 +1679,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {isRomUploading && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsRomUploading(false)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsRomUploading(false)} />
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-              className="relative bg-card border border-[#EADFCA] w-full max-w-sm rounded-3xl shadow-[0_24px_50px_rgba(42,38,32,0.15)] overflow-hidden flex flex-col z-10"
-              style={{ backgroundColor: '#FFFCF6', borderColor: '#EADFCA' }}
+              className="relative bg-[#0F0D16] border border-white/10 w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden flex flex-col z-10 text-white"
             >
               {/* Header */}
-              <div className="flex justify-between items-center px-6 py-4 border-b border-[#EADFCA]/60">
-                <h3 className="text-lg font-serif font-bold text-[#2B2620]">Log ROM Progress</h3>
-                <button onClick={() => setIsRomUploading(false)} className="p-1 rounded-full hover:bg-[#FAF6EF] text-[#2B2620]/50 hover:text-[#2B2620] cursor-pointer">
+              <div className="flex justify-between items-center px-6 py-4 border-b border-white/10">
+                <h3 className="text-lg font-serif font-bold text-white">Log ROM Progress</h3>
+                <button onClick={() => setIsRomUploading(false)} className="p-1 rounded-full hover:bg-white/10 text-white/50 hover:text-white cursor-pointer">
                   <X className="h-4 w-4" />
                 </button>
               </div>
@@ -1700,40 +1698,40 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               {/* Body */}
               <div className="p-6 space-y-4">
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Joint Area</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Joint Area</label>
                   <select
                     value={romJoint}
                     onChange={(e) => setRomJoint(e.target.value)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                   >
-                    <option value="Knee Flexion">Knee Flexion</option>
-                    <option value="Knee Extension">Knee Extension</option>
-                    <option value="Shoulder Abduction">Shoulder Abduction</option>
-                    <option value="Shoulder Rotation">Shoulder Rotation</option>
+                    <option value="Knee Flexion" className="bg-[#0B0A10]">Knee Flexion</option>
+                    <option value="Knee Extension" className="bg-[#0B0A10]">Knee Extension</option>
+                    <option value="Shoulder Abduction" className="bg-[#0B0A10]">Shoulder Abduction</option>
+                    <option value="Shoulder Rotation" className="bg-[#0B0A10]">Shoulder Rotation</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Angle (Degrees)</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Angle (Degrees)</label>
                   <input
                     type="number"
                     value={romAngle}
                     onChange={(e) => setRomAngle(e.target.value)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                   />
                 </div>
 
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Rehab Stage</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Rehab Stage</label>
                   <div className="flex gap-4">
                     {['Before', 'After'].map((stage) => (
-                      <label key={stage} className="flex items-center gap-1.5 text-xs text-[#2B2620] font-semibold cursor-pointer">
+                      <label key={stage} className="flex items-center gap-1.5 text-xs text-white font-semibold cursor-pointer">
                         <input
                           type="radio"
                           name="romStage"
                           checked={romStage === stage}
                           onChange={() => setRomStage(stage)}
-                          className="accent-primary"
+                          className="accent-[#12D6C4]"
                         />
                         {stage} Rehab
                       </label>
@@ -1741,17 +1739,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     onClick={() => setIsRomUploading(false)}
-                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 border border-white/10 hover:bg-white/5 text-white/70 text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleRomUploadSimulate}
-                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1.5"
+                    className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer flex items-center gap-1.5 shadow-md"
                   >
                     <Camera className="h-3.5 w-3.5" />
                     Simulate Capture
@@ -1845,9 +1843,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                         <h4 className="text-sm font-bold text-white">{pkg.packageName}</h4>
                         <div className="flex items-center gap-2">
                           <span className={`text-[9px] font-bold px-2 py-0.5 rounded-lg border uppercase tracking-wider ${
-                            pkg.paymentStatus === 'PAID' ? 'bg-primary/10 text-primary border-primary/20' :
-                            pkg.paymentStatus === 'PARTIAL' ? 'bg-orange-500/10 text-orange-700 border-orange-500/20' :
-                            'bg-red-500/10 text-red-700 border-red-500/20'
+                            pkg.paymentStatus === 'PAID' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' :
+                            pkg.paymentStatus === 'PARTIAL' ? 'bg-orange-500/20 text-orange-300 border-orange-500/30' :
+                            'bg-rose-500/20 text-rose-300 border-rose-500/30'
                           }`}>
                             {pkg.paymentStatus}
                           </span>
@@ -1861,7 +1859,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                               setEditPackagePaid(pkg.paidAmount ? pkg.paidAmount.toString() : '');
                               setIsEditingPackage(true);
                             }}
-                            className="p-1 text-[#2B2620]/60 hover:text-primary hover:bg-[#FAF6EF] rounded-lg transition-colors cursor-pointer"
+                            className="p-1 text-white/60 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
                             title="Edit Package Details"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
@@ -1883,7 +1881,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                                 }
                               });
                             }}
-                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            className="p-1 text-rose-400 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition-colors cursor-pointer"
                             title="Delete Package"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -1892,13 +1890,13 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                       </div>
 
                       {/* Pricing Info */}
-                      <div className="grid grid-cols-3 gap-2 bg-[#FAF6EF]/50 border border-[#EADFCA]/40 p-2.5 rounded-xl text-[10px] font-bold text-[#2B2620]/75 mb-3">
+                      <div className="grid grid-cols-3 gap-2 bg-black/40 border border-white/10 p-2.5 rounded-xl text-[10px] font-bold text-white/80 mb-3">
                         <div>
-                          <span className="text-[#2B2620]/45 block text-[8px] uppercase tracking-wider">Total Price</span>
+                          <span className="text-white/40 block text-[8px] uppercase tracking-wider">Total Price</span>
                           <span>₹{price.toLocaleString()}</span>
                         </div>
                         <div>
-                          <span className="text-[#2B2620]/45 block text-[8px] uppercase tracking-wider">Paid</span>
+                          <span className="text-white/40 block text-[8px] uppercase tracking-wider">Paid</span>
                           <span className="flex items-center gap-1">
                             ₹{paid.toLocaleString()}
                             <button 
@@ -1914,39 +1912,39 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                                 });
                                 if (res.ok) refetchPackages();
                               }}
-                              className="text-primary hover:underline font-semibold"
+                              className="text-[#12D6C4] hover:underline font-semibold"
                             >
                               (Edit)
                             </button>
                           </span>
                         </div>
                         <div>
-                          <span className="text-[#2B2620]/45 block text-[8px] uppercase tracking-wider">Balance</span>
-                          <span className={balance > 0 ? 'text-orange-600' : 'text-primary'}>₹{balance.toLocaleString()}</span>
+                          <span className="text-white/40 block text-[8px] uppercase tracking-wider">Balance</span>
+                          <span className={balance > 0 ? 'text-orange-400' : 'text-[#12D6C4]'}>₹{balance.toLocaleString()}</span>
                         </div>
                       </div>
 
-                      <p className="text-xs text-[#2B2620]/60 font-semibold mb-3">
+                      <p className="text-xs text-white/60 font-semibold mb-3">
                         {pkg.sessionsUsed} of {pkg.totalSessions} sessions completed.
                       </p>
                       
                       {/* Progress Bar */}
-                      <div className="w-full bg-[#EADFCA]/40 rounded-full h-2 mb-4">
+                      <div className="w-full bg-white/10 rounded-full h-2 mb-4">
                         <div 
-                          className="bg-primary h-2 rounded-full transition-all" 
+                          className="bg-[#12D6C4] h-2 rounded-full transition-all" 
                           style={{ width: `${(pkg.sessionsUsed / pkg.totalSessions) * 100}%` }}
                         ></div>
                       </div>
 
                       {/* Sub-sessions checklist */}
                       {subSessionsList.length > 0 && (
-                        <div className="mt-3 border-t border-[#EADFCA]/40 pt-3 max-h-48 overflow-y-auto space-y-1 bg-[#FAF6EF]/20 rounded-xl p-2 border border-[#EADFCA]/30">
-                          <p className="text-[9px] font-bold text-[#2B2620]/50 uppercase tracking-wider mb-1 px-1">Session Checklist & SOAP Notes</p>
+                        <div className="mt-3 border-t border-white/10 pt-3 max-h-48 overflow-y-auto space-y-1 bg-black/40 rounded-xl p-2.5 border border-white/10">
+                          <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider mb-1 px-1">Session Checklist & SOAP Notes</p>
                           {subSessionsList.map((name: string, idx: number) => {
                             const isCompleted = idx < pkg.sessionsUsed;
                             return (
-                              <div key={idx} className="flex items-center justify-between py-1 px-1 hover:bg-[#FAF6EF]/50 rounded-lg group/item transition-colors">
-                                <label className="flex items-center gap-2 text-xs text-[#2B2620] font-semibold cursor-pointer select-none">
+                              <div key={idx} className="flex items-center justify-between py-1 px-1 hover:bg-white/5 rounded-lg group/item transition-colors">
+                                <label className="flex items-center gap-2 text-xs text-white font-semibold cursor-pointer select-none">
                                   <input 
                                     type="checkbox" 
                                     checked={isCompleted}
@@ -1959,16 +1957,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                                       });
                                       if (res.ok) refetchPackages();
                                     }}
-                                    className="accent-primary h-3.5 w-3.5 cursor-pointer"
+                                    className="accent-[#12D6C4] h-3.5 w-3.5 cursor-pointer"
                                   />
-                                  <span className={isCompleted ? 'line-through text-[#2B2620]/45 font-medium' : ''}>
+                                  <span className={isCompleted ? 'line-through text-white/40 font-medium' : ''}>
                                     {name || `Session ${idx + 1}`}
                                   </span>
                                 </label>
                                 
                                 <div className="flex items-center gap-1.5 shrink-0">
                                   {subSessionsNotesList[idx] && (
-                                    <span className="text-[8px] bg-primary/10 text-primary border border-primary/20 font-bold px-1.5 py-0.5 rounded-md">
+                                    <span className="text-[8px] bg-[#12D6C4]/20 text-[#12D6C4] border border-[#12D6C4]/30 font-bold px-1.5 py-0.5 rounded-md">
                                       Has Notes
                                     </span>
                                   )}
@@ -1977,7 +1975,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                                       setCurrentSessionNotesText(subSessionsNotesList[idx] || '');
                                       setEditingNotesSessionIdx({ pkgId: pkg.id, idx });
                                     }}
-                                    className="p-1.5 rounded-lg border border-[#EADFCA] bg-[#FAF6EF]/60 hover:bg-[#EADFCA]/40 text-[#2B2620]/60 hover:text-primary transition-all cursor-pointer"
+                                    className="p-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white transition-all cursor-pointer"
                                     title="Add/Edit Session Notes"
                                   >
                                     <Edit2 className="h-3 w-3" />
@@ -2002,7 +2000,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                           refetchPackages();
                         }
                       }}
-                      className="w-full mt-4 py-2 bg-[#FAF6EF] hover:bg-[#EADFCA] text-[#2B2620] text-xs font-bold rounded-xl border border-[#EADFCA] transition-colors disabled:opacity-50 cursor-pointer"
+                      className="w-full mt-4 py-2.5 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl border-0 transition-colors disabled:opacity-50 cursor-pointer shadow-md"
                     >
                       {pkg.sessionsUsed >= pkg.totalSessions ? 'Package Completed' : 'Deduct Session'}
                     </button>
@@ -2017,16 +2015,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       {/* Initial Assessments Tab */}
       {activeTab === 'assessments' && (
         <div className="p-6 space-y-6 max-w-6xl mx-auto w-full animate-fadeIn">
-          <div className="flex items-center justify-between border-b border-[#EADFCA] pb-4">
+          <div className="flex items-center justify-between border-b border-white/10 pb-4">
             <div>
-              <h3 className="text-base font-serif font-bold text-[#2B2620]">Patient Digital Assessments</h3>
-              <p className="text-xs text-[#2B2620]/60 font-semibold mt-0.5">
+              <h3 className="text-base font-serif font-bold text-white">Patient Digital Assessments</h3>
+              <p className="text-xs text-white/50 font-semibold mt-0.5">
                 Structured clinical evaluations, ROM/MMT measurements, and red flag safety logs.
               </p>
             </div>
             <a
               href={`/crm360/assessments/new?patientId=${patientId}`}
-              className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl transition-all shadow-xs flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-all shadow-md flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="h-4 w-4" /> + New Initial Assessment
             </a>
@@ -2037,39 +2035,39 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               patient.assessments.map((a: any) => (
                 <div
                   key={a.id}
-                  className="p-4 bg-[#FAF6EF]/60 border border-[#EADFCA] rounded-2xl flex items-center justify-between gap-4"
+                  className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between gap-4"
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-primary/20 text-primary border border-primary/30 rounded-md">
+                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#12D6C4]/20 text-[#12D6C4] border border-[#12D6C4]/30 rounded-md">
                         {a.type}
                       </span>
-                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-[#2B2620]/10 text-[#2B2620]/70 rounded-md">
+                      <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/70 border border-white/20 rounded-md">
                         {a.status}
                       </span>
                     </div>
-                    <h4 className="text-sm font-serif font-bold text-[#2B2620]">
+                    <h4 className="text-sm font-serif font-bold text-white">
                       {a.ptDiagnosis || a.provisionalDiagnosis || 'Clinical Assessment'}
                     </h4>
-                    <p className="text-xs text-[#2B2620]/60 font-medium">
+                    <p className="text-xs text-white/50 font-medium">
                       Date: {new Date(a.assessmentDate).toLocaleDateString()}
                     </p>
                   </div>
 
                   <a
                     href={`/crm360/assessments/${a.id}`}
-                    className="px-3.5 py-2 bg-[#2B2620] hover:bg-black text-white text-xs font-bold rounded-xl transition-all shadow-xs shrink-0"
+                    className="px-3.5 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-all shadow-xs shrink-0"
                   >
                     View Details
                   </a>
                 </div>
               ))
             ) : (
-              <div className="p-8 text-center bg-[#FAF6EF]/30 border border-dashed border-[#EADFCA] rounded-2xl text-xs text-[#2B2620]/50 space-y-2">
+              <div className="p-8 text-center bg-white/5 border border-dashed border-white/10 rounded-2xl text-xs text-white/50 space-y-2">
                 <p>No initial assessments logged for this patient yet.</p>
                 <a
                   href={`/crm360/assessments/new?patientId=${patientId}`}
-                  className="text-primary font-bold hover:underline block pt-1"
+                  className="text-[#12D6C4] font-bold hover:underline block pt-1"
                 >
                   + Click to create first Initial Assessment
                 </a>
@@ -2083,70 +2081,70 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {isAddingPackage && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsAddingPackage(false)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsAddingPackage(false)} />
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
-              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-md flex flex-col z-10 max-h-[85vh] overflow-y-auto"
+              className="bg-[#0F0D16] border border-white/10 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-10 max-h-[85vh] overflow-y-auto text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-serif font-bold text-primary mb-2">Create Session Package</h3>
-              <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">Set up prepaid treatment session plans for the patient.</p>
+              <h3 className="text-lg font-serif font-bold text-white mb-1">Create Session Package</h3>
+              <p className="text-xs text-white/50 font-semibold mb-4">Set up prepaid treatment session plans for the patient.</p>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Package Main Name</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Package Main Name</label>
                   <input
                     type="text"
                     placeholder="e.g. 10 Class IV Laser Sessions"
                     value={packageName}
                     onChange={(e) => setPackageName(e.target.value)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Price (₹)</label>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Total Price (₹)</label>
                     <input
                       type="number"
                       placeholder="e.g. 15000"
                       value={packagePrice}
                       onChange={(e) => setPackagePrice(e.target.value)}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                      className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Amount Paid (₹)</label>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Amount Paid (₹)</label>
                     <input
                       type="number"
                       placeholder="e.g. 15000"
                       value={packagePaid}
                       onChange={(e) => setPackagePaid(e.target.value)}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                      className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Sessions</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Total Sessions</label>
                   <input
                     type="number"
                     min={1}
                     max={50}
                     value={totalSessions}
                     onChange={(e) => handleTotalSessionsChange(parseInt(e.target.value) || 1)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                   />
                 </div>
                 
-                <div className="space-y-2 border-t border-[#EADFCA]/60 pt-3">
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 block">Individual Session Names (Sub-names)</label>
+                <div className="space-y-2 border-t border-white/10 pt-3">
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 block">Individual Session Names (Sub-names)</label>
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {Array.from({ length: totalSessions }).map((_, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-[#2B2620]/50 w-6">#{idx + 1}</span>
+                        <span className="text-[10px] font-mono text-white/40 w-6">#{idx + 1}</span>
                         <input
                           type="text"
                           placeholder={`Session ${idx + 1} specific focus`}
@@ -2156,17 +2154,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                             next[idx] = e.target.value;
                             setSubNamesInput(next);
                           }}
-                          className="block flex-1 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-1.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                          className="block flex-1 text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-white focus:border-[#12D6C4] outline-none font-semibold"
                         />
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     onClick={() => setIsAddingPackage(false)}
-                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 border border-white/10 hover:bg-white/5 text-white/70 text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -2199,7 +2197,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                         alert('Failed to create package');
                       }
                     }}
-                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer shadow-md"
                   >
                     Save Package
                   </button>
@@ -2214,70 +2212,70 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {isEditingPackage && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setIsEditingPackage(false)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsEditingPackage(false)} />
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
-              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-md flex flex-col z-10 max-h-[85vh] overflow-y-auto"
+              className="bg-[#0F0D16] border border-white/10 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-10 max-h-[85vh] overflow-y-auto text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-serif font-bold text-primary mb-2">Edit Session Package</h3>
-              <p className="text-xs text-[#2B2620]/60 font-semibold mb-4">Modify the package details or session focus names.</p>
+              <h3 className="text-lg font-serif font-bold text-white mb-1">Edit Session Package</h3>
+              <p className="text-xs text-white/50 font-semibold mb-4">Modify the package details or session focus names.</p>
               
               <div className="space-y-4">
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Package Main Name</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Package Main Name</label>
                   <input
                     type="text"
                     placeholder="e.g. 10 Class IV Laser Sessions"
                     value={editPackageName}
                     onChange={(e) => setEditPackageName(e.target.value)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                   />
                 </div>
                 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Price (₹)</label>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Total Price (₹)</label>
                     <input
                       type="number"
                       placeholder="e.g. 15000"
                       value={editPackagePrice}
                       onChange={(e) => setEditPackagePrice(e.target.value)}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                      className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Amount Paid (₹)</label>
+                    <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Amount Paid (₹)</label>
                     <input
                       type="number"
                       placeholder="e.g. 15000"
                       value={editPackagePaid}
                       onChange={(e) => setEditPackagePaid(e.target.value)}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                      className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Total Sessions</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Total Sessions</label>
                   <input
                     type="number"
                     min={1}
                     max={50}
                     value={editTotalSessions}
                     onChange={(e) => handleEditTotalSessionsChange(parseInt(e.target.value) || 1)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold"
                   />
                 </div>
                 
-                <div className="space-y-2 border-t border-[#EADFCA]/60 pt-3">
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 block">Individual Session Names (Sub-names)</label>
+                <div className="space-y-2 border-t border-white/10 pt-3">
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 block">Individual Session Names (Sub-names)</label>
                   <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                     {Array.from({ length: editTotalSessions }).map((_, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono text-[#2B2620]/50 w-6">#{idx + 1}</span>
+                        <span className="text-[10px] font-mono text-white/40 w-6">#{idx + 1}</span>
                         <input
                           type="text"
                           placeholder={`Session ${idx + 1} specific focus`}
@@ -2287,17 +2285,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                             next[idx] = e.target.value;
                             setEditSubNamesInput(next);
                           }}
-                          className="block flex-1 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] px-3 py-1.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold"
+                          className="block flex-1 text-xs rounded-xl border border-white/10 bg-white/[0.04] px-3 py-1.5 text-white focus:border-[#12D6C4] outline-none font-semibold"
                         />
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     onClick={() => setIsEditingPackage(false)}
-                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 border border-white/10 hover:bg-white/5 text-white/70 text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -2325,7 +2323,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                         alert('Failed to update package');
                       }
                     }}
-                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer shadow-md"
                   >
                     Save Changes
                   </button>
@@ -2340,35 +2338,35 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {editingNotesSessionIdx && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setEditingNotesSessionIdx(null)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setEditingNotesSessionIdx(null)} />
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
-              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-lg flex flex-col z-10"
+              className="bg-[#0F0D16] border border-white/10 p-6 rounded-3xl shadow-2xl w-full max-w-lg flex flex-col z-10 text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-serif font-bold text-primary mb-1">Session SOAP & Treatment Note</h3>
-              <p className="text-xxs text-[#2B2620]/50 font-bold uppercase tracking-wider mb-4">
+              <h3 className="text-lg font-serif font-bold text-white mb-1">Session SOAP & Treatment Note</h3>
+              <p className="text-xxs text-white/40 font-bold uppercase tracking-wider mb-4">
                 Session #{editingNotesSessionIdx.idx + 1} specific documentation
               </p>
 
               <div className="space-y-4">
                 <div>
-                  <label className="text-xxs font-bold uppercase tracking-wider text-[#2B2620]/60 mb-1 block">Clinical Notes</label>
+                  <label className="text-xxs font-bold uppercase tracking-wider text-white/50 mb-1 block">Clinical Notes</label>
                   <textarea
                     rows={6}
                     placeholder="Enter visit details, SOAP notes, pain levels, or range of motion outcomes for this session..."
                     value={currentSessionNotesText}
                     onChange={(e) => setCurrentSessionNotesText(e.target.value)}
-                    className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF] p-3 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold leading-relaxed"
+                    className="block w-full text-xs rounded-xl border border-white/10 bg-white/[0.04] p-3 text-white focus:border-[#12D6C4] outline-none font-semibold leading-relaxed"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 pt-3 border-t border-[#EADFCA]/60">
+                <div className="flex justify-end gap-3 pt-3 border-t border-white/10">
                   <button
                     onClick={() => setEditingNotesSessionIdx(null)}
-                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 border border-white/10 hover:bg-white/5 text-white/70 text-xs font-bold rounded-xl cursor-pointer"
                   >
                     Cancel
                   </button>
@@ -2407,7 +2405,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                         alert('Failed to save session notes');
                       }
                     }}
-                    className="px-4 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold rounded-xl cursor-pointer"
+                    className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer shadow-md"
                   >
                     Save Notes
                   </button>
@@ -2422,18 +2420,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {viewingDoc && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setViewingDoc(null)} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setViewingDoc(null)} />
             <motion.div
               initial={{ y: 50, opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
               exit={{ y: 50, opacity: 0 }}
-              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-3xl flex flex-col z-10 max-h-[85vh]"
+              className="bg-[#0F0D16] border border-white/10 p-6 rounded-3xl shadow-2xl w-full max-w-3xl flex flex-col z-10 max-h-[85vh] text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex justify-between items-center pb-4 border-b border-[#EADFCA]/60 mb-4">
+              <div className="flex justify-between items-center pb-4 border-b border-white/10 mb-4">
                 <div>
-                  <h3 className="text-lg font-serif font-bold text-[#2B2620]">{viewingDoc.displayName}</h3>
-                  <p className="text-[10px] text-[#2B2620]/50 font-bold uppercase tracking-wider">{viewingDoc.fileType}</p>
+                  <h3 className="text-lg font-serif font-bold text-white">{viewingDoc.displayName}</h3>
+                  <p className="text-[10px] text-white/40 font-bold uppercase tracking-wider">{viewingDoc.fileType}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <a 
@@ -2441,30 +2439,30 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     download 
                     target="_blank"
                     rel="noreferrer"
-                    className="p-2 rounded-xl border border-[#EADFCA] hover:bg-[#FAF6EF] text-[#2B2620] cursor-pointer"
+                    className="p-2 rounded-xl border border-white/10 hover:bg-white/10 text-white cursor-pointer transition-colors"
                   >
                     <Download className="h-4 w-4" />
                   </a>
-                  <button onClick={() => setViewingDoc(null)} className="p-2 rounded-xl border border-[#EADFCA] hover:bg-[#FAF6EF] text-[#2B2620] cursor-pointer">
+                  <button onClick={() => setViewingDoc(null)} className="p-2 rounded-xl border border-white/10 hover:bg-white/10 text-white cursor-pointer transition-colors">
                     <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>
               
-              <div className="flex-1 overflow-y-auto flex items-center justify-center min-h-[350px] bg-[#FAF6EF]/40 rounded-2xl border border-[#EADFCA]/60 p-4">
+              <div className="flex-1 overflow-y-auto flex items-center justify-center min-h-[350px] bg-black/40 rounded-2xl border border-white/10 p-4">
                 {viewingDoc.url.toLowerCase().endsWith('.pdf') || viewingDoc.fileType === 'PDF' ? (
                   <iframe src={viewingDoc.url} className="w-full h-[55vh] rounded-xl border-0" />
                 ) : viewingDoc.url.toLowerCase().match(/\.(jpeg|jpg|gif|png|webp)$/) || ['X-Ray', 'MRI'].includes(viewingDoc.fileType) ? (
                   <img src={viewingDoc.url} alt={viewingDoc.displayName} className="max-w-full max-h-[55vh] object-contain rounded-xl shadow-xs" />
                 ) : (
                   <div className="text-center py-10 space-y-3">
-                    <File className="h-12 w-12 text-[#2B2620]/30 mx-auto" />
-                    <p className="text-xs text-[#2B2620]/60 font-semibold">Preview not supported for this file type.</p>
+                    <File className="h-12 w-12 text-white/30 mx-auto" />
+                    <p className="text-xs text-white/60 font-semibold">Preview not supported for this file type.</p>
                     <a 
                       href={viewingDoc.url} 
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-block px-4 py-2 bg-primary text-background text-xs font-bold rounded-xl"
+                      className="inline-block px-4 py-2 bg-white text-black text-xs font-bold rounded-xl"
                     >
                       Open in New Tab
                     </a>
@@ -2480,30 +2478,30 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       <AnimatePresence>
         {confirmDelete.isOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <div className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md" onClick={() => setConfirmDelete(prev => ({ ...prev, isOpen: false }))} />
+            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setConfirmDelete(prev => ({ ...prev, isOpen: false }))} />
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.9, opacity: 0 }}
-              className="bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-xl w-full max-w-sm flex flex-col z-10 text-center"
+              className="bg-[#0F0D16] border border-white/10 p-6 rounded-3xl shadow-2xl w-full max-w-sm flex flex-col z-10 text-center text-white"
               onClick={(e) => e.stopPropagation()}
             >
-              <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center text-red-500 mx-auto mb-3">
+              <div className="w-12 h-12 bg-rose-500/10 border border-rose-500/20 rounded-full flex items-center justify-center text-rose-400 mx-auto mb-3">
                 <AlertTriangle className="h-6 w-6" />
               </div>
-              <h3 className="text-base font-serif font-bold text-[#2B2620] mb-2">{confirmDelete.title}</h3>
-              <p className="text-xs text-[#2B2620]/60 font-semibold mb-6">{confirmDelete.message}</p>
+              <h3 className="text-base font-serif font-bold text-white mb-2">{confirmDelete.title}</h3>
+              <p className="text-xs text-white/60 font-semibold mb-6">{confirmDelete.message}</p>
               
               <div className="flex gap-3 justify-center">
                 <button
                   onClick={() => setConfirmDelete(prev => ({ ...prev, isOpen: false }))}
-                  className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl cursor-pointer flex-1"
+                  className="px-4 py-2 border border-white/10 hover:bg-white/5 text-white/70 text-xs font-bold rounded-xl cursor-pointer flex-1"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDelete.onConfirm}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-bold rounded-xl cursor-pointer flex-1"
+                  className="px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer flex-1 shadow-md"
                 >
                   Confirm Delete
                 </button>
