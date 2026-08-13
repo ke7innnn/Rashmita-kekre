@@ -277,7 +277,7 @@ export default function CreatePatientModal({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-[#2B2620]/30 backdrop-blur-md"
+            className="absolute inset-0 bg-black/80 backdrop-blur-md"
           />
 
           <motion.div 
@@ -285,16 +285,16 @@ export default function CreatePatientModal({
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 50, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 320, damping: 28 }}
-            className="relative bg-[#FFFCF6] border border-[#EADFCA]/40 w-full max-w-3xl rounded-3xl shadow-[0_24px_50px_rgba(42,38,32,0.12)] overflow-visible flex flex-col z-10"
+            className="relative bg-[#0F0D16] border border-white/20 w-full max-w-3xl rounded-3xl shadow-2xl overflow-visible flex flex-col z-10 text-white"
           >
             {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-[#EADFCA]/60 bg-[#FFFCF6]/50 shrink-0 rounded-t-3xl">
-              <h3 className="text-2xl font-serif text-[#2B2620] font-semibold">Add Patient</h3>
+            <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 shrink-0 rounded-t-3xl">
+              <h3 className="text-2xl font-serif text-white font-semibold">Add Patient</h3>
               <motion.button 
                 type="button"
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose} 
-                className="p-1.5 rounded-full hover:bg-[#FAF6EF] text-[#2B2620]/50 hover:text-[#2B2620] cursor-pointer focus:outline-hidden"
+                className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white cursor-pointer focus:outline-hidden"
               >
                 <X className="h-5 w-5 stroke-[1.75]" />
               </motion.button>
@@ -303,35 +303,35 @@ export default function CreatePatientModal({
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full overflow-visible">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 p-8 overflow-visible max-h-[60vh] overflow-y-auto bg-[#FFFCF6]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 p-8 overflow-visible max-h-[60vh] overflow-y-auto bg-[#0F0D16]">
                 
                 {/* Left Column */}
                 <div className="space-y-4">
                   {/* Full Name */}
                   <div className="space-y-1">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Full Name
                     </label>
                     <input
                       type="text"
                       placeholder="Patient Name"
                       {...register('fullName')}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
+                      className="block w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs"
                     />
                     {errors.fullName?.message && (
-                      <p className="text-[10px] text-red-500 mt-0.5">{errors.fullName.message as string}</p>
+                      <p className="text-[10px] text-rose-400 mt-0.5">{errors.fullName.message as string}</p>
                     )}
                   </div>
 
                   {/* Mobile No. */}
                   <div className="space-y-1">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Mobile No.
                     </label>
                     <div className="flex gap-2">
                       <select
                         {...register('phoneCountryCode')}
-                        className="w-24 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/60 px-2 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs cursor-pointer"
+                        className="w-24 text-xs rounded-xl border border-white/15 bg-[#0B0A10] px-2 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs cursor-pointer"
                       >
                         <option value="+91">IN (+91)</option>
                         <option value="+1">US (+1)</option>
@@ -341,29 +341,29 @@ export default function CreatePatientModal({
                       <input
                         type="text"
                         {...register('phoneLocal')}
-                        className="flex-1 text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
+                        className="flex-1 text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs"
                       />
                     </div>
                     {errors.phoneLocal?.message && (
-                      <p className="text-[10px] text-red-500 mt-0.5">{errors.phoneLocal.message as string}</p>
+                      <p className="text-[10px] text-rose-400 mt-0.5">{errors.phoneLocal.message as string}</p>
                     )}
                   </div>
 
                   {/* Email */}
                   <div className="space-y-1">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Email
                     </label>
                     <input
                       type="email"
                       {...register('email')}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
+                      className="block w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs"
                     />
                   </div>
 
                   {/* Age */}
                   <div className="space-y-1">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Age (Years)
                     </label>
                     <input
@@ -371,7 +371,7 @@ export default function CreatePatientModal({
                       placeholder="E.g., 35"
                       {...register('ageYears')}
                       onChange={handleAgeChange}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs"
+                      className="block w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs"
                     />
                   </div>
                 </div>
@@ -380,12 +380,12 @@ export default function CreatePatientModal({
                 <div className="space-y-4">
                   {/* Gender */}
                   <div className="space-y-1">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Gender
                     </label>
                     <select
                       {...register('gender')}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3 py-2.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs cursor-pointer"
+                      className="block w-full text-xs rounded-xl border border-white/15 bg-[#0B0A10] px-3 py-2.5 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs cursor-pointer"
                     >
                       <option value="Female">Female</option>
                       <option value="Male">Male</option>
@@ -395,12 +395,12 @@ export default function CreatePatientModal({
 
                   {/* Language */}
                   <div className="space-y-1">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Language
                     </label>
                     <select
                       {...register('language')}
-                      className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3 py-2.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-semibold shadow-xxs cursor-pointer"
+                      className="block w-full text-xs rounded-xl border border-white/15 bg-[#0B0A10] px-3 py-2.5 text-white focus:border-[#12D6C4] outline-none font-semibold shadow-xs cursor-pointer"
                     >
                       <option value="English">English</option>
                       <option value="Hindi">Hindi</option>
@@ -414,14 +414,14 @@ export default function CreatePatientModal({
                   {/* Referred By Section */}
                   <div className="space-y-2 relative z-50">
                     <div className="flex justify-between items-center">
-                      <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65 flex items-center gap-1">
-                        <UserPlus className="h-3 w-3 text-primary stroke-[2]" />
+                      <label className="block text-xxs font-bold uppercase tracking-wider text-white/60 flex items-center gap-1">
+                        <UserPlus className="h-3 w-3 text-[#12D6C4] stroke-[2]" />
                         Referred By (Referral Source)
                       </label>
                       <button
                         type="button"
                         onClick={() => setShowQuickAddDoctor(!showQuickAddDoctor)}
-                        className="text-[10px] font-bold text-primary hover:underline flex items-center gap-0.5 cursor-pointer"
+                        className="text-[10px] font-bold text-[#12D6C4] hover:underline flex items-center gap-0.5 cursor-pointer"
                       >
                         <Plus className="h-3 w-3" />
                         {showQuickAddDoctor ? 'Cancel' : 'Quick Add Referrer'}
@@ -450,34 +450,34 @@ export default function CreatePatientModal({
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: 'auto' }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="overflow-hidden bg-[#FAF6EF] border border-[#EADFCA] p-3.5 rounded-2xl space-y-2.5 shadow-sm mt-2"
+                          className="overflow-hidden bg-white/5 border border-white/10 p-3.5 rounded-2xl space-y-2.5 shadow-sm mt-2"
                         >
-                          <div className="flex items-center justify-between border-b border-[#EADFCA]/60 pb-1.5">
-                            <span className="text-xs font-bold text-[#2B2620] flex items-center gap-1.5">
-                              <Building2 className="h-3.5 w-3.5 text-primary" /> Quick Add Referral Partner
+                          <div className="flex items-center justify-between border-b border-white/10 pb-1.5">
+                            <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                              <Building2 className="h-3.5 w-3.5 text-[#12D6C4]" /> Quick Add Referral Partner
                             </span>
-                            <span className="text-[10px] text-[#2B2620]/50 font-medium">Appears in Referrals Tab</span>
+                            <span className="text-[10px] text-white/50 font-medium">Appears in Referrals Tab</span>
                           </div>
 
                           <div className="space-y-2">
                             <div>
-                              <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Doctor / Partner Name *</label>
+                              <label className="block text-[10px] font-semibold text-white/70 mb-0.5">Doctor / Partner Name *</label>
                               <input
                                 type="text"
                                 placeholder="E.g. Dr. Ramesh Gupta"
                                 value={quickDocName}
                                 onChange={(e) => setQuickDocName(e.target.value)}
-                                className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-3 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden"
+                                className="w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none"
                               />
                             </div>
 
                             <div className="grid grid-cols-2 gap-2">
                               <div>
-                                <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Specialty</label>
+                                <label className="block text-[10px] font-semibold text-white/70 mb-0.5">Specialty</label>
                                 <select
                                   value={quickDocSpecialty}
                                   onChange={(e) => setQuickDocSpecialty(e.target.value)}
-                                  className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-2 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden cursor-pointer"
+                                  className="w-full text-xs rounded-xl border border-white/15 bg-[#0B0A10] px-2 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none cursor-pointer"
                                 >
                                   <option value="Orthopedics & Joint Care">Orthopedics</option>
                                   <option value="Neurology & Rehabilitation">Neurology</option>
@@ -490,25 +490,25 @@ export default function CreatePatientModal({
                               </div>
 
                               <div>
-                                <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Clinic / Hospital</label>
+                                <label className="block text-[10px] font-semibold text-white/70 mb-0.5">Clinic / Hospital</label>
                                 <input
                                   type="text"
                                   placeholder="E.g. City Ortho Centre"
                                   value={quickDocClinic}
                                   onChange={(e) => setQuickDocClinic(e.target.value)}
-                                  className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-3 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden"
+                                  className="w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none"
                                 />
                               </div>
                             </div>
 
                             <div>
-                              <label className="block text-[10px] font-semibold text-[#2B2620]/70 mb-0.5">Contact Email / Phone (Optional)</label>
+                              <label className="block text-[10px] font-semibold text-white/70 mb-0.5">Contact Email / Phone (Optional)</label>
                               <input
                                 type="text"
                                 placeholder="e.g. dr.ramesh@clinic.com"
                                 value={quickDocEmail}
                                 onChange={(e) => setQuickDocEmail(e.target.value)}
-                                className="w-full text-xs rounded-xl border border-[#EADFCA] bg-white px-3 py-1.5 text-[#2B2620] font-semibold focus:border-primary focus:outline-hidden"
+                                className="w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none"
                               />
                             </div>
 
@@ -516,14 +516,14 @@ export default function CreatePatientModal({
                               <button
                                 type="button"
                                 onClick={() => setShowQuickAddDoctor(false)}
-                                className="px-3 py-1 text-xs font-semibold text-[#2B2620]/60 hover:bg-black/5 rounded-lg"
+                                className="px-3 py-1 text-xs font-semibold text-white/60 hover:bg-white/10 rounded-lg cursor-pointer"
                               >
                                 Cancel
                               </button>
                               <button
                                 type="button"
                                 onClick={() => saveNewReferringDoctor(quickDocName, quickDocSpecialty, quickDocClinic, quickDocEmail)}
-                                className="px-3 py-1 text-xs font-bold bg-primary text-white rounded-lg hover:bg-[#3C5040] shadow-xs cursor-pointer"
+                                className="px-3 py-1 text-xs font-bold bg-white hover:bg-white/90 text-black rounded-lg shadow-md cursor-pointer"
                               >
                                 Save & Select Referrer
                               </button>
@@ -536,7 +536,7 @@ export default function CreatePatientModal({
 
                   {/* Diagnosis Reason Selection */}
                   <div className="space-y-1 relative z-40">
-                    <label className="block text-xxs font-bold uppercase tracking-wider text-[#2B2620]/65">
+                    <label className="block text-xxs font-bold uppercase tracking-wider text-white/60">
                       Diagnosis / Reason for Visit
                     </label>
                     <Controller
@@ -561,8 +561,8 @@ export default function CreatePatientModal({
                           onClick={() => setValue('diagnosisReason', diag)}
                           className={`text-[10px] px-2 py-0.5 rounded-full border transition-all cursor-pointer font-medium ${
                             watch('diagnosisReason') === diag
-                              ? 'bg-primary text-white border-primary shadow-xs font-semibold'
-                              : 'bg-[#FAF6EF]/60 text-[#2B2620]/75 border-[#EADFCA] hover:bg-[#FAF6EF] hover:border-primary/40'
+                              ? 'bg-white text-black border-white shadow-md font-bold'
+                              : 'bg-white/5 text-white/70 border-white/10 hover:bg-white/10 hover:border-white/30'
                           }`}
                         >
                           {diag}
@@ -576,7 +576,7 @@ export default function CreatePatientModal({
                     <button
                       type="button"
                       onClick={() => setShowAddressInput(!showAddressInput)}
-                      className="w-full py-2 bg-primary/10 hover:bg-primary/20 text-primary font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-primary/20 shadow-xxs cursor-pointer"
+                      className="w-full py-2 bg-white/10 hover:bg-white/20 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl transition-all border border-white/20 shadow-xs cursor-pointer"
                     >
                       Address Details
                     </button>
@@ -592,7 +592,7 @@ export default function CreatePatientModal({
                             {...register('address')}
                             placeholder="Enter full address here..."
                             rows={3}
-                            className="block w-full text-xs rounded-xl border border-[#EADFCA] bg-[#FAF6EF]/40 px-3.5 py-2.5 text-[#2B2620] focus:border-primary focus:outline-hidden font-medium mt-2 shadow-xxs"
+                            className="block w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3.5 py-2.5 text-white focus:border-[#12D6C4] outline-none font-medium mt-2 shadow-xs"
                           />
                         </motion.div>
                       )}
@@ -603,12 +603,12 @@ export default function CreatePatientModal({
               </div>
 
               {/* Footer Actions */}
-              <div className="flex justify-end gap-3 px-6 py-4 border-t border-[#EADFCA]/60 bg-[#FFFCF6]/50 shrink-0 rounded-b-3xl">
+              <div className="flex justify-end gap-3 px-6 py-4 border-t border-white/10 bg-[#0F0D16] shrink-0 rounded-b-3xl">
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.95 }}
                   onClick={onClose}
-                  className="px-5 py-2 bg-transparent hover:bg-[#FAF6EF] text-[#2B2620]/75 border border-[#EADFCA] text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer focus:outline-hidden"
+                  className="px-5 py-2 bg-transparent hover:bg-white/10 text-white/70 border border-white/15 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer focus:outline-hidden"
                 >
                   Cancel
                 </motion.button>
@@ -616,7 +616,7 @@ export default function CreatePatientModal({
                   type="submit"
                   whileTap={{ scale: 0.95 }}
                   disabled={createPatientMutation.isPending}
-                  className="flex items-center gap-2 px-6 py-2 bg-primary hover:bg-[#3C5040] text-background text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs transition-all disabled:opacity-50 cursor-pointer focus:outline-hidden"
+                  className="flex items-center gap-2 px-6 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all disabled:opacity-50 cursor-pointer focus:outline-hidden"
                 >
                   {createPatientMutation.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />

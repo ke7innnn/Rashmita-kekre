@@ -66,15 +66,15 @@ export default function SearchableDropdown({
   };
 
   return (
-    <div className="relative w-full" ref={wrapperRef}>
+    <div className="relative w-full select-none" ref={wrapperRef}>
       <div 
         onClick={() => !disabled && setIsOpen(!isOpen)}
-        className={`flex items-center justify-between w-full text-xs rounded-xl border ${isOpen ? 'border-primary ring-1 ring-primary/20' : 'border-[#EADFCA]'} ${disabled ? 'bg-[#FAF6EF]/20 opacity-60 cursor-not-allowed' : 'bg-[#FAF6EF]/40 hover:bg-[#FAF6EF]/60 cursor-pointer'} px-3.5 py-2.5 text-[#2B2620] font-semibold shadow-xxs transition-all`}
+        className={`flex items-center justify-between w-full text-xs rounded-xl border ${isOpen ? 'border-[#12D6C4] ring-1 ring-[#12D6C4]/30' : 'border-white/15'} ${disabled ? 'bg-white/5 opacity-50 cursor-not-allowed' : 'bg-white/[0.04] hover:bg-white/[0.08] cursor-pointer'} px-3.5 py-2.5 text-white font-semibold transition-all`}
       >
-        <span className={value ? "text-[#2B2620]" : "text-[#2B2620]/45"}>
+        <span className={value ? "text-white font-semibold" : "text-white/40 font-medium"}>
           {value || placeholder}
         </span>
-        <ChevronDown className={`h-4 w-4 text-[#2B2620]/45 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-4 w-4 text-white/50 transition-transform ${isOpen ? 'rotate-180 text-white' : ''}`} />
       </div>
 
       <AnimatePresence>
@@ -84,36 +84,40 @@ export default function SearchableDropdown({
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -5 }}
             transition={{ duration: 0.15 }}
-            className="absolute z-50 w-full mt-2 bg-[#FFFCF6] border border-[#EADFCA]/60 rounded-xl shadow-[0_8px_30px_rgba(42,38,32,0.12)] overflow-hidden"
+            className="absolute z-50 w-full mt-2 bg-[#0F0D16] border border-white/20 rounded-2xl shadow-2xl overflow-hidden backdrop-blur-xl"
           >
-            <div className="p-2 border-b border-[#EADFCA]/40 bg-[#FAF6EF]/30">
+            <div className="p-2 border-b border-white/10 bg-white/5">
               <div className="relative">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#2B2620]/40" />
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-white/40" />
                 <input
                   type="text"
                   autoFocus
                   placeholder="Search..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full text-xs pl-8 pr-3 py-2 bg-white border border-[#EADFCA] rounded-lg text-[#2B2620] placeholder-[#2B2620]/35 font-semibold focus:outline-hidden focus:border-primary shadow-inner"
+                  className="w-full text-xs pl-8 pr-3 py-2 bg-white/[0.04] border border-white/15 rounded-xl text-white placeholder-white/35 font-semibold focus:outline-none focus:border-[#12D6C4]"
                 />
               </div>
             </div>
 
-            <div className="max-h-48 overflow-y-auto p-1">
+            <div className="max-h-48 overflow-y-auto p-1.5 space-y-0.5">
               {filteredOptions.length === 0 && !showCreateOption ? (
-                <div className="p-3 text-center text-xxs text-[#2B2620]/45 italic font-medium">
+                <div className="p-3 text-center text-xxs text-white/40 italic font-medium">
                   No matches found.
                 </div>
               ) : (
-                filteredOptions.map((option, idx) => (
+                filteredOptions.map((option) => (
                   <div
-                    key={idx}
+                    key={option}
                     onClick={() => handleSelect(option)}
-                    className="flex items-center justify-between px-3 py-2.5 hover:bg-primary/5 rounded-lg cursor-pointer text-xs font-semibold text-[#2B2620] transition-colors"
+                    className={`flex items-center justify-between px-3 py-2 text-xs font-semibold rounded-xl cursor-pointer transition-colors ${
+                      value === option 
+                        ? 'bg-[#12D6C4]/20 text-[#12D6C4]' 
+                        : 'text-white/80 hover:bg-white/10 hover:text-white'
+                    }`}
                   >
                     <span className="truncate">{option}</span>
-                    {value === option && <Check className="h-4 w-4 text-primary shrink-0" />}
+                    {value === option && <Check className="h-3.5 w-3.5 text-[#12D6C4] shrink-0" />}
                   </div>
                 ))
               )}
@@ -121,10 +125,10 @@ export default function SearchableDropdown({
               {showCreateOption && (
                 <div
                   onClick={handleCreate}
-                  className="flex items-center gap-2 px-3 py-2.5 mt-1 border border-primary/20 bg-primary/5 hover:bg-primary/10 rounded-lg cursor-pointer text-xs font-bold text-primary transition-colors"
+                  className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-[#12D6C4] hover:bg-[#12D6C4]/15 rounded-xl cursor-pointer transition-colors border-t border-white/10 mt-1"
                 >
-                  <Plus className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{createLabel} "{searchTerm}"</span>
+                  <Plus className="h-3.5 w-3.5 shrink-0" />
+                  <span>{createLabel}: "{searchTerm}"</span>
                 </div>
               )}
             </div>

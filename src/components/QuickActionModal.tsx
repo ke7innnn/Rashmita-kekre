@@ -111,9 +111,9 @@ export default function QuickActionModal({ appointmentId, onClose, modalities }:
       <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
         {/* Frosted Glass Overlay */}
         <div className="absolute inset-0 bg-[#2B2620]/35 backdrop-blur-md" onClick={onClose} />
-        
+
         {/* Promotion Dialogue */}
-        <motion.div 
+        <motion.div
           initial={{ scale: 0.95, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           className="relative bg-[#FFFCF6] border border-[#EADFCA] p-6 rounded-3xl shadow-[0_24px_50px_rgba(42,38,32,0.15)] w-full max-w-md z-10 space-y-4"
@@ -180,7 +180,7 @@ export default function QuickActionModal({ appointmentId, onClose, modalities }:
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
       {/* Frosted Glass Overlay */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
@@ -189,7 +189,7 @@ export default function QuickActionModal({ appointmentId, onClose, modalities }:
       />
 
       {/* Modal Content Sheet */}
-      <motion.div 
+      <motion.div
         initial={{ y: 50, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: 50, opacity: 0 }}
@@ -202,9 +202,9 @@ export default function QuickActionModal({ appointmentId, onClose, modalities }:
             <h3 className="text-2xl font-serif text-[#2B2620] font-semibold">Quick Status Update</h3>
             <p className="text-xs text-[#2B2620]/50 mt-0.5 font-bold">Patient: {appointment.patient.fullName}</p>
           </div>
-          <motion.button 
+          <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={onClose} 
+            onClick={onClose}
             className="p-1.5 rounded-full hover:bg-[#FAF6EF] text-[#2B2620]/50 hover:text-[#2B2620] cursor-pointer focus:outline-hidden"
           >
             <X className="h-5 w-5 stroke-[1.75]" />

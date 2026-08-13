@@ -109,9 +109,9 @@ export default function ManageAppointmentPage({ appointmentId, onBack }: Props) 
 
   if (isLoading || !appointment) {
     return (
-      <div className="flex flex-col items-center justify-center py-40 text-center bg-[#FFFCF6] border border-[#EADFCA]/60 rounded-2xl p-6">
-        <Loader2 className="h-10 w-10 text-primary animate-spin mb-3" />
-        <p className="text-sm font-semibold text-[#2B2620]/75">Retrieving active session credentials...</p>
+      <div className="flex flex-col items-center justify-center py-40 text-center bg-white/5 border border-white/10 rounded-3xl p-6 text-white">
+        <Loader2 className="h-10 w-10 text-white animate-spin mb-3" />
+        <p className="text-sm font-semibold text-white/70">Retrieving active session credentials...</p>
       </div>
     );
   }
@@ -286,29 +286,29 @@ export default function ManageAppointmentPage({ appointmentId, onBack }: Props) 
                 initial={{ opacity: 0, y: 15 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 15 }}
-                className="bg-[#FFFCF6] border-2 border-primary/20 p-6 rounded-2xl shadow-[0_8px_30px_rgba(42,38,32,0.03)] space-y-4"
+                className="bg-[#0F0D16] border border-white/20 p-6 rounded-3xl shadow-2xl space-y-4 text-white"
               >
-                <div className="flex items-center gap-2 text-primary">
+                <div className="flex items-center gap-2 text-[#12D6C4]">
                   <ShieldAlert className="h-5 w-5 stroke-[2]" />
-                  <h3 className="text-lg font-serif font-bold">Slot Promotion Opportunity</h3>
+                  <h3 className="text-lg font-serif font-bold text-white">Slot Promotion Opportunity</h3>
                 </div>
-                <p className="text-xs text-[#2B2620]/75 leading-relaxed font-semibold">
-                  This appointment has been marked as <strong>Cancelled</strong>. We found an active waitlist candidate looking for <strong className="text-primary">{matchingWaitlistEntry.app.treatmentType}</strong> on this date:
+                <p className="text-xs text-white/75 leading-relaxed font-semibold">
+                  This appointment has been marked as <strong>Cancelled</strong>. We found an active waitlist candidate looking for <strong className="text-[#12D6C4]">{matchingWaitlistEntry.app.treatmentType}</strong> on this date:
                 </p>
 
-                <div className="bg-[#FAF6EF]/80 border border-[#EADFCA]/60 p-4 rounded-xl space-y-2.5 shadow-inner">
+                <div className="bg-white/5 border border-white/10 p-4 rounded-xl space-y-2.5 shadow-inner">
                   <div>
-                    <span className="text-[9px] font-bold text-[#2B2620]/45 uppercase tracking-wider block">Candidate Match</span>
-                    <strong className="text-base font-serif font-bold text-[#2B2620] block">{matchingWaitlistEntry.match.patient.fullName}</strong>
+                    <span className="text-[9px] font-bold text-white/45 uppercase tracking-wider block">Candidate Match</span>
+                    <strong className="text-base font-serif font-bold text-white block">{matchingWaitlistEntry.match.patient.fullName}</strong>
                   </div>
-                  <div className="grid grid-cols-2 gap-4 text-xxs font-bold uppercase text-[#2B2620]/60">
+                  <div className="grid grid-cols-2 gap-4 text-xxs font-bold uppercase text-white/60">
                     <div>
-                      <span className="text-[#2B2620]/40 block mb-0.5">Phone Contact</span>
-                      <span>{matchingWaitlistEntry.match.patient.phone}</span>
+                      <span className="text-white/40 block mb-0.5">Phone Contact</span>
+                      <span className="text-white">{matchingWaitlistEntry.match.patient.phone}</span>
                     </div>
                     <div>
-                      <span className="text-[#2B2620]/40 block mb-0.5">Preferred Window</span>
-                      <span>{matchingWaitlistEntry.match.preferredTimeWindow}</span>
+                      <span className="text-white/40 block mb-0.5">Preferred Window</span>
+                      <span className="text-white">{matchingWaitlistEntry.match.preferredTimeWindow}</span>
                     </div>
                   </div>
                 </div>
@@ -320,7 +320,7 @@ export default function ManageAppointmentPage({ appointmentId, onBack }: Props) 
                       queryClient.invalidateQueries({ queryKey: ['appointments'] });
                       onBack();
                     }}
-                    className="px-4 py-2 border border-[#EADFCA] hover:bg-[#FAF6EF] text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden"
+                    className="px-4 py-2 border border-white/15 hover:bg-white/10 text-white/70 text-xs font-bold rounded-xl transition-colors cursor-pointer focus:outline-hidden"
                   >
                     Keep Slot Empty
                   </motion.button>

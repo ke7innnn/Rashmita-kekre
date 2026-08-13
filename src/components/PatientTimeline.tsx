@@ -441,9 +441,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
   if (isLoading || !patient) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center py-20 bg-[#FFFCF6] rounded-2xl">
-        <Loader2 className="h-8 w-8 text-primary animate-spin" />
-        <p className="text-sm text-foreground/60 mt-2 font-medium">Retrieving clinical history...</p>
+      <div className="flex-1 flex flex-col items-center justify-center py-20 bg-white/5 border border-white/10 rounded-3xl">
+        <Loader2 className="h-8 w-8 text-white animate-spin" />
+        <p className="text-sm text-white/60 mt-2 font-medium">Retrieving clinical history...</p>
       </div>
     );
   }

@@ -174,17 +174,17 @@ export default function AICopilotWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.95 }}
             transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-            className="w-[360px] h-[480px] bg-[#FFFCF6] border border-[#EADFCA] rounded-3xl shadow-[0_20px_50px_rgba(42,38,32,0.12)] flex flex-col overflow-hidden mb-4"
+            className="w-[360px] h-[480px] bg-[#0F0D16] border border-white/20 rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-4 backdrop-blur-xl text-white"
           >
             {/* Header */}
-            <div className="bg-primary text-background p-4 flex justify-between items-center shrink-0 shadow-xxs">
+            <div className="bg-white/10 text-white p-4 flex justify-between items-center shrink-0 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-background/15 rounded-lg text-background">
+                <div className="p-1.5 bg-white/10 rounded-lg text-[#12D6C4]">
                   <Bot className="h-4.5 w-4.5" />
                 </div>
                 <div>
                   <h4 className="text-xs font-bold uppercase tracking-wider">Health 360 Copilot</h4>
-                  <p className="text-[9px] text-background/70 font-semibold mt-0.5 flex items-center gap-1">
+                  <p className="text-[9px] text-white/60 font-semibold mt-0.5 flex items-center gap-1">
                     <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
                     Live CRM Assistant
                   </p>
@@ -192,14 +192,14 @@ export default function AICopilotWidget() {
               </div>
               <button 
                 onClick={() => setIsOpen(false)} 
-                className="text-background/80 hover:text-background p-1 hover:bg-background/10 rounded-lg transition-colors cursor-pointer border-0"
+                className="text-white/60 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer border-0"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Messages Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FAF6EF]/30">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white/[0.02]">
               {messages.map((msg) => {
                 const isBot = msg.sender === 'assistant';
                 return (
@@ -209,14 +209,14 @@ export default function AICopilotWidget() {
                       isBot ? 'self-start items-start' : 'self-end items-end'
                     }`}
                   >
-                    <span className="text-[9px] font-bold text-[#2B2620]/45 mb-0.5 px-1 capitalize">
+                    <span className="text-[9px] font-bold text-white/40 mb-0.5 px-1 capitalize">
                       {isBot ? 'Copilot' : 'Admin'}
                     </span>
                     <div
-                      className={`px-3 py-2 text-xs font-semibold shadow-xxs rounded-2xl whitespace-pre-wrap leading-normal ${
+                      className={`px-3 py-2 text-xs font-semibold rounded-2xl whitespace-pre-wrap leading-normal ${
                         isBot 
-                          ? 'bg-[#FFFCF6] text-[#2B2620] border border-[#EADFCA]/60 rounded-tl-none' 
-                          : 'bg-primary text-background rounded-tr-none'
+                          ? 'bg-white/10 text-white border border-white/15 rounded-tl-none' 
+                          : 'bg-white text-black font-bold rounded-tr-none shadow-md'
                       }`}
                     >
                       {msg.text}
@@ -227,11 +227,11 @@ export default function AICopilotWidget() {
 
               {isTyping && (
                 <div className="flex flex-col max-w-[85%] self-start items-start">
-                  <span className="text-[9px] font-bold text-[#2B2620]/45 mb-0.5 px-1 capitalize">Copilot</span>
-                  <div className="px-3 py-2 bg-[#FFFCF6] border border-[#EADFCA]/60 rounded-2xl rounded-tl-none flex items-center gap-1 shadow-xxs">
-                    <span className="h-1.5 w-1.5 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="h-1.5 w-1.5 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="h-1.5 w-1.5 bg-primary/80 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                  <span className="text-[9px] font-bold text-white/40 mb-0.5 px-1 capitalize">Copilot</span>
+                  <div className="px-3 py-2 bg-white/10 border border-white/15 rounded-2xl rounded-tl-none flex items-center gap-1">
+                    <span className="h-1.5 w-1.5 bg-[#12D6C4] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="h-1.5 w-1.5 bg-[#12D6C4] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="h-1.5 w-1.5 bg-[#12D6C4] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               )}
@@ -240,40 +240,40 @@ export default function AICopilotWidget() {
             </div>
 
             {/* Suggested prompts strip */}
-            <div className="px-4 py-2 border-t border-[#EADFCA]/40 bg-[#FFFCF6] shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2">
+            <div className="px-4 py-2 border-t border-white/10 bg-[#0F0D16] shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2">
               <button 
                 onClick={() => handleSendMessage("Show today's session stats")}
-                className="inline-block px-2.5 py-1 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 text-primary text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap bg-transparent"
+                className="inline-block px-2.5 py-1 bg-white/5 hover:bg-white/15 border border-white/15 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
                 Today's Stats
               </button>
               <button 
                 onClick={() => handleSendMessage("Who is waitlisted?")}
-                className="inline-block px-2.5 py-1 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 text-primary text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap bg-transparent"
+                className="inline-block px-2.5 py-1 bg-white/5 hover:bg-white/15 border border-white/15 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
                 Waitlist Queue
               </button>
               <button 
                 onClick={() => handleSendMessage("Who is the next upcoming patient?")}
-                className="inline-block px-2.5 py-1 hover:bg-primary/10 border border-primary/20 hover:border-primary/30 text-primary text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap bg-transparent"
+                className="inline-block px-2.5 py-1 bg-white/5 hover:bg-white/15 border border-white/15 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
               >
                 Next Patient
               </button>
             </div>
 
             {/* Input field */}
-            <div className="p-3 border-t border-[#EADFCA]/40 bg-[#FFFCF6] shrink-0 flex gap-2 items-center">
+            <div className="p-3 border-t border-white/10 bg-[#0F0D16] shrink-0 flex gap-2 items-center">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                 placeholder="Ask Health 360 Copilot..."
-                className="flex-1 text-xs bg-[#FAF6EF]/60 border border-[#EADFCA] rounded-xl px-3 py-2 text-[#2B2620] placeholder-[#2B2620]/45 font-semibold focus:outline-hidden focus:border-primary"
+                className="flex-1 text-xs bg-white/[0.04] border border-white/15 rounded-xl px-3 py-2 text-white placeholder-white/40 font-semibold focus:outline-none focus:border-[#12D6C4]"
               />
               <button
                 onClick={() => handleSendMessage()}
-                className="p-2 bg-primary hover:bg-[#3C5040] text-background rounded-xl transition-all cursor-pointer border-0 shrink-0"
+                className="p-2 bg-white hover:bg-white/90 text-black rounded-xl transition-all cursor-pointer border-0 shrink-0 shadow-md font-bold"
               >
                 <Send className="h-4 w-4" />
               </button>
