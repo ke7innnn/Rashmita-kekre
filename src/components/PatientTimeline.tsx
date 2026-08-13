@@ -1080,43 +1080,43 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       </div>
 
       {/* Sub-tab Switcher */}
-      <div className="flex border-b border-white/10 bg-white/5 px-6 py-2.5 gap-4 shrink-0 overflow-x-auto my-4 rounded-2xl">
+      <div className="flex border border-white/10 bg-white/[0.03] p-1.5 gap-2 shrink-0 overflow-x-auto my-4 rounded-2xl">
         <button
           onClick={() => setActiveTab('documents')}
-          className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'documents'
-              ? 'bg-white text-black shadow-md font-extrabold'
-              : 'text-white/60 hover:text-white hover:bg-white/10'
+              ? 'bg-white text-black shadow-md'
+              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
           }`}
         >
           Documents & Case Files
         </button>
         <button
           onClick={() => setActiveTab('rom')}
-          className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'rom'
-              ? 'bg-white text-black shadow-md font-extrabold'
-              : 'text-white/60 hover:text-white hover:bg-white/10'
+              ? 'bg-white text-black shadow-md'
+              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
           }`}
         >
           Clinical ROM & Referrals
         </button>
         <button
           onClick={() => setActiveTab('billing')}
-          className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'billing'
-              ? 'bg-white text-black shadow-md font-extrabold'
-              : 'text-white/60 hover:text-white hover:bg-white/10'
+              ? 'bg-white text-black shadow-md'
+              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
           }`}
         >
           Session Packages & Billing
         </button>
         <button
           onClick={() => setActiveTab('assessments')}
-          className={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-xl transition-all cursor-pointer whitespace-nowrap ${
+          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
             activeTab === 'assessments'
-              ? 'bg-white text-black shadow-md font-extrabold'
-              : 'text-white/60 hover:text-white hover:bg-white/10'
+              ? 'bg-white text-black shadow-md'
+              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
           }`}
         >
           Initial Assessments
