@@ -549,14 +549,14 @@ export default function AssessmentForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">Posture / Alignment</label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mb-3">
                   {(['NORMAL', 'ALTERED'] as const).map(p => (
                     <button
                       key={p}
                       type="button"
                       onClick={() => setPosture(p)}
-                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition ${
-                        posture === p ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/10 text-white/60 border-white/15'
+                      className={`flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                        posture === p ? 'bg-white text-black border-white shadow-md' : 'bg-white/10 text-white/60 border-white/15 hover:bg-white/15'
                       }`}
                     >
                       {p}
@@ -564,31 +564,66 @@ export default function AssessmentForm({
                   ))}
                 </div>
 
-                {/* Quick Notes & Extra Notes — visible when ALTERED is selected */}
-                {posture === 'ALTERED' && (
-                  <div className="mt-3 space-y-3 animate-[fadeSlideDown_0.3s_ease-out]">
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-amber-400/80 block mb-1">Quick Notes</label>
-                      <textarea
-                        value={postureNotes}
-                        onChange={(e) => setPostureNotes(e.target.value)}
-                        placeholder="e.g. Forward head posture, elevated right shoulder…"
-                        rows={2}
-                        className="w-full p-2.5 bg-white/10 border border-amber-400/30 rounded-xl text-white text-xs placeholder-white/30 resize-none focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-[10px] font-bold uppercase text-amber-400/80 block mb-1">Extra Notes</label>
-                      <textarea
-                        value={postureExtraNotes}
-                        onChange={(e) => setPostureExtraNotes(e.target.value)}
-                        placeholder="Additional observations, compensatory patterns, related findings…"
-                        rows={3}
-                        className="w-full p-2.5 bg-white/10 border border-amber-400/30 rounded-xl text-white text-xs placeholder-white/30 resize-none focus:outline-none focus:border-amber-400/60 focus:ring-1 focus:ring-amber-400/30 transition"
-                      />
+                {/* Always-visible Posture Writing & Observations Section */}
+                <div className="space-y-3">
+                  {/* Quick-insert tags */}
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/60 block mb-1.5">
+                      Posture Presets (Click to insert)
+                    </label>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[
+                        'Forward Head Posture',
+                        'Elevated Right Shoulder',
+                        'Elevated Left Shoulder',
+                        'Thoracic Kyphosis',
+                        'Lumbar Hyperlordosis',
+                        'Anterior Pelvic Tilt',
+                        'Posterior Pelvic Tilt',
+                        'Scoliotic Deviation',
+                        'Genu Valgum',
+                        'Genu Varum'
+                      ].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => {
+                            setPostureNotes(prev => prev ? `${prev}, ${preset}` : preset);
+                          }}
+                          className="text-[10px] font-semibold px-2.5 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white/80 border border-white/10 transition cursor-pointer"
+                        >
+                          + {preset}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                )}
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/60 block mb-1">
+                      Posture & Alignment Writing / Observations
+                    </label>
+                    <textarea
+                      value={postureNotes}
+                      onChange={(e) => setPostureNotes(e.target.value)}
+                      placeholder="Write posture observations here (e.g. Forward head posture, right scapular winging, pelvic asymmetry...)"
+                      rows={3}
+                      className="w-full p-2.5 bg-white/[0.04] border border-white/15 rounded-xl text-white text-xs placeholder-white/30 resize-none focus:outline-none focus:border-[#12D6C4] transition"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-bold uppercase text-white/60 block mb-1">
+                      Additional Clinical Remarks & Compensatory Findings
+                    </label>
+                    <textarea
+                      value={postureExtraNotes}
+                      onChange={(e) => setPostureExtraNotes(e.target.value)}
+                      placeholder="Describe compensatory movement strategies, muscle imbalance findings, spinal curvature notes..."
+                      rows={3}
+                      className="w-full p-2.5 bg-white/[0.04] border border-white/15 rounded-xl text-white text-xs placeholder-white/30 resize-none focus:outline-none focus:border-[#12D6C4] transition"
+                    />
+                  </div>
+                </div>
               </div>
 
               <div>

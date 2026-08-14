@@ -130,10 +130,10 @@ export default function CRMSidebar({ children }: Props) {
         setUser(parsed);
         setIsAuthenticated(true);
 
-        // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments & Billing
+        // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments, Billing & Appointments
         const role = (parsed.role || '').toLowerCase();
         const isAdmin = role === 'admin';
-        const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing');
+        const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments');
 
         if (!isAdmin && !isAllowedPath) {
           router.replace('/crm360/patients');
@@ -163,7 +163,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/patients', name: 'Patients Directory', icon: Users, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
-    { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin'] },
+    { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
@@ -176,7 +176,7 @@ export default function CRMSidebar({ children }: Props) {
 
   const navigation = fullNavigation.filter(item => {
     if (!isAdmin) {
-      return item.href === '/crm360' || item.href === '/crm360/patients' || item.href === '/crm360/attendance' || item.href === '/crm360/assessments' || item.href === '/crm360/billing';
+      return item.href === '/crm360' || item.href === '/crm360/patients' || item.href === '/crm360/attendance' || item.href === '/crm360/assessments' || item.href === '/crm360/billing' || item.href === '/crm360/appointments';
     }
     return true;
   });

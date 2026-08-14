@@ -130,7 +130,7 @@ async function main() {
       minModalities: 1,
       maxModalities: 1,
       includesExercise: true,
-      perSessionRate: 1500,
+      perSessionRate: 1000,
       packageRate: 1200,
       isActive: true,
       displayOrder: 1

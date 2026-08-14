@@ -23,7 +23,7 @@ export async function middleware(req: NextRequest) {
     const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
 
     if (isPhysio) {
-      const allowedPaths = ['/crm360', '/crm360/attendance', '/crm360/patients', '/crm360/assessments', '/crm360/billing'];
+      const allowedPaths = ['/crm360', '/crm360/attendance', '/crm360/patients', '/crm360/assessments', '/crm360/billing', '/crm360/appointments'];
       const isExactOverview = pathname === '/crm360';
       const isAllowed = isExactOverview || allowedPaths.some(p => p !== '/crm360' && pathname.startsWith(p));
       if (!isAllowed) {

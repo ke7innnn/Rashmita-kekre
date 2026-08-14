@@ -588,7 +588,7 @@ export default function InvoiceBuilderPage() {
                     onClick={() => {
                       const cstPlan = plans.find(p => p.name.toLowerCase().includes('cst') || p.name.toLowerCase().includes('craniosacral'));
                       if (cstPlan) {
-                        addTreatmentPlanLine(cstPlan);
+                        addTreatmentPlanLine({ ...cstPlan, perSessionRate: 1000 });
                       } else {
                         addManualLine();
                         const newLines = [...lines];
@@ -599,8 +599,8 @@ export default function InvoiceBuilderPage() {
                             id: `line-cst-${Date.now()}`,
                             description: 'Craniosacral Therapy (CST / BCST) Session',
                             quantity: 1,
-                            unitPrice: 1500,
-                            totalPrice: 1500,
+                            unitPrice: 1000,
+                            totalPrice: 1000,
                             isCoveredByPackage: false,
                           }
                         ]);
@@ -617,7 +617,7 @@ export default function InvoiceBuilderPage() {
                       </p>
                     </div>
                     <div className="mt-2 text-xs font-bold text-emerald-300 tabular-nums">
-                      ₹1,500.00
+                      ₹1,000.00
                     </div>
                   </button>
 
