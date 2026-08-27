@@ -39,25 +39,15 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   const [doctorPhoneInput, setDoctorPhoneInput] = useState('');
   const [thankyouSuccess, setThankyouSuccess] = useState<string | null>(null);
 
-  // State to hold manually added doctors from localStorage
-  const [customDoctors, setCustomDoctors] = useState<any[]>([]);
-
-  const loadCustomDoctors = () => {
-    const list = localStorage.getItem('custom_referral_doctors');
-    if (list) {
-      try {
-        setCustomDoctors(JSON.parse(list));
-      } catch (e) {
-        console.error('Error parsing custom doctors list:', e);
-      }
+  // Custom doctors from API
+  const { data: customDoctors = [], refetch: refetchDoctors } = useQuery({
+    queryKey: ['referring-doctors'],
+    queryFn: async () => {
+      const res = await fetch('/api/referring-doctors');
+      if (!res.ok) return [];
+      return res.json();
     }
-  };
-
-  useEffect(() => {
-    loadCustomDoctors();
-    window.addEventListener('custom-doctors-updated', loadCustomDoctors);
-    return () => window.removeEventListener('custom-doctors-updated', loadCustomDoctors);
-  }, []);
+  });
 
   // Fetch all patients to build the referrers mapping
   const { data: patients = [], isLoading } = useQuery({
@@ -99,7 +89,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   const getDoctorMetadata = (name: string) => {
     if (doctorMeta[name]) return doctorMeta[name];
     
-    const matched = customDoctors.find(d => d.name === name);
+    const matched = customDoctors.find((d: any) => d.name === name);
     if (matched) {
       return {
         specialty: matched.specialty,
@@ -118,7 +108,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   // Group patients by referring doctor
   const docMap: { [name: string]: any } = {};
 
-  customDoctors.forEach((doc) => {
+  customDoctors.forEach((doc: any) => {
     docMap[doc.name] = {
       name: doc.name,
       specialty: doc.specialty,
@@ -182,22 +172,24 @@ export default function ReferralsTab({ onViewPatient }: Props) {
 
   const topDocName = referrers.find((r: any) => r.name !== 'Self / Direct')?.name || 'Self / Direct';
 
-  const handleAddDoctorSubmit = (e: React.FormEvent) => {
+  const handleAddDoctorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docName.trim()) return;
 
     const formattedName = docName.startsWith('Dr.') ? docName.trim() : `Dr. ${docName.trim()}`;
-    const newDoc = {
-      name: formattedName,
-      specialty: docSpecialty,
-      clinic: docClinic.trim() || 'General Clinic',
-      email: docEmail.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
-    };
+    
+    await fetch('/api/referring-doctors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formattedName,
+        specialty: docSpecialty,
+        clinic: docClinic.trim() || 'General Clinic',
+        email: docEmail.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
+      })
+    });
 
-    const updated = [...customDoctors.filter(d => d.name !== formattedName), newDoc];
-    setCustomDoctors(updated);
-    localStorage.setItem('custom_referral_doctors', JSON.stringify(updated));
-    localStorage.setItem(`referral_doctor_metadata:${formattedName}`, JSON.stringify(newDoc));
+    await refetchDoctors();
 
     setDocName('');
     setDocClinic('');

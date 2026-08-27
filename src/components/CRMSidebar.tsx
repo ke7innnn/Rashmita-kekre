@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
@@ -18,6 +19,8 @@ interface Props {
 export default function CRMSidebar({ children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
+  const { data: session, status } = useSession();
+  
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -57,10 +60,11 @@ export default function CRMSidebar({ children }: Props) {
   };
 
   useEffect(() => {
-    if (user?.username || user?.name) {
-      fetchAttendanceStatus(user.username || 'rashmita');
+    if (session?.user) {
+      setUser(session.user);
+      fetchAttendanceStatus(session.user.name || 'rashmita');
     }
-  }, [user]);
+  }, [session]);
 
   // Live timer for elapsed shift duration
   useEffect(() => {
@@ -120,35 +124,26 @@ export default function CRMSidebar({ children }: Props) {
 
   useEffect(() => {
     if (pathname === '/crm360/login') return;
-    const session = localStorage.getItem('h360_session');
-    if (!session) {
+    
+    if (status === 'unauthenticated') {
       router.replace('/crm360/login');
       setIsAuthenticated(false);
-    } else {
-      try {
-        const parsed = JSON.parse(session);
-        setUser(parsed);
-        setIsAuthenticated(true);
+    } else if (status === 'authenticated' && session?.user) {
+      setIsAuthenticated(true);
 
-        // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments, Billing & Appointments
-        const role = (parsed.role || '').toLowerCase();
-        const isAdmin = role === 'admin';
-        const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments');
+      // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments, Billing & Appointments
+      const role = (session.user.role || '').toLowerCase();
+      const isAdmin = role === 'admin';
+      const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments');
 
-        if (!isAdmin && !isAllowedPath) {
-          router.replace('/crm360/patients');
-        }
-      } catch (e) {
-        localStorage.removeItem('h360_session');
-        router.replace('/crm360/login');
-        setIsAuthenticated(false);
+      if (!isAdmin && !isAllowedPath) {
+        router.replace('/crm360/patients');
       }
     }
-  }, [router, pathname]);
+  }, [router, pathname, status, session]);
 
-  const handleSignOut = () => {
-    localStorage.removeItem('h360_session');
-    router.replace('/crm360/login');
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: '/crm360/login' });
   };
 
   const handleConfirmRedirect = () => {
@@ -156,7 +151,7 @@ export default function CRMSidebar({ children }: Props) {
     window.open('https://health360-nu.vercel.app', '_blank');
   };
 
-  const userRole = (user?.role || '').toLowerCase();
+  const userRole = (session?.user?.role || '').toLowerCase();
   const isAdmin = userRole === 'admin';
 
   const fullNavigation = [
@@ -349,11 +344,11 @@ export default function CRMSidebar({ children }: Props) {
           {/* User Profile Footer Card */}
           <div className="flex items-center gap-3 p-3 bg-white/[0.04] border border-white/10 rounded-2xl">
             <div className="h-9 w-9 rounded-full bg-white/10 border border-[var(--primary)]/40 flex items-center justify-center font-bold text-white text-xs shrink-0">
-              {user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase()}
+              {session?.user?.name ? session.user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
             </div>
             <div className="truncate flex-1">
-              <p className="text-xs font-bold text-white truncate capitalize">{user.name}</p>
-              <p className="text-[10px] text-white/50 capitalize font-medium truncate">{user.role} Operator</p>
+              <p className="text-xs font-bold text-white truncate capitalize">{session?.user?.name || 'Loading...'}</p>
+              <p className="text-[10px] text-white/50 capitalize font-medium truncate">{session?.user?.role || 'Staff'} Operator</p>
             </div>
             <button
               onClick={handleSignOut}

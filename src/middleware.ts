@@ -44,7 +44,7 @@ export async function middleware(req: NextRequest) {
     const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
 
     if (isPhysio) {
-      const allowedApiPrefixes = ['/api/attendance', '/api/patients', '/api/appointments', '/api/modalities', '/api/settings', '/api/assessments', '/api/billing'];
+      const allowedApiPrefixes = ['/api/attendance', '/api/patients', '/api/appointments', '/api/modalities', '/api/settings', '/api/assessments', '/api/billing', '/api/referring-doctors'];
       const isAllowedApi = allowedApiPrefixes.some(p => pathname.startsWith(p));
 
       if (!isAllowedApi) {

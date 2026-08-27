@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
 import { Clock, LogIn, LogOut, Calendar, CheckCircle2, UserCheck, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
 import GlassPanel from '@/components/GlassPanel';
@@ -16,14 +17,13 @@ export default function AttendancePage() {
   const [currentDateStr, setCurrentDateStr] = useState<string>('');
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
+  const { data: session } = useSession();
+
   useEffect(() => {
-    const session = localStorage.getItem('h360_session');
-    if (session) {
-      try {
-        setUser(JSON.parse(session));
-      } catch (e) {}
+    if (session?.user) {
+      setUser(session.user);
     }
-  }, []);
+  }, [session]);
 
   const fetchAttendance = async () => {
     setLoading(true);

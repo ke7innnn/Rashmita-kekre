@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -10,21 +11,21 @@ import {
 import { formatCurrency } from '@/lib/formatters';
 
 export default function WeeklyActionQueuePage() {
+  const { data: session } = useSession();
   const [insights, setInsights] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [actionLoading, setActionLoading] = useState<Record<string, boolean>>({});
   const [userRole, setUserRole] = useState<string>('admin');
 
   useEffect(() => {
-    const session = localStorage.getItem('h360_session');
-    if (session) {
-      try {
-        const parsed = JSON.parse(session);
-        setUserRole((parsed.role || 'admin').toLowerCase());
-      } catch (e) {}
-    }
     fetchActionQueue();
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.role) {
+      setUserRole((session.user.role || 'admin').toLowerCase());
+    }
+  }, [session]);
 
   const fetchActionQueue = async () => {
     setLoading(true);

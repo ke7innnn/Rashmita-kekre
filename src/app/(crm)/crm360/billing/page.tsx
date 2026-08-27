@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { 
@@ -12,6 +13,7 @@ import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import CountUpNumber from '@/components/billing/CountUpNumber';
 
 export default function BillingOverviewPage() {
+  const { data: session } = useSession();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -19,15 +21,14 @@ export default function BillingOverviewPage() {
 
   useEffect(() => {
     fetchOverviewData();
-    const sessionStr = localStorage.getItem('h360_session');
-    if (sessionStr) {
-      try {
-        const parsed = JSON.parse(sessionStr);
-        const role = (parsed.role || '').toLowerCase();
-        setIsAdmin(role === 'admin');
-      } catch (e) {}
-    }
   }, []);
+
+  useEffect(() => {
+    if (session?.user?.role) {
+      const role = (session.user.role || '').toLowerCase();
+      setIsAdmin(role === 'admin');
+    }
+  }, [session]);
 
   const fetchOverviewData = async () => {
     setLoading(true);

@@ -110,8 +110,15 @@ export default function CreatePatientModal({
   const queryClient = useQueryClient();
   const [showAddressInput, setShowAddressInput] = useState(false);
   
-  // Custom doctors from localStorage
-  const [customDoctors, setCustomDoctors] = useState<any[]>([]);
+  // Custom doctors from API
+  const { data: customDoctors = [], refetch: refetchDoctors } = useQuery({
+    queryKey: ['referring-doctors'],
+    queryFn: async () => {
+      const res = await fetch('/api/referring-doctors');
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
 
   // Quick Add Referral Doctor Sub-form State
   const [showQuickAddDoctor, setShowQuickAddDoctor] = useState(false);
@@ -119,19 +126,6 @@ export default function CreatePatientModal({
   const [quickDocSpecialty, setQuickDocSpecialty] = useState('Orthopedics');
   const [quickDocClinic, setQuickDocClinic] = useState('');
   const [quickDocEmail, setQuickDocEmail] = useState('');
-
-  useEffect(() => {
-    if (isOpen) {
-      const list = localStorage.getItem('custom_referral_doctors');
-      if (list) {
-        try {
-          setCustomDoctors(JSON.parse(list));
-        } catch (e) {
-          console.error('Error parsing custom doctors list:', e);
-        }
-      }
-    }
-  }, [isOpen]);
 
   // Fetch all patients to extract referring doctors
   const { data: patients = [] } = useQuery({
@@ -146,7 +140,7 @@ export default function CreatePatientModal({
 
   // Compile list of unique referring doctors
   const doctorOptions = Array.from(new Set([
-    ...customDoctors.map(d => d.name),
+    ...customDoctors.map((d: any) => d.name),
     ...patients.map((p: any) => p.referringDoctor).filter(Boolean)
   ])).sort();
 
@@ -220,22 +214,25 @@ export default function CreatePatientModal({
     }
   };
 
-  const saveNewReferringDoctor = (name: string, specialty?: string, clinic?: string, email?: string) => {
+  const saveNewReferringDoctor = async (name: string, specialty?: string, clinic?: string, email?: string) => {
     if (!name || !name.trim()) return;
     const cleanName = name.trim();
     const formattedName = cleanName.startsWith('Dr.') || cleanName.toLowerCase().includes('clinic') || cleanName.toLowerCase().includes('hospital') || cleanName.toLowerCase().includes('direct')
       ? cleanName
       : `Dr. ${cleanName}`;
-    const newDoc = {
-      name: formattedName,
-      specialty: specialty || 'General Practice',
-      clinic: clinic || 'General Clinic',
-      email: email?.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
-    };
-    const updated = [...customDoctors.filter(d => d.name !== formattedName), newDoc];
-    setCustomDoctors(updated);
-    localStorage.setItem('custom_referral_doctors', JSON.stringify(updated));
-    localStorage.setItem(`referral_doctor_metadata:${formattedName}`, JSON.stringify(newDoc));
+      
+    await fetch('/api/referring-doctors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: formattedName,
+        specialty: specialty || 'General Practice',
+        clinic: clinic || 'General Clinic',
+        email: email?.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
+      })
+    });
+    
+    await refetchDoctors();
     window.dispatchEvent(new Event('custom-doctors-updated'));
     setValue('referringDoctor', formattedName);
     setShowQuickAddDoctor(false);
