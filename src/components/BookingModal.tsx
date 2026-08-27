@@ -1,6 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Calendar, Check, ArrowLeft, Loader2, Phone, MessageCircle, Sparkles, ShieldCheck, MapPin, UserCheck, Zap } from 'lucide-react';
+import { RecaptchaVerifier, signInWithPhoneNumber, ConfirmationResult } from 'firebase/auth';
+import { auth } from '@/lib/firebase';
 import './BookingModal.css';
+
+declare global {
+  interface Window {
+    recaptchaVerifier?: RecaptchaVerifier;
+  }
+}
 
 interface BookingPageProps {
   onClose: () => void;
@@ -40,9 +48,10 @@ export default function BookingModal({ onClose }: BookingPageProps) {
   const [isDateClosed, setIsDateClosed] = useState(false);
   const [dateClosedReason, setDateClosedReason] = useState<string>('');
 
-  // OTP States
+  // OTP & Firebase States
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const getDaysStrip = () => {
     const daysList = [];
@@ -155,24 +164,29 @@ export default function BookingModal({ onClose }: BookingPageProps) {
       if (!otpSent) {
         const cleanPhone = phone.replace(/\D/g, '').slice(-10);
         if (cleanPhone.length < 10) throw new Error('Please enter a valid 10-digit phone number.');
-        
-        const res = await fetch(`${CRM_API_URL}/api/public/book/otp`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ phone: cleanPhone }),
-        });
-        
-        const data = await res.json();
-        
-        if (!res.ok) {
-          throw new Error(data.error || 'Failed to send OTP.');
+        const formattedPhone = `+91${cleanPhone}`;
+
+        if (typeof window !== 'undefined') {
+          if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+              size: 'invisible',
+              callback: () => {},
+            });
+          }
         }
 
+        const confirmation = await signInWithPhoneNumber(auth, formattedPhone, window.recaptchaVerifier);
+        setConfirmationResult(confirmation);
         setOtpSent(true);
       } else {
+        if (!confirmationResult) {
+          throw new Error('Session expired. Please click Send OTP again.');
+        }
         if (otp.length !== 6) {
           throw new Error('Please enter a valid 6-digit OTP.');
         }
+
+        await confirmationResult.confirm(otp);
 
         const parsedAge = parseInt(age, 10);
         const calculatedDob = !isNaN(parsedAge) && parsedAge > 0
@@ -190,7 +204,6 @@ export default function BookingModal({ onClose }: BookingPageProps) {
           presentingComplaint: concern || 'Online Booking Intake',
           diagnosis: concern || '',
           notes: `Inbound online booking request. Diagnosis/Reason: ${concern || 'Not specified'}. Age: ${age || 'N/A'}. Gender: ${gender}`,
-          otp,
         };
 
         const res = await fetch(`${CRM_API_URL}/api/public/book`, {
@@ -212,8 +225,16 @@ export default function BookingModal({ onClose }: BookingPageProps) {
         }
       }
     } catch (error: any) {
-      console.error('OTP error:', error);
-      setApiError(error.message || 'An error occurred while sending OTP.');
+      console.error('Firebase OTP error:', error);
+      if (error.code === 'auth/invalid-phone-number') {
+        setApiError('Invalid phone number format.');
+      } else if (error.code === 'auth/invalid-verification-code') {
+        setApiError('Invalid OTP entered. Please check and try again.');
+      } else if (error.code === 'auth/too-many-requests') {
+        setApiError('Too many attempts. Please try again later.');
+      } else {
+        setApiError(error.message || 'An error occurred while sending OTP.');
+      }
     } finally {
       setIsSubmitting(false);
     }
