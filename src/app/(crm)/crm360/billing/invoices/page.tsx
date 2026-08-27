@@ -37,9 +37,9 @@ export default function InvoiceListPage() {
   const filteredInvoices = useMemo(() => {
     return invoices.filter(inv => {
       const matchesSearch = search === '' || 
-        inv.invoiceNumber.toLowerCase().includes(search.toLowerCase()) ||
-        inv.patient?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-        inv.patient?.phone?.toLowerCase().includes(search.toLowerCase());
+        (inv.invoiceNumber || '').toLowerCase().includes(search.toLowerCase()) ||
+        (inv.patient?.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+        (inv.patient?.phone || '').toLowerCase().includes(search.toLowerCase());
 
       const matchesStatus = selectedStatus === 'ALL' || inv.status === selectedStatus;
 

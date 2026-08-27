@@ -101,19 +101,20 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     return {
       specialty: 'General Practice & Intake',
       clinic: 'Local Clinic / Direct Booking',
-      email: `${name.toLowerCase().replace(/\s+/g, '')}@email.com`
+      email: `${(name || 'doctor').toLowerCase().replace(/\s+/g, '')}@email.com`
     };
   };
 
   // Group patients by referring doctor
   const docMap: { [name: string]: any } = {};
 
-  customDoctors.forEach((doc: any) => {
+  (customDoctors || []).forEach((doc: any) => {
+    if (!doc?.name) return;
     docMap[doc.name] = {
       name: doc.name,
-      specialty: doc.specialty,
-      clinic: doc.clinic,
-      email: doc.email,
+      specialty: doc.specialty || 'General Practice',
+      clinic: doc.clinic || 'Clinic',
+      email: doc.email || '',
       patientsCount: 0,
       thankYouSentCount: 0,
       dischargeReportCount: 0,
@@ -121,8 +122,8 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     };
   });
 
-  patients.forEach((p: any) => {
-    const docName = p.referringDoctor?.trim() || 'Self / Direct';
+  (patients || []).forEach((p: any) => {
+    const docName = p?.referringDoctor?.trim() || 'Self / Direct';
     
     if (!docMap[docName]) {
       const meta = getDoctorMetadata(docName);
@@ -153,9 +154,9 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   // Filter referrers by search query
   const referrers = Object.values(docMap)
     .filter((ref: any) => 
-      ref.name.toLowerCase().includes(search.toLowerCase()) || 
-      ref.specialty.toLowerCase().includes(search.toLowerCase()) ||
-      ref.clinic.toLowerCase().includes(search.toLowerCase())
+      (ref.name || '').toLowerCase().includes(search.toLowerCase()) || 
+      (ref.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
+      (ref.clinic || '').toLowerCase().includes(search.toLowerCase())
     )
     .sort((a: any, b: any) => b.patientsCount - a.patientsCount);
 

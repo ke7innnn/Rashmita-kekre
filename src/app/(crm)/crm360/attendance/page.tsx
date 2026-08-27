@@ -28,7 +28,7 @@ export default function AttendancePage() {
   const fetchAttendance = async () => {
     setLoading(true);
     try {
-      const username = user?.username || 'rashmita';
+      const username = user?.username || user?.name || 'rashmita';
       const res = await fetch(`/api/attendance?username=${encodeURIComponent(username)}`);
       const data = await res.json();
       if (res.ok) {

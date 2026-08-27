@@ -237,7 +237,7 @@ export default function StaffProfilePage() {
             />
           ) : (
             <div className="w-24 h-24 rounded-2xl bg-[#12D6C4]/15 border border-[#12D6C4]/30 flex items-center justify-center font-bold text-[#12D6C4] text-2xl">
-              {(staff.fullName || staff.username).substring(0, 2).toUpperCase()}
+              {(staff.fullName || staff.username || 'ST').substring(0, 2).toUpperCase()}
             </div>
           )}
         </div>

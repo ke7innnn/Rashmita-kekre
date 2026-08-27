@@ -32,9 +32,9 @@ export default function AssessmentsDirectoryPage() {
   };
 
   const filtered = assessments.filter(a => 
-    a.patient?.fullName?.toLowerCase().includes(search.toLowerCase()) ||
-    a.provisionalDiagnosis?.toLowerCase().includes(search.toLowerCase()) ||
-    a.ptDiagnosis?.toLowerCase().includes(search.toLowerCase())
+    (a.patient?.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.provisionalDiagnosis || '').toLowerCase().includes(search.toLowerCase()) ||
+    (a.ptDiagnosis || '').toLowerCase().includes(search.toLowerCase())
   );
 
   return (

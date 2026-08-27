@@ -144,7 +144,7 @@ export default function PatientsTab({
                   </thead>
                   <tbody className="divide-y divide-white/[0.06] font-medium text-[rgba(245,243,250,0.85)]">
                     {patients.map((p: any, index: number) => {
-                      const initials = p.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                      const initials = (p.fullName || 'PT').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'PT';
                       const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
                       const regDate = p.createdAt 
                         ? new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
@@ -249,7 +249,7 @@ export default function PatientsTab({
             /* GRID FORMAT VIEW */
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {patients.map((p: any) => {
-                const initials = p.fullName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+                const initials = (p.fullName || 'PT').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'PT';
                 const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
                 
                 return (
