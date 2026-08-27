@@ -1,20 +1,17 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Printer, Download, ArrowLeft, Loader2, RotateCcw, Edit3 } from 'lucide-react';
 import ReceiptDocument, { ClinicProfile, ReceiptData, PaymentMode } from '@/components/billing/ReceiptDocument';
 
-export default function InvoicePrintPage({ 
-  params,
-  searchParams
-}: { 
-  params: Promise<{ id: string }>;
-  searchParams: Promise<{ autoprint?: string }>;
-}) {
-  const { id } = use(params);
-  const { autoprint } = use(searchParams);
+export default function InvoicePrintPage() {
+  const routeParams = useParams();
+  const searchParams = useSearchParams();
+  const id = (routeParams?.id as string) || '';
+  const autoprint = searchParams.get('autoprint');
   const [invoice, setInvoice] = useState<any>(null);
   const [settings, setSettings] = useState<any>(null);
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
@@ -22,7 +19,9 @@ export default function InvoicePrintPage({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchInvoiceAndSettings();
+    if (id) {
+      fetchInvoiceAndSettings();
+    }
   }, [id]);
 
   const fetchInvoiceAndSettings = async () => {

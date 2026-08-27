@@ -1,14 +1,18 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { formatCurrency } from '@/lib/formatters';
 
-export default function MonthlyReviewPrintPage({ params }: { params: Promise<{ period: string }> }) {
-  const { period } = use(params);
+export default function MonthlyReviewPrintPage() {
+  const routeParams = useParams();
+  const period = (routeParams?.period as string) || '';
   const [review, setReview] = useState<any>(null);
 
   useEffect(() => {
-    fetchReview();
+    if (period) {
+      fetchReview();
+    }
   }, [period]);
 
   const fetchReview = async () => {

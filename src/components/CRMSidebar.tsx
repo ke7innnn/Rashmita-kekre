@@ -160,7 +160,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
-    { id: 'calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
+    { href: '/crm360/calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
     { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
@@ -262,20 +262,6 @@ export default function CRMSidebar({ children }: Props) {
                 {navigation.slice(4).map((item) => {
                   const Icon = item.icon;
                   const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
-
-                  if (item.id === 'calls') {
-                    return (
-                      <motion.button
-                        key={item.id}
-                        onClick={() => setShowRedirectModal(true)}
-                        whileTap={{ scale: 0.97 }}
-                        className="w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer text-white/60 hover:text-white hover:bg-white/[0.04]"
-                      >
-                        <Icon className="h-4 w-4 stroke-[1.75]" />
-                        <span>{item.name}</span>
-                      </motion.button>
-                    );
-                  }
 
                   return (
                     <Link key={item.href} href={item.href!}>
@@ -419,24 +405,8 @@ export default function CRMSidebar({ children }: Props) {
                   const Icon = item.icon;
                   const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
                   
-                  if (item.id === 'calls') {
-                    return (
-                      <button
-                        key={item.id}
-                        onClick={() => {
-                          setShowRedirectModal(true);
-                          setMobileMenuOpen(false);
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl text-[rgba(245,243,250,0.62)] hover:bg-[rgba(255,255,255,0.04)]"
-                      >
-                        <Icon className="h-4.5 w-4.5 stroke-[1.75]" />
-                        {item.name}
-                      </button>
-                    );
-                  }
-
                   return (
-                    <Link key={item.href} href={item.href!} onClick={() => setMobileMenuOpen(false)}>
+                    <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}>
                       <div className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl ${
                         isActive 
                           ? 'bg-[rgba(255,255,255,0.06)] text-primary border border-primary/30' 
@@ -455,8 +425,8 @@ export default function CRMSidebar({ children }: Props) {
                     <UserIcon className="h-4 w-4 stroke-[1.75]" />
                   </span>
                   <div>
-                    <p className="text-xs font-bold text-[#F5F3FA] capitalize">{user.name}</p>
-                    <p className="text-[10px] text-[rgba(245,243,250,0.4)] capitalize">{user.role}</p>
+                    <p className="text-xs font-bold text-[#F5F3FA] capitalize">{user?.name || session?.user?.name || 'Staff'}</p>
+                    <p className="text-[10px] text-[rgba(245,243,250,0.4)] capitalize">{user?.role || session?.user?.role || 'Operator'}</p>
                   </div>
                 </div>
                 <button

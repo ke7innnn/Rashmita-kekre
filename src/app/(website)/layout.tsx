@@ -6,6 +6,13 @@ import WhatsAppWidget from '@/components/WhatsAppWidget';
 export const metadata: Metadata = {
   title: 'HEALTH 360 - Comprehensive Movement Analysis & Physiotherapy',
   description: 'Our breakthrough methodology captures hundreds of data points across your posture, mobility, strength, and cardiovascular health – all in one visit.',
+  icons: {
+    icon: [
+      { url: '/logo/rklogo.png', type: 'image/png' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/logo/rklogo.png',
+  },
 };
 
 export default function RootLayout({

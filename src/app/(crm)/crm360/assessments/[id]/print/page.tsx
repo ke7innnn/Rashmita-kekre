@@ -1,13 +1,17 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 
-export default function AssessmentPrintPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function AssessmentPrintPage() {
+  const routeParams = useParams();
+  const id = (routeParams?.id as string) || '';
   const [assessment, setAssessment] = useState<any>(null);
 
   useEffect(() => {
-    fetchAssessment();
+    if (id) {
+      fetchAssessment();
+    }
   }, [id]);
 
   const fetchAssessment = async () => {

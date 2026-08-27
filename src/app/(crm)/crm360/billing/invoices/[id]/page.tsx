@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building, Edit3, Save, Plus, Loader2
 } from 'lucide-react';
@@ -9,8 +10,9 @@ import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import RecordPaymentModal from '@/components/billing/RecordPaymentModal';
 
-export default function InvoiceDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function InvoiceDetailPage() {
+  const routeParams = useParams();
+  const id = (routeParams?.id as string) || '';
   const [invoice, setInvoice] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -24,7 +26,9 @@ export default function InvoiceDetailPage({ params }: { params: Promise<{ id: st
   const [savingEdit, setSavingEdit] = useState<boolean>(false);
 
   useEffect(() => {
-    fetchInvoice();
+    if (id) {
+      fetchInvoice();
+    }
   }, [id]);
 
   useEffect(() => {

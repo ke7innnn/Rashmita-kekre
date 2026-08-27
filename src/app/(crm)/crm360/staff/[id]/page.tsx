@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, use, useRef } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
   ArrowLeft, FileText, UploadCloud, Trash2, Download, AlertCircle,
   AlertTriangle, CheckCircle2, Shield, Calendar, Clock, User, Briefcase,
@@ -17,8 +17,9 @@ const REQUIRED_DOCS = [
   { key: 'Aadhaar', label: 'Aadhaar Card Copy', description: 'Single file (PDF/Image)' }
 ];
 
-export default function StaffProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: staffId } = use(params);
+export default function StaffProfilePage() {
+  const routeParams = useParams();
+  const staffId = (routeParams?.id as string) || '';
   const router = useRouter();
   
   const [staff, setStaff] = useState<any>(null);

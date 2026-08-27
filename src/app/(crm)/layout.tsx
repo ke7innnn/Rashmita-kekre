@@ -12,6 +12,13 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Health 360 — Physiotherapy Patient CRM & Reception Dashboard",
   description: "Connected clinical management, scheduling, and AI voice agent control panel for Dr. Rashmita Karvir Kekre's practice.",
+  icons: {
+    icon: [
+      { url: '/logo/rklogo.png', type: 'image/png' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/logo/rklogo.png',
+  },
 };
 
 export default function RootLayout({

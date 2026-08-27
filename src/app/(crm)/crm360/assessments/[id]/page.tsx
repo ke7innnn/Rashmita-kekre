@@ -1,35 +1,46 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { 
   ArrowLeft, Printer, Lock, ShieldAlert, Plus, Calendar, User, 
-  Dumbbell, Target, CheckCircle2, History, Edit3
+  Dumbbell, Target, CheckCircle2, History, Edit3, RefreshCw
 } from 'lucide-react';
 import { SelectedRegion } from '@/components/assessments/BodyChartPicker';
 
-export default function AssessmentDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function AssessmentDetailPage() {
+  const routeParams = useParams();
+  const id = (routeParams?.id as string) || '';
   const [assessment, setAssessment] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [amendmentReason, setAmendmentReason] = useState('');
   const [amendmentText, setAmendmentText] = useState('');
   const [isAmending, setIsAmending] = useState(false);
 
   useEffect(() => {
-    fetchAssessmentDetail();
+    if (id) {
+      fetchAssessmentDetail();
+    }
   }, [id]);
 
   const fetchAssessmentDetail = async () => {
+    if (!id) return;
     setLoading(true);
+    setErrorMsg(null);
     try {
       const res = await fetch(`/api/assessments/${id}`);
       if (res.ok) {
         const data = await res.json();
         setAssessment(data);
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setErrorMsg(err.error || `Failed to load assessment (${res.status})`);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
+      setErrorMsg(e?.message || 'Network error while loading assessment.');
     } finally {
       setLoading(false);
     }
@@ -68,11 +79,21 @@ export default function AssessmentDetailPage({ params }: { params: Promise<{ id:
 
   if (!assessment) {
     return (
-      <div className="p-12 text-center text-white/50 space-y-3">
-        <p>Assessment record not found.</p>
-        <Link href="/crm360/assessments" className="text-emerald-400 font-bold hover:underline">
-          Back to Directory
-        </Link>
+      <div className="p-12 text-center text-white/70 space-y-4 max-w-md mx-auto my-12 bg-white/5 border border-white/10 rounded-2xl">
+        <ShieldAlert className="w-10 h-10 text-amber-400 mx-auto" />
+        <h3 className="text-base font-bold text-white">Assessment Record Not Found</h3>
+        <p className="text-xs text-white/50">{errorMsg || 'The requested clinical assessment could not be retrieved from the database.'}</p>
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={fetchAssessmentDetail}
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold flex items-center gap-2 transition"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Retry
+          </button>
+          <Link href="/crm360/assessments" className="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-black font-bold rounded-xl text-xs transition">
+            Back to Directory
+          </Link>
+        </div>
       </div>
     );
   }

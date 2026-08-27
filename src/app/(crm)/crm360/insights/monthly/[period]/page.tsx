@@ -1,20 +1,24 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Printer, Sparkles, TrendingUp, CheckCircle2, Target, History, RefreshCw
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 
-export default function MonthlyReviewPage({ params }: { params: Promise<{ period: string }> }) {
-  const { period } = use(params);
+export default function MonthlyReviewPage() {
+  const routeParams = useParams();
+  const period = (routeParams?.period as string) || '';
   const [review, setReview] = useState<any>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    fetchMonthlyReview();
+    if (period) {
+      fetchMonthlyReview();
+    }
   }, [period]);
 
   const fetchMonthlyReview = async () => {
