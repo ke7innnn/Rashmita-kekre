@@ -169,9 +169,11 @@ export default function AssessmentForm({
     if (saved) {
       try {
         const d = JSON.parse(saved);
-        if (d.chiefComplaint) setChiefComplaint(d.chiefComplaint);
-        if (d.ptDiagnosis) setPtDiagnosis(d.ptDiagnosis);
-        if (d.scalesJson) setScalesJson(d.scalesJson);
+        if (d && typeof d === 'object') {
+          if (d.chiefComplaint) setChiefComplaint(d.chiefComplaint);
+          if (d.ptDiagnosis) setPtDiagnosis(d.ptDiagnosis);
+          if (d.scalesJson) setScalesJson(d.scalesJson);
+        }
       } catch (e) {}
     }
   };

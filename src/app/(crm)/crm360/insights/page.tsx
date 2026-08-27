@@ -52,7 +52,8 @@ export default function WeeklyActionQueuePage() {
     const actionType = insight.actionType;
     let payload = {};
     try {
-      payload = JSON.parse(insight.actionPayloadJson || '{}');
+      const parsed = JSON.parse(insight.actionPayloadJson || '{}');
+      if (parsed && typeof parsed === 'object') payload = parsed;
     } catch (e) {}
 
     setActionLoading(prev => ({ ...prev, [insight.id]: true }));

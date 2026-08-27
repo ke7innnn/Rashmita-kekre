@@ -265,7 +265,7 @@ export default function InvoiceDetailPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/5 print:divide-gray-200 text-xs">
-              {(isEditing ? editLines : invoice.lines).map((line: any, idx: number) => (
+              {(isEditing ? editLines : (invoice.lines || [])).map((line: any, idx: number) => (
                 <tr key={line.id || idx}>
                   <td className="py-3 px-3 font-medium text-white print:text-black">
                     {isEditing ? (

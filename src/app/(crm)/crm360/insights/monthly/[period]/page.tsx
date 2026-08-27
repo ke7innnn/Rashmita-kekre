@@ -50,20 +50,39 @@ export default function MonthlyReviewPage() {
     );
   }
 
-  const whatChanged = review?.whatChangedJson ? JSON.parse(review.whatChangedJson) : {
+  let whatChanged = {
     revenuePaise: { baseline: 45000000, current: 50625000, pctChange: 12.5 },
     utilizationPct: { baseline: 58.0, current: 66.2, pctChange: 8.2 },
     noShowCount: { baseline: 14, current: 10, pctChange: -28.5 },
     activePackages: { baseline: 12, current: 15, pctChange: 25.0 }
   };
+  try {
+    if (review?.whatChangedJson) {
+      const parsed = JSON.parse(review.whatChangedJson);
+      if (parsed && typeof parsed === 'object') whatChanged = { ...whatChanged, ...parsed };
+    }
+  } catch (e) {}
 
-  const tips = review?.tipsJson ? JSON.parse(review.tipsJson) : [];
-  const followUp = review?.followUpJson ? JSON.parse(review.followUpJson) : {
+  let tips: any[] = [];
+  try {
+    if (review?.tipsJson) {
+      const parsed = JSON.parse(review.tipsJson);
+      if (Array.isArray(parsed)) tips = parsed;
+    }
+  } catch (e) {}
+
+  let followUp = {
     lastMonthTipsCount: 3,
     actedOnCount: 2,
     recoveredRevenuePaise: 3900000,
     narrative: "Last month you acted on 2 recommended patient re-engagement actions, recovering 6 stalled care plans and generating ≈₹39,000 in retained course revenue."
   };
+  try {
+    if (review?.followUpJson) {
+      const parsed = JSON.parse(review.followUpJson);
+      if (parsed && typeof parsed === 'object') followUp = { ...followUp, ...parsed };
+    }
+  } catch (e) {}
 
   return (
     <div className="p-6 md:p-8 max-w-4xl mx-auto space-y-8 select-none font-sans">
