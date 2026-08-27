@@ -41,8 +41,8 @@ export async function POST(req: Request) {
     const encodedText = encodeURIComponent(textMessage);
     const waUrl = `https://wa.me/${cleanPhone}?text=${encodedText}`;
 
-    // Optional: Meta Cloud API integration if env token configured
-    const token = process.env.WHATSAPP_TOKEN;
+    // Meta Cloud API integration if env token configured
+    const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
     const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
 
     if (token && phoneId) {
