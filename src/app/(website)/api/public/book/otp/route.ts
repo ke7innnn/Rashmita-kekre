@@ -27,11 +27,12 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Send SMS via MSG91 OTP API
+    // 1. Send SMS via MSG91 OTP API
     const msg91AuthKey = process.env.MSG91_AUTH_KEY || '552679AiTV4h5NbNZY6a5fb69dP1';
     const msg91TemplateId = process.env.MSG91_TEMPLATE_ID || '6a5f80560094e405d00c3a12';
     
     let smsSent = false;
+    let smsProvider = '';
     let smsError: string | null = null;
 
     try {
@@ -41,8 +42,9 @@ export async function POST(req: NextRequest) {
 
       console.log('[MSG91 OTP] Response for', cleanPhone, ':', JSON.stringify(data));
 
-      if (data.type === 'success') {
+      if (data.type === 'success' || data.message === 'OTP sent successfully') {
         smsSent = true;
+        smsProvider = 'MSG91';
       } else {
         smsError = JSON.stringify(data);
         console.error('[MSG91 OTP] Rejected:', data);
@@ -52,15 +54,44 @@ export async function POST(req: NextRequest) {
       console.error('[MSG91 OTP] Fetch error:', smsErr);
     }
 
+    // 2. Dual Fallback via Fast2SMS API if MSG91 failed
+    const fast2smsKey = process.env.FAST2SMS_API_KEY;
+    if (!smsSent && fast2smsKey) {
+      try {
+        console.log('[Fast2SMS] Attempting OTP delivery fallback for', cleanPhone);
+        const fast2smsUrl = `https://www.fast2sms.com/dev/bulkV2?authorization=${fast2smsKey}&variables_values=${otp}&route=otp&numbers=${cleanPhone}`;
+        const f2sRes = await fetch(fast2smsUrl, {
+          method: 'GET',
+          headers: {
+            'cache-control': 'no-cache',
+          },
+        });
+        const f2sData = await f2sRes.json();
+        console.log('[Fast2SMS] Response:', f2sData);
+
+        if (f2sData.return === true) {
+          smsSent = true;
+          smsProvider = 'Fast2SMS';
+          smsError = null;
+        } else {
+          smsError = (smsError ? smsError + ' | ' : '') + JSON.stringify(f2sData);
+        }
+      } catch (f2sErr: any) {
+        console.error('[Fast2SMS] Fetch error:', f2sErr);
+        smsError = (smsError ? smsError + ' | ' : '') + f2sErr.message;
+      }
+    }
+
     if (!smsSent) {
-      console.error(`[OTP] OTP for ${cleanPhone} NOT sent. Reason: ${smsError}`);
+      console.error(`[OTP] OTP for ${cleanPhone} NOT sent across all gateways. Reason: ${smsError}`);
     }
 
     return NextResponse.json({
       success: true,
       smsSent,
+      smsProvider,
       ...(smsError && { smsError }),
-      message: smsSent ? 'OTP sent successfully via MSG91' : `OTP generated but SMS failed: ${smsError}`,
+      message: smsSent ? `OTP sent successfully via ${smsProvider}` : `OTP generated in DB: ${smsError}`,
     });
 
   } catch (error) {
