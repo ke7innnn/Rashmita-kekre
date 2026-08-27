@@ -7,7 +7,13 @@ import {
   ArrowLeft, Printer, Lock, ShieldAlert, Plus, Calendar, User, 
   Dumbbell, Target, CheckCircle2, History, Edit3, RefreshCw
 } from 'lucide-react';
-import { SelectedRegion } from '@/components/assessments/BodyChartPicker';
+
+interface SelectedRegion {
+  id: string;
+  name: string;
+  region: string;
+  side: 'LEFT' | 'RIGHT' | 'BILATERAL';
+}
 
 export default function AssessmentDetailPage() {
   const routeParams = useParams();

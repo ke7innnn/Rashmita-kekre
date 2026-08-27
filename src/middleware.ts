@@ -10,8 +10,7 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  const secret = process.env.NEXTAUTH_SECRET || 'your-nextauth-secret-key-12345';
-  const token = await getToken({ req, secret, secureCookie: process.env.NODE_ENV === 'production' });
+  const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET || 'your-nextauth-secret-key-12345' });
 
   // 1. CRM Page Routes protection
   if (pathname.startsWith('/crm360')) {
