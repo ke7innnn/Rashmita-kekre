@@ -33,7 +33,7 @@ export default function InvoiceDetailPage() {
 
   useEffect(() => {
     if (invoice) {
-      setEditStatus(invoice.rawStatus || invoice.status || 'DRAFT');
+      setEditStatus(invoice.rawStatus || invoice.status || 'PENDING');
       setEditNotes(invoice.notes || '');
       setEditLines(invoice.lines ? invoice.lines.map((l: any) => ({ ...l })) : []);
     }
@@ -224,9 +224,8 @@ export default function InvoiceDetailPage() {
                     onChange={(e) => setEditStatus(e.target.value)}
                     className="text-xs bg-[#12101B] border border-white/20 text-white rounded-lg px-2 py-1 font-bold focus:outline-none cursor-pointer"
                   >
-                    <option value="DRAFT">DRAFT</option>
-                    <option value="UNPAID">UNPAID</option>
-                    <option value="PARTIAL">PARTIAL</option>
+                    <option value="PENDING">PENDING / UNPAID</option>
+                    <option value="PARTIALLY_PAID">PARTIALLY PAID</option>
                     <option value="PAID">PAID</option>
                     <option value="CANCELLED">CANCELLED</option>
                   </select>

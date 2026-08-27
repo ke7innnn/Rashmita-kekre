@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Printer, Download, ArrowLeft, Loader2, RotateCcw, Edit3 } from 'lucide-react';
 import ReceiptDocument, { ClinicProfile, ReceiptData, PaymentMode } from '@/components/billing/ReceiptDocument';
 
-export default function InvoicePrintPage() {
+function InvoicePrintContent() {
   const routeParams = useParams();
   const searchParams = useSearchParams();
   const id = (routeParams?.id as string) || '';
@@ -236,5 +236,17 @@ export default function InvoicePrintPage() {
         />
       </motion.div>
     </div>
+  );
+}
+
+export default function InvoicePrintPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-12 text-center text-white/50">
+        <Loader2 className="w-8 h-8 animate-spin mx-auto text-[#12D6C4]" />
+      </div>
+    }>
+      <InvoicePrintContent />
+    </Suspense>
   );
 }

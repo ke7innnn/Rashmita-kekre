@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,7 +14,7 @@ import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import CountUpNumber from '@/components/billing/CountUpNumber';
 
-export default function InvoiceBuilderPage() {
+function InvoiceBuilderContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const patientIdParam = searchParams.get('patientId');
@@ -902,5 +902,18 @@ export default function InvoiceBuilderPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function InvoiceBuilderPage() {
+  return (
+    <Suspense fallback={
+      <div className="p-8 space-y-6 max-w-7xl mx-auto">
+        <div className="h-8 w-48 bg-white/5 animate-pulse rounded-lg" />
+        <div className="h-96 bg-white/[0.03] border border-white/10 animate-pulse rounded-2xl" />
+      </div>
+    }>
+      <InvoiceBuilderContent />
+    </Suspense>
   );
 }

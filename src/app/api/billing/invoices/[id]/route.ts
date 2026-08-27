@@ -74,7 +74,33 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     }
 
     const updateData: any = {};
-    if (status) updateData.status = status;
+    
+    if (status) {
+      const raw = String(status).toUpperCase();
+      let normalizedStatus: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' = 'PENDING';
+      
+      if (raw === 'PAID') {
+        normalizedStatus = 'PAID';
+      } else if (raw === 'PARTIALLY_PAID' || raw === 'PARTIAL') {
+        normalizedStatus = 'PARTIALLY_PAID';
+      } else if (raw === 'CANCELLED' || raw === 'CANCELED') {
+        normalizedStatus = 'CANCELLED';
+      } else {
+        normalizedStatus = 'PENDING'; // maps 'UNPAID', 'DRAFT', 'PENDING'
+      }
+
+      updateData.status = normalizedStatus;
+
+      const existingInv = await prisma.invoice.findUnique({ where: { id } });
+      if (existingInv) {
+        if (normalizedStatus === 'PAID' && Number(existingInv.paidAmount) < Number(existingInv.totalAmount)) {
+          updateData.paidAmount = Number(existingInv.totalAmount);
+        } else if (normalizedStatus === 'PENDING' && Number(existingInv.paidAmount) > 0) {
+          updateData.paidAmount = 0;
+        }
+      }
+    }
+
     if (notes !== undefined) updateData.notes = notes;
     if (discountAmount !== undefined) updateData.discountAmount = Number(discountAmount);
 

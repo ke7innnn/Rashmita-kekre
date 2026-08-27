@@ -9,7 +9,8 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json();
-    const { invoiceId, amount, paymentMode, referenceNumber, date } = body;
+    const { invoiceId, amount, paymentMode, referenceNumber, date, paymentDate } = body;
+    const effectiveDate = date || paymentDate;
 
     if (!invoiceId || !amount || parseFloat(amount) <= 0) {
       return NextResponse.json({ error: 'Valid invoice ID and payment amount are required' }, { status: 400 });
@@ -43,7 +44,7 @@ export async function POST(req: NextRequest) {
           amount: pAmount,
           paymentMode: paymentMode || 'Cash',
           referenceNumber: referenceNumber || null,
-          date: date ? new Date(date) : new Date()
+          date: effectiveDate ? new Date(effectiveDate) : new Date()
         }
       }),
       prisma.invoice.update({
