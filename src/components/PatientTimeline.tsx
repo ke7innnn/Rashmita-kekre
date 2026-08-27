@@ -1825,7 +1825,12 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 let subSessionsList: string[] = [];
                 try {
                   if (pkg.subSessionNames) {
-                    subSessionsList = JSON.parse(pkg.subSessionNames);
+                    const parsed = JSON.parse(pkg.subSessionNames);
+                    if (Array.isArray(parsed)) {
+                      subSessionsList = parsed;
+                    } else if (typeof pkg.subSessionNames === 'string') {
+                      subSessionsList = pkg.subSessionNames.split(',');
+                    }
                   }
                 } catch (e) {
                   subSessionsList = pkg.subSessionNames ? pkg.subSessionNames.split(',') : [];
@@ -1834,7 +1839,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 let subSessionsNotesList: string[] = [];
                 try {
                   if (pkg.subSessionNotes) {
-                    subSessionsNotesList = JSON.parse(pkg.subSessionNotes);
+                    const parsed = JSON.parse(pkg.subSessionNotes);
+                    if (Array.isArray(parsed)) {
+                      subSessionsNotesList = parsed;
+                    }
                   }
                 } catch (e) {
                   subSessionsNotesList = [];
@@ -2391,7 +2399,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                       let subNotes: string[] = [];
                       try {
                         if (pkg.subSessionNotes) {
-                          subNotes = JSON.parse(pkg.subSessionNotes);
+                          const parsed = JSON.parse(pkg.subSessionNotes);
+                          if (Array.isArray(parsed)) subNotes = parsed;
                         }
                       } catch (e) {}
 

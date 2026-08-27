@@ -29,7 +29,10 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
   // Parse current scales from assessment state
   let currentScalesList: any[] = [];
   try {
-    if (value) currentScalesList = JSON.parse(value);
+    if (value) {
+      const parsed = JSON.parse(value);
+      if (Array.isArray(parsed)) currentScalesList = parsed;
+    }
   } catch (e) {}
 
   // Find previous scores for a scale ID
@@ -38,14 +41,16 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
       if (past.scalesJson) {
         try {
           const list = JSON.parse(past.scalesJson);
-          const found = list.find((s: any) => s.scaleId === scaleId);
-          if (found) {
-            return {
-              score: found.score,
-              maxScore: found.maxScore,
-              interpretation: found.interpretation,
-              date: new Date(past.assessmentDate || past.createdAt).toLocaleDateString()
-            };
+          if (Array.isArray(list)) {
+            const found = list.find((s: any) => s?.scaleId === scaleId);
+            if (found) {
+              return {
+                score: found.score,
+                maxScore: found.maxScore,
+                interpretation: found.interpretation,
+                date: new Date(past.assessmentDate || past.createdAt).toLocaleDateString()
+              };
+            }
           }
         } catch (e) {}
       }

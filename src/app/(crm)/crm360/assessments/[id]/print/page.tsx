@@ -99,14 +99,20 @@ export default function AssessmentPrintPage() {
             </tr>
           </thead>
           <tbody>
-            {assessment.romMeasurements.map((r: any) => (
-              <tr key={r.id} className="border-b border-gray-100">
-                <td className="py-1 font-sans font-semibold">{r.region} - {r.movement}</td>
-                <td className="py-1">{r.aromRight ?? '—'}° / {r.aromLeft ?? '—'}°</td>
-                <td className="py-1">{r.promRight ?? '—'}° / {r.promLeft ?? '—'}°</td>
-                <td className="py-1">{r.mmtRight ?? '—'} / {r.mmtLeft ?? '—'}</td>
+            {(assessment.romMeasurements || []).length === 0 ? (
+              <tr>
+                <td colSpan={4} className="py-2 text-gray-400 font-sans text-center">No ROM measurements recorded.</td>
               </tr>
-            ))}
+            ) : (
+              (assessment.romMeasurements || []).map((r: any) => (
+                <tr key={r.id} className="border-b border-gray-100">
+                  <td className="py-1 font-sans font-semibold">{r.region} - {r.movement}</td>
+                  <td className="py-1">{r.aromRight ?? '—'}° / {r.aromLeft ?? '—'}°</td>
+                  <td className="py-1">{r.promRight ?? '—'}° / {r.promLeft ?? '—'}°</td>
+                  <td className="py-1">{r.mmtRight ?? '—'} / {r.mmtLeft ?? '—'}</td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -117,11 +123,15 @@ export default function AssessmentPrintPage() {
           4. Special Tests
         </h2>
         <div className="grid grid-cols-2 gap-2">
-          {assessment.specialTestResults.map((t: any) => (
-            <div key={t.id} className="border-b border-gray-100 py-1">
-              <strong>{t.testName} ({t.side}):</strong> {t.result} {t.note ? `— ${t.note}` : ''}
-            </div>
-          ))}
+          {(assessment.specialTestResults || []).length === 0 ? (
+            <p className="text-gray-400 italic">No special tests recorded.</p>
+          ) : (
+            (assessment.specialTestResults || []).map((t: any) => (
+              <div key={t.id} className="border-b border-gray-100 py-1">
+                <strong>{t.testName} ({t.side}):</strong> {t.result} {t.note ? `— ${t.note}` : ''}
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -129,10 +139,11 @@ export default function AssessmentPrintPage() {
       {assessment.scalesJson && (() => {
         let scalesList: any[] = [];
         try {
-          scalesList = JSON.parse(assessment.scalesJson);
+          const parsed = JSON.parse(assessment.scalesJson);
+          if (Array.isArray(parsed)) scalesList = parsed;
         } catch(e) {}
 
-        if (scalesList.length === 0) return null;
+        if (!scalesList || scalesList.length === 0) return null;
 
         return (
           <div className="border border-gray-300 rounded-lg p-4 mb-6 space-y-2 text-xs">
