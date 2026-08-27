@@ -111,7 +111,10 @@ export default function AssessmentDetailPage() {
 
   let painRegions: SelectedRegion[] = [];
   try {
-    if (assessment.painSiteRegions) painRegions = JSON.parse(assessment.painSiteRegions);
+    if (assessment.painSiteRegions) {
+      const parsed = JSON.parse(assessment.painSiteRegions);
+      if (Array.isArray(parsed)) painRegions = parsed;
+    }
   } catch (e) {}
 
   const isSigned = assessment.status === 'SIGNED' || assessment.status === 'AMENDED';
@@ -318,15 +321,17 @@ export default function AssessmentDetailPage() {
         {assessment.scalesJson && (() => {
           let scalesList: any[] = [];
           try {
-            scalesList = JSON.parse(assessment.scalesJson);
+            const parsed = JSON.parse(assessment.scalesJson);
+            if (Array.isArray(parsed)) scalesList = parsed;
           } catch(e) {}
 
-          if (scalesList.length === 0) return null;
+          if (!scalesList || scalesList.length === 0) return null;
 
           let parentScales: any[] = [];
           try {
             if (assessment.parentAssessment?.scalesJson) {
-              parentScales = JSON.parse(assessment.parentAssessment.scalesJson);
+              const parsedParent = JSON.parse(assessment.parentAssessment.scalesJson);
+              if (Array.isArray(parsedParent)) parentScales = parsedParent;
             }
           } catch(e) {}
 
