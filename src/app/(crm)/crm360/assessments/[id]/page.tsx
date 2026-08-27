@@ -254,25 +254,31 @@ export default function AssessmentDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 font-mono">
-                {assessment.romMeasurements.map((r: any) => {
-                  const b = baselineRom.find((x: any) => x.region === r.region && x.movement === r.movement);
-                  return (
-                    <tr key={r.id} className="hover:bg-white/5">
-                      <td className="p-3 font-sans">
-                        <span className="text-[9px] uppercase font-bold text-emerald-400 block">{r.region}</span>
-                        <span className="font-bold text-white block">{r.movement}</span>
-                      </td>
-                      <td className="p-3 text-white">{r.aromRight ?? '—'}° / {r.aromLeft ?? '—'}°</td>
-                      <td className="p-3 text-white/80">{r.promRight ?? '—'}° / {r.promLeft ?? '—'}°</td>
-                      <td className="p-3 text-white/80">{r.mmtRight ?? '—'} / {r.mmtLeft ?? '—'}</td>
-                      {baselineRom.length > 0 && (
-                        <td className="p-3 text-emerald-300 font-bold">
-                          {b ? `R: ${b.aromRight ?? '—'}° → ${r.aromRight ?? '—'}°` : 'New'}
+                {(assessment.romMeasurements || []).length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="p-4 text-center text-white/40 font-sans">No ROM measurements recorded.</td>
+                  </tr>
+                ) : (
+                  (assessment.romMeasurements || []).map((r: any) => {
+                    const b = baselineRom.find((x: any) => x.region === r.region && x.movement === r.movement);
+                    return (
+                      <tr key={r.id} className="hover:bg-white/5">
+                        <td className="p-3 font-sans">
+                          <span className="text-[9px] uppercase font-bold text-emerald-400 block">{r.region}</span>
+                          <span className="font-bold text-white block">{r.movement}</span>
                         </td>
-                      )}
-                    </tr>
-                  );
-                })}
+                        <td className="p-3 text-white">{r.aromRight ?? '—'}° / {r.aromLeft ?? '—'}°</td>
+                        <td className="p-3 text-white/80">{r.promRight ?? '—'}° / {r.promLeft ?? '—'}°</td>
+                        <td className="p-3 text-white/80">{r.mmtRight ?? '—'} / {r.mmtLeft ?? '—'}</td>
+                        {baselineRom.length > 0 && (
+                          <td className="p-3 text-emerald-300 font-bold">
+                            {b ? `R: ${b.aromRight ?? '—'}° → ${r.aromRight ?? '—'}°` : 'New'}
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
@@ -284,17 +290,21 @@ export default function AssessmentDetailPage() {
             4. Special Orthopedic Tests
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {assessment.specialTestResults.map((t: any) => (
-              <div key={t.id} className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs space-y-1">
-                <div className="flex justify-between font-bold">
-                  <span className="text-white">{t.testName} ({t.side})</span>
-                  <span className={t.result === 'POSITIVE' ? 'text-rose-400 font-mono font-bold' : 'text-emerald-400 font-mono font-bold'}>
-                    {t.result}
-                  </span>
+            {(assessment.specialTestResults || []).length === 0 ? (
+              <p className="text-xs text-white/40 italic p-3">No special tests recorded.</p>
+            ) : (
+              (assessment.specialTestResults || []).map((t: any) => (
+                <div key={t.id} className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs space-y-1">
+                  <div className="flex justify-between font-bold">
+                    <span className="text-white">{t.testName} ({t.side})</span>
+                    <span className={t.result === 'POSITIVE' ? 'text-rose-400 font-mono font-bold' : 'text-emerald-400 font-mono font-bold'}>
+                      {t.result}
+                    </span>
+                  </div>
+                  {t.note && <p className="text-[11px] text-white/60 italic">"{t.note}"</p>}
                 </div>
-                {t.note && <p className="text-[11px] text-white/60 italic">"{t.note}"</p>}
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
 
@@ -404,7 +414,7 @@ export default function AssessmentDetailPage() {
             )}
 
             <div className="space-y-2">
-              {assessment.amendments.map((a: any) => (
+              {(assessment.amendments || []).map((a: any) => (
                 <div key={a.id} className="p-3 bg-white/5 border border-white/10 rounded-xl text-xs space-y-1">
                   <div className="flex justify-between text-white/50 text-[10px] font-mono">
                     <span>Amended by {a.userId}</span>
