@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { 
-  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building, Edit3, Save, Plus, Loader2
+  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building, Edit3, Save, Plus, Loader2, RotateCcw
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
@@ -17,10 +17,11 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState<boolean>(false);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   // Quick Edit States
   const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editStatus, setEditStatus] = useState<string>('DRAFT');
+  const [editStatus, setEditStatus] = useState<string>('PENDING');
   const [editNotes, setEditNotes] = useState<string>('');
   const [editLines, setEditLines] = useState<any[]>([]);
   const [savingEdit, setSavingEdit] = useState<boolean>(false);
@@ -53,6 +54,25 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const handleUpdateStatusDirect = async (newStatus: 'PAID' | 'PENDING' | 'CANCELLED') => {
+    setActionLoading(true);
+    try {
+      const res = await fetch(`/api/billing/invoices/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (!res.ok) throw new Error('Failed to update invoice status');
+      const updated = await res.json();
+      setInvoice(updated);
+      setEditStatus(updated.status);
+    } catch (e: any) {
+      alert(e.message || 'Error updating status');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -66,7 +86,8 @@ export default function InvoiceDetailPage() {
         body: JSON.stringify({ action: 'cancel' })
       });
       if (res.ok) {
-        fetchInvoice();
+        const updated = await res.json();
+        setInvoice(updated);
       }
     } catch (e) {
       console.error('Error cancelling invoice:', e);
@@ -86,7 +107,8 @@ export default function InvoiceDetailPage() {
         }),
       });
       if (!res.ok) throw new Error('Failed to save changes');
-      await fetchInvoice();
+      const updated = await res.json();
+      setInvoice(updated);
       setIsEditing(false);
     } catch (err: any) {
       alert(err.message || 'Error saving invoice changes');
@@ -131,16 +153,40 @@ export default function InvoiceDetailPage() {
           </Link>
         </div>
         <div className="flex flex-wrap items-center gap-2.5">
-          <Link
-            href={invoice.patientId ? `/crm360/billing/invoices/new?patientId=${invoice.patientId}` : `/crm360/billing/invoices/new`}
-            className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
-          >
-            <Plus className="w-4 h-4" /> + Generate New Invoice
-          </Link>
+          {/* Quick Mark Paid / Unpaid buttons */}
+          {invoice.status !== 'PAID' && invoice.status !== 'CANCELLED' && (
+            <button
+              onClick={() => handleUpdateStatusDirect('PAID')}
+              disabled={actionLoading}
+              className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md disabled:opacity-50 cursor-pointer"
+            >
+              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} Mark as Paid
+            </button>
+          )}
+
+          {invoice.status === 'PAID' && (
+            <button
+              onClick={() => handleUpdateStatusDirect('PENDING')}
+              disabled={actionLoading}
+              className="px-3.5 py-2 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            >
+              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Mark as Unpaid
+            </button>
+          )}
+
+          {invoice.status === 'CANCELLED' && (
+            <button
+              onClick={() => handleUpdateStatusDirect('PENDING')}
+              disabled={actionLoading}
+              className="px-3.5 py-2 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 border border-blue-500/40 text-xs font-bold transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+            >
+              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RotateCcw className="w-4 h-4" />} Reactivate Invoice
+            </button>
+          )}
 
           <button
             onClick={() => setIsEditing(!isEditing)}
-            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 ${isEditing ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
+            className={`px-3.5 py-2 rounded-xl border text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${isEditing ? 'bg-amber-500/20 text-amber-300 border-amber-500/30' : 'bg-white/10 hover:bg-white/20 text-white border-white/20'}`}
           >
             <Edit3 className="w-4 h-4" /> {isEditing ? 'Cancel Edit' : 'Quick Edit'}
           </button>
@@ -149,7 +195,7 @@ export default function InvoiceDetailPage() {
             <button
               onClick={handleSaveQuickEdit}
               disabled={savingEdit}
-              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Changes
             </button>
@@ -166,7 +212,7 @@ export default function InvoiceDetailPage() {
           {balance > 0 && invoice.status !== 'CANCELLED' && (
             <button
               onClick={() => setPaymentModalOpen(true)}
-              className="px-3.5 py-2 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,255,255,0.3)]"
+              className="px-3.5 py-2 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5 shadow-[0_0_15px_rgba(255,255,255,0.3)] cursor-pointer"
             >
               <CreditCard className="w-4 h-4" /> Record Payment
             </button>
@@ -175,11 +221,18 @@ export default function InvoiceDetailPage() {
           {invoice.status !== 'CANCELLED' && (
             <button
               onClick={handleCancelInvoice}
-              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold transition flex items-center gap-1.5"
+              className="px-3 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer"
             >
               <XCircle className="w-4 h-4" /> Cancel
             </button>
           )}
+
+          <Link
+            href={invoice.patientId ? `/crm360/billing/invoices/new?patientId=${invoice.patientId}` : `/crm360/billing/invoices/new`}
+            className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs font-semibold transition flex items-center gap-1.5 border border-white/10"
+          >
+            <Plus className="w-4 h-4" /> New Invoice
+          </Link>
         </div>
       </div>
 

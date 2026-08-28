@@ -64,46 +64,28 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const body = await req.json();
     const { action, status, notes, discountAmount, lines } = body;
 
+    const existingInv = await prisma.invoice.findUnique({
+      where: { id },
+      include: { lines: true, payments: true }
+    });
+
+    if (!existingInv) {
+      return NextResponse.json({ error: 'Invoice not found' }, { status: 404 });
+    }
+
     if (action === 'cancel') {
       const updated = await prisma.invoice.update({
         where: { id },
         data: { status: 'CANCELLED' },
-        include: { patient: true, lines: true, payments: true }
+        include: { patient: true, lines: true, payments: { orderBy: { date: 'desc' } } }
       });
       return NextResponse.json(updated);
     }
 
     const updateData: any = {};
     
-    if (status) {
-      const raw = String(status).toUpperCase();
-      let normalizedStatus: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' = 'PENDING';
-      
-      if (raw === 'PAID') {
-        normalizedStatus = 'PAID';
-      } else if (raw === 'PARTIALLY_PAID' || raw === 'PARTIAL') {
-        normalizedStatus = 'PARTIALLY_PAID';
-      } else if (raw === 'CANCELLED' || raw === 'CANCELED') {
-        normalizedStatus = 'CANCELLED';
-      } else {
-        normalizedStatus = 'PENDING'; // maps 'UNPAID', 'DRAFT', 'PENDING'
-      }
-
-      updateData.status = normalizedStatus;
-
-      const existingInv = await prisma.invoice.findUnique({ where: { id } });
-      if (existingInv) {
-        if (normalizedStatus === 'PAID' && Number(existingInv.paidAmount) < Number(existingInv.totalAmount)) {
-          updateData.paidAmount = Number(existingInv.totalAmount);
-        } else if (normalizedStatus === 'PENDING' && Number(existingInv.paidAmount) > 0) {
-          updateData.paidAmount = 0;
-        }
-      }
-    }
-
-    if (notes !== undefined) updateData.notes = notes;
-    if (discountAmount !== undefined) updateData.discountAmount = Number(discountAmount);
-
+    // 1. Line items update & subtotal recalculation
+    let currentSubtotal = existingInv.lines.reduce((sum, l) => sum + Number(l.totalPrice), 0);
     if (lines && Array.isArray(lines)) {
       for (const line of lines) {
         if (line.id) {
@@ -123,19 +105,77 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       }
 
       const allLines = await prisma.invoiceLine.findMany({ where: { invoiceId: id } });
-      const subtotal = allLines.reduce((sum, l) => sum + Number(l.totalPrice), 0);
-      const disc = discountAmount !== undefined ? Number(discountAmount) : 0;
-      updateData.subtotalAmount = subtotal;
-      updateData.totalAmount = Math.max(0, subtotal - disc);
+      currentSubtotal = allLines.reduce((sum, l) => sum + Number(l.totalPrice), 0);
     }
+
+    // 2. Discount handling
+    const currentDiscount = discountAmount !== undefined ? Number(discountAmount) : Number(existingInv.discountAmount || 0);
+    if (discountAmount !== undefined) {
+      updateData.discountAmount = currentDiscount;
+    }
+
+    const calculatedTotal = Math.max(0, currentSubtotal - currentDiscount);
+    updateData.totalAmount = calculatedTotal;
+
+    // 3. Status and Payment Synchronization
+    if (status) {
+      const raw = String(status).toUpperCase();
+      let normalizedStatus: 'PENDING' | 'PARTIALLY_PAID' | 'PAID' | 'CANCELLED' = 'PENDING';
+      
+      if (raw === 'PAID') {
+        normalizedStatus = 'PAID';
+      } else if (raw === 'PARTIALLY_PAID' || raw === 'PARTIAL') {
+        normalizedStatus = 'PARTIALLY_PAID';
+      } else if (raw === 'CANCELLED' || raw === 'CANCELED') {
+        normalizedStatus = 'CANCELLED';
+      } else {
+        normalizedStatus = 'PENDING'; // maps 'UNPAID', 'DRAFT', 'PENDING'
+      }
+
+      updateData.status = normalizedStatus;
+
+      if (normalizedStatus === 'PAID') {
+        updateData.paidAmount = calculatedTotal;
+        // Ensure at least one payment record exists for audit trail
+        const existingPayments = await prisma.payment.findMany({ where: { invoiceId: id } });
+        if (existingPayments.length === 0 && calculatedTotal > 0) {
+          await prisma.payment.create({
+            data: {
+              invoiceId: id,
+              amount: calculatedTotal,
+              paymentMode: 'Cash',
+              referenceNumber: 'Direct Settlement',
+              date: new Date()
+            }
+          });
+        }
+      } else if (normalizedStatus === 'PENDING') {
+        updateData.paidAmount = 0;
+        // Clean existing payments so balance math matches
+        await prisma.payment.deleteMany({ where: { invoiceId: id } });
+      } else if (normalizedStatus === 'PARTIALLY_PAID') {
+        if (Number(existingInv.paidAmount) === 0) {
+          updateData.paidAmount = Math.round(calculatedTotal / 2);
+        }
+      }
+    }
+
+    if (notes !== undefined) updateData.notes = notes;
 
     const updated = await prisma.invoice.update({
       where: { id },
       data: updateData,
-      include: { patient: true, lines: true, payments: true }
+      include: { patient: true, lines: true, payments: { orderBy: { date: 'desc' } } }
     });
 
-    return NextResponse.json(updated);
+    return NextResponse.json({
+      ...updated,
+      subtotalAmount: currentSubtotal,
+      totalAmount: Number(updated.totalAmount),
+      paidAmount: Number(updated.paidAmount),
+      status: updated.status,
+      rawStatus: updated.status
+    });
   } catch (error: any) {
     console.error('Error updating invoice:', error);
     return NextResponse.json({ error: 'Failed to update invoice' }, { status: 500 });

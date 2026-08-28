@@ -2,14 +2,16 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
-  FileText, Search, Plus, Filter, ArrowLeft, RefreshCw
+  FileText, Search, Plus, Filter, ArrowLeft, RefreshCw, Eye
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 
 export default function InvoiceListPage() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
@@ -151,7 +153,7 @@ export default function InvoiceListPage() {
                     <tr
                       key={inv.id}
                       className="hover:bg-white/[0.03] transition-colors duration-120 cursor-pointer"
-                      onClick={() => window.location.href = `/crm360/billing/invoices/${inv.id}`}
+                      onClick={() => router.push(`/crm360/billing/invoices/${inv.id}`)}
                     >
                       <td className="py-3.5 px-4 font-bold text-white hover:underline">
                         {inv.invoiceNumber}
