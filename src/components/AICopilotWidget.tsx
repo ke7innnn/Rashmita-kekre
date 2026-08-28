@@ -1,18 +1,28 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles, MessageSquare, X, Send, Bot, RefreshCw, BarChart2 } from 'lucide-react';
-const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
-type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
+import { 
+  Sparkles, MessageSquare, X, Send, Bot, RotateCcw, Zap, 
+  Calendar, CreditCard, Users, Activity, HelpCircle, ChevronRight
+} from 'lucide-react';
 
 interface Message {
   id: string;
   sender: 'user' | 'assistant';
   text: string;
+  tokens?: number;
+  source?: string;
   timestamp: Date;
 }
+
+const SUGGESTIONS = [
+  { label: '📅 Today\'s Schedule', query: 'Show today\'s appointment schedule and next upcoming patient' },
+  { label: '💰 Unpaid Invoices', query: 'Which invoices are currently unpaid or pending?' },
+  { label: '⏳ Waitlist Queue', query: 'Who is currently on the waitlist and what timings did they request?' },
+  { label: '🏥 Clinic Overview', query: 'Give me a complete summary of clinic operations, patients, and courses' },
+  { label: '🧠 CST Protocol', query: 'Explain how Craniosacral Therapy (BCST) is used for stress and chronic pain' },
+];
 
 export default function AICopilotWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -21,148 +31,82 @@ export default function AICopilotWidget() {
     {
       id: 'welcome',
       sender: 'assistant',
-      text: 'Hello! I am your Health 360 AI Assistant. Ask me for real-time updates on today’s sessions, waitlist status, or overall clinic operations.',
+      text: '👋 **Hello! I am your Health 360 AI Assistant.**\n\nI can answer **any question in real-time** about your patients, appointments, invoices, waitlist, or clinical physiotherapy & Craniosacral Therapy protocols with ultra-low token cost.',
       timestamp: new Date()
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Fetch today's date for live data lookup
-  const todayStr = new Date().toISOString().split('T')[0];
-
-  // Fetch appointments for real-time updates
-  const { data: appointments = [] } = useQuery({
-    queryKey: ['appointments', todayStr],
-    queryFn: async () => {
-      const res = await fetch(`/api/appointments?date=${todayStr}`);
-      if (!res.ok) return [];
-      return res.json();
-    }
-  });
-
-  // Fetch waitlist for waitlist queries
-  const { data: waitlist = [] } = useQuery({
-    queryKey: ['waitlist'],
-    queryFn: async () => {
-      const res = await fetch('/api/waitlist');
-      if (!res.ok) return [];
-      return res.json();
-    }
-  });
-
-  // Fetch call logs
-  const { data: callLogs = [] } = useQuery({
-    queryKey: ['call-logs'],
-    queryFn: async () => {
-      const res = await fetch('/api/call-logs');
-      if (!res.ok) return [];
-      return res.json();
-    }
-  });
-
-  const appointmentsList = Array.isArray(appointments) ? appointments : [];
-  const waitlistList = Array.isArray(waitlist) ? waitlist.filter((w: any) => w.status === 'WAITING') : [];
-  const logsList = Array.isArray(callLogs) ? callLogs : [];
-
   // Scroll to bottom on new messages
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  const handleSendMessage = (textToSend?: string) => {
+  const handleSendMessage = async (textToSend?: string) => {
     const text = (textToSend || inputText).trim();
-    if (!text) return;
+    if (!text || isTyping) return;
 
-    // Add user message
     const userMsg: Message = {
       id: Math.random().toString(),
       sender: 'user',
       text,
       timestamp: new Date()
     };
+
     setMessages((prev) => [...prev, userMsg]);
     if (!textToSend) setInputText('');
-
-    // Trigger bot response
     setIsTyping(true);
-    setTimeout(() => {
-      const responseText = generateBotResponse(text);
+
+    try {
+      // Build lightweight conversation history for context
+      const history = messages.slice(-4).map((m) => ({
+        role: m.sender === 'user' ? 'user' : 'assistant',
+        content: m.text
+      }));
+
+      const res = await fetch('/api/ai/copilot', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: text, history })
+      });
+
+      if (!res.ok) throw new Error('Failed to get AI response');
+      const data = await res.json();
+
       const botMsg: Message = {
         id: Math.random().toString(),
         sender: 'assistant',
-        text: responseText,
+        text: data.response || 'No response generated.',
+        tokens: data.tokenEstimate,
+        source: data.source,
         timestamp: new Date()
       };
+
       setMessages((prev) => [...prev, botMsg]);
+    } catch (err: any) {
+      console.error('Error fetching AI response:', err);
+      const fallbackMsg: Message = {
+        id: Math.random().toString(),
+        sender: 'assistant',
+        text: '⚠️ I encountered an issue connecting to the AI server. Please try asking again.',
+        timestamp: new Date()
+      };
+      setMessages((prev) => [...prev, fallbackMsg]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
-  const generateBotResponse = (query: string): string => {
-    const q = query.toLowerCase();
-
-    // 1. Completion & Stats Queries
-    if (q.includes('completion') || q.includes('stats') || q.includes('completed') || q.includes('appointments') || q.includes('session')) {
-      const scheduled = appointmentsList.filter((a: any) => a.status === AppointmentStatus.SCHEDULED).length;
-      const waiting = appointmentsList.filter((a: any) => a.status === AppointmentStatus.WAITING).length;
-      const progress = appointmentsList.filter((a: any) => a.status === AppointmentStatus.IN_PROGRESS).length;
-      const completed = appointmentsList.filter((a: any) => a.status === AppointmentStatus.COMPLETED).length;
-      
-      return `Here is today's appointments volume overview:\n\n` +
-             `• Completed: **${completed}**\n` +
-             `• In Progress: **${progress}**\n` +
-             `• Checked-in (Waiting): **${waiting}**\n` +
-             `• Scheduled: **${scheduled}**\n\n` +
-             `Total Booked Slots: **${appointmentsList.length}**.`;
-    }
-
-    // 2. Waitlist queries
-    if (q.includes('waitlist') || q.includes('queue') || q.includes('promote')) {
-      if (waitlistList.length === 0) {
-        return `There are currently **no active patients** on the waitlist. All priority intake requests have been successfully accommodated or scheduled.`;
+  const handleClearChat = () => {
+    setMessages([
+      {
+        id: 'welcome',
+        sender: 'assistant',
+        text: '👋 Chat cleared! Ask me anything about patients, appointments, billing, or clinical protocols.',
+        timestamp: new Date()
       }
-      const waitlistNames = waitlistList.map((w: any) => `• **${w.patient?.fullName || 'Anonymous'}** (Modality: ${w.desiredTreatmentType}, Timing: ${w.preferredTimeWindow})`).join('\n');
-      return `We have **${waitlistList.length} patients** actively waiting on the queue:\n\n${waitlistNames}\n\nTo promote a waitlisted candidate to an active appointment, navigate to the Waitlist box in the Clinic Overview or the Appointments Board.`;
-    }
-
-    // 3. Next patient check-in
-    if (q.includes('next') || q.includes('upcoming') || q.includes('checkin') || q.includes('check in')) {
-      const nextScheduled = appointmentsList.find((a: any) => a.status === AppointmentStatus.SCHEDULED);
-      if (!nextScheduled) {
-        return `All scheduled patients for today have already checked in or finished their treatment modalities.`;
-      }
-      return `The next patient scheduled is **${nextScheduled.patient?.fullName || 'Patient'}** at **${nextScheduled.startTime}** for a ${nextScheduled.treatmentType} session. You can check them in directly from the Clinic Overview Intake checklist.`;
-    }
-
-    // 4. Call logs or voice agent
-    if (q.includes('call') || q.includes('voice') || q.includes('agent') || q.includes('triage')) {
-      const missed = logsList.filter((log: any) => log.outcome === 'MISSED').length;
-      const followUp = logsList.filter((log: any) => log.outcome === 'FOLLOW_UP_NEEDED').length;
-      const booked = logsList.filter((log: any) => log.outcome === 'BOOKED').length;
-
-      return `AI Voice Agent Summary:\n\n` +
-             `• Booked via agent: **${booked}**\n` +
-             `• Follow-ups needed: **${followUp}**\n` +
-             `• Missed connections: **${missed}**\n\n` +
-             `You can review call transcripts or listen to recordings on the **AI Voice Agent** logs tab.`;
-    }
-
-    // 5. Help / generic greeting
-    if (q.includes('hello') || q.includes('hi') || q.includes('help') || q.includes('hey')) {
-      return `I can help you monitor live clinic details. Try asking:\n\n` +
-             `• "How many patients are waitlisted?"\n` +
-             `• "Show today's session stats"\n` +
-             `• "Who is the next upcoming patient?"\n` +
-             `• "Summarize voice agent activity"`;
-    }
-
-    // Fallback response
-    return `I've analyzed your query regarding "${query}". For today's operations:\n` +
-           `• Total Appointments: **${appointmentsList.length}**\n` +
-           `• Active Waitlist: **${waitlistList.length}**\n` +
-           `• Call Logs Registered: **${logsList.length}**\n\n` +
-           `Let me know if you need specific details on any of these parameters.`;
+    ]);
   };
 
   return (
@@ -170,53 +114,74 @@ export default function AICopilotWidget() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: 25, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.95 }}
-            transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-            className="w-[360px] h-[480px] bg-[#0F0D16] border border-white/20 rounded-3xl shadow-2xl flex flex-col overflow-hidden mb-4 backdrop-blur-xl text-white"
+            exit={{ opacity: 0, y: 25, scale: 0.95 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 28 }}
+            className="w-[380px] sm:w-[420px] h-[540px] bg-[#0C0A14]/95 border border-white/15 rounded-3xl shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden mb-4 backdrop-blur-2xl text-white"
           >
             {/* Header */}
-            <div className="bg-white/10 text-white p-4 flex justify-between items-center shrink-0 border-b border-white/10">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-white/10 rounded-lg text-[#12D6C4]">
-                  <Bot className="h-4.5 w-4.5" />
+            <div className="bg-white/[0.06] text-white p-4 flex justify-between items-center shrink-0 border-b border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-gradient-to-tr from-[#12D6C4]/20 to-cyan-500/20 border border-[#12D6C4]/40 rounded-xl text-[#12D6C4] shadow-inner">
+                  <Bot className="h-5 w-5" />
                 </div>
                 <div>
-                  <h4 className="text-xs font-bold uppercase tracking-wider">Health 360 Copilot</h4>
-                  <p className="text-[9px] text-white/60 font-semibold mt-0.5 flex items-center gap-1">
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-white">Health 360 AI Copilot</h4>
+                    <span className="px-1.5 py-0.5 rounded-full bg-[#12D6C4]/15 border border-[#12D6C4]/30 text-[#12D6C4] text-[9px] font-bold">
+                      Real-Time
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-white/50 font-medium mt-0.5 flex items-center gap-1">
                     <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    Live CRM Assistant
+                    Live Database Micro-Chunk Engine
                   </p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsOpen(false)} 
-                className="text-white/60 hover:text-white p-1 hover:bg-white/10 rounded-lg transition-colors cursor-pointer border-0"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={handleClearChat}
+                  title="Clear Chat"
+                  className="text-white/40 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                </button>
+                <button 
+                  onClick={() => setIsOpen(false)} 
+                  className="text-white/60 hover:text-white p-1.5 hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             {/* Messages Body */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-white/[0.02]">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-gradient-to-b from-white/[0.01] to-transparent">
               {messages.map((msg) => {
                 const isBot = msg.sender === 'assistant';
                 return (
                   <div
                     key={msg.id}
-                    className={`flex flex-col max-w-[85%] ${
+                    className={`flex flex-col max-w-[88%] ${
                       isBot ? 'self-start items-start' : 'self-end items-end'
                     }`}
                   >
-                    <span className="text-[9px] font-bold text-white/40 mb-0.5 px-1 capitalize">
-                      {isBot ? 'Copilot' : 'Admin'}
-                    </span>
+                    <div className="flex items-center gap-1.5 mb-1 px-1">
+                      <span className="text-[9px] font-bold text-white/40 capitalize">
+                        {isBot ? 'Health 360 AI' : 'You'}
+                      </span>
+                      {msg.tokens && (
+                        <span className="text-[8px] font-semibold text-[#12D6C4]/80 px-1 py-0.2 bg-[#12D6C4]/10 rounded border border-[#12D6C4]/20 flex items-center gap-0.5">
+                          <Zap className="w-2.5 h-2.5" /> ~{msg.tokens} tokens
+                        </span>
+                      )}
+                    </div>
                     <div
-                      className={`px-3 py-2 text-xs font-semibold rounded-2xl whitespace-pre-wrap leading-normal ${
+                      className={`px-3.5 py-2.5 text-xs rounded-2xl whitespace-pre-wrap leading-relaxed ${
                         isBot 
-                          ? 'bg-white/10 text-white border border-white/15 rounded-tl-none' 
-                          : 'bg-white text-black font-bold rounded-tr-none shadow-md'
+                          ? 'bg-white/[0.07] text-white/95 border border-white/12 rounded-tl-none shadow-sm' 
+                          : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-black font-bold rounded-tr-none shadow-md'
                       }`}
                     >
                       {msg.text}
@@ -227,8 +192,11 @@ export default function AICopilotWidget() {
 
               {isTyping && (
                 <div className="flex flex-col max-w-[85%] self-start items-start">
-                  <span className="text-[9px] font-bold text-white/40 mb-0.5 px-1 capitalize">Copilot</span>
-                  <div className="px-3 py-2 bg-white/10 border border-white/15 rounded-2xl rounded-tl-none flex items-center gap-1">
+                  <span className="text-[9px] font-bold text-white/40 mb-1 px-1">Health 360 AI</span>
+                  <div className="px-3.5 py-2.5 bg-white/[0.07] border border-white/12 rounded-2xl rounded-tl-none flex items-center gap-1.5">
+                    <span className="text-[10px] text-[#12D6C4] font-semibold mr-1 flex items-center gap-1">
+                      <Zap className="w-3 h-3 animate-pulse" /> Slicing DB chunk...
+                    </span>
                     <span className="h-1.5 w-1.5 bg-[#12D6C4] rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
                     <span className="h-1.5 w-1.5 bg-[#12D6C4] rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                     <span className="h-1.5 w-1.5 bg-[#12D6C4] rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
@@ -240,40 +208,32 @@ export default function AICopilotWidget() {
             </div>
 
             {/* Suggested prompts strip */}
-            <div className="px-4 py-2 border-t border-white/10 bg-[#0F0D16] shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none flex gap-2">
-              <button 
-                onClick={() => handleSendMessage("Show today's session stats")}
-                className="inline-block px-2.5 py-1 bg-white/5 hover:bg-white/15 border border-white/15 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-              >
-                Today's Stats
-              </button>
-              <button 
-                onClick={() => handleSendMessage("Who is waitlisted?")}
-                className="inline-block px-2.5 py-1 bg-white/5 hover:bg-white/15 border border-white/15 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-              >
-                Waitlist Queue
-              </button>
-              <button 
-                onClick={() => handleSendMessage("Who is the next upcoming patient?")}
-                className="inline-block px-2.5 py-1 bg-white/5 hover:bg-white/15 border border-white/15 text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer whitespace-nowrap"
-              >
-                Next Patient
-              </button>
+            <div className="px-3.5 py-2 border-t border-white/10 bg-black/40 shrink-0 overflow-x-auto whitespace-nowrap scrollbar-none flex gap-1.5">
+              {SUGGESTIONS.map((s, idx) => (
+                <button 
+                  key={idx}
+                  onClick={() => handleSendMessage(s.query)}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 bg-white/[0.05] hover:bg-white/[0.12] border border-white/12 text-white/90 text-[10px] font-bold rounded-lg transition-all cursor-pointer shrink-0"
+                >
+                  {s.label}
+                </button>
+              ))}
             </div>
 
             {/* Input field */}
-            <div className="p-3 border-t border-white/10 bg-[#0F0D16] shrink-0 flex gap-2 items-center">
+            <div className="p-3 border-t border-white/10 bg-black/60 shrink-0 flex gap-2 items-center">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
-                placeholder="Ask Health 360 Copilot..."
-                className="flex-1 text-xs bg-white/[0.04] border border-white/15 rounded-xl px-3 py-2 text-white placeholder-white/40 font-semibold focus:outline-none focus:border-[#12D6C4]"
+                placeholder="Ask anything (e.g., 'Is Malin paid?', 'Today stats')..."
+                className="flex-1 text-xs bg-white/[0.06] border border-white/15 rounded-xl px-3.5 py-2.5 text-white placeholder-white/40 font-medium focus:outline-none focus:border-[#12D6C4] transition-all"
               />
               <button
                 onClick={() => handleSendMessage()}
-                className="p-2 bg-white hover:bg-white/90 text-black rounded-xl transition-all cursor-pointer border-0 shrink-0 shadow-md font-bold"
+                disabled={!inputText.trim() || isTyping}
+                className="p-2.5 bg-gradient-to-r from-[#12D6C4] to-cyan-400 hover:brightness-110 text-black rounded-xl transition-all cursor-pointer border-0 shrink-0 shadow-md font-bold disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -282,16 +242,16 @@ export default function AICopilotWidget() {
         )}
       </AnimatePresence>
 
-      {/* Toggle trigger bubble */}
+      {/* Floating Toggle trigger bubble */}
       <motion.button
-        whileHover={{ scale: 1.05, y: -2 }}
-        whileTap={{ scale: 0.95 }}
+        whileHover={{ scale: 1.06, y: -2 }}
+        whileTap={{ scale: 0.94 }}
         onClick={() => setIsOpen(!isOpen)}
-        className="h-12 w-12 rounded-full bg-primary hover:bg-[#3C5040] text-background flex items-center justify-center shadow-lg border-0 cursor-pointer relative"
+        className="h-14 w-14 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-500 to-[#12D6C4] text-black font-bold flex items-center justify-center shadow-[0_10px_25px_rgba(18,214,196,0.4)] border border-white/20 cursor-pointer relative"
       >
-        <MessageSquare className="h-5 w-5" />
-        <span className="absolute -top-1.5 -right-1.5 p-1 bg-accent text-background rounded-full animate-bounce shadow-xxs">
-          <Sparkles className="h-3 w-3" />
+        <MessageSquare className="h-6 w-6 text-black" />
+        <span className="absolute -top-1 -right-1 p-1.5 bg-amber-400 text-black rounded-full animate-bounce shadow-md">
+          <Sparkles className="h-3.5 w-3.5 fill-black" />
         </span>
       </motion.button>
     </div>
