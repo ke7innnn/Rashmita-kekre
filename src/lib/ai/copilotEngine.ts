@@ -212,37 +212,34 @@ export function generateDeterministicResponse(query: string, microContext: Micro
   const parts = raw.split(' | ');
 
   if (domain === 'PATIENT_PROFILE') {
-    return `### 👤 Patient Record Overview\n\n` +
+    return `Patient Summary:\n\n` +
            parts.map(item => `• **${item.split(': ')[0]}**: ${item.split(': ').slice(1).join(': ') || item}`).join('\n');
   }
 
   if (domain === 'BILLING') {
-    return `### 💰 Real-Time Billing & Revenue Status\n\n` +
+    return `Billing Overview:\n\n` +
            parts.map(item => `• ${item}`).join('\n');
   }
 
   if (domain === 'APPOINTMENTS') {
-    return `### 📅 Today's Live Schedule & Appointments\n\n` +
+    return `Today's Appointments:\n\n` +
            parts.map(item => `• ${item}`).join('\n');
   }
 
   if (domain === 'WAITLIST') {
-    return `### ⏳ Active Priority Waitlist\n\n` +
+    return `Active Waitlist:\n\n` +
            parts.map(item => `• ${item}`).join('\n');
   }
 
   if (domain === 'STAFF') {
-    return `### 👥 Clinic Staff & Shift Attendance\n\n` +
+    return `Staff & Attendance:\n\n` +
            parts.map(item => `• ${item}`).join('\n');
   }
 
-  return `### 🏥 Health 360 CRM Intelligence Assistant\n\n` +
-         `**Clinic**: Dr. Rashmita Karvir Kekre (B.PTh., BCST)\n` +
-         `**Location**: Vasai West | **Contact**: +91 8482812859\n\n` +
-         `I can answer questions in real-time about:\n` +
-         `• **Patients**: Search case files, contact numbers, active packages\n` +
-         `• **Appointments**: Today's live slots, completions, next check-ins\n` +
-         `• **Billing**: Invoice numbers, unpaid balances, payments recorded\n` +
-         `• **Physiotherapy & CST**: Treatment modalities, protocols, clinical guidance\n\n` +
-         `*Ask me any question in the box below!*`;
+  return `Health 360 Assistant (Dr. Rashmita Karvir Kekre Clinic)\n\n` +
+         `You can ask me about:\n` +
+         `• **Patients**: Search case files, contact numbers, active courses\n` +
+         `• **Appointments**: Today's live slots and next check-ins\n` +
+         `• **Billing**: Invoices, pending balances, recorded payments\n` +
+         `• **Clinical Care**: Physiotherapy & Craniosacral therapy guidance`;
 }
