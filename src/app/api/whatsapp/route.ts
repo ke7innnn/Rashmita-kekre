@@ -47,24 +47,58 @@ export async function POST(req: Request) {
 
     if (token && phoneId) {
       try {
+        let metaPayload: any;
+
+        if (templateName) {
+          metaPayload = {
+            messaging_product: 'whatsapp',
+            to: cleanPhone,
+            type: 'template',
+            template: {
+              name: templateName,
+              language: { code: 'en' },
+              components: params.length > 0 ? [
+                {
+                  type: 'body',
+                  parameters: params.map((p: any) => ({
+                    type: 'text',
+                    text: String(p)
+                  }))
+                }
+              ] : []
+            }
+          };
+        } else {
+          metaPayload = {
+            messaging_product: 'whatsapp',
+            to: cleanPhone,
+            type: 'text',
+            text: { body: textMessage }
+          };
+        }
+
         const metaRes = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
-            messaging_product: 'whatsapp',
-            to: cleanPhone,
-            type: 'text',
-            text: { body: textMessage }
-          })
+          body: JSON.stringify(metaPayload)
         });
-        if (metaRes.ok) {
-          return NextResponse.json({ success: true, method: 'meta_api', waUrl });
+
+        const metaData = await metaRes.json();
+        if (metaRes.ok && metaData.messages?.[0]?.id) {
+          return NextResponse.json({ 
+            success: true, 
+            method: 'meta_api', 
+            messageId: metaData.messages[0].id,
+            waUrl 
+          });
+        } else {
+          console.warn('Meta WhatsApp API rejected payload, falling back to wa_me:', metaData);
         }
       } catch (err) {
-        console.warn('Meta WhatsApp API failed, falling back to wa.me URL:', err);
+        console.warn('Meta WhatsApp API error, falling back to wa.me URL:', err);
       }
     }
 
