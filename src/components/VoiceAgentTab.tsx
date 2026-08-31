@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   PhoneCall, PhoneIncoming, PhoneOutgoing, User, Clock, 
   MessageSquare, AlertCircle, CheckCircle, Search, 
   ChevronDown, ChevronUp, Loader2, Play, Activity, Mic,
-  UserCheck, AlertTriangle
+  UserCheck, AlertTriangle, Sparkles, Volume2
 } from 'lucide-react';
 import SegmentedControl from './SegmentedControl';
 import GlassPanel from './GlassPanel';
@@ -34,7 +34,7 @@ export default function VoiceAgentTab() {
   // Tab state for left panel (Followups vs Drop-offs)
   const [leftTab, setLeftTab] = useState('followups');
 
-  // Live simulation states for Gemini experience
+  // Live simulation states
   const [isLiveCallActive, setIsLiveCallActive] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState<string[]>([]);
   const [liveSummary, setLiveSummary] = useState('');
@@ -201,17 +201,18 @@ export default function VoiceAgentTab() {
   const getOutcomeStyle = (outcome: CallOutcome) => {
     switch (outcome) {
       case CallOutcome.BOOKED:
-        return 'bg-[rgba(25,227,177,0.12)] text-[#19E3B1] border-[rgba(25,227,177,0.3)]';
+        return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
       case CallOutcome.RESCHEDULED:
-        return 'bg-[rgba(34,184,255,0.12)] text-[#22B8FF] border-[rgba(34,184,255,0.3)]';
+        return 'bg-sky-500/20 text-sky-300 border-sky-500/40';
       case CallOutcome.CANCELLED:
-        return 'bg-[rgba(255,93,122,0.12)] text-[#FF5D7A] border-[rgba(255,93,122,0.3)]';
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
       case CallOutcome.FOLLOW_UP_NEEDED:
-        return 'bg-[rgba(255,180,84,0.12)] text-[#FFB454] border-[rgba(255,180,84,0.3)]';
+        return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
       case CallOutcome.MISSED:
-        return 'bg-[rgba(255,93,122,0.12)] text-[#FF5D7A] border-[rgba(255,93,122,0.3)]';
+      case CallOutcome.NO_ANSWER:
+        return 'bg-rose-500/20 text-rose-300 border-rose-500/40';
       default:
-        return 'bg-[rgba(255,255,255,0.04)] text-[rgba(245,243,250,0.6)] border-[rgba(255,255,255,0.08)]';
+        return 'bg-white/10 text-white/70 border-white/15';
     }
   };
 
@@ -240,16 +241,16 @@ export default function VoiceAgentTab() {
   ];
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-140px)] select-none">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 h-[calc(100vh-140px)] select-none font-sans text-white">
       {/* Left panel: Active Follow-up Queue vs Drop-offs */}
       <GlassPanel className="xl:col-span-1 flex flex-col overflow-hidden h-full">
-        <div className="p-4 border-b border-[rgba(255,255,255,0.08)] space-y-4">
+        <div className="p-4 border-b border-white/10 space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-serif text-[#F5F3FA] font-bold flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-[#FFB454] stroke-[1.75]" />
+            <h3 className="text-lg font-serif text-white font-bold flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-amber-400 stroke-[1.75]" />
               Agent Warnings
             </h3>
-            <span className="bg-[#FFB454] text-[#0A0711] px-2.5 py-0.5 rounded-full text-[10px] font-bold">
+            <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-0.5 rounded-full text-[10px] font-bold">
               {leftTab === 'followups' ? followUpQueue.length : dropOffAlerts.length} Action
             </span>
           </div>
@@ -262,43 +263,43 @@ export default function VoiceAgentTab() {
         </div>
 
         {/* Tab Lists */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3">
           <AnimatePresence mode="wait">
             {leftTab === 'followups' ? (
-              <motion.div key="followups" className="space-y-4">
+              <motion.div key="followups" className="space-y-3">
                 {followUpQueue.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-2 border border-dashed border-[rgba(255,255,255,0.08)] rounded-xl p-4">
-                    <CheckCircle className="h-8 w-8 text-[#19E3B1] stroke-[1.5]" />
-                    <p className="text-sm font-semibold text-[rgba(245,243,250,0.62)]">All Caught Up!</p>
-                    <p className="text-xs text-[rgba(245,243,250,0.4)] font-medium">No pending client calls in the follow-up queue.</p>
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-2 border border-dashed border-white/10 rounded-2xl p-4">
+                    <CheckCircle className="h-8 w-8 text-emerald-400 stroke-[1.5]" />
+                    <p className="text-sm font-semibold text-white/70">All Caught Up!</p>
+                    <p className="text-xs text-white/40 font-medium">No pending client calls in the follow-up queue.</p>
                   </div>
                 ) : (
                   followUpQueue.map((log: any) => (
                     <div 
                       key={log.id} 
-                      className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,180,84,0.4)] p-4 rounded-xl space-y-3 transition-all"
+                      className="bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 hover:border-amber-500/30 p-4 rounded-2xl space-y-3 transition-all duration-200"
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-serif font-bold text-sm text-[#F5F3FA]">
+                          <h4 className="font-serif font-bold text-sm text-white">
                             {log.patient?.fullName || 'Unregistered Caller'}
                           </h4>
-                          <p className="text-xs text-[rgba(245,243,250,0.62)] num-tabular">{log.phoneNumber}</p>
+                          <p className="text-xs text-white/50 font-mono mt-0.5">{log.phoneNumber}</p>
                         </div>
-                        <span className="eyebrow text-[9px] num-tabular">
+                        <span className="text-[10px] font-mono text-white/40">
                           {new Date(log.timestamp).toLocaleDateString()}
                         </span>
                       </div>
-                      <p className="text-xs text-[rgba(245,243,250,0.7)] italic bg-[rgba(255,255,255,0.02)] px-2.5 py-2 rounded-lg border border-[rgba(255,255,255,0.06)] font-medium">
+                      <p className="text-xs text-white/75 italic bg-white/[0.03] px-3 py-2 rounded-xl border border-white/5 font-medium leading-relaxed">
                         "{log.summary}"
                       </p>
-                      <div className="flex justify-between items-center pt-2 border-t border-[rgba(255,255,255,0.08)]">
-                        <span className="eyebrow text-[9px] text-[#FFB454]">
+                      <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
                           Callback Needed
                         </span>
                         <button
                           onClick={() => resolveMutation.mutate(log.id)}
-                          className="flex items-center gap-1.5 text-xs font-bold text-[#19E3B1] bg-[rgba(25,227,177,0.12)] border border-[rgba(25,227,177,0.3)] px-3 py-1.5 rounded-lg hover:bg-[rgba(25,227,177,0.2)] cursor-pointer"
+                          className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-3 py-1.5 rounded-xl transition cursor-pointer shadow-sm"
                         >
                           <CheckCircle className="h-3.5 w-3.5 stroke-[1.75]" />
                           Resolve
@@ -309,38 +310,38 @@ export default function VoiceAgentTab() {
                 )}
               </motion.div>
             ) : (
-              <motion.div key="dropoffs" className="space-y-4">
+              <motion.div key="dropoffs" className="space-y-3">
                 {dropOffAlerts.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-2 border border-dashed border-[rgba(255,255,255,0.08)] rounded-xl p-4">
-                    <CheckCircle className="h-8 w-8 text-[#19E3B1] stroke-[1.5]" />
-                    <p className="text-sm font-semibold text-[rgba(245,243,250,0.62)]">No Patient Drop-offs!</p>
-                    <p className="text-xs text-[rgba(245,243,250,0.4)] font-medium">All active patients are aligned with their expected cadences.</p>
+                  <div className="flex flex-col items-center justify-center py-20 text-center space-y-2 border border-dashed border-white/10 rounded-2xl p-4">
+                    <CheckCircle className="h-8 w-8 text-emerald-400 stroke-[1.5]" />
+                    <p className="text-sm font-semibold text-white/70">No Patient Drop-offs!</p>
+                    <p className="text-xs text-white/40 font-medium">All active patients are aligned with their expected cadences.</p>
                   </div>
                 ) : (
                   dropOffAlerts.map((p: any) => (
                     <div 
                       key={p.id} 
-                      className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.08)] hover:border-[rgba(255,93,122,0.4)] p-4 rounded-xl space-y-3 transition-all"
+                      className="bg-white/[0.02] hover:bg-white/[0.05] border border-white/10 hover:border-rose-500/30 p-4 rounded-2xl space-y-3 transition-all duration-200"
                     >
                       <div className="flex justify-between items-start">
                         <div>
-                          <h4 className="font-serif font-bold text-sm text-[#F5F3FA] flex items-center gap-1.5">
-                            <AlertTriangle className="h-4 w-4 text-[#FF5D7A] stroke-[1.75]" />
+                          <h4 className="font-serif font-bold text-sm text-white flex items-center gap-1.5">
+                            <AlertTriangle className="h-4 w-4 text-rose-400 stroke-[1.75]" />
                             {p.fullName}
                           </h4>
-                          <p className="text-xs text-[rgba(245,243,250,0.62)] num-tabular">{p.phone}</p>
+                          <p className="text-xs text-white/50 font-mono mt-0.5">{p.phone}</p>
                         </div>
-                        <span className="eyebrow text-[9px] text-[#FF5D7A] bg-[rgba(255,93,122,0.12)] px-2 py-0.5 rounded border border-[rgba(255,93,122,0.3)]">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-rose-300 bg-rose-500/20 px-2 py-0.5 rounded-lg border border-rose-500/40">
                           {p.expectedCadence}
                         </span>
                       </div>
-                      <p className="text-xs text-[rgba(245,243,250,0.7)] bg-[rgba(255,255,255,0.02)] px-2.5 py-2 rounded-lg border border-[rgba(255,255,255,0.06)] font-medium">
+                      <p className="text-xs text-white/70 bg-white/[0.03] px-3 py-2 rounded-xl border border-white/5 font-medium leading-relaxed">
                         Patient has missed their schedule. No future scheduled appointments detected.
                       </p>
-                      <div className="flex justify-end pt-2 border-t border-[rgba(255,255,255,0.08)]">
+                      <div className="flex justify-end pt-2 border-t border-white/10">
                         <button
                           onClick={() => triggerSimulation(p)}
-                          className="flex items-center gap-1.5 text-xs font-bold text-[#12D6C4] bg-[rgba(18,214,196,0.12)] border border-[rgba(18,214,196,0.3)] px-3 py-1.5 rounded-lg hover:bg-[rgba(18,214,196,0.2)] cursor-pointer"
+                          className="flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-3.5 py-1.5 rounded-xl transition cursor-pointer shadow-sm"
                         >
                           <PhoneCall className="h-3.5 w-3.5 stroke-[1.75]" />
                           Trigger Rebooking Call
@@ -358,34 +359,35 @@ export default function VoiceAgentTab() {
       {/* Right panel: Live activity & history */}
       <div className="xl:col-span-2 flex flex-col gap-6 h-full overflow-hidden">
         {/* Central Listening Orb Console */}
-        <GlassPanel accent="teal" className="p-6 flex flex-col gap-4 relative overflow-hidden shrink-0">
-          {/* Animated central listening orb signature visual */}
-          <div className="absolute right-10 top-1/2 -translate-y-1/2 w-48 h-48 rounded-full bg-gradient-to-r from-[#12D6C4] via-[#7B5CFF] to-[#E23FA6] blur-[60px] opacity-35 pointer-events-none animate-pulse" />
+        <GlassPanel className="p-6 flex flex-col gap-4 relative overflow-hidden shrink-0">
+          {/* Subtle Ambient Aura */}
+          <div className="absolute right-10 top-1/2 -translate-y-1/2 w-56 h-56 rounded-full bg-gradient-to-r from-emerald-500/20 via-violet-500/20 to-pink-500/20 blur-[70px] opacity-40 pointer-events-none animate-pulse" />
 
           <div className="flex justify-between items-center relative z-10">
             <div className="space-y-1">
-              <h3 className="text-xl font-serif text-[#F5F3FA] font-bold flex items-center gap-2">
-                <Mic className="h-5 w-5 text-[#12D6C4] stroke-[1.75]" />
+              <h3 className="text-lg font-serif text-white font-bold flex items-center gap-2">
+                <Mic className="h-5 w-5 text-emerald-400 stroke-[1.75]" />
                 AI Voice Assistant Console
               </h3>
-              <p className="text-xs text-[rgba(245,243,250,0.62)] font-medium">Simulated incoming portal for Health 360 call operations</p>
+              <p className="text-xs text-white/50 font-medium">Real-time telephonic reception & automated patient rebooking</p>
             </div>
-            <div className="flex items-center gap-2 bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] px-3 py-1.5 rounded-full">
-              <span className={`h-2.5 w-2.5 rounded-full ${isLiveCallActive ? 'bg-[#FF5D7A] animate-ping' : 'bg-[#19E3B1]'}`} />
-              <span className="eyebrow text-[9px] text-[#F5F3FA]">
+            <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-3 py-1.5 rounded-full">
+              <span className={`h-2 w-2 rounded-full ${isLiveCallActive ? 'bg-rose-400 animate-ping' : 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]'}`} />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-white/80">
                 {isLiveCallActive ? 'Call In Progress' : 'Agent Ready'}
               </span>
             </div>
           </div>
 
-          <div className="bg-[rgba(10,7,17,0.7)] backdrop-blur-md p-4 rounded-xl min-h-[120px] flex flex-col justify-between border border-[rgba(255,255,255,0.08)] relative z-10">
+          <div className="bg-black/30 backdrop-blur-xl p-4 rounded-2xl min-h-[120px] flex flex-col justify-between border border-white/10 relative z-10">
             {liveTranscript.length === 0 && !isLiveCallActive ? (
-              <div className="flex flex-col items-center justify-center py-6 text-center">
-                <p className="text-xs text-[rgba(245,243,250,0.62)] font-medium">No active call running. Trigger drop-offs rebooking or test inbound below.</p>
+              <div className="flex flex-col items-center justify-center py-6 text-center space-y-3">
+                <p className="text-xs text-white/50 font-medium">No active call running. Trigger a drop-off rebooking call from the left or test an incoming call below.</p>
                 <button
                   onClick={() => triggerSimulation(null)}
-                  className="mt-3 text-xs font-bold uppercase tracking-wider bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] px-4 py-2 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0"
+                  className="px-4 py-2.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60 text-xs font-bold transition flex items-center gap-2 cursor-pointer shadow-sm"
                 >
+                  <PhoneIncoming className="w-3.5 h-3.5" />
                   Simulate Patient Inbound Call
                 </button>
               </div>
@@ -397,7 +399,7 @@ export default function VoiceAgentTab() {
                       key={idx}
                       initial={{ opacity: 0, x: -5 }}
                       animate={{ opacity: 1, x: 0 }}
-                      className="text-xs font-medium text-[#F5F3FA] leading-relaxed"
+                      className="text-xs font-medium text-white/90 leading-relaxed"
                     >
                       {line}
                     </motion.p>
@@ -407,7 +409,7 @@ export default function VoiceAgentTab() {
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="mt-3 p-2.5 bg-[rgba(25,227,177,0.12)] border border-[rgba(25,227,177,0.3)] rounded-lg text-xs text-[#19E3B1] font-medium"
+                    className="mt-3 p-3 bg-emerald-500/15 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 font-medium"
                   >
                     <strong>Agent Outcome Summary:</strong> {liveSummary}
                   </motion.div>
@@ -420,44 +422,44 @@ export default function VoiceAgentTab() {
         {/* Call history panel */}
         <GlassPanel className="flex flex-col overflow-hidden flex-1">
           {/* Search header */}
-          <div className="p-4 border-b border-[rgba(255,255,255,0.08)] flex flex-col md:flex-row md:justify-between md:items-center gap-4 shrink-0">
+          <div className="p-4 border-b border-white/10 flex flex-col md:flex-row md:justify-between md:items-center gap-4 shrink-0">
             <div>
-              <h3 className="text-xl font-serif text-[#F5F3FA] font-bold flex items-center gap-2">
-                <PhoneCall className="h-5 w-5 text-[#12D6C4] stroke-[1.75]" />
+              <h3 className="text-lg font-serif text-white font-bold flex items-center gap-2">
+                <PhoneCall className="h-5 w-5 text-emerald-400 stroke-[1.75]" />
                 Call Logs History
               </h3>
-              <p className="text-xs text-[rgba(245,243,250,0.4)] font-medium mt-0.5">Historical phone recordings & transcripts</p>
+              <p className="text-xs text-white/40 font-medium mt-0.5">Historical phone recordings & conversation transcripts</p>
             </div>
             <div className="relative min-w-[240px]">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[rgba(245,243,250,0.4)] stroke-[1.75]" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-white/40 stroke-[1.75]" />
               <input
                 type="text"
-                placeholder="Search logs..."
+                placeholder="Search call logs..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 pr-4 py-2 w-full text-xs glass-input font-medium placeholder-[rgba(245,243,250,0.4)]"
+                className="pl-9 pr-4 py-2 w-full text-xs bg-white/10 border border-white/15 focus:border-emerald-400/60 focus:ring-1 focus:ring-emerald-400/30 text-white placeholder-white/40 rounded-xl outline-none transition font-medium"
               />
             </div>
           </div>
 
           {/* Scroll list */}
-          <div className="flex-1 overflow-y-auto divide-y divide-[rgba(255,255,255,0.06)]">
+          <div className="flex-1 overflow-y-auto divide-y divide-white/5">
             {isLoading ? (
               <div className="flex justify-center py-20">
-                <Loader2 className="h-8 w-8 text-[#12D6C4] animate-spin" />
+                <Loader2 className="h-8 w-8 text-emerald-400 animate-spin" />
               </div>
             ) : callLogs.length === 0 ? (
-              <div className="p-16 text-center text-[rgba(245,243,250,0.4)] font-medium text-xs">No calls logged yet.</div>
+              <div className="p-16 text-center text-white/40 font-medium text-xs">No calls logged yet.</div>
             ) : (
               callLogs.map((log: any) => (
-                <div key={log.id} className="p-5 hover:bg-[rgba(255,255,255,0.02)] space-y-3 transition-colors">
+                <div key={log.id} className="p-5 hover:bg-white/[0.02] space-y-3 transition-colors">
                   {/* Header */}
                   <div className="flex justify-between items-start gap-4">
                     <div className="flex items-center gap-3">
                       <span className={`p-2 rounded-full border ${
                         log.direction === CallDirection.INBOUND 
-                          ? 'bg-[rgba(34,184,255,0.12)] text-[#22B8FF] border-[rgba(34,184,255,0.3)]' 
-                          : 'bg-[rgba(25,227,177,0.12)] text-[#19E3B1] border-[rgba(25,227,177,0.3)]'
+                          ? 'bg-sky-500/20 text-sky-300 border-sky-500/30' 
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
                       }`}>
                         {log.direction === CallDirection.INBOUND ? (
                           <PhoneIncoming className="h-4 w-4 stroke-[1.75]" />
@@ -467,13 +469,13 @@ export default function VoiceAgentTab() {
                       </span>
                       <div>
                         <div className="flex items-center gap-2">
-                          <h4 className="font-serif font-bold text-base text-[#F5F3FA]">
+                          <h4 className="font-serif font-bold text-base text-white">
                             {log.patient?.fullName || 'Unregistered Caller'}
                           </h4>
-                          <span className="eyebrow text-[10px] num-tabular">• {log.phoneNumber}</span>
+                          <span className="text-xs font-mono text-white/40">• {log.phoneNumber}</span>
                         </div>
-                        <div className="flex items-center gap-2 eyebrow text-[10px] num-tabular mt-1">
-                          <Clock className="h-3 w-3 text-[rgba(245,243,250,0.4)]" />
+                        <div className="flex items-center gap-2 text-[10px] font-mono text-white/40 mt-1">
+                          <Clock className="h-3 w-3 text-white/30" />
                           <span>{new Date(log.timestamp).toLocaleString()}</span>
                           <span>•</span>
                           <span>Duration: {log.duration}s</span>
@@ -487,9 +489,9 @@ export default function VoiceAgentTab() {
                   </div>
 
                   {/* Summary */}
-                  <div className="pl-11 text-xs text-[rgba(245,243,250,0.8)] leading-relaxed font-medium">
-                    <p className="text-[#12D6C4] font-bold text-[10px] uppercase tracking-wider mb-1">AI Summary:</p>
-                    <p className="bg-[rgba(255,255,255,0.02)] border border-[rgba(255,255,255,0.06)] px-3 py-2 rounded-xl italic">
+                  <div className="pl-11 text-xs text-white/80 leading-relaxed font-medium">
+                    <p className="text-emerald-400 font-bold text-[10px] uppercase tracking-wider mb-1">AI Summary:</p>
+                    <p className="bg-white/[0.02] border border-white/5 px-3 py-2 rounded-xl italic">
                       "{log.summary || 'Caller hung up without leaving inquiry.'}"
                     </p>
                   </div>
@@ -501,17 +503,17 @@ export default function VoiceAgentTab() {
                         href={log.recordingUrl}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-1.5 eyebrow text-[10px] text-[#12D6C4] hover:underline cursor-pointer"
+                        className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition cursor-pointer"
                       >
-                        <Play className="h-3.5 w-3.5 fill-current text-[#12D6C4]" />
-                        Listen to Call
+                        <Play className="h-3.5 w-3.5 fill-current text-emerald-400" />
+                        Listen to Audio
                       </a>
                     )}
 
                     {log.transcript && (
                       <button
                         onClick={() => setExpandedCallId(expandedCallId === log.id ? null : log.id)}
-                        className="flex items-center gap-1.5 eyebrow text-[10px] text-[#12D6C4] hover:underline cursor-pointer focus:outline-hidden"
+                        className="flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 transition cursor-pointer focus:outline-none"
                       >
                         <MessageSquare className="h-3.5 w-3.5 stroke-[1.75]" />
                         {expandedCallId === log.id ? 'Hide Chat Logs' : 'View Full Transcript'}
@@ -528,7 +530,7 @@ export default function VoiceAgentTab() {
                         transition={{ duration: 0.2, ease: 'easeOut' }}
                         className="pl-11 overflow-hidden"
                       >
-                        <div className="bg-[rgba(10,7,17,0.8)] border border-[rgba(255,255,255,0.08)] p-4 rounded-2xl flex flex-col gap-3 max-h-[300px] overflow-y-auto mt-2">
+                        <div className="bg-black/40 border border-white/10 p-4 rounded-2xl flex flex-col gap-3 max-h-[300px] overflow-y-auto mt-2">
                           {parseTranscript(log.transcript).map((chat) => {
                             const isSent = chat.speaker.toLowerCase().includes('agent') || chat.speaker.toLowerCase().includes('doctor');
                             return (
@@ -538,14 +540,14 @@ export default function VoiceAgentTab() {
                                   isSent ? 'self-end items-end' : 'self-start items-start'
                                 }`}
                               >
-                                <span className="eyebrow text-[9px] mb-1 px-1 capitalize">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-white/40 mb-1 px-1">
                                   {chat.speaker || 'Caller'}
                                 </span>
                                 <div
                                   className={`px-3.5 py-2 text-xs font-medium ${
                                     isSent
-                                      ? 'bg-[rgba(18,214,196,0.15)] border border-[rgba(18,214,196,0.3)] text-[#12D6C4] rounded-2xl rounded-tr-none'
-                                      : 'bg-[rgba(255,255,255,0.06)] border border-[rgba(255,255,255,0.1)] text-[#F5F3FA] rounded-2xl rounded-tl-none'
+                                      ? 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-200 rounded-2xl rounded-tr-none'
+                                      : 'bg-white/10 border border-white/15 text-white rounded-2xl rounded-tl-none'
                                   }`}
                                 >
                                   <p className="leading-normal">{chat.message}</p>
