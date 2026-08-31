@@ -86,7 +86,7 @@ export default function SpecialTestsPicker({
               onClick={() => setActiveRegionFilter(r)}
               className={`px-3 py-1 rounded-xl text-xs font-bold transition cursor-pointer border ${
                 activeRegionFilter === r
-                  ? 'bg-emerald-500 text-white border-emerald-400'
+                  ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                   : 'bg-white/5 text-white/60 hover:text-white border-white/10'
               }`}
             >
@@ -130,7 +130,7 @@ export default function SpecialTestsPicker({
           <button
             type="button"
             onClick={addCustomTest}
-            className="px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+            className="px-3.5 py-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold rounded-xl transition cursor-pointer"
           >
             Add Custom
           </button>

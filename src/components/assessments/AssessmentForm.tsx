@@ -307,7 +307,7 @@ export default function AssessmentForm({
             type="button"
             onClick={() => handleSaveAssessment('SIGNED')}
             disabled={saving}
-            className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-lg"
+            className="px-4 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-sm backdrop-blur-md"
           >
             <Lock className="w-3.5 h-3.5" /> Complete & Sign
           </button>
@@ -326,8 +326,8 @@ export default function AssessmentForm({
               onClick={() => setCurrentStep(s.id)}
               className={`p-2 rounded-xl text-center flex flex-col items-center gap-1 transition cursor-pointer ${
                 isActive
-                  ? 'bg-emerald-500 text-white font-bold shadow-md'
-                  : 'text-white/60 hover:text-white hover:bg-white/5'
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold shadow-xs backdrop-blur-md'
+                  : 'text-white/60 hover:text-white hover:bg-white/5 border border-transparent'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -444,8 +444,8 @@ export default function AssessmentForm({
                         key={o}
                         type="button"
                         onClick={() => setOnset(o)}
-                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition ${
-                          onset === o ? 'bg-emerald-500 text-white border-emerald-400' : 'bg-white/10 text-white/60 border-white/15'
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
+                          onset === o ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-white/10 text-white/60 border-white/15 hover:bg-white/15'
                         }`}
                       >
                         {o.replace('_', ' ')}
@@ -805,7 +805,7 @@ export default function AssessmentForm({
                 type="button"
                 onClick={() => handleSaveAssessment('SIGNED')}
                 disabled={saving}
-                className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold rounded-xl shadow-xl flex items-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60 text-xs font-bold rounded-xl transition flex items-center gap-2 cursor-pointer backdrop-blur-md shadow-sm"
               >
                 <Lock className="w-4 h-4" /> Sign & Complete Assessment
               </button>

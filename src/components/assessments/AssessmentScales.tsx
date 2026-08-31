@@ -147,9 +147,9 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
                       key={opt.value}
                       type="button"
                       onClick={() => setAnswers(prev => ({ ...prev, [q.id]: opt.value }))}
-                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition ${
+                      className={`px-3 py-2 rounded-xl text-xs font-bold border transition cursor-pointer ${
                         answers[q.id] === opt.value
-                          ? 'bg-emerald-500 text-white border-emerald-400'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                           : 'bg-white/10 text-white/60 border-white/15 hover:bg-white/15'
                       }`}
                     >
@@ -249,7 +249,7 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
           <button
             type="button"
             onClick={handleSaveScale}
-            className="px-6 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold shadow-lg"
+            className="px-6 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 hover:border-emerald-500/60 font-bold transition cursor-pointer shadow-sm"
           >
             Save & Finish
           </button>
@@ -263,30 +263,20 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
       {/* Search and Category Filters */}
       <div className="space-y-4">
         <div className="relative">
-          <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <Search className="h-4 w-4 text-white/40" />
-          </span>
+          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
           <input
             type="text"
-            placeholder="Search scales by code, name, or description (e.g. knee, stroke)..."
+            placeholder="Search assessment scales (e.g. Roland-Morris, Oswestry, DASH, LEFS, SPADI)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/40 font-medium text-xs focus:outline-none focus:border-emerald-500/50 transition animate-fade-in"
+            className="w-full pl-9 pr-4 py-2.5 bg-white/10 border border-white/15 rounded-xl text-xs text-white placeholder-white/40 focus:outline-none focus:border-white/30"
           />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={() => setSearchQuery('')}
-              className="absolute inset-y-0 right-0 pr-3 flex items-center text-white/40 hover:text-white"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
         </div>
 
-        <div className="space-y-2">
+        {/* Category Filter Pills */}
+        <div className="space-y-1">
           <label className="text-[10px] font-bold uppercase tracking-wider text-white/50 block">
-            Filter Scales by Category:
+            Filter by Body Region / Condition:
           </label>
           <div className="flex overflow-x-auto whitespace-nowrap gap-1.5 pb-2 scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
             {CATEGORIES.map(cat => (
@@ -294,9 +284,9 @@ export default function AssessmentScales({ value, onChange, previousAssessments 
                 key={cat}
                 type="button"
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition shrink-0 ${
+                className={`px-3 py-1.5 rounded-xl text-[11px] font-bold border transition shrink-0 cursor-pointer ${
                   selectedCategory === cat
-                    ? 'bg-emerald-500 text-white border-emerald-400'
+                    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                     : 'bg-white/10 text-white/60 border-white/15 hover:bg-white/15'
                 }`}
               >

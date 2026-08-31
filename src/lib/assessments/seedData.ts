@@ -13,6 +13,22 @@ export const NORMATIVE_ROM_PRESETS: NormativeRomPreset[] = [
   { region: 'Cervical', movement: 'Rotation Right', normalDegrees: 80 },
   { region: 'Cervical', movement: 'Rotation Left', normalDegrees: 80 },
 
+  // Thoracic
+  { region: 'Thoracic', movement: 'Flexion', normalDegrees: 40 },
+  { region: 'Thoracic', movement: 'Extension', normalDegrees: 25 },
+  { region: 'Thoracic', movement: 'Rotation Right', normalDegrees: 35 },
+  { region: 'Thoracic', movement: 'Rotation Left', normalDegrees: 35 },
+  { region: 'Thoracic', movement: 'Lateral Flexion Right', normalDegrees: 25 },
+  { region: 'Thoracic', movement: 'Lateral Flexion Left', normalDegrees: 25 },
+
+  // Lumbar
+  { region: 'Lumbar', movement: 'Flexion', normalDegrees: 60 },
+  { region: 'Lumbar', movement: 'Extension', normalDegrees: 25 },
+  { region: 'Lumbar', movement: 'Lateral Flexion Right', normalDegrees: 25 },
+  { region: 'Lumbar', movement: 'Lateral Flexion Left', normalDegrees: 25 },
+  { region: 'Lumbar', movement: 'Rotation Right', normalDegrees: 45 },
+  { region: 'Lumbar', movement: 'Rotation Left', normalDegrees: 45 },
+
   // Shoulder
   { region: 'Shoulder', movement: 'Flexion', normalDegrees: 180 },
   { region: 'Shoulder', movement: 'Extension', normalDegrees: 60 },
@@ -32,13 +48,14 @@ export const NORMATIVE_ROM_PRESETS: NormativeRomPreset[] = [
   { region: 'Wrist/Hand', movement: 'Radial Deviation', normalDegrees: 20 },
   { region: 'Wrist/Hand', movement: 'Ulnar Deviation', normalDegrees: 30 },
 
-  // Lumbar
-  { region: 'Lumbar', movement: 'Flexion', normalDegrees: 60 },
-  { region: 'Lumbar', movement: 'Extension', normalDegrees: 25 },
-  { region: 'Lumbar', movement: 'Lateral Flexion Right', normalDegrees: 25 },
-  { region: 'Lumbar', movement: 'Lateral Flexion Left', normalDegrees: 25 },
-  { region: 'Lumbar', movement: 'Rotation Right', normalDegrees: 45 },
-  { region: 'Lumbar', movement: 'Rotation Left', normalDegrees: 45 },
+  // Fingers/Thumb
+  { region: 'Fingers/Thumb', movement: 'MCP Flexion', normalDegrees: 90 },
+  { region: 'Fingers/Thumb', movement: 'MCP Extension', normalDegrees: 30 },
+  { region: 'Fingers/Thumb', movement: 'PIP Flexion', normalDegrees: 100 },
+  { region: 'Fingers/Thumb', movement: 'DIP Flexion', normalDegrees: 70 },
+  { region: 'Fingers/Thumb', movement: 'Thumb Flexion', normalDegrees: 50 },
+  { region: 'Fingers/Thumb', movement: 'Thumb Extension', normalDegrees: 30 },
+  { region: 'Fingers/Thumb', movement: 'Thumb Abduction', normalDegrees: 70 },
 
   // Hip
   { region: 'Hip', movement: 'Flexion', normalDegrees: 120 },
@@ -57,6 +74,17 @@ export const NORMATIVE_ROM_PRESETS: NormativeRomPreset[] = [
   { region: 'Ankle/Foot', movement: 'Plantarflexion', normalDegrees: 50 },
   { region: 'Ankle/Foot', movement: 'Inversion', normalDegrees: 35 },
   { region: 'Ankle/Foot', movement: 'Eversion', normalDegrees: 15 },
+
+  // TMJ
+  { region: 'TMJ', movement: 'Opening (Depression)', normalDegrees: 45 },
+  { region: 'TMJ', movement: 'Lateral Deviation Right', normalDegrees: 10 },
+  { region: 'TMJ', movement: 'Lateral Deviation Left', normalDegrees: 10 },
+  { region: 'TMJ', movement: 'Protrusion', normalDegrees: 5 },
+
+  // Toes
+  { region: 'Toes', movement: 'MTP Flexion', normalDegrees: 40 },
+  { region: 'Toes', movement: 'MTP Extension', normalDegrees: 70 },
+  { region: 'Toes', movement: 'IP Flexion', normalDegrees: 30 },
 ];
 
 export interface SpecialTestPreset {

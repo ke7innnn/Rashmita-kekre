@@ -53,7 +53,9 @@ export default function BodyChartPicker({
               type="button"
               onClick={() => setActiveSide(s)}
               className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition cursor-pointer ${
-                activeSide === s ? 'bg-emerald-500 text-white' : 'text-white/60 hover:text-white'
+                activeSide === s
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
+                  : 'text-white/60 hover:text-white border border-transparent'
               }`}
             >
               {s}

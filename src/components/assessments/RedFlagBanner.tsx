@@ -89,7 +89,7 @@ export default function RedFlagBanner({
                   onClick={() => onFlagChange(f.key, false)}
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer border ${
                     f.value === false
-                      ? 'bg-emerald-500 text-white border-emerald-400'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                       : 'bg-white/5 text-white/60 hover:text-white border-white/10'
                   }`}
                 >
