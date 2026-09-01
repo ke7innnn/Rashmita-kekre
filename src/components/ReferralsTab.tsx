@@ -6,9 +6,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, UserCheck, Phone, ChevronRight, Loader2, Network, 
   Search, FileText, CheckCircle, Mail, MapPin, Building2, CheckSquare,
-  Plus, X, UserPlus, ArrowLeftRight, Send, MessageSquare, Edit3
+  Plus, X, UserPlus, ArrowLeftRight, Edit3
 } from 'lucide-react';
-import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
 import CreatePatientModal from './CreatePatientModal';
 import GlassPanel from './GlassPanel';
 
@@ -44,12 +43,6 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   const [isAssigningPatientToDoc, setIsAssigningPatientToDoc] = useState<string | null>(null); // doctor name
   const [patientSearch, setPatientSearch] = useState('');
   const [isCreatePatientModalOpen, setIsCreatePatientModalOpen] = useState(false);
-
-  // WhatsApp Thank You states
-  const [sendingThankyouDoc, setSendingThankyouDoc] = useState<string | null>(null);
-  const [showPhoneInputForDoc, setShowPhoneInputForDoc] = useState<string | null>(null);
-  const [doctorPhoneInput, setDoctorPhoneInput] = useState('');
-  const [thankyouSuccess, setThankyouSuccess] = useState<string | null>(null);
 
   // Custom doctors from API
   const { data: customDoctors = [], refetch: refetchDoctors } = useQuery({
@@ -522,116 +515,13 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                             setIsAssigningPatientToDoc(isAssigningPatientToDoc === ref.name ? null : ref.name);
                             setPatientSearch('');
                           }}
-                          className="px-3.5 py-2 bg-[rgba(18,214,196,0.12)] hover:bg-[rgba(18,214,196,0.2)] border border-[rgba(18,214,196,0.3)] text-[#12D6C4] eyebrow text-[9px] rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 focus:outline-hidden"
+                          className="px-4 py-2 bg-[rgba(18,214,196,0.12)] hover:bg-[rgba(18,214,196,0.2)] border border-[rgba(18,214,196,0.3)] text-[#12D6C4] eyebrow text-[9px] rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 focus:outline-hidden"
                         >
                           <Plus className="h-3.5 w-3.5" />
-                          Assign
-                        </button>
-                      )}
-
-                      {!isDirect && (
-                        <button
-                          onClick={() => {
-                            if (showPhoneInputForDoc === ref.name) {
-                              setShowPhoneInputForDoc(null);
-                              setDoctorPhoneInput('');
-                            } else {
-                              setShowPhoneInputForDoc(ref.name);
-                              setDoctorPhoneInput(ref.phone || '');
-                            }
-                          }}
-                          className="px-3.5 py-2 bg-[rgba(37,211,102,0.12)] hover:bg-[rgba(37,211,102,0.2)] border border-[rgba(37,211,102,0.3)] text-[#25D366] eyebrow text-[9px] rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 focus:outline-hidden"
-                        >
-                          {thankyouSuccess === ref.name ? (
-                            <><CheckCircle className="h-3.5 w-3.5" /> Sent!</>
-                          ) : (
-                            <><MessageSquare className="h-3.5 w-3.5" /> Thank You</>
-                          )}
+                          Assign Patient
                         </button>
                       )}
                     </div>
-
-                    {/* Inline WhatsApp Thank You Phone Input */}
-                    <AnimatePresence>
-                      {showPhoneInputForDoc === ref.name && !isDirect && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: 'auto', opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="border-t border-[rgba(37,211,102,0.2)] bg-[rgba(37,211,102,0.06)] p-3 space-y-2 mt-1 rounded-xl">
-                            <div className="flex items-center justify-between">
-                              <p className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider flex items-center gap-1.5">
-                                <Send className="w-3 h-3" /> Send WhatsApp Thank-You to {ref.name}
-                              </p>
-                              <span className="text-[9px] text-white/40">Destination: Doctor's Phone</span>
-                            </div>
-
-                            <p className="text-[10px] text-[rgba(245,243,250,0.6)]">
-                              Acknowledging referral of: <strong className="text-white">{ref.referredPatients?.[0]?.fullName || 'Referred Patient'}</strong>
-                            </p>
-
-                            <div className="flex gap-2">
-                              <input
-                                type="tel"
-                                placeholder="Doctor's 10-digit WhatsApp number"
-                                value={doctorPhoneInput}
-                                onChange={(e) => setDoctorPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                className="flex-1 text-xs bg-[rgba(255,255,255,0.05)] border border-[rgba(37,211,102,0.3)] rounded-lg px-2.5 py-1.5 text-[#F5F3FA] placeholder-[rgba(245,243,250,0.3)] focus:outline-none focus:ring-1 focus:ring-[#25D366] font-mono font-bold"
-                              />
-                              <button
-                                disabled={doctorPhoneInput.length < 10 || sendingThankyouDoc === ref.name}
-                                onClick={async () => {
-                                  setSendingThankyouDoc(ref.name);
-                                  const docLastName = ref.name.replace(/^Dr\.\s*/i, '').split(' ')[0];
-                                  const patientName = ref.referredPatients?.[0]?.fullName || 'your referred patient';
-                                  const cleanPhone = doctorPhoneInput.replace(/\D/g, '').slice(-10);
-
-                                  const result = await sendWhatsAppNotification({
-                                    phone: cleanPhone,
-                                    templateName: 'referral_thankyou_short',
-                                    params: [docLastName, patientName],
-                                  });
-
-                                  // Auto-save doctor phone to database if missing or updated
-                                  if (cleanPhone !== ref.phone) {
-                                    try {
-                                      await fetch('/api/referring-doctors', {
-                                        method: 'PATCH',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          id: ref.id,
-                                          oldName: ref.name,
-                                          phone: cleanPhone
-                                        })
-                                      });
-                                      refetchDoctors();
-                                    } catch (e) {
-                                      console.error('Failed to save doctor phone:', e);
-                                    }
-                                  }
-
-                                  setSendingThankyouDoc(null);
-                                  if (result.success) {
-                                    setThankyouSuccess(ref.name);
-                                    setShowPhoneInputForDoc(null);
-                                    setDoctorPhoneInput('');
-                                    setTimeout(() => setThankyouSuccess(null), 5000);
-                                  } else {
-                                    alert('Failed to send WhatsApp message. Please check the phone number and API status.');
-                                  }
-                                }}
-                                className="px-3 py-1.5 bg-[#25D366] hover:bg-[#1ebe59] text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-md shadow-[#25D366]/20 shrink-0"
-                              >
-                                {sendingThankyouDoc === ref.name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                                {sendingThankyouDoc === ref.name ? 'Sending...' : 'Send to Doctor'}
-                              </button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
                   </div>
 
                   {/* Assign Patient Overlay Section */}
