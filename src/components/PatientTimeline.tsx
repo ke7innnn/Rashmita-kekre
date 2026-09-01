@@ -1652,51 +1652,35 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 </div>
 
                 <div className="space-y-3.5 pt-1 border-t border-white/10">
-                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist & WhatsApp Actions</h5>
+                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist</h5>
                   
-                  <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={isThankYouSent}
-                        onChange={handleToggleThankYou}
-                        className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                      />
-                      <div className="space-y-0.5">
-                        <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note</p>
-                        <p className="text-[9px] text-white/50 font-semibold leading-none">Greeting to referring doctor</p>
-                      </div>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={triggerDoctorThankYouConfirm}
-                      className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[#25D366] text-[10px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      <Send className="w-2.5 h-2.5" /> Send WhatsApp
-                    </button>
-                  </div>
+                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <input 
+                      type="checkbox" 
+                      checked={isThankYouSent}
+                      onChange={handleToggleThankYou}
+                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
+                    />
+                    <div className="space-y-0.5">
+                      <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note</p>
+                      <p className="text-[9px] text-white/50 font-semibold leading-none">Greeting sent to referring doctor</p>
+                    </div>
+                  </label>
 
-                  <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none">
-                      <input 
-                        type="checkbox" 
-                        checked={isDischargeSent}
-                        onChange={handleToggleDischarge}
-                        className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                      />
-                      <div className="space-y-0.5">
-                        <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary</p>
-                        <p className="text-[9px] text-white/50 font-semibold leading-none">Final clinical progress report</p>
-                      </div>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={triggerDischargeConfirm}
-                      className="px-2.5 py-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-[10px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0"
-                    >
-                      <Send className="w-2.5 h-2.5" /> Send WhatsApp
-                    </button>
-                  </div>
+                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <input 
+                      type="checkbox" 
+                      checked={isDischargeSent}
+                      onChange={handleToggleDischarge}
+                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
+                    />
+                    <div className="space-y-0.5">
+                      <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary</p>
+                      <p className="text-[9px] text-white/50 font-semibold leading-none">Final progress report sent to doctor</p>
+                    </div>
+                  </label>
+
+                  <p className="text-[9px] text-white/30 italic font-medium pt-1">Use the WhatsApp Hub below to send these messages.</p>
                 </div>
               </div>
             ) : (
