@@ -232,19 +232,18 @@ export async function POST(req: NextRequest) {
       const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
       const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
 
-      // 1. Online Appointment Booking Confirmation
-      await sendWhatsAppMessageDirect({
+      // 1. Online Appointment Booking Confirmation (uses verified next_appointment_reminder)
+      const res = await sendWhatsAppMessageDirect({
         phone: patient.phone,
-        templateName: 'appointment_booking_confirmation',
+        templateName: 'next_appointment_reminder',
         params: [firstName, dateFormatted, timeFormatted],
       });
 
-      // 2. If first-time new patient, send Clinic Welcome & Google Maps pin
-      if (isNewPatient) {
+      if (!res?.success) {
         await sendWhatsAppMessageDirect({
           phone: patient.phone,
-          templateName: 'welcome_clinic_info',
-          params: [firstName],
+          templateName: 'appointment_booking_confirmation',
+          params: [firstName, dateFormatted, timeFormatted],
         });
       }
     } catch (waErr) {
