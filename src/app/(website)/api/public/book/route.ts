@@ -232,10 +232,10 @@ export async function POST(req: NextRequest) {
       const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
       const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
 
-      // 1. Appointment Confirmation
+      // 1. Online Appointment Booking Confirmation
       await sendWhatsAppMessageDirect({
         phone: patient.phone,
-        templateName: 'next_appointment_reminder',
+        templateName: 'appointment_booking_confirmation',
         params: [firstName, dateFormatted, timeFormatted],
       });
 
