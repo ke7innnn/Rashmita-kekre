@@ -679,26 +679,34 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
   // WhatsApp — Send Doctor Referral Thank You
   const triggerDoctorThankYouConfirm = () => {
-    const docName = patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? patient.referringDoctor : 'Doctor';
+    const rawDoc = patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? patient.referringDoctor : 'Doctor';
+    const docName = rawDoc.replace(/^Dr\.\s*/i, '');
     const patientName = patient.fullName;
-    const preview = `Dear ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic\n☎️ 8482812859 / 9834848981`;
+    const preview = `Dear Dr. ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
     const cleanPhone = patient.phone.replace(/\D/g, '');
     const waUrl = `https://wa.me/?text=${encodeURIComponent(preview)}`;
 
     whatsappConfirmActionRef.current = async () => {
       setWhatsappSending('referral');
+      const result = await sendWhatsAppNotification({
+        phone: patient.phone,
+        templateName: 'referral_thankyou_short',
+        params: [docName, patientName],
+      });
       handleToggleThankYou();
       setWhatsappSending(null);
-      setWhatsappSuccess('referral');
-      setTimeout(() => setWhatsappSuccess(null), 4000);
+      if (result.success) {
+        setWhatsappSuccess('referral');
+        setTimeout(() => setWhatsappSuccess(null), 4000);
+      }
     };
 
     setConfirmWhatsappModal({
       isOpen: true,
-      title: `Send Thank-You to ${docName}`,
-      templateBadge: 'Doctor Referral Onboarding',
-      recipientName: docName,
-      phone: 'Referring Doctor',
+      title: `Send Thank-You to Dr. ${docName}`,
+      templateBadge: 'referral_thankyou_short (Utility)',
+      recipientName: `Dr. ${docName}`,
+      phone: patient.phone,
       messagePreview: preview,
       waUrl,
     });
