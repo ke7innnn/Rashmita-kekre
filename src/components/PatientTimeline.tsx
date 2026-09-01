@@ -17,6 +17,7 @@ import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
 import CourseMeter from '@/components/billing/CourseMeter';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import EditPatientModal from '@/components/EditPatientModal';
+import WhatsAppTesterModal from '@/components/WhatsAppTesterModal';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -150,6 +151,8 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     message: '',
     onConfirm: () => {},
   });
+
+  const [isTesterOpen, setIsTesterOpen] = useState(false);
 
   const [confirmWhatsappModal, setConfirmWhatsappModal] = useState<{
     isOpen: boolean;
@@ -2283,6 +2286,22 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   </button>
                 </div>
 
+                {/* Secret Dev WhatsApp API Tester */}
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#25D366]"></span>
+                    <span className="text-[10px] text-white/40 font-medium">Meta Verified WhatsApp API</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsTesterOpen(true)}
+                    className="text-[10px] text-emerald-300 hover:text-white font-bold bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 px-2.5 py-1 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
+                  >
+                    <span>🧪 WhatsApp API Tester</span>
+                    <span className="text-[8px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1 py-0.2 rounded font-bold uppercase">Test Only</span>
+                  </button>
+                </div>
+
               </div>
             </div>
           </div>
@@ -3528,6 +3547,12 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         isOpen={isEditPatientModalOpen}
         patient={patient}
         onClose={() => setIsEditPatientModalOpen(false)}
+      />
+
+      {/* WhatsApp Meta API Tester Modal */}
+      <WhatsAppTesterModal
+        isOpen={isTesterOpen}
+        onClose={() => setIsTesterOpen(false)}
       />
     </div>
   );

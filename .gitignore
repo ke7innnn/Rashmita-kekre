@@ -37,7 +37,10 @@ yarn-error.log*
 .vercel
 
 # typescript
-*.tsbuildinfo
-next-env.d.ts
-
 /src/generated/prisma
+
+# local secret database backups
+1st_september*
+*.backup.json
+*backup*.json
+*backup*.txt
