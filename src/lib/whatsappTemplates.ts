@@ -51,8 +51,124 @@ We look forward to assisting you.
 
 Team Health 360`,
   },
+
+  GOOGLE_REVIEW: {
+    name: 'google_review_request',
+    formatText: (patientName: string, reviewUrl: string = 'https://g.page/r/CSdQGRuzUnLrEAE/review') => `Hello ${patientName},
+
+Thank you for visiting Health 360 Physiotherapy & Craniosacral Therapy Clinic.
+
+We would love to know about your recovery journey! Please take a quick moment to share your review on our Google profile:
+${reviewUrl}
+
+Your feedback helps others find the right care.
+
+Warm regards,
+Dr. Rashmita Karvir-Kekre (PT)
+Health 360 Clinic`,
+  },
+
+  MEDICLAIM_CERTIFICATE: {
+    name: 'mediclaim_certificate_notice',
+    formatText: (patientName: string, diagnosis: string, startDate: string, endDate: string, sessions: string, totalAmount: string) => `Hello ${patientName},
+
+Your Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:
+
+• Diagnosis: ${diagnosis}
+• Treatment Period: ${startDate} to ${endDate}
+• Total Sessions Attended: ${sessions}
+• Total Amount Paid: ₹${totalAmount}
+
+Please let us know if you or your insurance provider need any additional details.
+
+Warm regards,
+Dr. Rashmita Karvir-Kekre (PT)
+Health 360 Clinic`,
+  },
+
+  FITNESS_CERTIFICATE: {
+    name: 'fitness_certificate_notice',
+    formatText: (patientName: string, assessmentDate: string, fitnessStatus: string, remarks: string) => `Hello ${patientName},
+
+Based on your clinical evaluation at Health 360 Clinic on ${assessmentDate}, you are certified:
+
+✅ ${fitnessStatus}
+
+Physiotherapist Advice:
+${remarks}
+
+Keep up the great progress and continue your home routine!
+
+Warm regards,
+Dr. Rashmita Karvir-Kekre (PT)
+Health 360 Clinic`,
+  },
+
+  MEDICAL_REST: {
+    name: 'medical_rest_notice',
+    formatText: (patientName: string, diagnosis: string, startDate: string, endDate: string, reviewDate: string) => `Hello ${patientName},
+
+Following your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${diagnosis}.
+
+• Recommended Rest: ${startDate} to ${endDate}
+• Next Review Date: ${reviewDate}
+
+Please avoid strenuous activities and continue your prescribed rehabilitation.
+
+Wishing you a speedy recovery,
+Dr. Rashmita Karvir-Kekre (PT)
+Health 360 Clinic`,
+  },
+
+  DISCHARGE_SUMMARY: {
+    name: 'patient_discharge_summary',
+    formatText: (patientName: string, startDate: string, endDate: string, sessions: string, outcome: string, homeAdvice: string) => `Congratulations ${patientName}! 🎉
+
+You have successfully completed your physiotherapy program at Health 360 Clinic.
+
+• Treatment Period: ${startDate} to ${endDate}
+• Total Sessions: ${sessions}
+• Recovery Outcome: ${outcome}
+• Home Exercise Advice: ${homeAdvice}
+
+Thank you for trusting us with your recovery. Feel free to reach out whenever you need guidance!
+
+Warm regards,
+Dr. Rashmita Karvir-Kekre (PT)
+Health 360 Clinic`,
+  },
+
+  CLINIC_WELCOME: {
+    name: 'welcome_clinic_info',
+    formatText: (patientName: string) => `🌿 Welcome to Health360 Physiotherapy & Craniosacral Therapy Clinic! 🌿
+
+Dear ${patientName},
+
+Thank you for choosing Health360 Physiotherapy & Craniosacral Therapy Clinic. We are committed to helping you recover, move better, and live pain-free.
+
+📍 Address:
+Health360 Physiotherapy & Craniosacral Therapy Clinic, Shop no.1 & 2, Amardeep society, 
+Om Nagar, Vasai West. 
+
+🕙 Clinic Timings:
+Morning: 10:00 AM – 2:00 PM
+Evening: 5:00 PM – 9:00 PM
+
+📍 Google Location:
+https://maps.app.goo.gl/VpvTzGtZy3kCZZWGA?g_st=iw
+
+For appointments or any assistance, feel free to contact us. We look forward to being a part of your recovery journey.
+☎️: 8482812859 / 9834848981
+✉️: health360vasai@gmail.com
+
+Wishing you good health! 🌸
+Team Health360 Physiotherapy & Craniosacral Therapy Clinic`,
+  },
 };
 
+/**
+ * Client-side WhatsApp sender that dispatches via CRM /api/whatsapp route
+ */
 export async function sendWhatsAppNotification({
   phone,
   templateName,
@@ -71,12 +187,78 @@ export async function sendWhatsAppNotification({
       body: JSON.stringify({ phone, templateName, params, message }),
     });
     const data = await res.json();
-    if (data.success && data.waUrl && typeof window !== 'undefined') {
-      window.open(data.waUrl, '_blank');
-    }
     return data;
   } catch (err: any) {
     console.error('Failed to send WhatsApp notification:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+/**
+ * Server-side direct dispatcher using Meta Cloud API with fallback
+ */
+export async function sendWhatsAppMessageDirect({
+  phone,
+  templateName,
+  params = [],
+  message,
+}: {
+  phone: string;
+  templateName?: string;
+  params?: string[];
+  message?: string;
+}) {
+  try {
+    let cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
+
+    const token = process.env.WHATSAPP_ACCESS_TOKEN || process.env.WHATSAPP_TOKEN;
+    const phoneId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+
+    if (!token || !phoneId) {
+      console.warn('WhatsApp API credentials missing in environment.');
+      return { success: false, error: 'Missing WhatsApp credentials' };
+    }
+
+    let payload: any;
+    if (templateName) {
+      payload = {
+        messaging_product: 'whatsapp',
+        to: cleanPhone,
+        type: 'template',
+        template: {
+          name: templateName,
+          language: { code: 'en' },
+          components: params.length > 0 ? [
+            {
+              type: 'body',
+              parameters: params.map((p: any) => ({ type: 'text', text: String(p) }))
+            }
+          ] : []
+        }
+      };
+    } else {
+      payload = {
+        messaging_product: 'whatsapp',
+        to: cleanPhone,
+        type: 'text',
+        text: { body: message || 'Hello from Health 360 Clinic.' }
+      };
+    }
+
+    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const data = await res.json();
+    return { success: res.ok, data };
+  } catch (err: any) {
+    console.error('Direct WhatsApp dispatch error:', err);
     return { success: false, error: err.message };
   }
 }
