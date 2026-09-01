@@ -123,11 +123,13 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   });
 
   (patients || []).forEach((p: any) => {
-    const docName = p?.referringDoctor?.trim() || 'Self / Direct';
-    
+    const docName = p?.referringDoctor?.trim();
+
+    // Skip patients with no referring doctor or Self / Direct — they don't belong in the referral list
+    if (!docName || docName === 'Self / Direct' || docName === 'Self' || docName === 'Direct') return;
+
     if (!docMap[docName]) {
       const meta = getDoctorMetadata(docName);
-      
       docMap[docName] = {
         name: docName,
         specialty: meta.specialty,
@@ -151,13 +153,18 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     }
   });
 
-  // Filter referrers by search query
+  // Filter referrers: exclude Self/Direct, apply search query
   const referrers = Object.values(docMap)
-    .filter((ref: any) => 
-      (ref.name || '').toLowerCase().includes(search.toLowerCase()) || 
-      (ref.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-      (ref.clinic || '').toLowerCase().includes(search.toLowerCase())
-    )
+    .filter((ref: any) => {
+      const name = (ref.name || '').trim();
+      if (name === 'Self / Direct' || name === 'Self' || name === 'Direct' || !name) return false;
+      if (!search) return true;
+      return (
+        name.toLowerCase().includes(search.toLowerCase()) ||
+        (ref.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
+        (ref.clinic || '').toLowerCase().includes(search.toLowerCase())
+      );
+    })
     .sort((a: any, b: any) => b.patientsCount - a.patientsCount);
 
   // General Metrics
