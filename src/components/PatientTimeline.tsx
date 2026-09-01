@@ -1640,52 +1640,34 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       {/* ROM & Referrals Checklist Tab */}
       {activeTab === 'rom' && (
         <div className="p-6 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn grid grid-cols-1 md:grid-cols-2 gap-8 divide-x-0 md:divide-x divide-white/10">
-          {/* Left panel: Referring Doctor & Checklist */}
+          {/* Left panel: Referring Doctor */}
           <div className="space-y-6 md:pr-8">
-            <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor & Onboarding</h3>
-            
+            <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor</h3>
+
             {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) ? (
-              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-4 shadow-xl">
-                <div>
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Referrer Doctor Name</p>
-                  <h4 className="text-base font-serif font-bold text-emerald-400 mt-0.5">{patient.referringDoctor}</h4>
+              <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 p-5 rounded-2xl shadow-xl space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">
+                    👨‍⚕️
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-bold text-emerald-400/70 uppercase tracking-widest">Referred by</p>
+                    <h4 className="text-sm font-bold text-white mt-0.5">{patient.referringDoctor}</h4>
+                  </div>
                 </div>
-
-                <div className="space-y-3.5 pt-1 border-t border-white/10">
-                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist</h5>
-                  
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <input 
-                      type="checkbox" 
-                      checked={isThankYouSent}
-                      onChange={handleToggleThankYou}
-                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note</p>
-                      <p className="text-[9px] text-white/50 font-semibold leading-none">Greeting sent to referring doctor</p>
-                    </div>
-                  </label>
-
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                    <input 
-                      type="checkbox" 
-                      checked={isDischargeSent}
-                      onChange={handleToggleDischarge}
-                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary</p>
-                      <p className="text-[9px] text-white/50 font-semibold leading-none">Final progress report sent to doctor</p>
-                    </div>
-                  </label>
-
-                  <p className="text-[9px] text-white/30 italic font-medium pt-1">Use the WhatsApp Hub below to send these messages.</p>
-                </div>
+                <p className="text-[10px] text-white/40 font-medium border-t border-white/10 pt-3">
+                  Use the <span className="text-[#25D366] font-bold">WhatsApp Hub</span> on the right to send a thank-you note or discharge report to this doctor.
+                </p>
               </div>
             ) : (
-              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                <p className="text-xs text-white/50 font-semibold">Patient registered as Direct Intake. No referring doctor checklist required.</p>
+              <div className="bg-white/[0.03] border border-white/[0.07] p-5 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base shrink-0">🏠</div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Self / Direct Intake</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">No referring doctor assigned</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1750,29 +1732,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 self-start sm:self-auto px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[#25D366] text-[10px] font-bold">
+                <div className="flex items-center gap-1.5 self-start sm:self-auto px-2.5 py-1.5 rounded-full bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] text-[10px] font-bold tracking-wide">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse"></span>
-                  Meta API Connected
+                  Meta API · Live
                 </div>
               </div>
 
-              <div className="bg-gradient-to-b from-[#13111C]/80 to-[#0B0A10]/90 border border-white/[0.08] p-5 rounded-3xl space-y-5 shadow-2xl backdrop-blur-2xl">
+              <div className="bg-gradient-to-b from-[#0F1A14]/90 to-[#0B0A10]/95 border border-[#25D366]/10 p-5 rounded-3xl space-y-5 shadow-2xl backdrop-blur-2xl">
 
                 {/* 1. Appointments & Welcome */}
                 <div className="space-y-3">
                   <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                    Appointments & Clinic Guides
-                  </p>
-
-                  {/* Next Appointment Reminder */}
-                  <div className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-emerald-500/30 p-4 rounded-2xl transition-all duration-200">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-serif font-bold text-white flex items-center gap-2">
-                          📅 Next Session Reminder
-                        </p>
-                        <p className="text-[11px] text-white/50 mt-0.5">
                           Sends confirmed session date & time directly to patient's WhatsApp
                         </p>
                       </div>
@@ -1839,47 +1809,37 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     <button
                       onClick={triggerMissedApptConfirm}
                       disabled={whatsappSending === 'missed'}
-                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-rose-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                      className="group p-4 bg-white/[0.02] hover:bg-rose-500/5 border border-white/[0.08] hover:border-rose-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 group-hover:scale-105 transition-transform">
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                           <span className="text-sm">🚫</span>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-white group-hover:text-rose-200 transition-colors">
-                            Missed Session Notice
-                          </p>
-                          <p className="text-[10px] text-white/40 mt-0.5">
-                            Polite re-booking notification
-                          </p>
-                        </div>
+                        <p className="text-xs font-bold text-white group-hover:text-rose-200 transition-colors">Missed Session</p>
                       </div>
-                      <span className="text-[10px] font-bold text-rose-400/80 group-hover:text-rose-300 px-2.5 py-1 rounded-lg bg-rose-500/10 border border-rose-500/20">
-                        {whatsappSuccess === 'missed' ? '✓ Sent' : 'Preview ➔'}
-                      </span>
+                      <p className="text-[10px] text-white/40 leading-relaxed">Polite re-booking notification</p>
+                      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                        <span className="text-[10px] font-bold text-rose-400/80 group-hover:text-rose-300">{whatsappSuccess === 'missed' ? '✓ Sent' : 'Send ➔'}</span>
+                      </div>
                     </button>
 
                     <button
                       onClick={triggerWelcomeConfirm}
                       disabled={whatsappSending === 'welcome'}
-                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-teal-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                      className="group p-4 bg-white/[0.02] hover:bg-teal-500/5 border border-white/[0.08] hover:border-teal-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-teal-400 group-hover:scale-105 transition-transform">
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                           <span className="text-sm">🌿</span>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-white group-hover:text-teal-200 transition-colors">
-                            Clinic Location & Welcome
-                          </p>
-                          <p className="text-[10px] text-white/40 mt-0.5">
-                            Timings, address & Maps pin
-                          </p>
-                        </div>
+                        <p className="text-xs font-bold text-white group-hover:text-teal-200 transition-colors">Clinic Welcome</p>
                       </div>
-                      <span className="text-[10px] font-bold text-teal-400/80 group-hover:text-teal-300 px-2.5 py-1 rounded-lg bg-teal-500/10 border border-teal-500/20">
-                        {whatsappSuccess === 'welcome' ? '✓ Sent' : 'Preview ➔'}
-                      </span>
+                      <p className="text-[10px] text-white/40 leading-relaxed">Timings, address & Maps pin</p>
+                      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                        <span className="text-[10px] font-bold text-teal-400/80 group-hover:text-teal-300">{whatsappSuccess === 'welcome' ? '✓ Sent' : 'Send ➔'}</span>
+                      </div>
                     </button>
                   </div>
                 </div>
@@ -1896,48 +1856,38 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     <button
                       onClick={triggerDischargeConfirm}
                       disabled={whatsappSending === 'discharge'}
-                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-purple-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                      className="group p-4 bg-white/[0.02] hover:bg-purple-500/5 border border-white/[0.08] hover:border-purple-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
                     >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-hover:scale-105 transition-transform">
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                           <span className="text-sm">🎓</span>
                         </div>
-                        <div>
-                          <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">
-                            Discharge Summary
-                          </p>
-                          <p className="text-[10px] text-white/40 mt-0.5">
-                            Program completion & home advice
-                          </p>
-                        </div>
+                        <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">Discharge Summary</p>
                       </div>
-                      <span className="text-[10px] font-bold text-purple-400/80 group-hover:text-purple-300 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                        {whatsappSuccess === 'discharge' ? '✓ Sent' : 'Preview ➔'}
-                      </span>
+                      <p className="text-[10px] text-white/40 leading-relaxed">Program completion & home advice</p>
+                      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                        <span className="text-[10px] font-bold text-purple-400/80 group-hover:text-purple-300">{whatsappSuccess === 'discharge' ? '✓ Sent' : 'Send ➔'}</span>
+                      </div>
                     </button>
 
                     {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) && (
                       <button
                         onClick={triggerDoctorThankYouConfirm}
                         disabled={whatsappSending === 'referral'}
-                        className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-emerald-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                        className="group p-4 bg-white/[0.02] hover:bg-emerald-500/5 border border-white/[0.08] hover:border-emerald-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform">
+                        <div className="flex items-center gap-3 mb-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
                             <span className="text-sm">👨‍⚕️</span>
                           </div>
-                          <div>
-                            <p className="text-xs font-bold text-white group-hover:text-emerald-200 transition-colors">
-                              Doctor Referral Note
-                            </p>
-                            <p className="text-[10px] text-white/40 mt-0.5">
-                              Thank-you to {patient.referringDoctor}
-                            </p>
-                          </div>
+                          <p className="text-xs font-bold text-white group-hover:text-emerald-200 transition-colors">Doctor Referral Note</p>
                         </div>
-                        <span className="text-[10px] font-bold text-emerald-400/80 group-hover:text-emerald-300 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
-                          {whatsappSuccess === 'referral' ? '✓ Sent' : 'Preview ➔'}
-                        </span>
+                        <p className="text-[10px] text-white/40 leading-relaxed">Thank-you to {patient.referringDoctor}</p>
+                        <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                          <span className="text-[10px] font-bold text-emerald-400/80 group-hover:text-emerald-300">{whatsappSuccess === 'referral' ? '✓ Sent' : 'Send ➔'}</span>
+                        </div>
                       </button>
                     )}
 
