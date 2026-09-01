@@ -125,8 +125,19 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   (patients || []).forEach((p: any) => {
     const docName = p?.referringDoctor?.trim();
 
-    // Skip patients with no referring doctor or Self / Direct — they don't belong in the referral list
-    if (!docName || docName === 'Self / Direct' || docName === 'Self' || docName === 'Direct') return;
+    // Skip patients with no referring doctor or any variant of Self / Direct (case-insensitive)
+    if (!docName) return;
+    const docNameLower = docName.toLowerCase();
+    if (
+      docNameLower === 'self' ||
+      docNameLower === 'direct' ||
+      docNameLower === 'self / direct' ||
+      docNameLower === 'self/direct' ||
+      docNameLower === 'self-direct' ||
+      docNameLower === 'n/a' ||
+      docNameLower === 'na' ||
+      docNameLower === 'none'
+    ) return;
 
     if (!docMap[docName]) {
       const meta = getDoctorMetadata(docName);
@@ -153,11 +164,13 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     }
   });
 
-  // Filter referrers: exclude Self/Direct, apply search query
+  // Filter referrers: exclude Self/Direct variants (case-insensitive), apply search query
+  const SELF_DIRECT_VARIANTS = ['self', 'direct', 'self / direct', 'self/direct', 'self-direct', 'n/a', 'na', 'none'];
   const referrers = Object.values(docMap)
     .filter((ref: any) => {
       const name = (ref.name || '').trim();
-      if (name === 'Self / Direct' || name === 'Self' || name === 'Direct' || !name) return false;
+      if (!name) return false;
+      if (SELF_DIRECT_VARIANTS.includes(name.toLowerCase())) return false;
       if (!search) return true;
       return (
         name.toLowerCase().includes(search.toLowerCase()) ||

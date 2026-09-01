@@ -1644,7 +1644,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           <div className="space-y-6 md:pr-8">
             <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor & Onboarding</h3>
             
-            {patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? (
+            {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) ? (
               <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-4 shadow-xl">
                 <div>
                   <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Referrer Doctor Name</p>
@@ -1916,7 +1916,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                       </span>
                     </button>
 
-                    {patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' && (
+                    {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) && (
                       <button
                         onClick={triggerDoctorThankYouConfirm}
                         disabled={whatsappSending === 'referral'}
