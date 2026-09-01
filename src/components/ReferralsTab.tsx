@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Users, UserCheck, Phone, ChevronRight, Loader2, Network, 
   Search, FileText, CheckCircle, Mail, MapPin, Building2, CheckSquare,
-  Plus, X, UserPlus, ArrowLeftRight, Send, MessageSquare
+  Plus, X, UserPlus, ArrowLeftRight, Send, MessageSquare, Edit3
 } from 'lucide-react';
 import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
 import CreatePatientModal from './CreatePatientModal';
@@ -24,9 +24,21 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   // Manual Doctor Creation Modal States
   const [isAddDocOpen, setIsAddDocOpen] = useState(false);
   const [docName, setDocName] = useState('');
-  const [docSpecialty, setDocSpecialty] = useState('Orthopedics');
+  const [docPhone, setDocPhone] = useState('');
+  const [docSpecialty, setDocSpecialty] = useState('Orthopedics & Spine');
   const [docClinic, setDocClinic] = useState('');
   const [docEmail, setDocEmail] = useState('');
+
+  // Edit Doctor Modal States
+  const [isEditDocOpen, setIsEditDocOpen] = useState(false);
+  const [editingDocId, setEditingDocId] = useState<string | null>(null);
+  const [editingDocOldName, setEditingDocOldName] = useState('');
+  const [editingDocName, setEditingDocName] = useState('');
+  const [editingDocPhone, setEditingDocPhone] = useState('');
+  const [editingDocSpecialty, setEditingDocSpecialty] = useState('Orthopedics & Spine');
+  const [editingDocClinic, setEditingDocClinic] = useState('');
+  const [editingDocEmail, setEditingDocEmail] = useState('');
+  const [isSavingEditDoc, setIsSavingEditDoc] = useState(false);
 
   // Manual Patient Assignment States
   const [isAssigningPatientToDoc, setIsAssigningPatientToDoc] = useState<string | null>(null); // doctor name
@@ -78,8 +90,8 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     }
   });
 
-  // Seed details for known referring doctors to look premium & professional
-  const doctorMeta: { [name: string]: { specialty: string; clinic: string; email: string } } = {
+  // Seed details for known referring doctors
+  const doctorMeta: { [name: string]: { specialty: string; clinic: string; email: string; phone?: string } } = {
     'Dr. Amit Sharma': { specialty: 'Orthopedics & Spine Surgery', clinic: 'Sharma Bone & Joint Clinic', email: 'sharma.ortho@email.com' },
     'Dr. Rajesh Patel': { specialty: 'Neurology & Rehabilitation', clinic: 'Patel Neuro Centre', email: 'patel.neuro@email.com' },
     'Dr. Priya Nair': { specialty: 'Rheumatology Specialists', clinic: 'Nair Rheumatism Clinic', email: 'priya.rheum@email.com' },
@@ -87,21 +99,31 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   };
 
   const getDoctorMetadata = (name: string) => {
-    if (doctorMeta[name]) return doctorMeta[name];
-    
-    const matched = customDoctors.find((d: any) => d.name === name);
+    const matched = (customDoctors || []).find((d: any) => d.name?.toLowerCase().trim() === name?.toLowerCase().trim());
     if (matched) {
       return {
-        specialty: matched.specialty,
-        clinic: matched.clinic,
-        email: matched.email
+        id: matched.id,
+        specialty: matched.specialty || 'General Practice',
+        clinic: matched.clinic || 'Clinic',
+        email: matched.email || '',
+        phone: matched.phone || ''
+      };
+    }
+
+    if (doctorMeta[name]) {
+      return {
+        ...doctorMeta[name],
+        id: null,
+        phone: doctorMeta[name].phone || ''
       };
     }
 
     return {
+      id: null,
       specialty: 'General Practice & Intake',
       clinic: 'Local Clinic / Direct Booking',
-      email: `${(name || 'doctor').toLowerCase().replace(/\s+/g, '')}@email.com`
+      email: `${(name || 'doctor').toLowerCase().replace(/[\s\.]+/g, '')}@email.com`,
+      phone: ''
     };
   };
 
@@ -111,10 +133,12 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   (customDoctors || []).forEach((doc: any) => {
     if (!doc?.name) return;
     docMap[doc.name] = {
+      id: doc.id,
       name: doc.name,
       specialty: doc.specialty || 'General Practice',
       clinic: doc.clinic || 'Clinic',
       email: doc.email || '',
+      phone: doc.phone || '',
       patientsCount: 0,
       thankYouSentCount: 0,
       dischargeReportCount: 0,
@@ -142,10 +166,12 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     if (!docMap[docName]) {
       const meta = getDoctorMetadata(docName);
       docMap[docName] = {
+        id: meta.id,
         name: docName,
         specialty: meta.specialty,
         clinic: meta.clinic,
         email: meta.email,
+        phone: meta.phone || '',
         patientsCount: 0,
         thankYouSentCount: 0,
         dischargeReportCount: 0,
@@ -175,35 +201,38 @@ export default function ReferralsTab({ onViewPatient }: Props) {
       return (
         name.toLowerCase().includes(search.toLowerCase()) ||
         (ref.specialty || '').toLowerCase().includes(search.toLowerCase()) ||
-        (ref.clinic || '').toLowerCase().includes(search.toLowerCase())
+        (ref.clinic || '').toLowerCase().includes(search.toLowerCase()) ||
+        (ref.phone || '').includes(search)
       );
     })
     .sort((a: any, b: any) => b.patientsCount - a.patientsCount);
 
   // General Metrics
-  const totalReferred = patients.filter((p: any) => p.referringDoctor && p.referringDoctor !== 'Self / Direct').length;
-  const activeReferrers = Object.keys(docMap).filter(k => k !== 'Self / Direct').length;
+  const totalReferred = patients.filter((p: any) => p.referringDoctor && !SELF_DIRECT_VARIANTS.includes(p.referringDoctor.toLowerCase().trim())).length;
+  const activeReferrers = Object.keys(docMap).filter(k => !SELF_DIRECT_VARIANTS.includes(k.toLowerCase().trim())).length;
   
   const onboardingFinishedCount = patients.filter((p: any) => 
     p.referringDoctor && 
-    p.referringDoctor !== 'Self / Direct' && 
+    !SELF_DIRECT_VARIANTS.includes(p.referringDoctor.toLowerCase().trim()) && 
     p.treatmentModalityAssigned
   ).length;
   const intakeOnboardingRate = totalReferred > 0 ? Math.round((onboardingFinishedCount / totalReferred) * 100) : 100;
 
-  const topDocName = referrers.find((r: any) => r.name !== 'Self / Direct')?.name || 'Self / Direct';
+  const topDocName = referrers.find((r: any) => !SELF_DIRECT_VARIANTS.includes(r.name.toLowerCase().trim()))?.name || 'None';
 
   const handleAddDoctorSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!docName.trim()) return;
 
     const formattedName = docName.startsWith('Dr.') ? docName.trim() : `Dr. ${docName.trim()}`;
+    const cleanPhone = docPhone.replace(/\D/g, '').slice(-10);
     
     await fetch('/api/referring-doctors', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: formattedName,
+        phone: cleanPhone || undefined,
         specialty: docSpecialty,
         clinic: docClinic.trim() || 'General Clinic',
         email: docEmail.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
@@ -211,11 +240,61 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     });
 
     await refetchDoctors();
+    queryClient.invalidateQueries({ queryKey: ['referring-doctors'] });
 
     setDocName('');
+    setDocPhone('');
     setDocClinic('');
     setDocEmail('');
     setIsAddDocOpen(false);
+  };
+
+  const handleOpenEditDoctor = (ref: any) => {
+    setEditingDocId(ref.id || null);
+    setEditingDocOldName(ref.name);
+    setEditingDocName(ref.name);
+    setEditingDocPhone(ref.phone || '');
+    setEditingDocSpecialty(ref.specialty || 'Orthopedics & Spine');
+    setEditingDocClinic(ref.clinic || '');
+    setEditingDocEmail(ref.email || '');
+    setIsEditDocOpen(true);
+  };
+
+  const handleEditDoctorSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDocName.trim()) return;
+
+    setIsSavingEditDoc(true);
+    try {
+      const cleanPhone = editingDocPhone.replace(/\D/g, '').slice(-10);
+      const formattedName = editingDocName.startsWith('Dr.') ? editingDocName.trim() : `Dr. ${editingDocName.trim()}`;
+
+      await fetch('/api/referring-doctors', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: editingDocId,
+          oldName: editingDocOldName,
+          name: formattedName,
+          phone: cleanPhone || '',
+          specialty: editingDocSpecialty,
+          clinic: editingDocClinic.trim() || 'Clinic',
+          email: editingDocEmail.trim() || ''
+        })
+      });
+
+      await refetchDoctors();
+      queryClient.invalidateQueries({ queryKey: ['referring-doctors'] });
+      queryClient.invalidateQueries({ queryKey: ['patients-all'] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+
+      setIsEditDocOpen(false);
+    } catch (err) {
+      console.error('Failed to edit doctor:', err);
+      alert('Failed to save doctor changes');
+    } finally {
+      setIsSavingEditDoc(false);
+    }
   };
 
   const assignablePatients = patients.filter((p: any) => {
@@ -336,9 +415,21 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                   <div className="p-6 flex flex-col justify-between space-y-4">
                     <div className="flex items-start justify-between gap-3">
                       <div className="space-y-1 truncate">
-                        <h4 className="text-lg font-serif font-bold text-[#F5F3FA] truncate">
-                          {ref.name}
-                        </h4>
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-lg font-serif font-bold text-[#F5F3FA] truncate">
+                            {ref.name}
+                          </h4>
+                          {!isDirect && (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditDoctor(ref)}
+                              className="p-1 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-[#12D6C4] transition cursor-pointer"
+                              title="Edit Doctor Info & Phone Number"
+                            >
+                              <Edit3 className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
                         <p className="eyebrow text-[9px] text-[#12D6C4]">{ref.specialty}</p>
                       </div>
                       
@@ -348,13 +439,33 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                       </span>
                     </div>
 
-                    {/* Clinic details info */}
+                    {/* Clinic & Contact details info */}
                     <div className="space-y-2 text-xs font-medium text-[rgba(245,243,250,0.62)]">
                       <div className="flex items-center gap-2">
                         <Building2 className="h-3.5 w-3.5 text-[#12D6C4] shrink-0 stroke-[1.75]" />
                         <span className="truncate">{ref.clinic}</span>
                       </div>
+
                       {!isDirect && (
+                        <div className="flex items-center gap-2">
+                          <Phone className="h-3.5 w-3.5 text-[#25D366] shrink-0 stroke-[1.75]" />
+                          {ref.phone ? (
+                            <span className="font-mono text-[#25D366] font-bold tracking-wide">
+                              +91 {ref.phone}
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleOpenEditDoctor(ref)}
+                              className="text-amber-400 hover:text-amber-300 underline text-[11px] font-semibold cursor-pointer"
+                            >
+                              No WhatsApp phone set (+ Add Phone)
+                            </button>
+                          )}
+                        </div>
+                      )}
+
+                      {!isDirect && ref.email && (
                         <div className="flex items-center gap-2">
                           <Mail className="h-3.5 w-3.5 text-[#12D6C4] shrink-0 stroke-[1.75]" />
                           <span className="truncate">{ref.email}</span>
@@ -423,7 +534,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                               setDoctorPhoneInput('');
                             } else {
                               setShowPhoneInputForDoc(ref.name);
-                              setDoctorPhoneInput('');
+                              setDoctorPhoneInput(ref.phone || '');
                             }
                           }}
                           className="px-3.5 py-2 bg-[rgba(37,211,102,0.12)] hover:bg-[rgba(37,211,102,0.2)] border border-[rgba(37,211,102,0.3)] text-[#25D366] eyebrow text-[9px] rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1 focus:outline-hidden"
@@ -447,27 +558,57 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                           className="overflow-hidden"
                         >
                           <div className="border-t border-[rgba(37,211,102,0.2)] bg-[rgba(37,211,102,0.06)] p-3 space-y-2 mt-1 rounded-xl">
-                            <p className="text-[9px] font-bold text-[#25D366] uppercase tracking-wider">Send Referral Thank You to {ref.name}</p>
-                            <p className="text-[9px] text-[rgba(245,243,250,0.5)]">For: {ref.patients?.[0]?.fullName || 'most recent patient'}</p>
+                            <div className="flex items-center justify-between">
+                              <p className="text-[10px] font-bold text-[#25D366] uppercase tracking-wider flex items-center gap-1.5">
+                                <Send className="w-3 h-3" /> Send WhatsApp Thank-You to {ref.name}
+                              </p>
+                              <span className="text-[9px] text-white/40">Destination: Doctor's Phone</span>
+                            </div>
+
+                            <p className="text-[10px] text-[rgba(245,243,250,0.6)]">
+                              Acknowledging referral of: <strong className="text-white">{ref.referredPatients?.[0]?.fullName || 'Referred Patient'}</strong>
+                            </p>
+
                             <div className="flex gap-2">
                               <input
                                 type="tel"
-                                placeholder="Doctor's WhatsApp number (10 digits)"
+                                placeholder="Doctor's 10-digit WhatsApp number"
                                 value={doctorPhoneInput}
                                 onChange={(e) => setDoctorPhoneInput(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                                className="flex-1 text-xs bg-[rgba(255,255,255,0.05)] border border-[rgba(37,211,102,0.3)] rounded-lg px-2.5 py-1.5 text-[#F5F3FA] placeholder-[rgba(245,243,250,0.3)] focus:outline-none focus:ring-1 focus:ring-[#25D366]"
+                                className="flex-1 text-xs bg-[rgba(255,255,255,0.05)] border border-[rgba(37,211,102,0.3)] rounded-lg px-2.5 py-1.5 text-[#F5F3FA] placeholder-[rgba(245,243,250,0.3)] focus:outline-none focus:ring-1 focus:ring-[#25D366] font-mono font-bold"
                               />
                               <button
                                 disabled={doctorPhoneInput.length < 10 || sendingThankyouDoc === ref.name}
                                 onClick={async () => {
                                   setSendingThankyouDoc(ref.name);
-                                  const docLastName = ref.name.replace('Dr. ', '').split(' ')[0];
-                                  const patientName = ref.patients?.[0]?.fullName || 'your referred patient';
+                                  const docLastName = ref.name.replace(/^Dr\.\s*/i, '').split(' ')[0];
+                                  const patientName = ref.referredPatients?.[0]?.fullName || 'your referred patient';
+                                  const cleanPhone = doctorPhoneInput.replace(/\D/g, '').slice(-10);
+
                                   const result = await sendWhatsAppNotification({
-                                    phone: doctorPhoneInput,
+                                    phone: cleanPhone,
                                     templateName: 'referral_thankyou_short',
                                     params: [docLastName, patientName],
                                   });
+
+                                  // Auto-save doctor phone to database if missing or updated
+                                  if (cleanPhone !== ref.phone) {
+                                    try {
+                                      await fetch('/api/referring-doctors', {
+                                        method: 'PATCH',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({
+                                          id: ref.id,
+                                          oldName: ref.name,
+                                          phone: cleanPhone
+                                        })
+                                      });
+                                      refetchDoctors();
+                                    } catch (e) {
+                                      console.error('Failed to save doctor phone:', e);
+                                    }
+                                  }
+
                                   setSendingThankyouDoc(null);
                                   if (result.success) {
                                     setThankyouSuccess(ref.name);
@@ -475,13 +616,13 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                                     setDoctorPhoneInput('');
                                     setTimeout(() => setThankyouSuccess(null), 5000);
                                   } else {
-                                    alert('Failed to send. Check API credentials.');
+                                    alert('Failed to send WhatsApp message. Please check the phone number and API status.');
                                   }
                                 }}
-                                className="px-3 py-1.5 bg-[#25D366] hover:bg-[#1ebe59] text-white text-[9px] font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                                className="px-3 py-1.5 bg-[#25D366] hover:bg-[#1ebe59] text-white text-[10px] font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1 shadow-md shadow-[#25D366]/20 shrink-0"
                               >
-                                {sendingThankyouDoc === ref.name ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-                                {sendingThankyouDoc === ref.name ? '...' : 'Send'}
+                                {sendingThankyouDoc === ref.name ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                                {sendingThankyouDoc === ref.name ? 'Sending...' : 'Send to Doctor'}
                               </button>
                             </div>
                           </div>
@@ -630,7 +771,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
 
               <form onSubmit={handleAddDoctorSubmit} className="space-y-4">
                 <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Doctor Name</label>
+                  <label className="eyebrow text-[9px] block">Doctor Name *</label>
                   <input
                     type="text"
                     required
@@ -642,17 +783,28 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                 </div>
 
                 <div className="space-y-1">
+                  <label className="eyebrow text-[9px] block text-[#25D366]">Doctor's WhatsApp Phone (10 Digits)</label>
+                  <input
+                    type="tel"
+                    placeholder="E.g., 9833333333"
+                    value={docPhone}
+                    onChange={(e) => setDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="block w-full text-xs glass-input p-2.5 font-mono font-bold text-[#25D366] placeholder-[rgba(245,243,250,0.4)] border-[#25D366]/30"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <label className="eyebrow text-[9px] block">Specialty</label>
                   <select
                     value={docSpecialty}
                     onChange={(e) => setDocSpecialty(e.target.value)}
                     className="block w-full text-xs glass-input p-2.5 cursor-pointer font-bold bg-[#120D1F] text-[#F5F3FA]"
                   >
-                    <option value="Orthopedics">Orthopedics & Spine</option>
-                    <option value="Neurology">Neurology & Rehab</option>
-                    <option value="Rheumatology">Rheumatology</option>
-                    <option value="Cardiology">Cardiology & Sports</option>
-                    <option value="Pediatrics">Pediatrics Rehab</option>
+                    <option value="Orthopedics & Spine">Orthopedics & Spine</option>
+                    <option value="Neurology & Rehab">Neurology & Rehab</option>
+                    <option value="Rheumatology Specialists">Rheumatology</option>
+                    <option value="Cardiology & Sports">Cardiology & Sports</option>
+                    <option value="Pediatrics Rehab">Pediatrics Rehab</option>
                     <option value="General Practice">General Practice</option>
                   </select>
                 </div>
@@ -670,7 +822,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                 </div>
 
                 <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Email Address</label>
+                  <label className="eyebrow text-[9px] block">Email Address (Optional)</label>
                   <input
                     type="email"
                     placeholder="E.g., doctor@email.com (optional)"
@@ -701,6 +853,115 @@ export default function ReferralsTab({ onViewPatient }: Props) {
         )}
       </AnimatePresence>
 
+      {/* Edit Doctor Info & Phone Modal */}
+      <AnimatePresence>
+        {isEditDocOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+            <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={() => setIsEditDocOpen(false)} />
+            <motion.div
+              initial={{ scale: 0.95, y: 15, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.95, y: 15, opacity: 0 }}
+              className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.15)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.6)] w-full max-w-sm z-10 space-y-4"
+            >
+              <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3">
+                <div className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4 text-[#12D6C4]" />
+                  <h4 className="text-lg font-serif font-bold text-[#F5F3FA]">Edit Doctor Profile</h4>
+                </div>
+                <button onClick={() => setIsEditDocOpen(false)} className="text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA]">
+                  <X className="h-4.5 w-4.5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleEditDoctorSubmit} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="eyebrow text-[9px] block">Doctor Name</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="E.g., Dr. Jane Smith"
+                    value={editingDocName}
+                    onChange={(e) => setEditingDocName(e.target.value)}
+                    className="block w-full text-xs glass-input p-2.5 font-bold text-white placeholder-[rgba(245,243,250,0.4)]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="eyebrow text-[9px] block text-[#25D366] flex items-center justify-between">
+                    <span>WhatsApp Phone Number</span>
+                    <span className="text-[8px] text-white/40 font-normal">Used for Referral Thank-You</span>
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="10-digit mobile number (e.g. 9833333333)"
+                    value={editingDocPhone}
+                    onChange={(e) => setEditingDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="block w-full text-xs glass-input p-2.5 font-mono font-bold text-[#25D366] placeholder-[rgba(245,243,250,0.4)] border-[#25D366]/40"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="eyebrow text-[9px] block">Specialty</label>
+                  <select
+                    value={editingDocSpecialty}
+                    onChange={(e) => setEditingDocSpecialty(e.target.value)}
+                    className="block w-full text-xs glass-input p-2.5 cursor-pointer font-bold bg-[#120D1F] text-[#F5F3FA]"
+                  >
+                    <option value="Orthopedics & Spine">Orthopedics & Spine</option>
+                    <option value="Neurology & Rehab">Neurology & Rehab</option>
+                    <option value="Rheumatology Specialists">Rheumatology</option>
+                    <option value="Cardiology & Sports">Cardiology & Sports</option>
+                    <option value="Pediatrics Rehab">Pediatrics Rehab</option>
+                    <option value="General Practice">General Practice</option>
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="eyebrow text-[9px] block">Clinic / Hospital</label>
+                  <input
+                    type="text"
+                    placeholder="E.g., City Bone & Joint Clinic"
+                    value={editingDocClinic}
+                    onChange={(e) => setEditingDocClinic(e.target.value)}
+                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="eyebrow text-[9px] block">Email Address</label>
+                  <input
+                    type="email"
+                    placeholder="E.g., doctor@email.com"
+                    value={editingDocEmail}
+                    onChange={(e) => setEditingDocEmail(e.target.value)}
+                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditDocOpen(false)}
+                    className="flex-1 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors cursor-pointer text-[rgba(245,243,250,0.8)]"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingEditDoc}
+                    className="flex-1 py-2.5 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0 flex items-center justify-center gap-1.5"
+                  >
+                    {isSavingEditDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    {isSavingEditDoc ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       <CreatePatientModal 
         isOpen={isCreatePatientModalOpen} 
         onClose={() => setIsCreatePatientModalOpen(false)} 
@@ -714,3 +975,4 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     </div>
   );
 }
+

@@ -98,6 +98,24 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [whatsappSending, setWhatsappSending] = useState<string | null>(null);
   const [whatsappSuccess, setWhatsappSuccess] = useState<string | null>(null);
 
+  // Fetch referring doctors to look up referring doctor's phone number
+  const { data: referringDoctors = [], refetch: refetchReferringDoctors } = useQuery({
+    queryKey: ['referring-doctors'],
+    queryFn: async () => {
+      const res = await fetch('/api/referring-doctors');
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  // Doctor phone entry modal state for when doctor has no phone
+  const [docPhoneModal, setDocPhoneModal] = useState<{
+    isOpen: boolean;
+    docName: string;
+    phone: string;
+    isSaving?: boolean;
+  }>({ isOpen: false, docName: '', phone: '' });
+
   // Custom modal states for Session Packages, Document Previewer, and Custom Confirm
   const [isAddingPackage, setIsAddingPackage] = useState(false);
   const [packageName, setPackageName] = useState('');
@@ -677,19 +695,41 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     updatePatientMutation.mutate({ notes: currentNotes });
   };
 
-  // WhatsApp — Send Doctor Referral Thank You
+  // WhatsApp — Send Doctor Referral Thank You directly to Doctor's Phone
   const triggerDoctorThankYouConfirm = () => {
-    const rawDoc = patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? patient.referringDoctor : 'Doctor';
+    const rawDoc = patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim())
+      ? patient.referringDoctor
+      : 'Doctor';
     const docName = rawDoc.replace(/^Dr\.\s*/i, '');
     const patientName = patient.fullName;
     const preview = `Dear Dr. ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/?text=${encodeURIComponent(preview)}`;
+
+    // Find the referring doctor record to get their phone number
+    const matchedDoc = (referringDoctors || []).find((d: any) => 
+      d.name?.toLowerCase().trim() === rawDoc.toLowerCase().trim() ||
+      d.name?.replace(/^Dr\.\s*/i, '').toLowerCase().trim() === docName.toLowerCase().trim()
+    );
+
+    const docPhone = matchedDoc?.phone ? matchedDoc.phone.replace(/\D/g, '').slice(-10) : '';
+
+    if (!docPhone || docPhone.length < 10) {
+      // Doctor has no phone number on file — prompt user to enter doctor's phone number
+      setDocPhoneModal({
+        isOpen: true,
+        docName: rawDoc,
+        phone: '',
+        isSaving: false
+      });
+      return;
+    }
+
+    const cleanPhone = docPhone;
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(preview)}`;
 
     whatsappConfirmActionRef.current = async () => {
       setWhatsappSending('referral');
       const result = await sendWhatsAppNotification({
-        phone: patient.phone,
+        phone: cleanPhone,
         templateName: 'referral_thankyou_short',
         params: [docName, patientName],
       });
@@ -698,15 +738,76 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       if (result.success) {
         setWhatsappSuccess('referral');
         setTimeout(() => setWhatsappSuccess(null), 4000);
+      } else {
+        alert('Failed to deliver message to doctor. Please check doctor phone number and API credentials.');
       }
     };
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: `Send Thank-You to Dr. ${docName}`,
-      templateBadge: 'referral_thankyou_short (Utility)',
-      recipientName: `Dr. ${docName}`,
-      phone: patient.phone,
+      templateBadge: 'referral_thankyou_short (Sent to Doctor)',
+      recipientName: `Dr. ${docName} (Referring Doctor)`,
+      phone: cleanPhone,
+      messagePreview: preview,
+      waUrl,
+    });
+  };
+
+  const handleSaveDoctorPhoneAndProceed = async (phoneToSave: string) => {
+    const cleanPhone = phoneToSave.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) return;
+
+    setDocPhoneModal(prev => ({ ...prev, isSaving: true }));
+
+    try {
+      await fetch('/api/referring-doctors', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldName: docPhoneModal.docName,
+          name: docPhoneModal.docName,
+          phone: cleanPhone
+        })
+      });
+
+      await refetchReferringDoctors();
+      queryClient.invalidateQueries({ queryKey: ['referring-doctors'] });
+    } catch (e) {
+      console.error('Failed to save doctor phone:', e);
+    } finally {
+      setDocPhoneModal({ isOpen: false, docName: '', phone: '', isSaving: false });
+    }
+
+    // Immediately open confirmation modal targeting this doctor's newly saved phone
+    const docName = docPhoneModal.docName.replace(/^Dr\.\s*/i, '');
+    const patientName = patient.fullName;
+    const preview = `Dear Dr. ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(preview)}`;
+
+    whatsappConfirmActionRef.current = async () => {
+      setWhatsappSending('referral');
+      const result = await sendWhatsAppNotification({
+        phone: cleanPhone,
+        templateName: 'referral_thankyou_short',
+        params: [docName, patientName],
+      });
+      handleToggleThankYou();
+      setWhatsappSending(null);
+      if (result.success) {
+        setWhatsappSuccess('referral');
+        setTimeout(() => setWhatsappSuccess(null), 4000);
+      } else {
+        alert('Failed to deliver message to doctor. Please check doctor phone number.');
+      }
+    };
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: `Send Thank-You to Dr. ${docName}`,
+      templateBadge: 'referral_thankyou_short (Sent to Doctor)',
+      recipientName: `Dr. ${docName} (Referring Doctor)`,
+      phone: cleanPhone,
       messagePreview: preview,
       waUrl,
     });
@@ -1644,22 +1745,42 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           <div className="space-y-6 md:pr-8">
             <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor</h3>
 
-            {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) ? (
-              <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 p-5 rounded-2xl shadow-xl space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">
-                    👨‍⚕️
+            {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) ? (() => {
+              const rawDoc = patient.referringDoctor;
+              const matchedDoc = (referringDoctors || []).find((d: any) => 
+                d.name?.toLowerCase().trim() === rawDoc.toLowerCase().trim() ||
+                d.name?.replace(/^Dr\.\s*/i, '').toLowerCase().trim() === rawDoc.replace(/^Dr\.\s*/i, '').toLowerCase().trim()
+              );
+              return (
+                <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 p-5 rounded-2xl shadow-xl space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">
+                      👨‍⚕️
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold text-emerald-400/70 uppercase tracking-widest">Referred by</p>
+                      <h4 className="text-sm font-bold text-white mt-0.5">{patient.referringDoctor}</h4>
+                      {matchedDoc?.phone ? (
+                        <p className="text-xs text-[#25D366] font-mono font-bold mt-1 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5" /> +91 {matchedDoc.phone}
+                        </p>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setDocPhoneModal({ isOpen: true, docName: patient.referringDoctor, phone: '' })}
+                          className="text-amber-400 hover:text-amber-300 underline text-[11px] font-semibold mt-1 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Phone className="w-3 h-3" /> No phone registered (+ Add WhatsApp No.)
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-emerald-400/70 uppercase tracking-widest">Referred by</p>
-                    <h4 className="text-sm font-bold text-white mt-0.5">{patient.referringDoctor}</h4>
-                  </div>
+                  <p className="text-[10px] text-white/40 font-medium border-t border-white/10 pt-3">
+                    Use the <span className="text-[#25D366] font-bold">WhatsApp Hub</span> on the right to send a thank-you note or discharge report directly to this doctor.
+                  </p>
                 </div>
-                <p className="text-[10px] text-white/40 font-medium border-t border-white/10 pt-3">
-                  Use the <span className="text-[#25D366] font-bold">WhatsApp Hub</span> on the right to send a thank-you note or discharge report to this doctor.
-                </p>
-              </div>
-            ) : (
+              );
+            })() : (
               <div className="bg-white/[0.03] border border-white/[0.07] p-5 rounded-2xl">
                 <div className="flex items-center gap-3">
                   <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base shrink-0">🏠</div>
@@ -1743,6 +1864,18 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 {/* 1. Appointments & Welcome */}
                 <div className="space-y-3">
                   <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Appointments & Clinic Guides
+                  </p>
+
+                  {/* Next Appointment Reminder */}
+                  <div className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-emerald-500/30 p-4 rounded-2xl transition-all duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-serif font-bold text-white flex items-center gap-2">
+                          📅 Next Session Reminder
+                        </p>
+                        <p className="text-[11px] text-white/50 mt-0.5">
                           Sends confirmed session date & time directly to patient's WhatsApp
                         </p>
                       </div>
@@ -3087,6 +3220,103 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 <Send className="w-3.5 h-3.5 stroke-[2.5]" /> Send Official Message
               </button>
             </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
+      {/* Doctor WhatsApp Phone Number Entry Modal — portaled to document.body */}
+      {docPhoneModal.isOpen && isMounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            onClick={() => setDocPhoneModal({ isOpen: false, docName: '', phone: '' })}
+          />
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="relative bg-gradient-to-b from-[#13111C] to-[#0B0A10] border border-white/15 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] rounded-2xl shrink-0">
+                  <Phone className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-serif font-bold text-white leading-tight">
+                    Doctor's WhatsApp Number
+                  </h3>
+                  <p className="text-[11px] text-white/50 font-medium mt-0.5">
+                    Required to send referral thank-you & updates
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDocPhoneModal({ isOpen: false, docName: '', phone: '' })}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs space-y-1">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Referring Doctor</p>
+              <p className="text-sm font-bold text-white">{docPhoneModal.docName}</p>
+              <p className="text-[11px] text-white/50 pt-1">
+                Enter this doctor's 10-digit WhatsApp phone number. It will be saved automatically so you never have to re-enter it.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (docPhoneModal.phone.length === 10) {
+                  handleSaveDoctorPhoneAndProceed(docPhoneModal.phone);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                  10-Digit Mobile Number (India)
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-mono font-bold text-white/60">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    autoFocus
+                    placeholder="9833333333"
+                    value={docPhoneModal.phone}
+                    onChange={(e) => setDocPhoneModal(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                    className="flex-1 text-sm bg-white/5 border border-[#25D366]/40 focus:border-[#25D366] rounded-xl px-3 py-2 text-white font-mono font-bold outline-none placeholder-white/25"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDocPhoneModal({ isOpen: false, docName: '', phone: '' })}
+                  className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={docPhoneModal.phone.length < 10 || docPhoneModal.isSaving}
+                  className="flex-1 py-2.5 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer disabled:opacity-50 shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5"
+                >
+                  {docPhoneModal.isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  Save &amp; Continue
+                </button>
+              </div>
+            </form>
           </motion.div>
         </div>,
         document.body
