@@ -677,6 +677,33 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     updatePatientMutation.mutate({ notes: currentNotes });
   };
 
+  // WhatsApp — Send Doctor Referral Thank You
+  const triggerDoctorThankYouConfirm = () => {
+    const docName = patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? patient.referringDoctor : 'Doctor';
+    const patientName = patient.fullName;
+    const preview = `Dear ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic\n☎️ 8482812859 / 9834848981`;
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/?text=${encodeURIComponent(preview)}`;
+
+    whatsappConfirmActionRef.current = async () => {
+      setWhatsappSending('referral');
+      handleToggleThankYou();
+      setWhatsappSending(null);
+      setWhatsappSuccess('referral');
+      setTimeout(() => setWhatsappSuccess(null), 4000);
+    };
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: `Send Thank-You to ${docName}`,
+      templateBadge: 'Doctor Referral Onboarding',
+      recipientName: docName,
+      phone: 'Referring Doctor',
+      messagePreview: preview,
+      waUrl,
+    });
+  };
+
   // WhatsApp — Send Next Appointment Reminder
   const triggerNextApptReminderConfirm = () => {
     if (!nextApptDate || !nextApptTime) return;
@@ -1617,33 +1644,51 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 </div>
 
                 <div className="space-y-3.5 pt-1 border-t border-white/10">
-                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist</h5>
+                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist & WhatsApp Actions</h5>
                   
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isThankYouSent}
-                      onChange={handleToggleThankYou}
-                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note Sent</p>
-                      <p className="text-[9px] text-white/50 font-semibold leading-none">Send greeting note to referring doctor</p>
-                    </div>
-                  </label>
+                  <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isThankYouSent}
+                        onChange={handleToggleThankYou}
+                        className="mt-0.5 rounded border-white/20 accent-emerald-500"
+                      />
+                      <div className="space-y-0.5">
+                        <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note</p>
+                        <p className="text-[9px] text-white/50 font-semibold leading-none">Greeting to referring doctor</p>
+                      </div>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={triggerDoctorThankYouConfirm}
+                      className="px-2.5 py-1 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 text-[#25D366] text-[10px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0"
+                    >
+                      <Send className="w-2.5 h-2.5" /> Send WhatsApp
+                    </button>
+                  </div>
 
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isDischargeSent}
-                      onChange={handleToggleDischarge}
-                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary Sent</p>
-                      <p className="text-[9px] text-white/50 font-semibold leading-none">Send final progress report to referring doctor</p>
-                    </div>
-                  </label>
+                  <div className="flex items-center justify-between gap-3 p-2.5 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                    <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={isDischargeSent}
+                        onChange={handleToggleDischarge}
+                        className="mt-0.5 rounded border-white/20 accent-emerald-500"
+                      />
+                      <div className="space-y-0.5">
+                        <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary</p>
+                        <p className="text-[9px] text-white/50 font-semibold leading-none">Final clinical progress report</p>
+                      </div>
+                    </label>
+                    <button
+                      type="button"
+                      onClick={triggerDischargeConfirm}
+                      className="px-2.5 py-1 bg-purple-500/15 hover:bg-purple-500/25 border border-purple-500/30 text-purple-300 text-[10px] font-bold rounded-lg transition cursor-pointer flex items-center gap-1 shrink-0"
+                    >
+                      <Send className="w-2.5 h-2.5" /> Send WhatsApp
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : (
@@ -1664,9 +1709,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                   {handouts.map((h: any) => (
-                    <div key={h.id} className="p-3 border border-white/10 rounded-xl bg-white/5 flex justify-between items-center gap-3">
-                      <div className="truncate">
-                        <p className="text-xs font-serif font-bold text-white truncate">{h.title}</p>
+                    <div key={h.id} className="p-3 border border-white/10 bg-white/5 rounded-2xl flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-white">{h.title}</p>
                         <p style={{ fontSize: '9px', lineHeight: '12px' }} className="text-white/50 font-bold uppercase mt-1">{h.category} • {h.fileType}</p>
                       </div>
                       <motion.button
@@ -1857,6 +1902,54 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
+                      onClick={triggerDischargeConfirm}
+                      disabled={whatsappSending === 'discharge'}
+                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-purple-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-hover:scale-105 transition-transform">
+                          <span className="text-sm">🎓</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">
+                            Discharge Summary
+                          </p>
+                          <p className="text-[10px] text-white/40 mt-0.5">
+                            Program completion & home advice
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-purple-400/80 group-hover:text-purple-300 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
+                        {whatsappSuccess === 'discharge' ? '✓ Sent' : 'Preview ➔'}
+                      </span>
+                    </button>
+
+                    {patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' && (
+                      <button
+                        onClick={triggerDoctorThankYouConfirm}
+                        disabled={whatsappSending === 'referral'}
+                        className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-emerald-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 group-hover:scale-105 transition-transform">
+                            <span className="text-sm">👨‍⚕️</span>
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-white group-hover:text-emerald-200 transition-colors">
+                              Doctor Referral Note
+                            </p>
+                            <p className="text-[10px] text-white/40 mt-0.5">
+                              Thank-you to {patient.referringDoctor}
+                            </p>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-bold text-emerald-400/80 group-hover:text-emerald-300 px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                          {whatsappSuccess === 'referral' ? '✓ Sent' : 'Preview ➔'}
+                        </span>
+                      </button>
+                    )}
+
+                    <button
                       onClick={triggerMediclaimConfirm}
                       disabled={whatsappSending === 'mediclaim'}
                       className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-sky-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
@@ -1922,29 +2015,6 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                       </div>
                       <span className="text-[10px] font-bold text-amber-400/80 group-hover:text-amber-300 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
                         {whatsappSuccess === 'rest' ? '✓ Sent' : 'Preview ➔'}
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={triggerDischargeConfirm}
-                      disabled={whatsappSending === 'discharge'}
-                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-purple-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 group-hover:scale-105 transition-transform">
-                          <span className="text-sm">🎓</span>
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">
-                            Discharge Summary
-                          </p>
-                          <p className="text-[10px] text-white/40 mt-0.5">
-                            Program completion & home advice
-                          </p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] font-bold text-purple-400/80 group-hover:text-purple-300 px-2.5 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20">
-                        {whatsappSuccess === 'discharge' ? '✓ Sent' : 'Preview ➔'}
                       </span>
                     </button>
                   </div>

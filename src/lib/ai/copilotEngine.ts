@@ -176,7 +176,7 @@ export async function extractMicroContext(query: string): Promise<MicroContextRe
     }
 
     // ─── 6. CLINICAL & PHYSIOTHERAPY / BCST QUERIES ───
-    else if (q.includes('craniosacral') || q.includes('bcst') || q.includes('cst') || q.includes('pain') || q.includes('stress') || q.includes('physio') || q.includes('exercise') || q.includes('rehab') || q.includes('disc') || q.includes('sciatica') || q.includes('knee') || q.includes('shoulder') || q.includes('spine') || q.includes('posture')) {
+    else if (q.includes('craniosacral') || (q.includes('cranio') && q.includes('sacral')) || q.includes('bcst') || q.includes('cst') || q.includes('pain') || q.includes('stress') || q.includes('physio') || q.includes('exercise') || q.includes('rehab') || q.includes('disc') || q.includes('sciatica') || q.includes('knee') || q.includes('shoulder') || q.includes('spine') || q.includes('posture') || q.includes('therapy') || q.includes('protocol') || q.includes('treatment') || q.includes('technique')) {
       domain = 'CLINICAL_GUIDANCE';
       denseChunk = `[CLINICAL_EXPERT_SYSTEM | Clinic: Health 360 | Specialist: Dr. Rashmita Karvir-Kekre (B.PTh, BCST) | Modalities: Biodynamic Craniosacral Therapy, Orthopedic Physiotherapy, Neuro-Rehab, Myofascial Release, Polyvagal ANS Regulation]`;
     }
@@ -218,8 +218,8 @@ export function generateDeterministicResponse(query: string, microContext: Micro
   const parts = raw.split(' | ');
   const q = query.toLowerCase();
 
-  if (domain === 'CLINICAL_GUIDANCE' || q.includes('craniosacral') || q.includes('bcst') || q.includes('cst') || q.includes('pain') || q.includes('stress')) {
-    if (q.includes('craniosacral') || q.includes('bcst') || q.includes('cst') || q.includes('stress')) {
+  if (domain === 'CLINICAL_GUIDANCE' || q.includes('craniosacral') || (q.includes('cranio') && q.includes('sacral')) || q.includes('bcst') || q.includes('cst') || q.includes('pain') || q.includes('stress') || q.includes('therapy')) {
+    if (q.includes('craniosacral') || (q.includes('cranio') && q.includes('sacral')) || q.includes('bcst') || q.includes('cst') || q.includes('stress') || q.includes('therapy')) {
       return `### Biodynamic Craniosacral Therapy (BCST) for Stress & Chronic Pain\n\n` +
              `Biodynamic Craniosacral Therapy (BCST) is a gentle, non-invasive hands-on therapy practiced at **Health 360 Clinic** by **Dr. Rashmita Karvir-Kekre** that works directly with the central nervous system and the body's natural self-regulatory mechanisms.\n\n` +
              `• **Autonomic Nervous System Regulation (Polyvagal Theory):**\n` +
