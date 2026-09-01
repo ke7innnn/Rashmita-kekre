@@ -9,7 +9,7 @@ import {
   Clock, PhoneCall, ChevronLeft, Loader2, ArrowLeft, 
   MessageSquare, FileDown, Activity, Mic, Sparkles, 
   Plus, Check, Camera, Image, AlertTriangle, Download, 
-  Trash2, Edit2, PlayCircle, Folder, File, FolderPlus,
+  Trash2, Edit2, Edit3, PlayCircle, Folder, File, FolderPlus,
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -31,6 +31,12 @@ const CallOutcome = {
   NO_ANSWER: 'NO_ANSWER'
 } as const;
 type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
+
+export interface WhatsAppParamField {
+  label: string;
+  value: string;
+  placeholder?: string;
+}
 
 interface Props {
   patientId: string;
@@ -148,21 +154,75 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [confirmWhatsappModal, setConfirmWhatsappModal] = useState<{
     isOpen: boolean;
     title: string;
+    templateName?: string;
     templateBadge?: string;
     recipientName: string;
     phone: string;
+    paramFields?: WhatsAppParamField[];
+    previewGenerator?: (params: string[]) => string;
     messagePreview: string;
     waUrl?: string;
+    onSend?: (phone: string, params: string[]) => Promise<void>;
   }>({
     isOpen: false,
     title: '',
+    templateName: '',
     templateBadge: '',
     recipientName: '',
     phone: '',
+    paramFields: [],
     messagePreview: '',
     waUrl: '',
   });
   const whatsappConfirmActionRef = useRef<(() => void) | null>(null);
+
+  const handleParamChange = (index: number, newValue: string) => {
+    setConfirmWhatsappModal(prev => {
+      const updatedFields = [...(prev.paramFields || [])];
+      updatedFields[index] = { ...updatedFields[index], value: newValue };
+      const paramValues = updatedFields.map(f => f.value);
+      
+      const newPreview = prev.previewGenerator ? prev.previewGenerator(paramValues) : prev.messagePreview;
+      const cleanPhone = prev.phone.replace(/\D/g, '');
+      const finalPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const newWaUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(newPreview)}`;
+
+      return {
+        ...prev,
+        paramFields: updatedFields,
+        messagePreview: newPreview,
+        waUrl: newWaUrl,
+      };
+    });
+  };
+
+  const handlePhoneChange = (newPhone: string) => {
+    setConfirmWhatsappModal(prev => {
+      const cleanPhone = newPhone.replace(/\D/g, '');
+      const finalPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const newWaUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(prev.messagePreview)}`;
+      return {
+        ...prev,
+        phone: newPhone,
+        waUrl: newWaUrl,
+      };
+    });
+  };
+
+  const handleSendConfirmModal = async () => {
+    const currentParams = (confirmWhatsappModal.paramFields || []).map(f => f.value);
+    const currentPhone = confirmWhatsappModal.phone;
+    const onSend = confirmWhatsappModal.onSend;
+    
+    setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }));
+    
+    if (onSend) {
+      await onSend(currentPhone, currentParams);
+    } else if (whatsappConfirmActionRef.current) {
+      whatsappConfirmActionRef.current();
+      whatsappConfirmActionRef.current = null;
+    }
+  };
 
   const handleTotalSessionsChange = (val: number) => {
     setTotalSessions(val);
@@ -702,7 +762,11 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       : 'Doctor';
     const docName = rawDoc.replace(/^Dr\.\s*/i, '');
     const patientName = patient.fullName;
-    const preview = `Dear Dr. ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const previewGen = (p: string[]) => 
+      `Dear Dr. ${p[0] || docName},\n\nThank you for referring ${p[1] || patientName} to us. We sincerely appreciate your trust and support. The patient has been evaluated, and treatment has been started. We look forward to working together to achieve the best outcome.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Physiotherapy & Craniosacral Therapy Clinic`;
+
+    const initialPreview = previewGen([docName, patientName]);
 
     // Find the referring doctor record to get their phone number
     const matchedDoc = (referringDoctors || []).find((d: any) => 
@@ -713,7 +777,6 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const docPhone = matchedDoc?.phone ? matchedDoc.phone.replace(/\D/g, '').slice(-10) : '';
 
     if (!docPhone || docPhone.length < 10) {
-      // Doctor has no phone number on file — prompt user to enter doctor's phone number
       setDocPhoneModal({
         isOpen: true,
         docName: rawDoc,
@@ -724,33 +787,38 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     }
 
     const cleanPhone = docPhone;
-    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(preview)}`;
-
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('referral');
-      const result = await sendWhatsAppNotification({
-        phone: cleanPhone,
-        templateName: 'referral_thankyou_short',
-        params: [docName, patientName],
-      });
-      handleToggleThankYou();
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('referral');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to deliver message to doctor. Please check doctor phone number and API credentials.');
-      }
-    };
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: `Send Thank-You to Dr. ${docName}`,
+      templateName: 'referral_thankyou_short',
       templateBadge: 'referral_thankyou_short (Sent to Doctor)',
       recipientName: `Dr. ${docName} (Referring Doctor)`,
       phone: cleanPhone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Doctor's Name / Salutation", value: docName },
+        { label: "Referred Patient Name", value: patientName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('referral');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'referral_thankyou_short',
+          params: params,
+        });
+        handleToggleThankYou();
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('referral');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to deliver message to doctor. Please check doctor phone number.');
+        }
+      }
     });
   };
 
@@ -779,37 +847,44 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       setDocPhoneModal({ isOpen: false, docName: '', phone: '', isSaving: false });
     }
 
-    // Immediately open confirmation modal targeting this doctor's newly saved phone
     const docName = docPhoneModal.docName.replace(/^Dr\.\s*/i, '');
     const patientName = patient.fullName;
-    const preview = `Dear Dr. ${docName},\n\nThank you for referring ${patientName} to Health 360 Physiotherapy & Craniosacral Therapy Clinic. We have commenced their clinical evaluation and specialized rehabilitation protocol.\n\nWe will keep you updated on their recovery progress.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) => 
+      `Dear Dr. ${p[0] || docName},\n\nThank you for referring ${p[1] || patientName} to us. We sincerely appreciate your trust and support. The patient has been evaluated, and treatment has been started. We look forward to working together to achieve the best outcome.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Physiotherapy & Craniosacral Therapy Clinic`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('referral');
-      const result = await sendWhatsAppNotification({
-        phone: cleanPhone,
-        templateName: 'referral_thankyou_short',
-        params: [docName, patientName],
-      });
-      handleToggleThankYou();
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('referral');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to deliver message to doctor. Please check doctor phone number.');
-      }
-    };
+    const initialPreview = previewGen([docName, patientName]);
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: `Send Thank-You to Dr. ${docName}`,
+      templateName: 'referral_thankyou_short',
       templateBadge: 'referral_thankyou_short (Sent to Doctor)',
       recipientName: `Dr. ${docName} (Referring Doctor)`,
       phone: cleanPhone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Doctor's Name / Salutation", value: docName },
+        { label: "Referred Patient Name", value: patientName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('referral');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'referral_thankyou_short',
+          params: params,
+        });
+        handleToggleThankYou();
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('referral');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to deliver message to doctor. Please check doctor phone number.');
+        }
+      }
     });
   };
 
@@ -821,113 +896,138 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const [h, m] = nextApptTime.split(':');
     const hour = parseInt(h, 10);
     const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-    const preview = `Hello ${firstName},\n\nThank you for your visit today. Your next physiotherapy session is scheduled for:\n\n📅 ${dateFormatted}\n⏰ ${timeFormatted}\n\nWe look forward to seeing you. Please reply to this message if you need to reschedule.\n\nTeam Health 360`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
 
-    whatsappConfirmActionRef.current = () => handleSendNextApptReminder();
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nThank you for your visit today. Your next physiotherapy session is scheduled for:\n\n📅 ${p[1] || dateFormatted}\n⏰ ${p[2] || timeFormatted}\n\nWe look forward to seeing you. Please reply to this message if you need to reschedule.\n\nTeam Health 360`;
+
+    const initialPreview = previewGen([firstName, dateFormatted, timeFormatted]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Next Session Reminder',
+      templateName: 'next_appointment_reminder',
       templateBadge: 'next_appointment_reminder (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName },
+        { label: "Session Date", value: dateFormatted },
+        { label: "Session Time", value: timeFormatted }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('appt');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'next_appointment_reminder',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('appt');
+          setShowApptModal(false);
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send WhatsApp message. Please check API credentials.');
+        }
+      }
     });
   };
 
   const handleSendNextApptReminder = async () => {
-    if (!nextApptDate || !nextApptTime) return;
-    setWhatsappSending('appt');
-    const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const dateFormatted = new Date(nextApptDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    const [h, m] = nextApptTime.split(':');
-    const hour = parseInt(h, 10);
-    const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-    const result = await sendWhatsAppNotification({
-      phone: patient.phone,
-      templateName: 'next_appointment_reminder',
-      params: [firstName, dateFormatted, timeFormatted],
-    });
-    setWhatsappSending(null);
-    if (result.success) {
-      setWhatsappSuccess('appt');
-      setShowApptModal(false);
-      setTimeout(() => setWhatsappSuccess(null), 4000);
-    } else {
-      alert('Failed to send WhatsApp message. Please check API credentials.');
-    }
+    triggerNextApptReminderConfirm();
   };
 
   // WhatsApp — Send Missed Appointment Notice
   const triggerMissedApptConfirm = () => {
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const preview = `Hello ${firstName},\n\nWe missed seeing you at your appointment today. To continue your recovery and maintain your progress, please let us know a suitable time to reschedule your session.\n\nWe look forward to assisting you.\n\nTeam Health 360`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nWe missed seeing you at your appointment today. To continue your recovery and maintain your progress, please let us know a suitable time to reschedule your session.\n\nWe look forward to assisting you.\n\nTeam Health 360`;
 
-    whatsappConfirmActionRef.current = () => handleSendMissedAppt();
+    const initialPreview = previewGen([firstName]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Missed Appointment Notice',
+      templateName: 'missed_appointment_notice',
       templateBadge: 'missed_appointment_notice (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('missed');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'missed_appointment_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('missed');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send WhatsApp message. Please check API credentials.');
+        }
+      }
     });
   };
 
   const handleSendMissedAppt = async () => {
-    setWhatsappSending('missed');
-    const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const result = await sendWhatsAppNotification({
-      phone: patient.phone,
-      templateName: 'missed_appointment_notice',
-      params: [firstName],
-    });
-    setWhatsappSending(null);
-    if (result.success) {
-      setWhatsappSuccess('missed');
-      setTimeout(() => setWhatsappSuccess(null), 4000);
-    } else {
-      alert('Failed to send WhatsApp message. Please check API credentials.');
-    }
+    triggerMissedApptConfirm();
   };
 
   // WhatsApp — Send Google Review Request
   const triggerGoogleReviewConfirm = () => {
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
     const reviewUrl = 'https://g.page/r/CSdQGRuzUnLrEAE/review';
-    const preview = `Hello ${firstName},\n\nThank you for visiting Health 360 Physiotherapy & Craniosacral Therapy Clinic.\n\nWe would love to know about your recovery journey! Please take a quick moment to share your review on our Google profile:\n${reviewUrl}\n\nYour feedback helps others find the right care.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('review');
-      const result = await sendWhatsAppNotification({
-        phone: patient.phone,
-        templateName: 'google_review_request',
-        params: [firstName, reviewUrl],
-      });
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('review');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to send Google Review request.');
-      }
-    };
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nThank you for visiting Health 360 Physiotherapy & Craniosacral Therapy Clinic.\n\nWe would love to know about your recovery journey! Please take a quick moment to share your review on our Google profile:\n${p[1] || reviewUrl}\n\nYour feedback helps others find the right care.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const initialPreview = previewGen([firstName, reviewUrl]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Google Review & Feedback Request',
+      templateName: 'google_review_request',
       templateBadge: 'google_review_request (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName },
+        { label: "Google Review Link", value: reviewUrl }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('review');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'google_review_request',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('review');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Google Review request.');
+        }
+      }
     });
   };
 
@@ -940,34 +1040,46 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 10);
     const totalAmount = String(patient.invoices?.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0) || '6500');
 
-    const preview = `Hello ${firstName},\n\nYour Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:\n\n• Diagnosis: ${diagnosis}\n• Treatment Period: ${startDate} to ${endDate}\n• Total Sessions Attended: ${sessions}\n• Total Amount Paid: ₹${totalAmount}\n\nPlease let us know if you or your insurance provider need any additional details.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nYour Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:\n\n• Diagnosis: ${p[1] || diagnosis}\n• Treatment Period: ${p[2] || startDate} to ${p[3] || endDate}\n• Total Sessions Attended: ${p[4] || sessions}\n• Total Amount Paid: ₹${p[5] || totalAmount}\n\nPlease let us know if you or your insurance provider need any additional details.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('mediclaim');
-      const result = await sendWhatsAppNotification({
-        phone: patient.phone,
-        templateName: 'mediclaim_certificate_notice',
-        params: [firstName, diagnosis, startDate, endDate, sessions, totalAmount],
-      });
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('mediclaim');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to send Mediclaim Certificate notice.');
-      }
-    };
+    const initialPreview = previewGen([firstName, diagnosis, startDate, endDate, sessions, totalAmount]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Mediclaim Reimbursement Summary',
+      templateName: 'mediclaim_certificate_notice',
       templateBadge: 'mediclaim_certificate_notice (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Clinical Diagnosis", value: diagnosis },
+        { label: "Treatment Start Date", value: startDate },
+        { label: "Treatment End Date", value: endDate },
+        { label: "Total Sessions", value: sessions },
+        { label: "Total Amount (₹)", value: totalAmount }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('mediclaim');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'mediclaim_certificate_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('mediclaim');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Mediclaim Certificate notice.');
+        }
+      }
     });
   };
 
@@ -978,34 +1090,44 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const status = 'Fit to resume regular work and sports activities';
     const remarks = 'Perform prescribed warmup and ergonomic exercises daily';
 
-    const preview = `Hello ${firstName},\n\nBased on your clinical evaluation at Health 360 Clinic on ${assessmentDate}, you are certified:\n\n✅ ${status}\n\nPhysiotherapist Advice:\n${remarks}\n\nKeep up the great progress and continue your home routine!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nBased on your clinical evaluation at Health 360 Clinic on ${p[1] || assessmentDate}, you are certified:\n\n✅ ${p[2] || status}\n\nPhysiotherapist Advice:\n${p[3] || remarks}\n\nKeep up the great progress and continue your home routine!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('fitness');
-      const result = await sendWhatsAppNotification({
-        phone: patient.phone,
-        templateName: 'fitness_certificate_notice',
-        params: [firstName, assessmentDate, status, remarks],
-      });
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('fitness');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to send Fitness Certificate notice.');
-      }
-    };
+    const initialPreview = previewGen([firstName, assessmentDate, status, remarks]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Fitness Certificate Notice',
+      templateName: 'fitness_certificate_notice',
       templateBadge: 'fitness_certificate_notice (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Assessment Date", value: assessmentDate },
+        { label: "Fitness Status", value: status },
+        { label: "Physiotherapist Remarks", value: remarks }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('fitness');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'fitness_certificate_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('fitness');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Fitness Certificate notice.');
+        }
+      }
     });
   };
 
@@ -1021,34 +1143,45 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     reviewDateObj.setDate(reviewDateObj.getDate() + 8);
     const reviewDate = reviewDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    const preview = `Hello ${firstName},\n\nFollowing your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${diagnosis}.\n\n• Recommended Rest: ${startDate} to ${endDate}\n• Next Review Date: ${reviewDate}\n\nPlease avoid strenuous activities and continue your prescribed rehabilitation.\n\nWishing you a speedy recovery,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nFollowing your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${p[1] || diagnosis}.\n\n• Recommended Rest: ${p[2] || startDate} to ${p[3] || endDate}\n• Next Review Date: ${p[4] || reviewDate}\n\nPlease avoid strenuous activities and continue your prescribed rehabilitation.\n\nWishing you a speedy recovery,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('rest');
-      const result = await sendWhatsAppNotification({
-        phone: patient.phone,
-        templateName: 'medical_rest_notice',
-        params: [firstName, diagnosis, startDate, endDate, reviewDate],
-      });
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('rest');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to send Medical Rest advice.');
-      }
-    };
+    const initialPreview = previewGen([firstName, diagnosis, startDate, endDate, reviewDate]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Medical Rest Notice',
+      templateName: 'medical_rest_notice',
       templateBadge: 'medical_rest_notice (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Clinical Diagnosis", value: diagnosis },
+        { label: "Rest Start Date", value: startDate },
+        { label: "Rest End Date", value: endDate },
+        { label: "Next Review Date", value: reviewDate }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('rest');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'medical_rest_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('rest');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Medical Rest advice.');
+        }
+      }
     });
   };
 
@@ -1061,86 +1194,109 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     const outcome = 'Pain-free mobility and full functional strength achieved';
     const advice = 'Continue home maintenance exercises 3 times a week';
 
-    const preview = `Congratulations ${firstName}! 🎉\n\nYou have successfully completed your physiotherapy program at Health 360 Clinic.\n\n• Treatment Period: ${startDate} to ${endDate}\n• Total Sessions: ${sessions}\n• Recovery Outcome: ${outcome}\n• Home Exercise Advice: ${advice}\n\nThank you for trusting us with your recovery. Feel free to reach out whenever you need guidance!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) =>
+      `Congratulations ${p[0] || firstName}! 🎉\n\nYou have successfully completed your physiotherapy program at Health 360 Clinic.\n\n• Treatment Period: ${p[1] || startDate} to ${p[2] || endDate}\n• Total Sessions: ${p[3] || sessions}\n• Recovery Outcome: ${p[4] || outcome}\n• Home Exercise Advice: ${p[5] || advice}\n\nThank you for trusting us with your recovery. Feel free to reach out whenever you need guidance!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('discharge');
-      const result = await sendWhatsAppNotification({
-        phone: patient.phone,
-        templateName: 'patient_discharge_summary',
-        params: [firstName, startDate, endDate, sessions, outcome, advice],
-      });
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('discharge');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to send Discharge Summary notice.');
-      }
-    };
+    const initialPreview = previewGen([firstName, startDate, endDate, sessions, outcome, advice]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Patient Discharge Summary',
+      templateName: 'patient_discharge_summary',
       templateBadge: 'patient_discharge_summary (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Treatment Start Date", value: startDate },
+        { label: "Treatment End Date", value: endDate },
+        { label: "Total Sessions", value: sessions },
+        { label: "Recovery Outcome", value: outcome },
+        { label: "Home Exercise Advice", value: advice }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('discharge');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'patient_discharge_summary',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('discharge');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Discharge Summary notice.');
+        }
+      }
     });
   };
 
   // WhatsApp — Send Clinic Welcome & Location Info
   const triggerWelcomeConfirm = () => {
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const preview = `🌿 Welcome to Health360 Physiotherapy & Craniosacral Therapy Clinic! 🌿\n\nDear ${firstName},\n\nThank you for choosing Health360 Physiotherapy Clinic. We are committed to helping you recover, move better, and live pain-free.\n\n📍 Address:\nShop no.1 & 2, Amardeep society, Om Nagar, Vasai West.\n\n🕙 Clinic Timings:\nMorning: 10:00 AM – 2:00 PM | Evening: 5:00 PM – 9:00 PM\n\n📍 Google Maps Location:\nhttps://maps.app.goo.gl/VpvTzGtZy3kCZZWGA?g_st=iw\n\n☎️: 8482812859 / 9834848981\n✉️: health360vasai@gmail.com\n\nWishing you good health! 🌸\nTeam Health360 Physiotherapy Clinic`;
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+    const previewGen = (p: string[]) =>
+      `🌿 Welcome to Health360 Physiotherapy & Craniosacral Therapy Clinic! 🌿\n\nDear ${p[0] || firstName},\n\nThank you for choosing Health360 Physiotherapy Clinic. We are committed to helping you recover, move better, and live pain-free.\n\n📍 Address:\nShop no.1 & 2, Amardeep society, Om Nagar, Vasai West.\n\n🕙 Clinic Timings:\nMorning: 10:00 AM – 2:00 PM | Evening: 5:00 PM – 9:00 PM\n\n📍 Google Maps Location:\nhttps://maps.app.goo.gl/VpvTzGtZy3kCZZWGA?g_st=iw\n\n☎️: 8482812859 / 9834848981\n✉️: health360vasai@gmail.com\n\nWishing you good health! 🌸\nTeam Health360 Physiotherapy Clinic`;
 
-    whatsappConfirmActionRef.current = async () => {
-      setWhatsappSending('welcome');
-      const result = await sendWhatsAppNotification({
-        phone: patient.phone,
-        templateName: 'welcome_clinic_info',
-        params: [firstName],
-      });
-      setWhatsappSending(null);
-      if (result.success) {
-        setWhatsappSuccess('welcome');
-        setTimeout(() => setWhatsappSuccess(null), 4000);
-      } else {
-        alert('Failed to send Clinic Welcome info.');
-      }
-    };
+    const initialPreview = previewGen([firstName]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
 
     setConfirmWhatsappModal({
       isOpen: true,
       title: 'Send Clinic Welcome & Location Guide',
+      templateName: 'welcome_clinic_info',
       templateBadge: 'welcome_clinic_info (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
       waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('welcome');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'welcome_clinic_info',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('welcome');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Clinic Welcome info.');
+        }
+      }
     });
   };
 
   const triggerHandoutShareConfirm = (handout: any) => {
     const preview = `Hi ${patient.fullName?.split(' ')[0] || 'Patient'}, Dr. Rashmita has shared a clinical education handout with you: "${handout.title}" (${handout.category}).`;
-    whatsappConfirmActionRef.current = () => {
-      shareHandoutMutation.mutate({
-        patientId,
-        handoutId: handout.id,
-        sentVia: 'whatsapp',
-      });
-    };
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+
     setConfirmWhatsappModal({
       isOpen: true,
       title: `Confirm Sharing Handout: ${handout.title}`,
       recipientName: patient.fullName,
       phone: patient.phone,
       messagePreview: preview,
+      waUrl,
+      onSend: async () => {
+        shareHandoutMutation.mutate({
+          patientId,
+          handoutId: handout.id,
+          sentVia: 'whatsapp',
+        });
+      }
     });
   };
 
@@ -3146,23 +3302,73 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               </button>
             </div>
 
-            {/* Recipient & Template Badge */}
-            <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs">
-              <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
-                <span className="font-bold text-white">
-                  {confirmWhatsappModal.recipientName}
-                </span>
-                <span className="text-white/40 font-mono text-[11px]">
-                  ({confirmWhatsappModal.phone})
-                </span>
+            {/* Recipient & Editable Phone */}
+            <div className="p-3.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+                  <span className="font-bold text-white text-xs">
+                    {confirmWhatsappModal.recipientName}
+                  </span>
+                </div>
+                {confirmWhatsappModal.templateBadge && (
+                  <span className="text-[10px] font-bold text-[#25D366] bg-[#25D366]/10 border border-[#25D366]/20 px-2.5 py-0.5 rounded-lg">
+                    {confirmWhatsappModal.templateBadge}
+                  </span>
+                )}
               </div>
-              {confirmWhatsappModal.templateBadge && (
-                <span className="text-[10px] font-bold text-[#25D366] bg-[#25D366]/10 border border-[#25D366]/20 px-2.5 py-0.5 rounded-lg">
-                  {confirmWhatsappModal.templateBadge}
-                </span>
-              )}
+
+              <div className="flex items-center gap-2 pt-1 border-t border-white/[0.06]">
+                <label className="text-[10px] font-bold text-white/50 uppercase tracking-wider shrink-0">
+                  Target WhatsApp Phone:
+                </label>
+                <div className="flex items-center gap-1.5 flex-1">
+                  <span className="text-white/40 text-xs font-mono font-bold">+91</span>
+                  <input
+                    type="tel"
+                    value={confirmWhatsappModal.phone.replace(/^91/, '')}
+                    onChange={(e) => handlePhoneChange(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="w-full text-xs font-mono font-bold bg-white/5 border border-white/10 focus:border-[#25D366] rounded-lg px-2.5 py-1 text-white outline-none"
+                    placeholder="10-digit number"
+                  />
+                </div>
+              </div>
             </div>
+
+            {/* Interactive Template Parameter Editor */}
+            {confirmWhatsappModal.paramFields && confirmWhatsappModal.paramFields.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#12D6C4] uppercase tracking-wider flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 stroke-[2.2]" />
+                    Edit Template Parameters (Variables)
+                  </span>
+                  <span className="text-[10px] text-white/40 font-medium">
+                    Updates message preview live
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-white/[0.02] border border-white/[0.08] p-3 rounded-2xl max-h-48 overflow-y-auto">
+                  {confirmWhatsappModal.paramFields.map((field, idx) => (
+                    <div
+                      key={idx}
+                      className={confirmWhatsappModal.paramFields!.length % 2 !== 0 && idx === confirmWhatsappModal.paramFields!.length - 1 ? "sm:col-span-2 space-y-1" : "space-y-1"}
+                    >
+                      <label className="text-[10px] font-bold text-white/60 block truncate">
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={field.value}
+                        onChange={(e) => handleParamChange(idx, e.target.value)}
+                        placeholder={field.placeholder || `Enter ${field.label}`}
+                        className="w-full text-xs bg-white/5 border border-white/10 focus:border-[#12D6C4] focus:ring-1 focus:ring-[#12D6C4]/30 rounded-xl px-2.5 py-1.5 text-white font-medium outline-none transition"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Realistic WhatsApp Chat Bubble */}
             <div className="space-y-1.5">
@@ -3209,12 +3415,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
               <button
                 type="button"
-                onClick={() => {
-                  const action = whatsappConfirmActionRef.current;
-                  setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }));
-                  whatsappConfirmActionRef.current = null;
-                  if (action) action();
-                }}
+                onClick={handleSendConfirmModal}
                 className="w-full sm:flex-1 py-2.5 px-4 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5 order-1 sm:order-3"
               >
                 <Send className="w-3.5 h-3.5 stroke-[2.5]" /> Send Official Message
