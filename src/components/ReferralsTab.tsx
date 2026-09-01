@@ -128,13 +128,17 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   };
 
   // Group patients by referring doctor
+  const SELF_DIRECT_VARIANTS = ['self', 'direct', 'self / direct', 'self/direct', 'self-direct', 'n/a', 'na', 'none'];
   const docMap: { [name: string]: any } = {};
 
   (customDoctors || []).forEach((doc: any) => {
     if (!doc?.name) return;
-    docMap[doc.name] = {
+    const cleanDocName = doc.name.trim();
+    if (SELF_DIRECT_VARIANTS.includes(cleanDocName.toLowerCase())) return;
+
+    docMap[cleanDocName] = {
       id: doc.id,
-      name: doc.name,
+      name: cleanDocName,
       specialty: doc.specialty || 'General Practice',
       clinic: doc.clinic || 'Clinic',
       email: doc.email || '',
@@ -191,7 +195,6 @@ export default function ReferralsTab({ onViewPatient }: Props) {
   });
 
   // Filter referrers: exclude Self/Direct variants (case-insensitive), apply search query
-  const SELF_DIRECT_VARIANTS = ['self', 'direct', 'self / direct', 'self/direct', 'self-direct', 'n/a', 'na', 'none'];
   const referrers = Object.values(docMap)
     .filter((ref: any) => {
       const name = (ref.name || '').trim();
