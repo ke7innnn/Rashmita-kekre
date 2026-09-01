@@ -178,6 +178,7 @@ export async function POST(req: NextRequest) {
       where: { phone: body.phone },
     });
 
+    const isNewPatient = !patient;
     if (!patient) {
       patient = await prisma.patient.create({
         data: {
@@ -231,11 +232,21 @@ export async function POST(req: NextRequest) {
       const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
       const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
 
+      // 1. Appointment Confirmation
       await sendWhatsAppMessageDirect({
         phone: patient.phone,
         templateName: 'next_appointment_reminder',
         params: [firstName, dateFormatted, timeFormatted],
       });
+
+      // 2. If first-time new patient, send Clinic Welcome & Google Maps pin
+      if (isNewPatient) {
+        await sendWhatsAppMessageDirect({
+          phone: patient.phone,
+          templateName: 'welcome_clinic_info',
+          params: [firstName],
+        });
+      }
     } catch (waErr) {
       console.warn('Failed to dispatch automated WhatsApp confirmation:', waErr);
     }
