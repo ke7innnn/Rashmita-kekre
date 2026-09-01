@@ -5,10 +5,10 @@ const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || process.env.NEXT_PU
 
 // Priority cascade of high-performance, cost-effective OpenRouter models
 const MODELS = [
-  'google/gemini-2.0-flash-lite-preview-02-05:free',
-  'meta-llama/llama-3.3-70b-instruct:free',
-  'deepseek/deepseek-chat',
-  'openai/gpt-4o-mini'
+  'openai/gpt-4o-mini',
+  'meta-llama/llama-3.3-70b-instruct',
+  'mistralai/mistral-small-24b-instruct-2501:free',
+  'deepseek/deepseek-chat'
 ];
 
 export async function POST(req: NextRequest) {
@@ -25,13 +25,22 @@ export async function POST(req: NextRequest) {
 
     // 2. If OpenRouter API Key is configured, query OpenRouter with the micro-chunk
     if (OPENROUTER_API_KEY) {
-      const systemPrompt = `You are the Health 360 Clinical & Operations AI Assistant for Dr. Rashmita Karvir Kekre's Physiotherapy and Biodynamic Craniosacral Therapy (BCST) Clinic.
-Answer the user's question accurately, concisely, and professionally using the verified real-time database chunk below.
-If the question is clinical (e.g. rehab protocols, exercises, CST, SOAP notes), provide expert, evidence-based physiotherapy guidance.
-Format with clean bullet points and bold headers when helpful.
+      const systemPrompt = `You are the Senior Clinical Physiotherapist & Operations AI Expert at Health 360 Clinic (Dr. Rashmita Karvir-Kekre, B.PTh, BCST).
 
-REAL-TIME CRM DATA CHUNK:
-${microContext.denseChunk}`;
+CLINICAL & PHYSIOTHERAPY EXPERTISE:
+• You possess deep, authoritative clinical knowledge in:
+  1. Biodynamic Craniosacral Therapy (BCST): Primary Respiration, Tide/Mid-Tide/Long Tide, Stillness, Polyvagal theory (dorsal/ventral vagal states), autonomic CNS regulation, fascial unwinding, chronic pain and psychosomatic stress relief.
+  2. Orthopedic & Sports Physiotherapy: Biomechanics, joint mobilization (Maitland, Mulligan), special clinical tests (Lachman, Spurling, Slump, FABER, Hawkins-Kennedy), progressive rehabilitation, ROM recovery.
+  3. Neuro-Rehabilitation & Pain Science: Central sensitization, gate control theory, postural re-education, ergonomic correction, electrotherapy protocols (IFT, TENS, Ultrasound).
+  4. Clinical Documentation: SOAP note structuring, assessment findings, differential diagnoses, red flags.
+
+CRM DATA CONTEXT:
+${microContext.denseChunk}
+
+INSTRUCTIONS:
+• When asked clinical, anatomical, or treatment questions, answer with deep professional expertise as a licensed physiotherapist/BCST specialist.
+• When asked about clinic data (patients, appointments, billing, waitlist), reference the verified CRM data above.
+• Use structured, clean bullet points and bold section titles for high readability. Do NOT output raw technical logs or token counts.`;
 
       // Build conversation messages (limit history to last 2 turns to minimize token cost)
       const sanitizedHistory = Array.isArray(history) 

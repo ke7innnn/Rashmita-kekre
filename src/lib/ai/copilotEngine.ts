@@ -175,7 +175,13 @@ export async function extractMicroContext(query: string): Promise<MicroContextRe
       denseChunk = `[STAFF_INFO | ClockedInNow: ${clockedIn || 'None'} | RegisteredStaff: ${staffList}]`;
     }
 
-    // ─── 6. CLINIC GENERAL METRICS (GLOBAL SUMMARY) ───
+    // ─── 6. CLINICAL & PHYSIOTHERAPY / BCST QUERIES ───
+    else if (q.includes('craniosacral') || q.includes('bcst') || q.includes('cst') || q.includes('pain') || q.includes('stress') || q.includes('physio') || q.includes('exercise') || q.includes('rehab') || q.includes('disc') || q.includes('sciatica') || q.includes('knee') || q.includes('shoulder') || q.includes('spine') || q.includes('posture')) {
+      domain = 'CLINICAL_GUIDANCE';
+      denseChunk = `[CLINICAL_EXPERT_SYSTEM | Clinic: Health 360 | Specialist: Dr. Rashmita Karvir-Kekre (B.PTh, BCST) | Modalities: Biodynamic Craniosacral Therapy, Orthopedic Physiotherapy, Neuro-Rehab, Myofascial Release, Polyvagal ANS Regulation]`;
+    }
+
+    // ─── 7. GENERAL CLINIC OVERVIEW ───
     else {
       domain = 'CLINIC_OVERVIEW';
 
@@ -210,6 +216,26 @@ export function generateDeterministicResponse(query: string, microContext: Micro
   const { domain, denseChunk } = microContext;
   const raw = denseChunk.replace(/[\[\]]/g, '');
   const parts = raw.split(' | ');
+  const q = query.toLowerCase();
+
+  if (domain === 'CLINICAL_GUIDANCE' || q.includes('craniosacral') || q.includes('bcst') || q.includes('cst') || q.includes('pain') || q.includes('stress')) {
+    if (q.includes('craniosacral') || q.includes('bcst') || q.includes('cst') || q.includes('stress')) {
+      return `### Biodynamic Craniosacral Therapy (BCST) for Stress & Chronic Pain\n\n` +
+             `Biodynamic Craniosacral Therapy (BCST) is a gentle, non-invasive hands-on therapy practiced at **Health 360 Clinic** by **Dr. Rashmita Karvir-Kekre** that works directly with the central nervous system and the body's natural self-regulatory mechanisms.\n\n` +
+             `• **Autonomic Nervous System Regulation (Polyvagal Theory):**\n` +
+             `  BCST helps downregulate a hyper-aroused sympathetic nervous system (fight-or-flight) and promotes ventral vagal parasympathetic activation, calming physiological stress, anxiety, and systemic inflammation.\n\n` +
+             `• **Primary Respiration & Fascial Unwinding:**\n` +
+             `  By tuning into the *Tide* and rhythmic micro-motion of cerebrospinal fluid and dural membranes, BCST releases deep seated myofascial tension and emotional strain held in tissues.\n\n` +
+             `• **Breaking the Chronic Pain Cycle:**\n` +
+             `  Chronic pain often involves central sensitization where pain pathways remain overactive. BCST creates a state of deep stillness (dynamic stillness), allowing neural pathways to reset and pain threshold to normalize.\n\n` +
+             `• **Clinical Indications at Health 360:**\n` +
+             `  - Chronic Neck & Lower Back Pain\n` +
+             `  - Stress, Anxiety & Sleep Disturbances\n` +
+             `  - Fibromyalgia & Myofascial Pain Syndrome\n` +
+             `  - Migraines & TMJ Dysfunction\n` +
+             `  - Post-traumatic strain & recovery`;
+    }
+  }
 
   if (domain === 'PATIENT_PROFILE') {
     return `Patient Summary:\n\n` +
@@ -238,8 +264,8 @@ export function generateDeterministicResponse(query: string, microContext: Micro
 
   return `Health 360 Assistant (Dr. Rashmita Karvir Kekre Clinic)\n\n` +
          `You can ask me about:\n` +
+         `• **Clinical Physiotherapy & BCST**: Treatment protocols, exercise prescriptions, chronic pain & CST mechanisms\n` +
          `• **Patients**: Search case files, contact numbers, active courses\n` +
          `• **Appointments**: Today's live slots and next check-ins\n` +
-         `• **Billing**: Invoices, pending balances, recorded payments\n` +
-         `• **Clinical Care**: Physiotherapy & Craniosacral therapy guidance`;
+         `• **Billing**: Invoices, pending balances, recorded payments`;
 }
