@@ -239,3 +239,75 @@ h1, h2, h3, h4, h5, h6 {
     transform: translateY(0);
   }
 }
+
+/* ============================================================
+   GLOBAL PRINT ENGINE RULES - ENSURES PERFECT BILL & RECEIPT PRINTS
+   ============================================================ */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 8mm 10mm;
+  }
+
+  html,
+  body {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+  }
+
+  /* Force hide all screen-only UI */
+  .no-print,
+  .no-print *,
+  [data-no-print],
+  aside,
+  header,
+  nav {
+    display: none !important;
+  }
+
+  /* Ensure print content is 100% visible, opaque, and unclipped */
+  main,
+  div {
+    overflow: visible !important;
+  }
+
+  .bill-paper,
+  .bill-paper * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bill-paper {
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 1.5px solid #000000 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    position: static !important;
+    display: block !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .editable-field {
+    outline: none !important;
+    background: transparent !important;
+  }
+}
+

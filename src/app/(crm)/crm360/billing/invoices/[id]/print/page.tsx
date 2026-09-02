@@ -173,9 +173,9 @@ function InvoicePrintContent() {
   const docHeading = isReceipt ? 'Receipt' : 'Invoice';
 
   return (
-    <div className="min-h-screen bg-[#0F172A] print:bg-white text-black font-sans selection:bg-gray-200 relative">
+    <div className="min-h-screen bg-[#0F172A] print:min-h-0 print:h-auto print:bg-white text-black font-sans selection:bg-gray-200 relative print:p-0 print:m-0 print:overflow-visible">
       {/* Screen Only Clean Dark Toolbar */}
-      <div className="no-print sticky top-0 z-50 bg-[#1E293B]/95 backdrop-blur-md text-white py-3 px-4 border-b border-slate-700 shadow-md">
+      <div className="no-print print:hidden sticky top-0 z-50 bg-[#1E293B]/95 backdrop-blur-md text-white py-3 px-4 border-b border-slate-700 shadow-md">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
@@ -238,19 +238,14 @@ function InvoicePrintContent() {
       </div>
 
       {/* Paper Canvas Container */}
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
-        className="relative z-10 max-w-[210mm] mx-auto my-8 print:my-0 shadow-[0_25px_70px_rgba(0,0,0,0.85)] print:shadow-none"
-      >
+      <div className="relative z-10 max-w-[210mm] mx-auto my-8 print:my-0 print:p-0 print:m-0 print:w-full print:max-w-none shadow-[0_25px_70px_rgba(0,0,0,0.85)] print:shadow-none">
         <ReceiptDocument 
           clinic={clinic} 
           data={receiptData} 
           onUpdateData={handleUpdateData}
           onSelectPaymentMode={handleSelectPaymentMode}
         />
-      </motion.div>
+      </div>
     </div>
   );
 }

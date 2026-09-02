@@ -170,7 +170,7 @@ export default function ReceiptDocument({
 
   return (
     <>
-      <style jsx global>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
 
       <div className="bill-paper">
         {/* ================= 1. CLINIC LETTERHEAD ================= */}
@@ -867,32 +867,56 @@ const CSS = `
 .editable-field[contenteditable="true"]:focus {
   background: rgba(14, 165, 233, 0.15);
   outline: 1.5px solid #0284c7;
-}
-
 /* ================= PRINT RULES ================= */
 @page {
   size: A4 portrait;
-  margin: 10mm;
+  margin: 8mm 10mm;
 }
 
 @media print {
+  html,
   body {
     background: #ffffff !important;
+    background-color: #ffffff !important;
     color: #000000 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
   .no-print,
-  .no-print * {
+  .no-print *,
+  [data-no-print] {
     display: none !important;
+  }
+  .bill-paper,
+  .bill-paper * {
+    visibility: visible !important;
+    opacity: 1 !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
   }
   .bill-paper {
     width: 100% !important;
-    min-height: auto !important;
+    max-width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
     padding: 0 !important;
-    border: 1.5px solid #0f172a !important;
-    box-shadow: none !important;
     margin: 0 !important;
+    border: 1.5px solid #000000 !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    position: static !important;
+    display: block !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
   .editable-field {
     outline: none !important;

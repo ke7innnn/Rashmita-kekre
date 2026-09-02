@@ -20,7 +20,7 @@ export default function CRMSidebar({ children }: Props) {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session, status } = useSession();
-  
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showRedirectModal, setShowRedirectModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -123,7 +123,7 @@ export default function CRMSidebar({ children }: Props) {
   };
 
   useEffect(() => {
-    if (pathname === '/crm360/login') return;
+    if (pathname === '/crm360/login' || pathname?.includes('/print')) return;
     
     if (status === 'unauthenticated') {
       router.replace('/crm360/login');
