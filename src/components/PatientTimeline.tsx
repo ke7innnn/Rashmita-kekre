@@ -10,7 +10,8 @@ import {
   MessageSquare, FileDown, Activity, Mic, Sparkles, 
   Plus, Check, Camera, Image, AlertTriangle, Download, 
   Trash2, Edit2, PlayCircle, Folder, File, FolderPlus,
-  ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare
+  ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare,
+  Ban, ShieldCheck
 } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
@@ -436,6 +437,38 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     },
     onError: (err: any) => {
       alert(err.message || 'Error deleting call log');
+    }
+  });
+
+  const isBlocked = (patient?.tags || []).includes('blocked') || (typeof patient?.tags === 'string' && patient?.tags.includes('blocked'));
+
+  const toggleBlockMutation = useMutation({
+    mutationFn: async () => {
+      const currentTags: string[] = Array.isArray(patient?.tags) 
+        ? [...patient.tags] 
+        : (patient?.tags ? patient.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : []);
+      
+      let nextTags: string[];
+      if (isBlocked) {
+        nextTags = currentTags.filter(t => t !== 'blocked');
+      } else {
+        nextTags = [...currentTags, 'blocked'];
+      }
+
+      const res = await fetch(`/api/patients/${patientId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tags: nextTags }),
+      });
+      if (!res.ok) throw new Error('Failed to update member status');
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['patient-profile', patientId] });
+      queryClient.invalidateQueries({ queryKey: ['patients'] });
+    },
+    onError: (err: any) => {
+      alert(err.message || 'Error updating member status');
     }
   });
 
@@ -937,11 +970,49 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                 <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
                   Language: {patient.language || 'English'}
                 </span>
+                {isBlocked && (
+                  <span className="inline-flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded-full shadow-xxs">
+                    <Ban className="h-2.5 w-2.5" />
+                    BLOCKED
+                  </span>
+                )}
               </div>
             </div>
           </div>
 
           <div className="shrink-0 flex items-center gap-2">
+            {/* Block / Unblock Member Button */}
+            <motion.button
+              whileTap={{ scale: 0.95 }}
+              onClick={() => {
+                if (isBlocked) {
+                  if (confirm(`Are you sure you want to unblock ${patient.fullName}?`)) {
+                    toggleBlockMutation.mutate();
+                  }
+                } else {
+                  if (confirm(`Are you sure you want to block ${patient.fullName}? This will restrict booking privileges and flag their profile.`)) {
+                    toggleBlockMutation.mutate();
+                  }
+                }
+              }}
+              disabled={toggleBlockMutation.isPending}
+              className={`flex items-center gap-1.5 px-3.5 py-2.5 border text-xs font-bold rounded-xl transition-all cursor-pointer shadow-md whitespace-nowrap ${
+                isBlocked
+                  ? 'bg-rose-500/20 hover:bg-rose-500/30 border-rose-500/40 text-rose-300'
+                  : 'bg-white/10 hover:bg-rose-500/20 border-white/20 hover:border-rose-500/40 text-white hover:text-rose-300'
+              }`}
+              title={isBlocked ? 'Unblock member' : 'Block member'}
+            >
+              {toggleBlockMutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : isBlocked ? (
+                <ShieldCheck className="h-4 w-4 text-rose-400 stroke-[1.75]" />
+              ) : (
+                <Ban className="h-4 w-4 text-rose-400 stroke-[1.75]" />
+              )}
+              <span>{isBlocked ? 'Unblock Member' : 'Block Member'}</span>
+            </motion.button>
+
             <motion.button
               whileTap={{ scale: 0.95 }}
               onClick={() => setIsEditPatientModalOpen(true)}
@@ -974,6 +1045,23 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             </motion.button>
           </div>
         </div>
+
+        {/* Blocked Alert Banner */}
+        {isBlocked && (
+          <div className="p-3.5 rounded-2xl bg-rose-500/15 border border-rose-500/40 text-rose-200 text-xs font-semibold flex items-center justify-between mt-2">
+            <div className="flex items-center gap-2.5">
+              <Ban className="h-4 w-4 text-rose-400 shrink-0" />
+              <span>This member is currently <strong>BLOCKED / BLACKLISTED</strong>. Direct self-bookings and appointments are restricted.</span>
+            </div>
+            <button
+              onClick={() => toggleBlockMutation.mutate()}
+              disabled={toggleBlockMutation.isPending}
+              className="px-3 py-1 bg-rose-500 hover:bg-rose-600 text-white text-[11px] font-bold rounded-lg transition cursor-pointer"
+            >
+              Unblock Now
+            </button>
+          </div>
+        )}
 
         {/* Demographics details (Consolidated Borders) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold mt-1">

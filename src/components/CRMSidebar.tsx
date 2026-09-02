@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, Smartphone
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -160,6 +160,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/portal', name: 'Member App Portal', icon: Smartphone, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },

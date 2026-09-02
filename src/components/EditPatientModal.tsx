@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Save, UserCheck, AlertCircle } from 'lucide-react';
+import { X, Loader2, Save, UserCheck, AlertCircle, Ban, ShieldCheck } from 'lucide-react';
 
 interface EditPatientModalProps {
   isOpen: boolean;
@@ -68,6 +68,7 @@ export default function EditPatientModal({
   const [thirdPartyUid, setThirdPartyUid] = useState('');
   const [dateOfMarriage, setDateOfMarriage] = useState('');
   const [notes, setNotes] = useState('');
+  const [isBlocked, setIsBlocked] = useState(false);
 
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -76,6 +77,11 @@ export default function EditPatientModal({
     if (patient) {
       setFullName(patient.fullName || '');
       setGender(patient.gender || 'Female');
+      
+      const currentTags = Array.isArray(patient.tags) 
+        ? patient.tags 
+        : (patient.tags ? patient.tags.split(',').map((t: string) => t.trim()) : []);
+      setIsBlocked(currentTags.includes('blocked'));
       
       if (patient.dateOfBirth) {
         const d = new Date(patient.dateOfBirth);
@@ -203,6 +209,16 @@ export default function EditPatientModal({
       thirdPartyUid: thirdPartyUid.trim() || null,
       dateOfMarriage: dateOfMarriage ? new Date(dateOfMarriage).toISOString() : null,
       notes: notes.trim() || null,
+      tags: (() => {
+        const currentTags = Array.isArray(patient.tags) 
+          ? [...patient.tags] 
+          : (patient.tags ? patient.tags.split(',').map((t: string) => t.trim()).filter(Boolean) : []);
+        const cleanTags = currentTags.filter((t: string) => t !== 'blocked');
+        if (isBlocked) {
+          cleanTags.push('blocked');
+        }
+        return cleanTags;
+      })(),
     };
 
     updateMutation.mutate(payload);
@@ -497,6 +513,58 @@ export default function EditPatientModal({
                 placeholder="Key observations, medical history, precautions..."
                 className="w-full text-xs bg-white/[0.04] border border-white/15 rounded-xl p-2.5 text-white font-semibold focus:outline-none focus:border-[#12D6C4]"
               />
+            </div>
+
+            {/* Member Status & Access Control Section */}
+            <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center border ${
+                  isBlocked 
+                    ? 'bg-rose-500/20 text-rose-400 border-rose-500/40' 
+                    : 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                }`}>
+                  {isBlocked ? <Ban className="h-5 w-5 stroke-[2]" /> : <ShieldCheck className="h-5 w-5 stroke-[2]" />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-white">Member Access Status</span>
+                    <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${
+                      isBlocked
+                        ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                        : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                    }`}>
+                      {isBlocked ? 'BLOCKED' : 'ACTIVE'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/50 mt-0.5">
+                    {isBlocked 
+                      ? 'Member is blocked from scheduling appointments and flagged.' 
+                      : 'Member is in good standing with standard access.'}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsBlocked(!isBlocked)}
+                className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition cursor-pointer flex items-center gap-1.5 ${
+                  isBlocked
+                    ? 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/40'
+                    : 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border-rose-500/40'
+                }`}
+              >
+                {isBlocked ? (
+                  <>
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>Unblock Member</span>
+                  </>
+                ) : (
+                  <>
+                    <Ban className="h-3.5 w-3.5" />
+                    <span>Block Member</span>
+                  </>
+                )}
+              </button>
             </div>
 
             {/* Footer Buttons */}

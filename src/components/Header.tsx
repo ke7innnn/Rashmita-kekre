@@ -34,6 +34,7 @@ export default function Header() {
             <li><a href="/gallery">Gallery</a></li>
             <li><a href="/contact">Contact</a></li>
             <li><a href="/careers">Careers</a></li>
+            <li><a href="/portal" className="text-[#FF5C7A] font-semibold">Member Portal</a></li>
           </ul>
         </nav>
 
@@ -72,7 +73,8 @@ export default function Header() {
                 { name: 'Services', href: '/#our-services' },
                 { name: 'Gallery', href: '/gallery' },
                 { name: 'Contact', href: '/contact' },
-                { name: 'Careers', href: '/careers' }
+                { name: 'Careers', href: '/careers' },
+                { name: 'Member Portal', href: '/portal' },
               ].map((item, idx) => (
                 <motion.li 
                   key={item.name}
