@@ -4,8 +4,9 @@ import React, { useEffect, useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Printer, Download, ArrowLeft, Loader2, RotateCcw, Edit3 } from 'lucide-react';
+import { Printer, Download, ArrowLeft, Loader2, RotateCcw, Edit3, MessageSquare } from 'lucide-react';
 import ReceiptDocument, { ClinicProfile, ReceiptData, PaymentMode } from '@/components/billing/ReceiptDocument';
+import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 function InvoicePrintContent() {
   const routeParams = useParams();
@@ -172,17 +173,9 @@ function InvoicePrintContent() {
   const docHeading = isReceipt ? 'Receipt' : 'Invoice';
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#1A162B] via-[#0E0C1A] to-[#161226] print:bg-white text-black font-sans selection:bg-gray-200 relative overflow-hidden">
-      {/* Ambient Luminous Glass Bubble Orbs (Screen Only) */}
-      <div className="no-print fixed inset-0 pointer-events-none overflow-hidden z-0">
-        <div className="absolute -top-40 -left-40 w-[36rem] h-[36rem] rounded-full bg-gradient-to-br from-indigo-500/35 via-purple-600/30 to-pink-500/20 blur-[100px] animate-pulse" />
-        <div className="absolute -bottom-48 -right-48 w-[42rem] h-[42rem] rounded-full bg-gradient-to-tl from-fuchsia-600/35 via-purple-700/30 to-teal-400/20 blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[55rem] h-[55rem] rounded-full bg-gradient-to-r from-violet-600/25 via-pink-600/20 to-indigo-500/20 blur-[140px]" />
-        <div className="absolute inset-0 bg-white/[0.02] backdrop-blur-[60px]" />
-      </div>
-
-      {/* Screen Only Floating Glass Toolbar */}
-      <div className="no-print sticky top-0 z-50 bg-white/[0.06] backdrop-blur-2xl text-white py-3 px-4 border-b border-white/15 shadow-[0_10px_30px_rgba(0,0,0,0.5)]">
+    <div className="min-h-screen bg-[#0F172A] print:bg-white text-black font-sans selection:bg-gray-200 relative">
+      {/* Screen Only Clean Dark Toolbar */}
+      <div className="no-print sticky top-0 z-50 bg-[#1E293B]/95 backdrop-blur-md text-white py-3 px-4 border-b border-slate-700 shadow-md">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Link
@@ -193,7 +186,7 @@ function InvoicePrintContent() {
             </Link>
             <span className="hidden sm:inline text-white/30">|</span>
             <span className="text-[11px] text-teal-300 font-medium flex items-center gap-1 bg-teal-500/10 border border-teal-500/20 px-2 py-0.5 rounded-full">
-              <Edit3 className="w-3 h-3 text-teal-400" /> Interactive Edit Mode (Click text or tick boxes to customize)
+              <Edit3 className="w-3 h-3 text-teal-400" /> Interactive Edit Mode (Click text to edit)
             </span>
           </div>
 
@@ -204,6 +197,29 @@ function InvoicePrintContent() {
               title="Reset all modifications back to original invoice data"
             >
               <RotateCcw className="w-3.5 h-3.5" /> Reset
+            </button>
+            <button
+              onClick={() => {
+                if (!receiptData.patientPhone) {
+                  alert('No patient phone number recorded for this invoice.');
+                  return;
+                }
+                openWhatsAppBill({
+                  phone: receiptData.patientPhone,
+                  patientName: receiptData.patientName,
+                  invoiceNumber: receiptData.documentNumber,
+                  issueDate: receiptData.issueDate,
+                  lines: receiptData.lines,
+                  total: receiptData.total,
+                  amountPaid: receiptData.amountPaid,
+                  balanceDue: receiptData.balanceDue,
+                  paymentMode: receiptData.paymentMode,
+                });
+              }}
+              className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
+              title="Quick send official bill receipt to patient on WhatsApp"
+            >
+              <MessageSquare className="w-3.5 h-3.5" /> Send WhatsApp
             </button>
             <button
               onClick={handleDownloadPdf}

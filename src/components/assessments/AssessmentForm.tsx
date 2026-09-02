@@ -56,6 +56,11 @@ export default function AssessmentForm({
   
   // Subjective
   const [chiefComplaint, setChiefComplaint] = useState('');
+  const [historyOfPresentIllness, setHistoryOfPresentIllness] = useState('');
+  const [medicalHistory, setMedicalHistory] = useState('');
+  const [medicalHistoryTags, setMedicalHistoryTags] = useState<string[]>([]);
+  const [surgicalHistory, setSurgicalHistory] = useState('');
+  const [medicineHistory, setMedicineHistory] = useState('');
   const [onset, setOnset] = useState<'ACUTE' | 'SUB_ACUTE' | 'CHRONIC'>('ACUTE');
   const [onsetDate, setOnsetDate] = useState('');
   const [mechanismOfInjury, setMechanismOfInjury] = useState('');
@@ -155,7 +160,9 @@ export default function AssessmentForm({
   const saveDraftToLocalStorage = () => {
     const draftData = {
       patientId, type, occupation, occupationCategory, provisionalDiagnosis,
-      chiefComplaint, onset, onsetDate, mechanismOfInjury, painSiteRegions,
+      chiefComplaint, historyOfPresentIllness, medicalHistory, medicalHistoryTags,
+      surgicalHistory, medicineHistory,
+      onset, onsetDate, mechanismOfInjury, painSiteRegions,
       vasRest, vasActivity, vasBest, vasWorst, redFlagWeightLoss, redFlagBowelBladder,
       redFlagSaddleAnaesthesia, redFlagNightPain, redFlagDecisionNote, ptDiagnosis, prognosis,
       scalesJson
@@ -171,6 +178,12 @@ export default function AssessmentForm({
         const d = JSON.parse(saved);
         if (d && typeof d === 'object') {
           if (d.chiefComplaint) setChiefComplaint(d.chiefComplaint);
+          if (d.historyOfPresentIllness) setHistoryOfPresentIllness(d.historyOfPresentIllness);
+          if (d.medicalHistory) setMedicalHistory(d.medicalHistory);
+          if (Array.isArray(d.medicalHistoryTags)) setMedicalHistoryTags(d.medicalHistoryTags);
+          if (d.surgicalHistory) setSurgicalHistory(d.surgicalHistory);
+          if (d.medicineHistory) setMedicineHistory(d.medicineHistory);
+          if (d.mechanismOfInjury) setMechanismOfInjury(d.mechanismOfInjury);
           if (d.ptDiagnosis) setPtDiagnosis(d.ptDiagnosis);
           if (d.scalesJson) setScalesJson(d.scalesJson);
         }
@@ -221,7 +234,19 @@ export default function AssessmentForm({
       aggravatingFactors,
       easingFactors,
       diurnalVariation,
-      pmh,
+      pmh: JSON.stringify({
+        medicalHistory,
+        conditions: medicalHistoryTags,
+        surgicalHistory,
+        medicineHistory,
+      }),
+      narrativeJson: JSON.stringify({
+        historyOfPresentIllness,
+        medicalHistory,
+        medicalHistoryTags,
+        surgicalHistory,
+        medicineHistory,
+      }),
       investigations,
       redFlagWeightLoss: Boolean(redFlagWeightLoss),
       redFlagBowelBladder: Boolean(redFlagBowelBladder),
@@ -424,18 +449,75 @@ export default function AssessmentForm({
             </div>
 
             <div className="space-y-4 text-xs">
+              {/* Chief Complaint */}
               <div>
                 <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">Chief Complaint *</label>
                 <textarea
-                  rows={3}
-                  placeholder="Describe patient's chief complaint in their own words..."
+                  rows={2}
+                  placeholder="Describe patient's chief complaint in their own words (e.g. 'Severe lower back pain radiating to left leg for 2 weeks')..."
                   value={chiefComplaint}
                   onChange={(e) => setChiefComplaint(e.target.value)}
-                  className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium"
+                  className="w-full p-3 bg-white/10 border border-white/20 rounded-xl text-white font-medium focus:outline-none focus:border-emerald-400"
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 1. History of Present Illness (HPI) */}
+              <div className="p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <label className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                      <FileText className="w-3.5 h-3.5 text-emerald-400" />
+                      1. History of Present Illness (HPI)
+                    </label>
+                    <p className="text-[10px] text-white/50 mt-0.5">
+                      Chronological progression, pain characteristics, mechanical triggers, and prior episodes.
+                    </p>
+                  </div>
+                  <DictationButton onTranscript={(txt) => setHistoryOfPresentIllness(historyOfPresentIllness ? `${historyOfPresentIllness} ${txt}` : txt)} />
+                </div>
+
+                <textarea
+                  rows={3}
+                  placeholder="Detail the chronological course of symptoms, exact onset circumstances, progression over days/weeks, mechanical triggers, aggravating and relieving positions, radiating pain/paraesthesia, previous episodes, and past treatments attempted..."
+                  value={historyOfPresentIllness}
+                  onChange={(e) => setHistoryOfPresentIllness(e.target.value)}
+                  className="w-full p-3 bg-white/5 border border-white/15 rounded-xl text-white font-medium focus:outline-none focus:border-emerald-400 leading-relaxed"
+                />
+
+                {/* Quick Suggestion Chips for HPI */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-white/40 mr-1">Quick Add:</span>
+                  {[
+                    'Gradual insidious onset',
+                    'Sudden traumatic onset',
+                    'Progressive worsening',
+                    'Intermittent shooting pain',
+                    'Radiating to lower extremity',
+                    'Radiating to upper extremity',
+                    'Paraesthesia / Numbness reported',
+                    'Aggravated by forward flexion',
+                    'Aggravated by prolonged sitting',
+                    'Relieved by supine lying / rest',
+                    'Past similar episode 6 months ago',
+                  ].map((phrase) => (
+                    <button
+                      key={phrase}
+                      type="button"
+                      onClick={() => {
+                        setHistoryOfPresentIllness((prev) =>
+                          prev ? `${prev}. ${phrase}` : phrase
+                        );
+                      }}
+                      className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-white/5 hover:bg-emerald-500/20 text-white/70 hover:text-emerald-300 border border-white/10 hover:border-emerald-500/30 transition cursor-pointer"
+                    >
+                      + {phrase}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Onset Type, Mechanism of Injury & Diurnal Variation */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">Onset Type</label>
                   <div className="flex gap-2">
@@ -455,6 +537,17 @@ export default function AssessmentForm({
                 </div>
 
                 <div>
+                  <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">Mechanism of Injury</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Heavy lifting, slip/fall, sports injury, desk posture..."
+                    value={mechanismOfInjury}
+                    onChange={(e) => setMechanismOfInjury(e.target.value)}
+                    className="w-full p-2.5 bg-white/10 border border-white/20 rounded-xl text-white font-medium focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                <div>
                   <label className="text-[10px] font-bold uppercase text-white/50 block mb-1">Diurnal Variation</label>
                   <select
                     value={diurnalVariation}
@@ -466,6 +559,155 @@ export default function AssessmentForm({
                     <option value="CONSTANT" className="bg-[#0B0A10]">Constant Pain</option>
                     <option value="VARIABLE" className="bg-[#0B0A10]">Variable / Activity Dependent</option>
                   </select>
+                </div>
+              </div>
+
+              {/* 2. Medical History / Surgical History / Medicine History Card */}
+              <div className="p-4 bg-white/[0.03] border border-white/10 rounded-2xl space-y-4">
+                <div className="border-b border-white/10 pb-2">
+                  <span className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                    <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                    2. Medical History / Surgical History / Medicine History
+                  </span>
+                  <p className="text-[10px] text-white/50 mt-0.5">
+                    Essential systemic conditions, prior surgical procedures, and current medication regimen.
+                  </p>
+                </div>
+
+                {/* A. Medical History & Comorbidities */}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold uppercase text-white/60 block">
+                    A. Medical History & Systemic Conditions
+                  </label>
+                  
+                  {/* Comorbidity Condition Tags */}
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      'Diabetes Mellitus',
+                      'Hypertension',
+                      'Cardiac Disease',
+                      'Thyroid Disorder',
+                      'Asthma / Respiratory',
+                      'Osteoarthritis',
+                      'Osteoporosis',
+                      'Rheumatoid / Autoimmune',
+                      'Spinal Pathology',
+                      'Neuropathy',
+                      'No Known Comorbidities',
+                    ].map((tag) => {
+                      const isSelected = medicalHistoryTags.includes(tag);
+                      return (
+                        <button
+                          key={tag}
+                          type="button"
+                          onClick={() => {
+                            if (tag === 'No Known Comorbidities') {
+                              setMedicalHistoryTags(isSelected ? [] : ['No Known Comorbidities']);
+                            } else {
+                              const filtered = medicalHistoryTags.filter(t => t !== 'No Known Comorbidities');
+                              if (isSelected) {
+                                setMedicalHistoryTags(filtered.filter(t => t !== tag));
+                              } else {
+                                setMedicalHistoryTags([...filtered, tag]);
+                              }
+                            }
+                          }}
+                          className={`text-[10px] font-semibold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                              : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'
+                          }`}
+                        >
+                          {isSelected ? '✓ ' : '+ '}{tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Additional medical history details (e.g. Duration of diabetes, BP control, renal, gastrointestinal)..."
+                    value={medicalHistory}
+                    onChange={(e) => setMedicalHistory(e.target.value)}
+                    className="w-full p-2.5 bg-white/5 border border-white/15 rounded-xl text-white font-medium focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                {/* B. Surgical History */}
+                <div className="space-y-2 pt-1 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase text-white/60 block">
+                      B. Surgical History (Procedures, Dates & Implants)
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        'No Prior Surgeries',
+                        'Spine Discectomy',
+                        'Spine Fusion',
+                        'Knee Arthroscopy',
+                        'Total Knee Replacement',
+                        'Total Hip Replacement',
+                        'ORIF / Fixation',
+                      ].map((surg) => (
+                        <button
+                          key={surg}
+                          type="button"
+                          onClick={() => {
+                            setSurgicalHistory((prev) => prev ? `${prev}, ${surg}` : surg);
+                          }}
+                          className="text-[9px] font-semibold px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 transition cursor-pointer"
+                        >
+                          + {surg}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Prior surgical history, orthopedic procedures, spinal surgeries, arthroscopy, joint replacements with approximate year/implants..."
+                    value={surgicalHistory}
+                    onChange={(e) => setSurgicalHistory(e.target.value)}
+                    className="w-full p-2.5 bg-white/5 border border-white/15 rounded-xl text-white font-medium focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                {/* C. Medicine History */}
+                <div className="space-y-2 pt-1 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold uppercase text-white/60 block">
+                      C. Medicine / Drug History & Allergies
+                    </label>
+                    <div className="flex flex-wrap gap-1">
+                      {[
+                        'No Regular Medications',
+                        'Analgesics / NSAIDs',
+                        'Muscle Relaxants',
+                        'Anticoagulants / Blood Thinners',
+                        'Neuropathic Agents',
+                        'Steroids / Injections',
+                        'Calcium & Vit D3',
+                        'Drug Allergy Noted',
+                      ].map((med) => (
+                        <button
+                          key={med}
+                          type="button"
+                          onClick={() => {
+                            setMedicineHistory((prev) => prev ? `${prev}, ${med}` : med);
+                          }}
+                          className="text-[9px] font-semibold px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/10 transition cursor-pointer"
+                        >
+                          + {med}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Current prescribed medications, dosages, OTC pain medications, blood thinners, calcium/supplements, and known drug allergies..."
+                    value={medicineHistory}
+                    onChange={(e) => setMedicineHistory(e.target.value)}
+                    className="w-full p-2.5 bg-white/5 border border-white/15 rounded-xl text-white font-medium focus:outline-none focus:border-emerald-400"
+                  />
                 </div>
               </div>
 

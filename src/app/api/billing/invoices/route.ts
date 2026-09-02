@@ -11,8 +11,12 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const search = searchParams.get('search') || '';
     const status = searchParams.get('status') || '';
+    const patientId = searchParams.get('patientId') || '';
 
     const where: any = {};
+    if (patientId) {
+      where.patientId = patientId;
+    }
     if (status) {
       where.status = status;
     }

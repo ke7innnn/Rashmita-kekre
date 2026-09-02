@@ -280,3 +280,96 @@ export async function sendWhatsAppMessageDirect({
     return { success: false, error: err.message };
   }
 }
+
+/**
+ * Generate formatted text for a clinical bill / invoice receipt
+ */
+export function generateBillWhatsAppText({
+  patientName,
+  invoiceNumber,
+  issueDate,
+  lines,
+  total,
+  amountPaid,
+  balanceDue,
+  paymentMode,
+}: {
+  patientName: string;
+  invoiceNumber: string;
+  issueDate?: string;
+  lines?: { description: string; quantity?: number; lineTotal?: number }[];
+  total: number;
+  amountPaid: number;
+  balanceDue: number;
+  paymentMode?: string | null;
+}) {
+  const itemsText = lines && lines.length > 0
+    ? lines.map(l => `• ${l.description}${l.quantity && l.quantity > 1 ? ` (${l.quantity}x)` : ''}`).join('\n')
+    : '• Physiotherapy Clinical Services';
+
+  const isPaid = balanceDue <= 0 && amountPaid > 0;
+  const statusStr = isPaid ? '✅ Paid in Full' : amountPaid > 0 ? '⚠️ Partial Payment' : '⏳ Payment Due';
+
+  return `🏥 *Health 360 Physiotherapy & Craniosacral Clinic*
+*Official Payment Receipt & Bill*
+
+Dear *${patientName}*,
+
+Thank you for choosing Health 360 Clinic. Here are your official billing details:
+
+📄 *Receipt / Invoice No:* ${invoiceNumber}
+📅 *Date:* ${issueDate || new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+💳 *Payment Mode:* ${paymentMode || 'UPI / Online'}
+📊 *Status:* ${statusStr}
+
+🩺 *Services & Treatments:*
+${itemsText}
+
+💰 *Total Amount:* ₹${total.toLocaleString('en-IN')}
+💵 *Amount Paid:* ₹${amountPaid.toLocaleString('en-IN')}
+${balanceDue > 0 ? `⚠️ *Balance Due:* ₹${balanceDue.toLocaleString('en-IN')}\n` : ''}
+📍 *Clinic Address:*
+Shop No.1 & 2, Amardeep Society, Om Nagar, Vasai (West), Dist. Palghar - 401202
+☎️ *Contact:* +91 8482812859 / 9834848981
+✉️ *Email:* health360vasai@gmail.com
+
+Wishing you a speedy, healthy, and pain-free recovery!
+*Dr. Rashmita Karvir-Kekre (PT)*
+Team Health 360`;
+}
+
+/**
+ * Quick send bill / invoice receipt to patient on WhatsApp
+ */
+export function openWhatsAppBill({
+  phone,
+  ...details
+}: {
+  phone: string;
+  patientName: string;
+  invoiceNumber: string;
+  issueDate?: string;
+  lines?: { description: string; quantity?: number; lineTotal?: number }[];
+  total: number;
+  amountPaid: number;
+  balanceDue: number;
+  paymentMode?: string | null;
+}) {
+  const text = generateBillWhatsAppText(details);
+  
+  // Try sending via background CRM API as well
+  try {
+    fetch('/api/whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, message: text }),
+    }).catch(() => {});
+  } catch (e) {}
+
+  // Format phone with India 91 prefix
+  const cleanDigits = (phone || '').replace(/\D/g, '');
+  const targetPhone = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+
+  const url = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+  window.open(url, '_blank');
+}

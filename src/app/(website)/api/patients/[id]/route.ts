@@ -37,6 +37,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
           include: { handout: true },
           orderBy: { sentAt: 'desc' },
         },
+        invoices: {
+          include: {
+            lines: true,
+            payments: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        },
       },
     });
 

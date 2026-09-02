@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowLeft, Search, Plus, Trash2, Check, AlertCircle, FileText, Sparkles, User, ShoppingBag, Calendar, AlertTriangle
+  ArrowLeft, Search, Plus, Trash2, Check, AlertCircle, FileText, Sparkles, User, ShoppingBag, Calendar, AlertTriangle, MessageSquare
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import { suggestPlanFromModalities } from '@/lib/planSuggestion';
@@ -13,6 +13,7 @@ import CourseMeter from '@/components/billing/CourseMeter';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import CountUpNumber from '@/components/billing/CountUpNumber';
+import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 function InvoiceBuilderContent() {
   const router = useRouter();
@@ -299,7 +300,7 @@ function InvoiceBuilderContent() {
 
   const grandTotal = Math.max(0, subtotal - calculatedDiscount);
 
-  const handleSaveInvoice = async () => {
+  const handleSaveInvoice = async (sendWhatsApp: boolean = false) => {
     if (!selectedPatient) {
       setError('Please select a patient');
       return;
@@ -338,6 +339,21 @@ function InvoiceBuilderContent() {
       }
 
       const inv = await res.json();
+
+      if (sendWhatsApp && selectedPatient.phone) {
+        openWhatsAppBill({
+          phone: selectedPatient.phone,
+          patientName: selectedPatient.fullName,
+          invoiceNumber: inv.invoiceNumber,
+          issueDate: new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+          lines: inv.lines,
+          total: Number(inv.totalAmount || 0),
+          amountPaid: Number(inv.paidAmount || 0),
+          balanceDue: Math.max(0, Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0)),
+          paymentMode: 'UPI / Cash',
+        });
+      }
+
       router.push(`/crm360/billing/invoices/${inv.id}`);
     } catch (err: any) {
       setError(err.message || 'Error generating invoice. Retrying...');
@@ -870,21 +886,40 @@ function InvoiceBuilderContent() {
               </span>
             </div>
 
-            <button
-              onClick={handleSaveInvoice}
-              disabled={saving || !selectedPatient || lines.length === 0 || lines.some(l => l.isUnresolvedFollowUp)}
-              className="w-full py-3 rounded-xl bg-white hover:bg-white/90 text-black text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? (
-                <span className="w-4 h-4 border-2 border-black/30 border-t-black rounded-full animate-spin" />
-              ) : lines.some(l => l.isUnresolvedFollowUp) ? (
-                <span className="text-amber-900 font-bold">Needs Billing Choice for Follow-up</span>
-              ) : (
-                <>
-                  <Check className="w-4 h-4" /> Issue Invoice
-                </>
-              )}
-            </button>
+            <div className="space-y-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => handleSaveInvoice(true)}
+                disabled={saving || !selectedPatient || lines.length === 0 || lines.some(l => l.isUnresolvedFollowUp)}
+                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                title="Create invoice and immediately open WhatsApp with formatted bill receipt"
+              >
+                {saving ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <MessageSquare className="w-4 h-4" /> Issue & Send WhatsApp
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSaveInvoice(false)}
+                disabled={saving || !selectedPatient || lines.length === 0 || lines.some(l => l.isUnresolvedFollowUp)}
+                className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              >
+                {saving ? (
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : lines.some(l => l.isUnresolvedFollowUp) ? (
+                  <span className="text-amber-300 font-bold">Needs Billing Choice for Follow-up</span>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" /> Issue Invoice Only
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

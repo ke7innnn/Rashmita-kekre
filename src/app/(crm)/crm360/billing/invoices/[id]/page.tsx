@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { 
-  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building, Edit3, Save, Plus, Loader2, RotateCcw
+  ArrowLeft, Printer, CreditCard, XCircle, CheckCircle2, AlertCircle, Phone, Mail, MapPin, Building, Edit3, Save, Plus, Loader2, RotateCcw, MessageSquare
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import RecordPaymentModal from '@/components/billing/RecordPaymentModal';
+import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 export default function InvoiceDetailPage() {
   const routeParams = useParams();
@@ -200,6 +201,30 @@ export default function InvoiceDetailPage() {
               {savingEdit ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Changes
             </button>
           )}
+
+          <button
+            onClick={() => {
+              if (!invoice.patient?.phone) {
+                alert('No patient phone number available for this invoice.');
+                return;
+              }
+              openWhatsAppBill({
+                phone: invoice.patient.phone,
+                patientName: invoice.patient.fullName,
+                invoiceNumber: invoice.invoiceNumber,
+                issueDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+                lines: invoice.lines,
+                total,
+                amountPaid: paid,
+                balanceDue: balance,
+                paymentMode: invoice.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid'),
+              });
+            }}
+            className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
+            title="Send official bill summary and receipt to patient on WhatsApp"
+          >
+            <MessageSquare className="w-4 h-4" /> Send WhatsApp
+          </button>
 
           <Link
             href={`/crm360/billing/invoices/${id}/print?autoprint=1`}

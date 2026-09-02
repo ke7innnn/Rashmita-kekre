@@ -20,15 +20,26 @@ export async function middleware(req: NextRequest) {
     }
 
     const role = (token.role as string)?.toUpperCase();
-    const isPhysio = role === 'PHYSIO' || role === 'RECEPTIONIST';
+    const isAdmin = role === 'ADMIN';
 
-    if (isPhysio) {
-      const allowedPaths = ['/crm360', '/crm360/attendance', '/crm360/patients', '/crm360/assessments', '/crm360/billing', '/crm360/appointments'];
-      const isExactOverview = pathname === '/crm360';
-      const isAllowed = isExactOverview || allowedPaths.some(p => p !== '/crm360' && pathname.startsWith(p));
+    // Staff access restriction: Non-admins CANNOT access Clinic Overview (/crm360)
+    if (!isAdmin) {
+      if (pathname === '/crm360' || pathname === '/crm360/') {
+        const defaultStaffUrl = new URL('/crm360/patients', req.url);
+        return NextResponse.redirect(defaultStaffUrl);
+      }
+
+      const allowedPaths = [
+        '/crm360/patients',
+        '/crm360/attendance',
+        '/crm360/appointments',
+        '/crm360/billing',
+        '/crm360/assessments',
+      ];
+      const isAllowed = allowedPaths.some(p => pathname.startsWith(p));
       if (!isAllowed) {
-        const overviewUrl = new URL('/crm360', req.url);
-        return NextResponse.redirect(overviewUrl);
+        const fallbackUrl = new URL('/crm360/patients', req.url);
+        return NextResponse.redirect(fallbackUrl);
       }
     }
   }

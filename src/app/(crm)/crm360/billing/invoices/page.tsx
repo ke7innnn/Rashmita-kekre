@@ -5,10 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { 
-  FileText, Search, Plus, Filter, ArrowLeft, RefreshCw, Eye
+  FileText, Search, Plus, Filter, ArrowLeft, RefreshCw, Eye, Printer, MessageSquare
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
+import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 export default function InvoiceListPage() {
   const router = useRouter();
@@ -141,6 +142,7 @@ export default function InvoiceListPage() {
                   <th className="py-3.5 px-4 text-right">Paid</th>
                   <th className="py-3.5 px-4 text-right">Balance</th>
                   <th className="py-3.5 px-4 text-center">Status</th>
+                  <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5 text-xs text-white">
@@ -152,7 +154,7 @@ export default function InvoiceListPage() {
                   return (
                     <tr
                       key={inv.id}
-                      className="hover:bg-white/[0.03] transition-colors duration-120 cursor-pointer"
+                      className="hover:bg-white/[0.03] transition-colors duration-120 cursor-pointer group"
                       onClick={() => router.push(`/crm360/billing/invoices/${inv.id}`)}
                     >
                       <td className="py-3.5 px-4 font-bold text-white hover:underline">
@@ -176,6 +178,49 @@ export default function InvoiceListPage() {
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         <InvoiceStatusPill status={inv.status} />
+                      </td>
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!inv.patient?.phone) {
+                                alert('No phone number recorded for this patient.');
+                                return;
+                              }
+                              openWhatsAppBill({
+                                phone: inv.patient.phone,
+                                patientName: inv.patient.fullName,
+                                invoiceNumber: inv.invoiceNumber,
+                                issueDate: new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+                                lines: inv.lines,
+                                total,
+                                amountPaid: paid,
+                                balanceDue: balance,
+                                paymentMode: inv.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid'),
+                              });
+                            }}
+                            className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 rounded-lg transition cursor-pointer"
+                            title="Send bill receipt on WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                          </button>
+                          <Link
+                            href={`/crm360/billing/invoices/${inv.id}/print`}
+                            target="_blank"
+                            className="p-1.5 bg-white/5 hover:bg-white/20 text-white/70 hover:text-white rounded-lg transition"
+                            title="Print Official Bill"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                          </Link>
+                          <Link
+                            href={`/crm360/billing/invoices/${inv.id}`}
+                            className="p-1.5 bg-teal-500/10 hover:bg-teal-500/20 text-teal-400 hover:text-teal-300 rounded-lg transition"
+                            title="View Details"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </Link>
+                        </div>
                       </td>
                     </tr>
                   );

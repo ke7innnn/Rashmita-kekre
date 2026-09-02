@@ -11,10 +11,11 @@ import {
   Plus, Check, Camera, Image, AlertTriangle, Download, 
   Trash2, Edit2, Edit3, PlayCircle, Folder, File, FolderPlus,
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare,
-  Ban, ShieldCheck
+  Ban, ShieldCheck, Receipt, Eye, Printer, CreditCard
 } from 'lucide-react';
+import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
+import { sendWhatsAppNotification, openWhatsAppBill } from '@/lib/whatsappTemplates';
 import CourseMeter from '@/components/billing/CourseMeter';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import EditPatientModal from '@/components/EditPatientModal';
@@ -321,6 +322,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     queryFn: async () => {
       const res = await fetch(`/api/packages?patientId=${patientId}`);
       if (!res.ok) throw new Error('Failed to fetch packages');
+      return res.json();
+    },
+  });
+
+  // Fetch patient invoices & bills
+  const { data: patientInvoices = [], refetch: refetchInvoices } = useQuery({
+    queryKey: ['patientInvoices', patientId],
+    queryFn: async () => {
+      const res = await fetch(`/api/billing/invoices?patientId=${patientId}`);
+      if (!res.ok) return [];
       return res.json();
     },
   });
@@ -2645,7 +2656,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             patientId={patientId}
             patientName={patient.fullName}
             onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ['packages', patientId] });
               queryClient.invalidateQueries({ queryKey: ['patientPackages', patientId] });
+              queryClient.invalidateQueries({ queryKey: ['patientInvoices', patientId] });
               queryClient.invalidateQueries({ queryKey: ['patient', patientId] });
             }}
           />
@@ -2864,6 +2877,147 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               })}
             </div>
           )}
+
+          {/* Past Bills & Invoices Section */}
+          <div className="pt-8 border-t border-white/10 space-y-4">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div>
+                <h3 className="text-xl font-serif font-bold text-white flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-teal-400" />
+                  Past Bills & Invoices
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-white/10 text-white/70">
+                    {patientInvoices.length}
+                  </span>
+                </h3>
+                <p className="text-xxs text-white/50 font-bold uppercase tracking-wider mt-0.5">
+                  Complete billing history, payment status, and printable receipts for {patient.fullName}
+                </p>
+              </div>
+
+              <Link
+                href={`/crm360/billing/invoices/new?patientId=${patientId}`}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-all shadow-md"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Bill
+              </Link>
+            </div>
+
+            {patientInvoices.length === 0 ? (
+              <div className="p-8 text-center text-white/40 border border-dashed border-white/15 rounded-3xl font-medium bg-white/[0.02] space-y-2">
+                <FileText className="w-8 h-8 mx-auto text-white/20" />
+                <p className="text-xs">No bills generated for this patient yet.</p>
+                <Link
+                  href={`/crm360/billing/invoices/new?patientId=${patientId}`}
+                  className="inline-flex items-center gap-1 text-xs text-teal-400 hover:text-teal-300 font-bold underline mt-1"
+                >
+                  Generate first bill for {patient.fullName} →
+                </Link>
+              </div>
+            ) : (
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl overflow-hidden divide-y divide-white/5 shadow-lg">
+                {patientInvoices.map((inv: any) => {
+                  const total = Number(inv.totalAmount || 0);
+                  const paid = Number(inv.paidAmount || 0);
+                  const balance = Math.max(0, total - paid);
+                  const isPaid = inv.status === 'PAID' || balance === 0;
+
+                  return (
+                    <div
+                      key={inv.id}
+                      className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-white/[0.02] transition"
+                    >
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2.5">
+                          <span className="font-mono text-sm font-bold text-white tracking-wide">
+                            {inv.invoiceNumber}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                              isPaid
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                : inv.status === 'OVERDUE'
+                                ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
+                                : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                            }`}
+                          >
+                            {inv.status}
+                          </span>
+                        </div>
+                        <p className="text-xs text-white/50">
+                          Issued on {new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {inv.lines && inv.lines.length > 0 && (
+                            <span className="text-white/40"> · {inv.lines.map((l: any) => l.description).join(', ')}</span>
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-4 sm:gap-6 self-end sm:self-center">
+                        <div className="text-right">
+                          <div className="text-sm font-bold text-white font-mono">
+                            ₹{total.toLocaleString('en-IN')}
+                          </div>
+                          <div className="text-[11px] text-white/50">
+                            {balance > 0 ? (
+                              <span className="text-amber-400 font-semibold">Bal: ₹{balance.toLocaleString('en-IN')}</span>
+                            ) : (
+                              <span className="text-emerald-400 font-semibold">Paid in Full</span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (!patient.phone) {
+                                alert('No phone number recorded for this patient.');
+                                return;
+                              }
+                              openWhatsAppBill({
+                                phone: patient.phone,
+                                patientName: patient.fullName,
+                                invoiceNumber: inv.invoiceNumber,
+                                issueDate: new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
+                                lines: inv.lines,
+                                total,
+                                amountPaid: paid,
+                                balanceDue: balance,
+                                paymentMode: inv.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid'),
+                              });
+                            }}
+                            className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                            title="Send bill receipt to patient on WhatsApp"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            <span className="hidden md:inline">WhatsApp</span>
+                          </button>
+
+                          <Link
+                            href={`/crm360/billing/invoices/${inv.id}/print`}
+                            target="_blank"
+                            className="p-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                            title="Print / Download Official Receipt"
+                          >
+                            <Printer className="w-3.5 h-3.5" />
+                            <span className="hidden md:inline">Print</span>
+                          </Link>
+                          <Link
+                            href={`/crm360/billing/invoices/${inv.id}`}
+                            className="p-2 bg-teal-500/20 hover:bg-teal-500/30 border border-teal-500/30 text-teal-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+                            title="View Invoice Details & Record Payments"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                            <span className="hidden md:inline">Details</span>
+                          </Link>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
       )}
 

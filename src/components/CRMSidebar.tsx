@@ -155,7 +155,7 @@ export default function CRMSidebar({ children }: Props) {
   const isAdmin = userRole === 'admin';
 
   const fullNavigation = [
-    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin'] },
     { href: '/crm360/patients', name: 'Patients Directory', icon: Users, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
@@ -172,12 +172,20 @@ export default function CRMSidebar({ children }: Props) {
 
   const navigation = fullNavigation.filter(item => {
     if (!isAdmin) {
-      return item.href === '/crm360' || item.href === '/crm360/patients' || item.href === '/crm360/attendance' || item.href === '/crm360/assessments' || item.href === '/crm360/billing' || item.href === '/crm360/appointments';
+      if (item.href === '/crm360') return false;
+      return (
+        item.href === '/crm360/patients' ||
+        item.href === '/crm360/appointments' ||
+        item.href === '/crm360/attendance' ||
+        item.href === '/crm360/assessments' ||
+        item.href === '/crm360/billing' ||
+        item.href === '/portal'
+      );
     }
     return true;
   });
 
-  if (pathname === '/crm360/login') {
+  if (pathname === '/crm360/login' || pathname.endsWith('/print') || pathname.includes('/print')) {
     return <>{children}</>;
   }
 
@@ -192,11 +200,11 @@ export default function CRMSidebar({ children }: Props) {
   if (!isAuthenticated) return null;
 
   return (
-    <div className="flex min-h-screen bg-[#0A0711] text-[#F5F3FA] font-sans antialiased selection:bg-primary/20 relative">
-      <AuroraBackground />
+    <div className="flex min-h-screen bg-[#0A0711] print:bg-white text-[#F5F3FA] print:text-black font-sans antialiased selection:bg-primary/20 relative">
+      <div className="print:hidden"><AuroraBackground /></div>
 
       {/* Sidebar Navigation (Desktop) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 justify-between shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 justify-between shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none print:hidden">
         <div className="space-y-5">
           {/* Logo Branding */}
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -232,7 +240,7 @@ export default function CRMSidebar({ children }: Props) {
             <div>
               <p className="text-[9px] font-bold tracking-widest text-white/35 uppercase px-3.5 pb-2">Main Menu</p>
               <div className="space-y-1">
-                {navigation.slice(0, 4).map((item) => {
+                {navigation.filter(item => item.category === 'main').map((item) => {
                   const Icon = item.icon;
                   const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
 
@@ -260,7 +268,7 @@ export default function CRMSidebar({ children }: Props) {
             <div>
               <p className="text-[9px] font-bold tracking-widest text-white/35 uppercase px-3.5 pb-2">Management</p>
               <div className="space-y-1">
-                {navigation.slice(4).map((item) => {
+                {navigation.filter(item => item.category === 'management').map((item) => {
                   const Icon = item.icon;
                   const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
 
@@ -349,9 +357,9 @@ export default function CRMSidebar({ children }: Props) {
       </aside>
 
       {/* Main Content Shell */}
-      <div className="flex-1 flex flex-col min-w-0 z-10">
+      <div className="flex-1 flex flex-col min-w-0 z-10 print:p-0">
         {/* Mobile Header Bar */}
-        <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[rgba(18,13,31,0.8)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.08)] sticky top-0 z-30">
+        <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[rgba(18,13,31,0.8)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.08)] sticky top-0 z-30 print:hidden">
           <div className="flex items-center gap-3">
             <div className="relative shrink-0">
               <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-30" />
@@ -443,7 +451,7 @@ export default function CRMSidebar({ children }: Props) {
         </AnimatePresence>
 
         {/* Tab Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-transparent">
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-transparent print:p-0 print:overflow-visible">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

@@ -29,6 +29,40 @@ export default function AssessmentPrintPage() {
 
   if (!assessment) return null;
 
+  let narrative: any = {};
+  try {
+    if (assessment.narrativeJson) {
+      narrative = typeof assessment.narrativeJson === 'string' ? JSON.parse(assessment.narrativeJson) : assessment.narrativeJson;
+    }
+  } catch (e) {}
+
+  let pmhData: any = {};
+  try {
+    if (assessment.pmh) {
+      if (typeof assessment.pmh === 'string' && (assessment.pmh.startsWith('{') || assessment.pmh.startsWith('['))) {
+        pmhData = JSON.parse(assessment.pmh);
+      } else if (typeof assessment.pmh === 'object') {
+        pmhData = assessment.pmh;
+      } else {
+        pmhData = { medicalHistory: assessment.pmh };
+      }
+    }
+  } catch (e) {}
+
+  const hpi = narrative.historyOfPresentIllness || '';
+  const medHistory = narrative.medicalHistory || pmhData.medicalHistory || (typeof assessment.pmh === 'string' && !assessment.pmh.startsWith('{') ? assessment.pmh : '');
+  const medTags: string[] = Array.isArray(narrative.medicalHistoryTags) ? narrative.medicalHistoryTags : (Array.isArray(pmhData.conditions) ? pmhData.conditions : []);
+  const surgHistory = narrative.surgicalHistory || pmhData.surgicalHistory || '';
+  const medRxHistory = narrative.medicineHistory || pmhData.medicineHistory || '';
+
+  let painRegions: any[] = [];
+  try {
+    if (assessment.painSiteRegions) {
+      const parsed = typeof assessment.painSiteRegions === 'string' ? JSON.parse(assessment.painSiteRegions) : assessment.painSiteRegions;
+      if (Array.isArray(parsed)) painRegions = parsed;
+    }
+  } catch (e) {}
+
   return (
     <div className="p-8 max-w-4xl mx-auto bg-white text-black font-sans selection:bg-gray-200">
       {/* Clinic Letterhead */}
@@ -48,35 +82,70 @@ export default function AssessmentPrintPage() {
           <span className="text-xs font-bold uppercase tracking-widest block text-black/60">
             {assessment.type} ASSESSMENT
           </span>
-          <div className="text-sm font-bold text-black font-mono">
-            Date: {new Date(assessment.assessmentDate).toLocaleDateString()}
-          </div>
-          <div className="text-xs text-black/60 font-mono">Status: {assessment.status}</div>
+          <span className="text-xs font-mono text-black/50 block">ID: {assessment.id.slice(0, 10)}</span>
+          <span className="text-xs text-black/60 block pt-1">Date: {new Date(assessment.assessmentDate).toLocaleDateString()}</span>
         </div>
       </div>
 
-      {/* Patient Profile */}
-      <div className="border border-gray-300 rounded-lg p-4 mb-6 space-y-2">
-        <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-gray-200 pb-1">
-          1. Patient Profile
-        </h2>
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div><strong>Name:</strong> {assessment.patient?.fullName}</div>
-          <div><strong>Phone:</strong> {assessment.patient?.phone}</div>
-          <div><strong>Occupation:</strong> {assessment.occupation || 'N/A'}</div>
-          <div><strong>DOB / Gender:</strong> {new Date(assessment.patient?.dateOfBirth).toLocaleDateString()} ({assessment.patient?.gender})</div>
-          <div><strong>Provisional Diagnosis:</strong> {assessment.provisionalDiagnosis || 'N/A'}</div>
-          <div><strong>Referral Source:</strong> {assessment.referralSource?.name || 'Self / Direct'}</div>
+      {/* Patient demographics */}
+      <div className="border border-gray-300 rounded-lg p-4 mb-6 text-xs grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <span className="text-[10px] text-gray-500 uppercase block">Patient Name</span>
+          <strong className="text-sm">{assessment.patient?.fullName}</strong>
+        </div>
+        <div>
+          <span className="text-[10px] text-gray-500 uppercase block">Gender / Age</span>
+          <strong>{assessment.patient?.gender} / {assessment.patient?.dateOfBirth ? new Date().getFullYear() - new Date(assessment.patient.dateOfBirth).getFullYear() : '—'} Yrs</strong>
+        </div>
+        <div>
+          <span className="text-[10px] text-gray-500 uppercase block">Contact Phone</span>
+          <strong>{assessment.patient?.phone}</strong>
+        </div>
+        <div>
+          <span className="text-[10px] text-gray-500 uppercase block">Occupation</span>
+          <strong>{assessment.occupation || 'N/A'}</strong>
         </div>
       </div>
 
       {/* Subjective */}
-      <div className="border border-gray-300 rounded-lg p-4 mb-6 space-y-2 text-xs">
+      <div className="border border-gray-300 rounded-lg p-4 mb-6 space-y-3 text-xs">
         <h2 className="text-xs font-bold uppercase tracking-wider text-black border-b border-gray-200 pb-1">
           2. Subjective Profile
         </h2>
         <p><strong>Chief Complaint:</strong> "{assessment.chiefComplaint || 'None'}"</p>
-        <div className="grid grid-cols-4 gap-2 pt-1 font-mono">
+        
+        {hpi && (
+          <p><strong>History of Present Illness (HPI):</strong> {hpi}</p>
+        )}
+
+        {(medTags.length > 0 || medHistory || surgHistory || medRxHistory) && (
+          <div className="pt-2 border-t border-gray-100 space-y-1">
+            <strong>Medical, Surgical & Medicine History:</strong>
+            {medTags.length > 0 && (
+              <p>• <strong>Conditions:</strong> {medTags.join(', ')}</p>
+            )}
+            {medHistory && (
+              <p>• <strong>Medical Details:</strong> {medHistory}</p>
+            )}
+            {surgHistory && (
+              <p>• <strong>Surgical History:</strong> {surgHistory}</p>
+            )}
+            {medRxHistory && (
+              <p>• <strong>Medicine & Allergies:</strong> {medRxHistory}</p>
+            )}
+          </div>
+        )}
+
+        {painRegions.length > 0 && (
+          <div className="pt-2 border-t border-gray-100 space-y-0.5">
+            <strong>Marked Pain Sites & Joints:</strong>
+            <p className="text-gray-800">
+              {painRegions.map((pr: any) => `${pr.name} (${pr.region} · ${pr.side}${pr.isCustom ? ' · Custom' : ''})`).join('; ')}
+            </p>
+          </div>
+        )}
+
+        <div className="grid grid-cols-4 gap-2 pt-2 border-t border-gray-100 font-mono">
           <div>Rest VAS: {assessment.vasRest ?? '—'}/10</div>
           <div>Activity VAS: {assessment.vasActivity ?? '—'}/10</div>
           <div>Best VAS: {assessment.vasBest ?? '—'}/10</div>

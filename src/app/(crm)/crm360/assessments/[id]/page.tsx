@@ -13,6 +13,9 @@ interface SelectedRegion {
   name: string;
   region: string;
   side: 'LEFT' | 'RIGHT' | 'BILATERAL';
+  xPercent?: number;
+  yPercent?: number;
+  isCustom?: boolean;
 }
 
 export default function AssessmentDetailPage() {
@@ -117,6 +120,32 @@ export default function AssessmentDetailPage() {
     }
   } catch (e) {}
 
+  let narrative: any = {};
+  try {
+    if (assessment.narrativeJson) {
+      narrative = typeof assessment.narrativeJson === 'string' ? JSON.parse(assessment.narrativeJson) : assessment.narrativeJson;
+    }
+  } catch (e) {}
+
+  let pmhData: any = {};
+  try {
+    if (assessment.pmh) {
+      if (typeof assessment.pmh === 'string' && (assessment.pmh.startsWith('{') || assessment.pmh.startsWith('['))) {
+        pmhData = JSON.parse(assessment.pmh);
+      } else if (typeof assessment.pmh === 'object') {
+        pmhData = assessment.pmh;
+      } else {
+        pmhData = { medicalHistory: assessment.pmh };
+      }
+    }
+  } catch (e) {}
+
+  const hpi = narrative.historyOfPresentIllness || '';
+  const medHistory = narrative.medicalHistory || pmhData.medicalHistory || (typeof assessment.pmh === 'string' && !assessment.pmh.startsWith('{') ? assessment.pmh : '');
+  const medTags: string[] = Array.isArray(narrative.medicalHistoryTags) ? narrative.medicalHistoryTags : (Array.isArray(pmhData.conditions) ? pmhData.conditions : []);
+  const surgHistory = narrative.surgicalHistory || pmhData.surgicalHistory || '';
+  const medRxHistory = narrative.medicineHistory || pmhData.medicineHistory || '';
+
   const isSigned = assessment.status === 'SIGNED' || assessment.status === 'AMENDED';
   const baselineRom = assessment.parentAssessment?.romMeasurements || [];
 
@@ -214,13 +243,80 @@ export default function AssessmentDetailPage() {
         </div>
 
         {/* Section 2: Subjective Findings */}
-        <div className="space-y-3 border-t border-white/10 pt-6">
+        <div className="space-y-4 border-t border-white/10 pt-6">
           <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400 border-b border-white/10 pb-1">
             2. Subjective Profile
           </h3>
-          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl text-xs space-y-2">
-            <span className="text-[10px] font-bold text-white/50 uppercase block">Chief Complaint:</span>
-            <p className="text-white/80 font-medium italic">"{assessment.chiefComplaint || 'None'}"</p>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+            {/* Chief Complaint */}
+            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-1.5">
+              <span className="text-[10px] font-bold text-white/50 uppercase block">Chief Complaint:</span>
+              <p className="text-white/90 font-medium italic leading-relaxed">
+                "{assessment.chiefComplaint || 'None recorded'}"
+              </p>
+            </div>
+
+            {/* History of Present Illness (HPI) */}
+            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-1.5">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                1. History of Present Illness (HPI):
+              </span>
+              <p className="text-white/80 font-medium leading-relaxed">
+                {hpi || 'No chronological HPI recorded.'}
+              </p>
+              {assessment.mechanismOfInjury && (
+                <div className="pt-1.5 text-[11px] text-white/60">
+                  <span className="text-white/40 font-bold uppercase text-[9px] block">Mechanism of Injury:</span>
+                  {assessment.mechanismOfInjury}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Medical History / Surgical History / Medicine History Card */}
+          <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3 text-xs">
+            <div className="border-b border-white/10 pb-2 flex items-center justify-between">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                2. Medical History / Surgical History / Medicine History
+              </span>
+              <span className="text-[9px] text-white/40 uppercase font-mono">Clinical Systemic Review</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Medical History & Comorbidities */}
+              <div className="p-3 bg-white/[0.03] border border-white/10 rounded-xl space-y-2">
+                <span className="text-[10px] font-bold text-white/60 uppercase block">A. Medical History & Conditions</span>
+                {medTags.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {medTags.map((tag: string) => (
+                      <span key={tag} className="px-2 py-0.5 text-[9px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-md">
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <p className="text-white/80 font-medium leading-relaxed">
+                  {medHistory || (medTags.length > 0 ? '' : 'No systemic conditions reported.')}
+                </p>
+              </div>
+
+              {/* Surgical History */}
+              <div className="p-3 bg-white/[0.03] border border-white/10 rounded-xl space-y-2">
+                <span className="text-[10px] font-bold text-white/60 uppercase block">B. Surgical History</span>
+                <p className="text-white/80 font-medium leading-relaxed">
+                  {surgHistory || 'No past surgical procedures recorded.'}
+                </p>
+              </div>
+
+              {/* Medicine History */}
+              <div className="p-3 bg-white/[0.03] border border-white/10 rounded-xl space-y-2">
+                <span className="text-[10px] font-bold text-white/60 uppercase block">C. Medicine / Drug History</span>
+                <p className="text-white/80 font-medium leading-relaxed">
+                  {medRxHistory || 'No regular medications or drug allergies noted.'}
+                </p>
+              </div>
+            </div>
           </div>
 
           {/* Pain VAS Metrics */}
@@ -242,6 +338,35 @@ export default function AssessmentDetailPage() {
               <span className="text-base text-rose-500">{assessment.vasWorst ?? '—'}/10</span>
             </div>
           </div>
+
+          {/* Marked Body Chart Pain Points / Custom Joints */}
+          {painRegions.length > 0 && (
+            <div className="p-4 bg-white/5 border border-white/10 rounded-2xl space-y-2 text-xs">
+              <span className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider block">
+                Marked Body Diagram Pain Sites & Joints ({painRegions.length})
+              </span>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {painRegions.map((pr) => (
+                  <div
+                    key={pr.id}
+                    className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 ${
+                      pr.isCustom
+                        ? 'bg-cyan-500/15 border-cyan-500/30 text-cyan-200'
+                        : 'bg-white/5 border-white/10 text-white'
+                    }`}
+                  >
+                    <span className="font-bold">{pr.name}</span>
+                    <span className="text-[9px] font-mono opacity-60 uppercase">({pr.region} · {pr.side})</span>
+                    {pr.isCustom && (
+                      <span className="text-[8px] font-mono px-1 py-0.2 bg-cyan-400/20 text-cyan-300 rounded border border-cyan-400/30">
+                        Custom
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Section 3: ROM / MMT Comparison Table */}

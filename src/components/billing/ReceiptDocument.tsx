@@ -43,8 +43,6 @@ export interface ReceiptData {
   includesCourse: boolean;
 }
 
-const PAPER: 'a4' | 'a5-landscape' = 'a4';
-
 /* ============================================================
    MONEY FORMATTING — Indian grouping
    ============================================================ */
@@ -72,7 +70,6 @@ const TENS = [
   'Ninety',
 ];
 
-/** 0–99 */
 function twoDigitWords(n: number): string {
   if (n < 20) return ONES[n];
   const tens = Math.floor(n / 10);
@@ -80,7 +77,6 @@ function twoDigitWords(n: number): string {
   return rest ? `${TENS[tens]} ${ONES[rest]}` : TENS[tens];
 }
 
-/** 0–999 */
 function threeDigitWords(n: number): string {
   const hundred = Math.floor(n / 100);
   const rest = n % 100;
@@ -90,7 +86,6 @@ function threeDigitWords(n: number): string {
   return parts.join(' ');
 }
 
-/** Whole rupees to Indian-system words. */
 export function numberToIndianWords(num: number): string {
   const n = Math.floor(Math.abs(num));
   if (n === 0) return 'Zero';
@@ -103,7 +98,6 @@ export function numberToIndianWords(num: number): string {
   const hundreds = rem % 1000;
 
   const parts: string[] = [];
-  // Crore can exceed 99, so recurse for that segment.
   if (crore) parts.push(`${numberToIndianWords(crore)} Crore`);
   if (lakh) parts.push(`${twoDigitWords(lakh)} Lakh`);
   if (thousand) parts.push(`${twoDigitWords(thousand)} Thousand`);
@@ -112,7 +106,6 @@ export function numberToIndianWords(num: number): string {
   return parts.join(' ');
 }
 
-/** Full "… Rupees Only" phrase, with paise when present. */
 export function amountInWords(value: number): string {
   const rupees = Math.floor(Math.abs(value));
   const paise = Math.round((Math.abs(value) - rupees) * 100);
@@ -121,31 +114,6 @@ export function amountInWords(value: number): string {
     return `${base} and ${twoDigitWords(paise)} Paise Only`;
   }
   return `${base} Only`;
-}
-
-/* ============================================================
-   TICK BOX
-   ============================================================ */
-
-function TickBox({ 
-  label, 
-  checked, 
-  onClick 
-}: { 
-  label: string; 
-  checked: boolean; 
-  onClick?: () => void;
-}) {
-  return (
-    <span 
-      className={`tickbox ${onClick ? 'cursor-pointer hover:opacity-75 transition-opacity select-none' : ''}`} 
-      onClick={onClick}
-      title={onClick ? `Click to select ${label}` : undefined}
-    >
-      <span className="tickbox__square">{checked ? '\u2713' : ''}</span>
-      <span className="tickbox__label">{label}</span>
-    </span>
-  );
 }
 
 /* ============================================================
@@ -163,10 +131,9 @@ export default function ReceiptDocument({
   onUpdateData?: (updated: Partial<ReceiptData>) => void;
   onSelectPaymentMode?: (mode: PaymentMode) => void;
 }) {
-  // Paper reads RECEIPT once money has been taken, INVOICE before that.
   const isReceipt = data.amountPaid > 0;
-  const heading = isReceipt ? 'RECEIPT' : 'INVOICE';
-  const numberLabel = isReceipt ? 'Receipt No.' : 'Invoice No.';
+  const isPaidFull = data.balanceDue <= 0 && data.amountPaid > 0;
+  const docTitle = isReceipt ? 'RECEIPT' : 'INVOICE';
 
   const handleTextChange = (field: keyof ReceiptData) => (e: React.FocusEvent<HTMLElement>) => {
     if (!onUpdateData) return;
@@ -205,171 +172,250 @@ export default function ReceiptDocument({
     <>
       <style jsx global>{CSS}</style>
 
-      <div className={`doc doc--${PAPER}`}>
-        {/* ---------- HEADER ---------- */}
-        <header className="doc__header">
-          <div className="doc__brand">
-            {clinic.logoUrl ? (
-              <img
-                src={clinic.logoUrl}
-                alt={clinic.name}
-                className="doc__logo"
-              />
-            ) : (
-              <div className="doc__wordmark">{clinic.name}</div>
-            )}
-            <div className="doc__tagline">{clinic.tagline}</div>
+      <div className="bill-paper">
+        {/* ================= 1. CLINIC LETTERHEAD ================= */}
+        <div className="bill-header">
+          <div className="bill-header-left">
+            <img
+              src="/logo/rklogo.png"
+              alt="Health 360 Logo"
+              className="bill-clinic-logo"
+            />
+            <div>
+              <h1 className="bill-clinic-name">Health 360</h1>
+              <p className="bill-clinic-tagline">
+                Physiotherapy and Craniosacral Therapy Clinic
+              </p>
+              <p className="bill-clinic-address">
+                Shop No.1, Amardeep Society, Om Nagar, Vasai (West), Dist. Palghar - 401202
+              </p>
+            </div>
           </div>
 
-          <div className="doc__doctor">
-            <div className="doc__doctorName">{clinic.doctorName}</div>
-            {clinic.credentials.map((line) => (
-              <div key={line} className="doc__credential">
-                {line}
-              </div>
-            ))}
-          </div>
-        </header>
-
-        <hr className="rule rule--heavy" />
-
-        {/* ---------- META ---------- */}
-        <div className="doc__meta">
-          <div>
-            <span className="meta__label">{numberLabel}:</span>{' '}
-            <span 
-              className="meta__value editable-field"
-              contentEditable={!!onUpdateData}
-              suppressContentEditableWarning
-              onBlur={handleTextChange('documentNumber')}
-            >
-              {data.documentNumber}
-            </span>
-          </div>
-          <div className="doc__headingWord">{heading}</div>
-          <div className="doc__metaRight">
-            <span className="meta__label">Date:</span>{' '}
-            <span 
-              className="meta__value editable-field"
-              contentEditable={!!onUpdateData}
-              suppressContentEditableWarning
-              onBlur={handleTextChange('issueDate')}
-            >
-              {data.issueDate}
-            </span>
+          <div className="bill-header-right">
+            <h2 className="bill-doctor-name">Dr. Rashmita Karvir Kekre</h2>
+            <p className="bill-doctor-credentials">B.PTh. (M.I.A.P.) · BCST</p>
+            <p className="bill-doctor-title">Consultant Physiotherapist & Craniosacral Therapist</p>
+            <p className="bill-doctor-contact">
+              Tel: +91 8482812859 · health360vasai@gmail.com
+            </p>
           </div>
         </div>
 
-        {/* ---------- RECEIVED FROM ---------- */}
-        <section className="doc__from">
-          <div className="field__label">{isReceipt ? 'Received From' : 'Billed To'}</div>
-          <div 
-            className="field__value editable-field"
-            contentEditable={!!onUpdateData}
-            suppressContentEditableWarning
-            onBlur={handleTextChange('patientName')}
-          >
-            {data.patientName}
+        {/* ================= 2. TITLE BAR ================= */}
+        <div className="bill-title-bar">
+          <div className="bill-title-text">
+            TAX INVOICE / {docTitle}
           </div>
-          <div 
-            className="field__sub editable-field"
-            contentEditable={!!onUpdateData}
-            suppressContentEditableWarning
-            onBlur={handleTextChange('patientPhone')}
-          >
-            {data.patientPhone}
+          <div className="bill-status-badge">
+            {isPaidFull ? 'PAID IN FULL' : data.amountPaid > 0 ? 'PARTIAL PAYMENT' : 'PAYMENT DUE'}
           </div>
-        </section>
+        </div>
 
-        {/* ---------- LINE ITEMS ---------- */}
-        <table className="items">
-          <thead>
-            <tr>
-              <th className="items__desc">Description</th>
-              <th className="items__qty">Qty</th>
-              <th className="items__rate">Unit Price</th>
-              <th className="items__amt">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.lines.map((line, idx) => (
-              <tr key={line.id}>
-                <td 
-                  className="items__desc editable-field"
+        {/* ================= 3. METADATA 2-COLUMN CARDS ================= */}
+        <div className="bill-meta-grid">
+          {/* Patient Card (Billed To) */}
+          <div className="bill-meta-card">
+            <div className="bill-card-header">BILLED TO / PATIENT DETAILS</div>
+            <div className="bill-card-content">
+              <div className="bill-field-row">
+                <span className="bill-field-label">Patient Name:</span>
+                <span
+                  className="bill-field-val font-bold editable-field"
                   contentEditable={!!onUpdateData}
                   suppressContentEditableWarning
-                  onBlur={handleLineChange(idx, 'description')}
+                  onBlur={handleTextChange('patientName')}
                 >
-                  {line.description}
-                </td>
-                <td 
-                  className="items__qty editable-field"
+                  {data.patientName}
+                </span>
+              </div>
+              <div className="bill-field-row">
+                <span className="bill-field-label">Contact Phone:</span>
+                <span
+                  className="bill-field-val editable-field"
                   contentEditable={!!onUpdateData}
                   suppressContentEditableWarning
-                  onBlur={handleLineChange(idx, 'quantity')}
+                  onBlur={handleTextChange('patientPhone')}
                 >
-                  {line.quantity}
-                </td>
-                <td 
-                  className="items__rate num editable-field"
+                  {data.patientPhone || 'N/A'}
+                </span>
+              </div>
+              <div className="bill-field-row">
+                <span className="bill-field-label">Location:</span>
+                <span className="bill-field-val">Vasai / Mumbai, Maharashtra</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Invoice Info Card */}
+          <div className="bill-meta-card">
+            <div className="bill-card-header">INVOICE & RECEIPT PARTICULARS</div>
+            <div className="bill-card-content">
+              <div className="bill-field-row">
+                <span className="bill-field-label">Receipt / Inv No:</span>
+                <span
+                  className="bill-field-val font-mono font-bold editable-field"
                   contentEditable={!!onUpdateData}
                   suppressContentEditableWarning
-                  onBlur={handleLineChange(idx, 'unitPrice')}
+                  onBlur={handleTextChange('documentNumber')}
                 >
-                  {formatINR(line.unitPrice)}
-                </td>
-                <td className="items__amt num">{formatINR(line.lineTotal)}</td>
+                  {data.documentNumber}
+                </span>
+              </div>
+              <div className="bill-field-row">
+                <span className="bill-field-label">Date of Issue:</span>
+                <span
+                  className="bill-field-val editable-field"
+                  contentEditable={!!onUpdateData}
+                  suppressContentEditableWarning
+                  onBlur={handleTextChange('issueDate')}
+                >
+                  {data.issueDate}
+                </span>
+              </div>
+              <div className="bill-field-row">
+                <span className="bill-field-label">Payment Mode:</span>
+                <span className="bill-field-val font-bold text-slate-800">
+                  {data.paymentMode || 'UPI / Cash'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* ================= 4. LINE ITEMS TABLE ================= */}
+        <div className="bill-table-wrapper">
+          <table className="bill-table">
+            <thead>
+              <tr>
+                <th style={{ width: '8%', textAlign: 'center' }}>Sr.</th>
+                <th style={{ width: '52%' }}>Particulars / Treatment Service</th>
+                <th style={{ width: '12%', textAlign: 'center' }}>Qty / Days</th>
+                <th style={{ width: '14%', textAlign: 'right' }}>Rate (₹)</th>
+                <th style={{ width: '14%', textAlign: 'right' }}>Amount (₹)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.lines.map((line, idx) => (
+                <tr key={line.id}>
+                  <td style={{ textAlign: 'center' }}>{idx + 1}</td>
+                  <td>
+                    <span
+                      className="editable-field font-semibold"
+                      contentEditable={!!onUpdateData}
+                      suppressContentEditableWarning
+                      onBlur={handleLineChange(idx, 'description')}
+                    >
+                      {line.description}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    <span
+                      className="editable-field"
+                      contentEditable={!!onUpdateData}
+                      suppressContentEditableWarning
+                      onBlur={handleLineChange(idx, 'quantity')}
+                    >
+                      {line.quantity}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right' }}>
+                    <span
+                      className="editable-field font-mono"
+                      contentEditable={!!onUpdateData}
+                      suppressContentEditableWarning
+                      onBlur={handleLineChange(idx, 'unitPrice')}
+                    >
+                      {formatINR(line.unitPrice)}
+                    </span>
+                  </td>
+                  <td style={{ textAlign: 'right', fontWeight: 600 }}>
+                    <span
+                      className="editable-field font-mono"
+                      contentEditable={!!onUpdateData}
+                      suppressContentEditableWarning
+                      onBlur={handleLineChange(idx, 'lineTotal')}
+                    >
+                      {formatINR(line.lineTotal)}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-        {/* ---------- AMOUNT IN WORDS ---------- */}
-        <section className="doc__words">
-          <span className="field__label">Amount</span>{' '}
-          <span className="words__value">{amountInWords(data.total)}</span>
-        </section>
+        {/* ================= 5. AMOUNT IN WORDS RIBBON ================= */}
+        <div className="bill-words-ribbon">
+          <span className="bill-words-label">Amount in Words:</span>
+          <span className="bill-words-val">{amountInWords(data.total)}</span>
+        </div>
 
-        {/* ---------- BOTTOM BAND ---------- */}
-        <section className="doc__bottom">
-          <div className="doc__bottomLeft">
-            <div className="modes">
-              <TickBox label="Cash" checked={data.paymentMode === 'CASH'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('CASH') : undefined} />
-              <TickBox label="UPI" checked={data.paymentMode === 'UPI'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('UPI') : undefined} />
-              <TickBox label="Cheque" checked={data.paymentMode === 'CHEQUE'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('CHEQUE') : undefined} />
-              <TickBox label="Other" checked={data.paymentMode === 'OTHER'} onClick={onSelectPaymentMode ? () => onSelectPaymentMode('OTHER') : undefined} />
+        {/* ================= 6. PAYMENT SUMMARY & TOTALS ================= */}
+        <div className="bill-bottom-grid">
+          {/* Left: Payment Modes & Terms */}
+          <div className="bill-bottom-left">
+            <div className="bill-payment-modes-box">
+              <span className="bill-payment-modes-title">Mode of Payment:</span>
+              <div className="bill-modes-list">
+                {(['UPI', 'CASH', 'CHEQUE', 'OTHER'] as const).map(mode => {
+                  const isChecked = data.paymentMode === mode;
+                  return (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => onSelectPaymentMode?.(mode)}
+                      className={`bill-mode-chip ${isChecked ? 'active' : ''}`}
+                    >
+                      <span className="bill-chip-check">{isChecked ? '✓' : ''}</span>
+                      <span>{mode === 'OTHER' ? 'Card / Other' : mode}</span>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {data.includesCourse && (
-              <p className="terms">
-                Package valid 45 days from date of purchase. Unused sessions are
-                not refundable.
-              </p>
+              <div className="bill-terms-box">
+                <strong>Package Terms:</strong> Package valid 45 days from date of purchase. Unused sessions are non-refundable and non-transferable.
+              </div>
             )}
 
-            <p 
-              className="notes editable-field"
-              contentEditable={!!onUpdateData}
-              suppressContentEditableWarning
-              onBlur={handleTextChange('notes')}
-            >
-              {data.notes || (onUpdateData ? 'Click to add notes...' : '')}
-            </p>
+            <div className="bill-notes-box">
+              <span className="font-semibold block mb-0.5">Notes / Remarks:</span>
+              <p
+                className="editable-field italic text-slate-600"
+                contentEditable={!!onUpdateData}
+                suppressContentEditableWarning
+                onBlur={handleTextChange('notes')}
+              >
+                {data.notes || (onUpdateData ? 'Click to add notes/remarks...' : 'All clinical services rendered as requested.')}
+              </p>
+            </div>
           </div>
 
-          <div className="doc__bottomRight">
-            <table className="totals">
+          {/* Right: Accounting Totals Table */}
+          <div className="bill-bottom-right">
+            <table className="bill-totals-table">
               <tbody>
                 <tr>
-                  <td className="totals__label">Total</td>
-                  <td className="totals__value num">
-                    {formatINR(data.total)}
-                  </td>
+                  <td className="bill-tot-label">Subtotal</td>
+                  <td className="bill-tot-val font-mono">{formatINR(data.subtotal || data.total)}</td>
+                </tr>
+                {data.discount > 0 && (
+                  <tr>
+                    <td className="bill-tot-label text-rose-600">Discount</td>
+                    <td className="bill-tot-val font-mono text-rose-600">- {formatINR(data.discount)}</td>
+                  </tr>
+                )}
+                <tr className="bill-tot-final">
+                  <td className="bill-tot-label font-bold">Total Amount</td>
+                  <td className="bill-tot-val font-bold font-mono text-slate-950">{formatINR(data.total)}</td>
                 </tr>
                 <tr>
-                  <td className="totals__label">Paid</td>
-                  <td 
-                    className="totals__value num editable-field"
+                  <td className="bill-tot-label font-semibold text-emerald-700">Amount Paid</td>
+                  <td
+                    className="bill-tot-val font-bold font-mono text-emerald-700 editable-field"
                     contentEditable={!!onUpdateData}
                     suppressContentEditableWarning
                     onBlur={handlePaidChange}
@@ -377,262 +423,480 @@ export default function ReceiptDocument({
                     {formatINR(data.amountPaid)}
                   </td>
                 </tr>
-                <tr className="totals__balance">
-                  <td className="totals__label">Balance</td>
-                  <td className="totals__value num">
+                <tr className="bill-tot-balance">
+                  <td className="bill-tot-label font-bold">Balance Due</td>
+                  <td className="bill-tot-val font-bold font-mono">
                     {formatINR(data.balanceDue)}
                   </td>
                 </tr>
               </tbody>
             </table>
           </div>
-        </section>
+        </div>
 
-        {/* ---------- SIGNATURE ---------- */}
-        <section className="doc__sign">
-          <div className="sign__rule" />
-          <div className="sign__label">By</div>
-        </section>
-
-        <div className="doc__thanks">Thank You</div>
-
-        {/* ---------- FOOTER ---------- */}
-        <footer className="doc__footer">
-          <hr className="rule" />
-          <div className="footer__row">
-            <span>{clinic.address}</span>
-            <span className="footer__dot">·</span>
-            <span>{clinic.phone}</span>
-            <span className="footer__dot">·</span>
-            <span>{clinic.email}</span>
+        {/* ================= 7. SIGNATORY & VERIFICATION ================= */}
+        <div className="bill-sign-section">
+          <div className="bill-sign-left">
+            <p className="bill-disclaimer">
+              • This is a computer-generated invoice and official clinic receipt.<br />
+              • Thank you for choosing Health 360 for your recovery and wellness.
+            </p>
           </div>
-        </footer>
+
+          <div className="bill-sign-right">
+            <div className="bill-sign-for">For HEALTH 360 CLINIC</div>
+            <div className="bill-sign-space">
+              <div className="bill-sign-line" />
+            </div>
+            <div className="bill-sign-name">Dr. Rashmita Karvir Kekre</div>
+            <div className="bill-sign-role">Authorized Signatory / Consultant</div>
+          </div>
+        </div>
+
+        {/* ================= 8. FOOTER ================= */}
+        <div className="bill-footer">
+          Shop No.1, Amardeep Society, Om Nagar, Vasai (W), Dist. Palghar - 401202 · Tel: +91 8482812859 · Email: health360vasai@gmail.com
+        </div>
       </div>
     </>
   );
 }
 
 /* ============================================================
-   STYLES
-   All print dimensions in mm / pt. Never px.
+   STYLES: CLEAN, STRUCTURED CLINIC BILL (SCREEN & PRINT)
    ============================================================ */
 
 const CSS = `
-.doc {
-  background: #fff;
-  color: #111;
-  font-family: ui-sans-serif, system-ui, "Segoe UI", Helvetica, Arial, sans-serif;
-  font-size: 10pt;
+/* Paper container */
+.bill-paper {
+  background: #ffffff !important;
+  color: #0f172a !important;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: 9.5pt;
   line-height: 1.45;
+  width: 210mm;
+  min-height: 297mm;
+  padding: 12mm 14mm;
   box-sizing: border-box;
+  margin: 0 auto;
+  border: 1px solid #cbd5e1;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
 }
-.doc *, .doc *::before, .doc *::after { box-sizing: inherit; }
 
-.doc--a4 { width: 210mm; min-height: 297mm; padding: 14mm; }
-.doc--a5-landscape { width: 210mm; min-height: 148mm; padding: 10mm; }
-
-.num { font-variant-numeric: tabular-nums; }
-
-/* header */
-.doc__header {
+/* 1. Header */
+.bill-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 10mm;
+  gap: 8mm;
+  padding-bottom: 4mm;
+  border-bottom: 2px solid #0f172a;
 }
-.doc__logo { max-height: 20mm; width: auto; display: block; }
-.doc__wordmark { font-size: 17pt; font-weight: 700; letter-spacing: -0.01em; }
-.doc__tagline {
-  margin-top: 1.5mm;
+.bill-header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 3.5mm;
+  max-width: 105mm;
+}
+.bill-clinic-logo {
+  height: 16mm;
+  width: auto;
+  object-fit: contain;
+  display: block;
+}
+.bill-clinic-name {
+  font-size: 15pt;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  margin: 0;
+  line-height: 1.1;
+}
+.bill-clinic-tagline {
   font-size: 7pt;
-  letter-spacing: 0.09em;
+  font-weight: 700;
   text-transform: uppercase;
-  color: #555;
-  max-width: 70mm;
+  letter-spacing: 0.08em;
+  color: #0284c7;
+  margin-top: 1mm;
 }
-.doc__doctor { text-align: right; }
-.doc__doctorName { font-size: 11.5pt; font-weight: 600; }
-.doc__credential { font-size: 8.5pt; color: #444; }
+.bill-clinic-address {
+  font-size: 7.5pt;
+  color: #475569;
+  margin-top: 1mm;
+  line-height: 1.3;
+}
 
-/* rules */
-.rule { border: 0; border-top: 0.3mm solid #ddd; margin: 4mm 0; }
-.rule--heavy { border-top: 0.4mm solid #333; margin: 4mm 0 3mm; }
+.bill-header-right {
+  text-align: right;
+  max-width: 85mm;
+}
+.bill-doctor-name {
+  font-size: 11pt;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+.bill-doctor-credentials {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #0369a1;
+  margin-top: 0.5mm;
+}
+.bill-doctor-title {
+  font-size: 7.5pt;
+  color: #475569;
+  margin-top: 0.5mm;
+}
+.bill-doctor-contact {
+  font-size: 7.5pt;
+  color: #334155;
+  margin-top: 1mm;
+  font-weight: 600;
+}
 
-/* meta */
-.doc__meta {
+/* 2. Title Bar */
+.bill-title-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  border-top: 0;
+  padding: 2mm 4mm;
+  margin-bottom: 3.5mm;
+}
+.bill-title-text {
+  font-size: 10pt;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  color: #0f172a;
+  text-transform: uppercase;
+}
+.bill-status-badge {
+  font-size: 8pt;
+  font-weight: 800;
+  padding: 0.8mm 3mm;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+  letter-spacing: 0.05em;
+}
+
+/* 3. Metadata Grid */
+.bill-meta-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3.5mm;
+  margin-bottom: 3.5mm;
+}
+.bill-meta-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  overflow: hidden;
+  background: #ffffff;
+}
+.bill-card-header {
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  font-size: 7.5pt;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #334155;
+  padding: 1.5mm 3mm;
+  text-transform: uppercase;
+}
+.bill-card-content {
+  padding: 2.5mm 3mm;
+}
+.bill-field-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  gap: 6mm;
+  padding: 0.8mm 0;
+  border-bottom: 1px dashed #f1f5f9;
 }
-.doc__headingWord {
-  font-size: 9pt;
-  letter-spacing: 0.18em;
-  color: #777;
+.bill-field-row:last-child {
+  border-bottom: 0;
+}
+.bill-field-label {
+  font-size: 8pt;
+  color: #64748b;
   font-weight: 600;
 }
-.doc__metaRight { text-align: right; }
-.meta__label { font-size: 8.5pt; color: #666; }
-.meta__value { font-size: 11pt; font-weight: 600; white-space: nowrap; }
-
-/* received from */
-.doc__from { margin-top: 6mm; }
-.field__label {
-  font-size: 8pt;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: #666;
+.bill-field-val {
+  font-size: 8.5pt;
+  color: #0f172a;
+  text-align: right;
 }
-.field__value { font-size: 11.5pt; font-weight: 600; margin-top: 1mm; }
-.field__sub { font-size: 9pt; color: #444; }
 
-/* items */
-.items {
+/* 4. Table */
+.bill-table-wrapper {
+  margin-bottom: 3.5mm;
+  border: 1px solid #cbd5e1;
+}
+.bill-table {
   width: 100%;
-  table-layout: fixed;
   border-collapse: collapse;
-  margin-top: 6mm;
+  font-size: 8.5pt;
 }
-.items thead th {
+.bill-table thead th {
+  background: #f1f5f9;
+  border-bottom: 1.5px solid #0f172a;
+  color: #1e293b;
   font-size: 8pt;
-  letter-spacing: 0.09em;
+  font-weight: 700;
   text-transform: uppercase;
-  color: #666;
-  font-weight: 600;
-  border-bottom: 0.3mm solid #333;
-  padding-bottom: 2mm;
+  letter-spacing: 0.05em;
+  padding: 2.5mm 3mm;
 }
-.items tbody td {
-  padding: 2.6mm 0;
-  border-bottom: 0.2mm solid #eee;
+.bill-table tbody td {
+  padding: 2.8mm 3mm;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1e293b;
   vertical-align: top;
-  font-size: 9.5pt;
 }
-.items__desc { width: 55%; text-align: left; }
-.items__qty  { width: 10%; text-align: center; }
-.items__rate { width: 15%; text-align: right; }
-.items__amt  { width: 20%; text-align: right; font-weight: 600; }
-.items tbody tr { page-break-inside: avoid; }
-
-/* amount in words */
-.doc__words {
-  margin-top: 5mm;
-  padding-bottom: 2mm;
-  border-bottom: 0.3mm solid #ddd;
+.bill-table tbody tr:last-child td {
+  border-bottom: 0;
 }
-.words__value { font-size: 9.5pt; font-style: italic; }
+.bill-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
 
-/* bottom band */
-.doc__bottom {
+/* 5. Words Ribbon */
+.bill-words-ribbon {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 2mm 3.5mm;
+  font-size: 8pt;
   display: flex;
-  justify-content: space-between;
-  gap: 10mm;
-  margin-top: 6mm;
-  page-break-inside: avoid;
+  gap: 2mm;
+  align-items: baseline;
+  margin-bottom: 4mm;
 }
-.doc__bottomLeft { flex: 1 1 auto; }
-.doc__bottomRight { flex: 0 0 65mm; }
+.bill-words-label {
+  font-weight: 700;
+  color: #475569;
+  white-space: nowrap;
+}
+.bill-words-val {
+  font-style: italic;
+  font-weight: 600;
+  color: #0f172a;
+}
 
-.modes { display: flex; gap: 6mm; flex-wrap: wrap; }
-.tickbox { display: inline-flex; align-items: center; gap: 1.6mm; }
-.tickbox__square {
-  width: 3.6mm;
-  height: 3.6mm;
-  border: 0.3mm solid #333;
+/* 6. Bottom Summary Grid */
+.bill-bottom-grid {
+  display: grid;
+  grid-template-columns: 1fr 78mm;
+  gap: 4mm;
+  margin-bottom: 5mm;
+  align-items: start;
+}
+.bill-payment-modes-box {
+  border: 1px solid #cbd5e1;
+  padding: 2mm 3mm;
+  border-radius: 2px;
+  background: #ffffff;
+  margin-bottom: 2.5mm;
+}
+.bill-payment-modes-title {
+  font-size: 7.5pt;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #475569;
+  display: block;
+  margin-bottom: 1.5mm;
+}
+.bill-modes-list {
+  display: flex;
+  gap: 2mm;
+  flex-wrap: wrap;
+}
+.bill-mode-chip {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  font-size: 8pt;
-  line-height: 1;
+  gap: 1.5mm;
+  font-size: 7.5pt;
+  font-weight: 600;
+  padding: 1mm 2.5mm;
+  border-radius: 4px;
+  border: 1px solid #cbd5e1;
+  background: #f8fafc;
+  color: #334155;
+  cursor: pointer;
 }
-.tickbox__label { font-size: 9pt; }
-
-.terms { margin-top: 4mm; font-size: 8pt; color: #444; max-width: 90mm; }
-.notes { margin-top: 2mm; font-size: 8pt; font-style: italic; color: #444; }
-
-/* totals */
-.totals {
-  width: 100%;
-  border-collapse: collapse;
-  border: 0.3mm solid #333;
-}
-.totals td { padding: 2.4mm 3mm; border-bottom: 0.2mm solid #ccc; }
-.totals tr:last-child td { border-bottom: 0; }
-.totals__label { font-size: 9.5pt; }
-.totals__value { text-align: right; font-size: 10pt; }
-.totals__balance .totals__label,
-.totals__balance .totals__value {
+.bill-mode-chip.active {
+  background: #e0f2fe;
+  border-color: #0284c7;
+  color: #0369a1;
   font-weight: 700;
-  font-size: 11.5pt;
-  border-top: 0.4mm solid #333;
+}
+.bill-chip-check {
+  display: inline-block;
+  width: 3mm;
+  font-weight: 800;
 }
 
-/* signature */
-.doc__sign {
-  margin-top: 14mm;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  page-break-inside: avoid;
+.bill-terms-box {
+  font-size: 7.5pt;
+  color: #475569;
+  line-height: 1.35;
+  padding: 2mm 3mm;
+  background: #fefce8;
+  border: 1px solid #fef08a;
+  border-radius: 2px;
+  margin-bottom: 2.5mm;
 }
-.sign__rule { width: 45mm; border-top: 0.3mm solid #333; }
-.sign__label { font-size: 8pt; color: #555; margin-top: 1mm; }
-
-.doc__thanks {
-  margin-top: 6mm;
-  text-align: center;
-  font-size: 9pt;
-  font-style: italic;
-  color: #555;
-}
-
-/* footer */
-.doc__footer { margin-top: 8mm; }
-.footer__row {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 2mm;
-  font-size: 8.5pt;
-  color: #444;
-  text-align: center;
-}
-.footer__dot { color: #aaa; }
-
-/* editable fields */
-.editable-field[contenteditable="true"] {
-  outline: none;
-  transition: background-color 0.15s ease, border-color 0.15s ease;
+.bill-notes-box {
+  font-size: 7.5pt;
+  color: #475569;
+  padding: 2mm 3mm;
+  border: 1px dashed #cbd5e1;
   border-radius: 2px;
 }
+
+/* Totals table */
+.bill-totals-table {
+  width: 100%;
+  border-collapse: collapse;
+  border: 1.5px solid #0f172a;
+  font-size: 8.5pt;
+}
+.bill-totals-table td {
+  padding: 2.2mm 3.5mm;
+  border-bottom: 1px solid #cbd5e1;
+}
+.bill-tot-label {
+  color: #475569;
+}
+.bill-tot-val {
+  text-align: right;
+  color: #0f172a;
+}
+.bill-tot-final {
+  background: #f8fafc;
+  border-top: 1.5px solid #0f172a;
+}
+.bill-tot-final .bill-tot-label,
+.bill-tot-final .bill-tot-val {
+  font-size: 9.5pt;
+  color: #0f172a;
+}
+.bill-tot-balance {
+  background: #f1f5f9;
+  border-top: 1.5px solid #0f172a;
+}
+.bill-tot-balance .bill-tot-label,
+.bill-tot-balance .bill-tot-val {
+  font-size: 10pt;
+  color: #0f172a;
+}
+
+/* 7. Sign section */
+.bill-sign-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 3mm;
+  margin-top: 4mm;
+}
+.bill-sign-left {
+  max-width: 105mm;
+}
+.bill-disclaimer {
+  font-size: 7.5pt;
+  color: #64748b;
+  line-height: 1.4;
+  margin: 0;
+}
+.bill-sign-right {
+  text-align: right;
+  min-width: 60mm;
+}
+.bill-sign-for {
+  font-size: 8pt;
+  font-weight: 700;
+  color: #334155;
+  text-transform: uppercase;
+}
+.bill-sign-space {
+  height: 12mm;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+}
+.bill-sign-line {
+  width: 50mm;
+  border-top: 1px solid #0f172a;
+}
+.bill-sign-name {
+  font-size: 8.5pt;
+  font-weight: 700;
+  color: #0f172a;
+  margin-top: 1mm;
+}
+.bill-sign-role {
+  font-size: 7.5pt;
+  color: #64748b;
+}
+
+/* 8. Footer */
+.bill-footer {
+  margin-top: 6mm;
+  padding-top: 2.5mm;
+  border-top: 1px solid #cbd5e1;
+  text-align: center;
+  font-size: 7pt;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+/* Editable fields in preview */
+.editable-field[contenteditable="true"] {
+  outline: none;
+  border-radius: 2px;
+  transition: background 0.15s ease;
+}
 .editable-field[contenteditable="true"]:hover {
-  background-color: rgba(59, 130, 246, 0.08);
-  outline: 1px dashed rgba(59, 130, 246, 0.4);
+  background: rgba(14, 165, 233, 0.1);
+  outline: 1px dashed rgba(14, 165, 233, 0.4);
 }
 .editable-field[contenteditable="true"]:focus {
-  background-color: rgba(59, 130, 246, 0.12);
-  outline: 1.5px solid #2563eb;
+  background: rgba(14, 165, 233, 0.15);
+  outline: 1.5px solid #0284c7;
 }
 
-/* ---------- PRINT ---------- */
-@page { size: A4 portrait; margin: 14mm; }
+/* ================= PRINT RULES ================= */
+@page {
+  size: A4 portrait;
+  margin: 10mm;
+}
 
 @media print {
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+  .bill-paper {
+    width: 100% !important;
+    min-height: auto !important;
+    padding: 0 !important;
+    border: 1.5px solid #0f172a !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+  }
   .editable-field {
     outline: none !important;
     background: transparent !important;
   }
-  .doc {
-    width: auto;
-    min-height: 0;
-    padding: 0;
-    box-shadow: none;
-    border-radius: 0;
-  }
-  .doc thead { display: table-header-group; }
-  .doc__bottom,
-  .doc__sign,
-  .totals,
-  .items tbody tr { page-break-inside: avoid; }
 }
 `;
