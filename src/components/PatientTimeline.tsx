@@ -9,7 +9,7 @@ import {
   Clock, PhoneCall, ChevronLeft, Loader2, ArrowLeft, 
   MessageSquare, FileDown, Activity, Mic, Sparkles, 
   Plus, Check, Camera, Image, AlertTriangle, Download, 
-  Trash2, Edit2, PlayCircle, Folder, File, FolderPlus,
+  Trash2, Edit2, Edit3, PlayCircle, Folder, File, FolderPlus,
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare,
   Ban, ShieldCheck
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import { sendWhatsAppNotification } from '@/lib/whatsappTemplates';
 import CourseMeter from '@/components/billing/CourseMeter';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import EditPatientModal from '@/components/EditPatientModal';
+import WhatsAppTesterModal from '@/components/WhatsAppTesterModal';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -32,6 +33,12 @@ const CallOutcome = {
   NO_ANSWER: 'NO_ANSWER'
 } as const;
 type CallOutcome = typeof CallOutcome[keyof typeof CallOutcome];
+
+export interface WhatsAppParamField {
+  label: string;
+  value: string;
+  placeholder?: string;
+}
 
 interface Props {
   patientId: string;
@@ -96,8 +103,26 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [showApptModal, setShowApptModal] = useState(false);
   const [nextApptDate, setNextApptDate] = useState('');
   const [nextApptTime, setNextApptTime] = useState('');
-  const [whatsappSending, setWhatsappSending] = useState<'appt' | 'missed' | null>(null);
-  const [whatsappSuccess, setWhatsappSuccess] = useState<'appt' | 'missed' | null>(null);
+  const [whatsappSending, setWhatsappSending] = useState<string | null>(null);
+  const [whatsappSuccess, setWhatsappSuccess] = useState<string | null>(null);
+
+  // Fetch referring doctors to look up referring doctor's phone number
+  const { data: referringDoctors = [], refetch: refetchReferringDoctors } = useQuery({
+    queryKey: ['referring-doctors'],
+    queryFn: async () => {
+      const res = await fetch('/api/referring-doctors');
+      if (!res.ok) return [];
+      return res.json();
+    }
+  });
+
+  // Doctor phone entry modal state for when doctor has no phone
+  const [docPhoneModal, setDocPhoneModal] = useState<{
+    isOpen: boolean;
+    docName: string;
+    phone: string;
+    isSaving?: boolean;
+  }>({ isOpen: false, docName: '', phone: '' });
 
   // Custom modal states for Session Packages, Document Previewer, and Custom Confirm
   const [isAddingPackage, setIsAddingPackage] = useState(false);
@@ -128,20 +153,80 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     onConfirm: () => {},
   });
 
+  const [isTesterOpen, setIsTesterOpen] = useState(false);
+
   const [confirmWhatsappModal, setConfirmWhatsappModal] = useState<{
     isOpen: boolean;
     title: string;
+    templateName?: string;
+    templateBadge?: string;
     recipientName: string;
     phone: string;
+    paramFields?: WhatsAppParamField[];
+    previewGenerator?: (params: string[]) => string;
     messagePreview: string;
+    waUrl?: string;
+    onSend?: (phone: string, params: string[]) => Promise<void>;
   }>({
     isOpen: false,
     title: '',
+    templateName: '',
+    templateBadge: '',
     recipientName: '',
     phone: '',
+    paramFields: [],
     messagePreview: '',
+    waUrl: '',
   });
   const whatsappConfirmActionRef = useRef<(() => void) | null>(null);
+
+  const handleParamChange = (index: number, newValue: string) => {
+    setConfirmWhatsappModal(prev => {
+      const updatedFields = [...(prev.paramFields || [])];
+      updatedFields[index] = { ...updatedFields[index], value: newValue };
+      const paramValues = updatedFields.map(f => f.value);
+      
+      const newPreview = prev.previewGenerator ? prev.previewGenerator(paramValues) : prev.messagePreview;
+      const cleanPhone = prev.phone.replace(/\D/g, '');
+      const finalPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const newWaUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(newPreview)}`;
+
+      return {
+        ...prev,
+        paramFields: updatedFields,
+        messagePreview: newPreview,
+        waUrl: newWaUrl,
+      };
+    });
+  };
+
+  const handlePhoneChange = (newPhone: string) => {
+    setConfirmWhatsappModal(prev => {
+      const cleanPhone = newPhone.replace(/\D/g, '');
+      const finalPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      const newWaUrl = `https://wa.me/${finalPhone}?text=${encodeURIComponent(prev.messagePreview)}`;
+      return {
+        ...prev,
+        phone: newPhone,
+        waUrl: newWaUrl,
+      };
+    });
+  };
+
+  const handleSendConfirmModal = async () => {
+    const currentParams = (confirmWhatsappModal.paramFields || []).map(f => f.value);
+    const currentPhone = confirmWhatsappModal.phone;
+    const onSend = confirmWhatsappModal.onSend;
+    
+    setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }));
+    
+    if (onSend) {
+      await onSend(currentPhone, currentParams);
+    } else if (whatsappConfirmActionRef.current) {
+      whatsappConfirmActionRef.current();
+      whatsappConfirmActionRef.current = null;
+    }
+  };
 
   const handleTotalSessionsChange = (val: number) => {
     setTotalSessions(val);
@@ -706,96 +791,548 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     updatePatientMutation.mutate({ notes: currentNotes });
   };
 
+  // WhatsApp — Send Doctor Referral Thank You directly to Doctor's Phone
+  const triggerDoctorThankYouConfirm = () => {
+    const rawDoc = patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim())
+      ? patient.referringDoctor
+      : 'Doctor';
+    const docName = rawDoc.replace(/^Dr\.\s*/i, '');
+    const patientName = patient.fullName;
+
+    const previewGen = (p: string[]) => 
+      `Dear Dr. ${p[0] || docName},\n\nThank you for referring ${p[1] || patientName} to us. We sincerely appreciate your trust and support. The patient has been evaluated, and treatment has been started. We look forward to working together to achieve the best outcome.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Physiotherapy & Craniosacral Therapy Clinic`;
+
+    const initialPreview = previewGen([docName, patientName]);
+
+    // Find the referring doctor record to get their phone number
+    const matchedDoc = (referringDoctors || []).find((d: any) => 
+      d.name?.toLowerCase().trim() === rawDoc.toLowerCase().trim() ||
+      d.name?.replace(/^Dr\.\s*/i, '').toLowerCase().trim() === docName.toLowerCase().trim()
+    );
+
+    const docPhone = matchedDoc?.phone ? matchedDoc.phone.replace(/\D/g, '').slice(-10) : '';
+
+    if (!docPhone || docPhone.length < 10) {
+      setDocPhoneModal({
+        isOpen: true,
+        docName: rawDoc,
+        phone: '',
+        isSaving: false
+      });
+      return;
+    }
+
+    const cleanPhone = docPhone;
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: `Send Thank-You to Dr. ${docName}`,
+      templateName: 'referral_thankyou_short',
+      templateBadge: 'referral_thankyou_short (Sent to Doctor)',
+      recipientName: `Dr. ${docName} (Referring Doctor)`,
+      phone: cleanPhone,
+      paramFields: [
+        { label: "Doctor's Name / Salutation", value: docName },
+        { label: "Referred Patient Name", value: patientName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('referral');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'referral_thankyou_short',
+          params: params,
+        });
+        handleToggleThankYou();
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('referral');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to deliver message to doctor. Please check doctor phone number.');
+        }
+      }
+    });
+  };
+
+  const handleSaveDoctorPhoneAndProceed = async (phoneToSave: string) => {
+    const cleanPhone = phoneToSave.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) return;
+
+    setDocPhoneModal(prev => ({ ...prev, isSaving: true }));
+
+    try {
+      await fetch('/api/referring-doctors', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          oldName: docPhoneModal.docName,
+          name: docPhoneModal.docName,
+          phone: cleanPhone
+        })
+      });
+
+      await refetchReferringDoctors();
+      queryClient.invalidateQueries({ queryKey: ['referring-doctors'] });
+    } catch (e) {
+      console.error('Failed to save doctor phone:', e);
+    } finally {
+      setDocPhoneModal({ isOpen: false, docName: '', phone: '', isSaving: false });
+    }
+
+    const docName = docPhoneModal.docName.replace(/^Dr\.\s*/i, '');
+    const patientName = patient.fullName;
+    const previewGen = (p: string[]) => 
+      `Dear Dr. ${p[0] || docName},\n\nThank you for referring ${p[1] || patientName} to us. We sincerely appreciate your trust and support. The patient has been evaluated, and treatment has been started. We look forward to working together to achieve the best outcome.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Physiotherapy & Craniosacral Therapy Clinic`;
+
+    const initialPreview = previewGen([docName, patientName]);
+    const waUrl = `https://wa.me/91${cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: `Send Thank-You to Dr. ${docName}`,
+      templateName: 'referral_thankyou_short',
+      templateBadge: 'referral_thankyou_short (Sent to Doctor)',
+      recipientName: `Dr. ${docName} (Referring Doctor)`,
+      phone: cleanPhone,
+      paramFields: [
+        { label: "Doctor's Name / Salutation", value: docName },
+        { label: "Referred Patient Name", value: patientName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('referral');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'referral_thankyou_short',
+          params: params,
+        });
+        handleToggleThankYou();
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('referral');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to deliver message to doctor. Please check doctor phone number.');
+        }
+      }
+    });
+  };
+
   // WhatsApp — Send Next Appointment Reminder
   const triggerNextApptReminderConfirm = () => {
     if (!nextApptDate || !nextApptTime) return;
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
     const dateFormatted = new Date(nextApptDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
     const [h, m] = nextApptTime.split(':');
-    const hour = parseInt(h);
-    const timeFormatted = `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-    const preview = `Hi ${firstName}, this is a reminder for your upcoming session at Health 360 Clinic on ${dateFormatted} at ${timeFormatted}.`;
+    const hour = parseInt(h, 10);
+    const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
 
-    whatsappConfirmActionRef.current = () => handleSendNextApptReminder();
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nThank you for your visit today. Your next physiotherapy session is scheduled for:\n\n📅 ${p[1] || dateFormatted}\n⏰ ${p[2] || timeFormatted}\n\nWe look forward to seeing you. Please reply to this message if you need to reschedule.\n\nTeam Health 360`;
+
+    const initialPreview = previewGen([firstName, dateFormatted, timeFormatted]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
     setConfirmWhatsappModal({
       isOpen: true,
-      title: 'Confirm Sending Appointment Reminder',
+      title: 'Send Next Session Reminder',
+      templateName: 'next_appointment_reminder',
+      templateBadge: 'next_appointment_reminder (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName },
+        { label: "Session Date", value: dateFormatted },
+        { label: "Session Time", value: timeFormatted }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('appt');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'next_appointment_reminder',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('appt');
+          setShowApptModal(false);
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send WhatsApp message. Please check API credentials.');
+        }
+      }
     });
   };
 
   const handleSendNextApptReminder = async () => {
-    if (!nextApptDate || !nextApptTime) return;
-    setWhatsappSending('appt');
-    const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const dateFormatted = new Date(nextApptDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-    const [h, m] = nextApptTime.split(':');
-    const hour = parseInt(h);
-    const timeFormatted = `${hour > 12 ? hour - 12 : hour}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
-    const result = await sendWhatsAppNotification({
-      phone: patient.phone,
-      templateName: 'next_appointment_reminder',
-      params: [firstName, dateFormatted, timeFormatted],
-    });
-    setWhatsappSending(null);
-    if (result.success) {
-      setWhatsappSuccess('appt');
-      setShowApptModal(false);
-      setTimeout(() => setWhatsappSuccess(null), 4000);
-    } else {
-      alert('Failed to send WhatsApp message. Please check API credentials.');
-    }
+    triggerNextApptReminderConfirm();
   };
 
   // WhatsApp — Send Missed Appointment Notice
   const triggerMissedApptConfirm = () => {
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const preview = `Hi ${firstName}, we noticed you missed your scheduled session today at Health 360 Clinic. Please get in touch with us to reschedule.`;
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nWe missed seeing you at your appointment today. To continue your recovery and maintain your progress, please let us know a suitable time to reschedule your session.\n\nWe look forward to assisting you.\n\nTeam Health 360`;
 
-    whatsappConfirmActionRef.current = () => handleSendMissedAppt();
+    const initialPreview = previewGen([firstName]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
     setConfirmWhatsappModal({
       isOpen: true,
-      title: 'Confirm Sending Missed Appointment Notice',
+      title: 'Send Missed Appointment Notice',
+      templateName: 'missed_appointment_notice',
+      templateBadge: 'missed_appointment_notice (Utility)',
       recipientName: patient.fullName,
       phone: patient.phone,
-      messagePreview: preview,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('missed');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'missed_appointment_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('missed');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send WhatsApp message. Please check API credentials.');
+        }
+      }
     });
   };
 
   const handleSendMissedAppt = async () => {
-    setWhatsappSending('missed');
+    triggerMissedApptConfirm();
+  };
+
+  // WhatsApp — Send Google Review Request
+  const triggerGoogleReviewConfirm = () => {
     const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
-    const result = await sendWhatsAppNotification({
+    const reviewUrl = 'https://g.page/r/CSdQGRuzUnLrEAE/review';
+
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nThank you for visiting Health 360 Physiotherapy & Craniosacral Therapy Clinic.\n\nWe would love to know about your recovery journey! Please take a quick moment to share your review on our Google profile:\n${p[1] || reviewUrl}\n\nYour feedback helps others find the right care.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const initialPreview = previewGen([firstName, reviewUrl]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: 'Send Google Review & Feedback Request',
+      templateName: 'google_review_request',
+      templateBadge: 'google_review_request (Utility)',
+      recipientName: patient.fullName,
       phone: patient.phone,
-      templateName: 'missed_appointment_notice',
-      params: [firstName],
+      paramFields: [
+        { label: "Patient's First Name", value: firstName },
+        { label: "Google Review Link", value: reviewUrl }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('review');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'google_review_request',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('review');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Google Review request.');
+        }
+      }
     });
-    setWhatsappSending(null);
-    if (result.success) {
-      setWhatsappSuccess('missed');
-      setTimeout(() => setWhatsappSuccess(null), 4000);
-    } else {
-      alert('Failed to send WhatsApp message. Please check API credentials.');
-    }
+  };
+
+  // WhatsApp — Send Mediclaim Certificate Summary
+  const triggerMediclaimConfirm = () => {
+    const firstName = patient.fullName;
+    const diagnosis = patient.diagnosis || 'Physiotherapy & CST Rehabilitation';
+    const startDate = patient.createdAt ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent';
+    const endDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 10);
+    const totalAmount = String(patient.invoices?.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0) || '6500');
+
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nYour Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:\n\n• Diagnosis: ${p[1] || diagnosis}\n• Treatment Period: ${p[2] || startDate} to ${p[3] || endDate}\n• Total Sessions Attended: ${p[4] || sessions}\n• Total Amount Paid: ₹${p[5] || totalAmount}\n\nPlease let us know if you or your insurance provider need any additional details.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const initialPreview = previewGen([firstName, diagnosis, startDate, endDate, sessions, totalAmount]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: 'Send Mediclaim Reimbursement Summary',
+      templateName: 'mediclaim_certificate_notice',
+      templateBadge: 'mediclaim_certificate_notice (Utility)',
+      recipientName: patient.fullName,
+      phone: patient.phone,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Clinical Diagnosis", value: diagnosis },
+        { label: "Treatment Start Date", value: startDate },
+        { label: "Treatment End Date", value: endDate },
+        { label: "Total Sessions", value: sessions },
+        { label: "Total Amount (₹)", value: totalAmount }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('mediclaim');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'mediclaim_certificate_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('mediclaim');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Mediclaim Certificate notice.');
+        }
+      }
+    });
+  };
+
+  // WhatsApp — Send Fitness Certificate Notice
+  const triggerFitnessConfirm = () => {
+    const firstName = patient.fullName;
+    const assessmentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const status = 'Fit to resume regular work and sports activities';
+    const remarks = 'Perform prescribed warmup and ergonomic exercises daily';
+
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nBased on your clinical evaluation at Health 360 Clinic on ${p[1] || assessmentDate}, you are certified:\n\n✅ ${p[2] || status}\n\nPhysiotherapist Advice:\n${p[3] || remarks}\n\nKeep up the great progress and continue your home routine!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const initialPreview = previewGen([firstName, assessmentDate, status, remarks]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: 'Send Fitness Certificate Notice',
+      templateName: 'fitness_certificate_notice',
+      templateBadge: 'fitness_certificate_notice (Utility)',
+      recipientName: patient.fullName,
+      phone: patient.phone,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Assessment Date", value: assessmentDate },
+        { label: "Fitness Status", value: status },
+        { label: "Physiotherapist Remarks", value: remarks }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('fitness');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'fitness_certificate_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('fitness');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Fitness Certificate notice.');
+        }
+      }
+    });
+  };
+
+  // WhatsApp — Send Medical Rest Notice
+  const triggerMedicalRestConfirm = () => {
+    const firstName = patient.fullName;
+    const diagnosis = patient.diagnosis || 'Acute Musculoskeletal Condition';
+    const startDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const endDateObj = new Date();
+    endDateObj.setDate(endDateObj.getDate() + 7);
+    const endDate = endDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const reviewDateObj = new Date();
+    reviewDateObj.setDate(reviewDateObj.getDate() + 8);
+    const reviewDate = reviewDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    const previewGen = (p: string[]) =>
+      `Hello ${p[0] || firstName},\n\nFollowing your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${p[1] || diagnosis}.\n\n• Recommended Rest: ${p[2] || startDate} to ${p[3] || endDate}\n• Next Review Date: ${p[4] || reviewDate}\n\nPlease avoid strenuous activities and continue your prescribed rehabilitation.\n\nWishing you a speedy recovery,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const initialPreview = previewGen([firstName, diagnosis, startDate, endDate, reviewDate]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: 'Send Medical Rest Notice',
+      templateName: 'medical_rest_notice',
+      templateBadge: 'medical_rest_notice (Utility)',
+      recipientName: patient.fullName,
+      phone: patient.phone,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Clinical Diagnosis", value: diagnosis },
+        { label: "Rest Start Date", value: startDate },
+        { label: "Rest End Date", value: endDate },
+        { label: "Next Review Date", value: reviewDate }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('rest');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'medical_rest_notice',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('rest');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Medical Rest advice.');
+        }
+      }
+    });
+  };
+
+  // WhatsApp — Send Discharge Summary Notice
+  const triggerDischargeConfirm = () => {
+    const firstName = patient.fullName;
+    const startDate = patient.createdAt ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Initial Session';
+    const endDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 12);
+    const outcome = 'Pain-free mobility and full functional strength achieved';
+    const advice = 'Continue home maintenance exercises 3 times a week';
+
+    const previewGen = (p: string[]) =>
+      `Congratulations ${p[0] || firstName}! 🎉\n\nYou have successfully completed your physiotherapy program at Health 360 Clinic.\n\n• Treatment Period: ${p[1] || startDate} to ${p[2] || endDate}\n• Total Sessions: ${p[3] || sessions}\n• Recovery Outcome: ${p[4] || outcome}\n• Home Exercise Advice: ${p[5] || advice}\n\nThank you for trusting us with your recovery. Feel free to reach out whenever you need guidance!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
+
+    const initialPreview = previewGen([firstName, startDate, endDate, sessions, outcome, advice]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: 'Send Patient Discharge Summary',
+      templateName: 'patient_discharge_summary',
+      templateBadge: 'patient_discharge_summary (Utility)',
+      recipientName: patient.fullName,
+      phone: patient.phone,
+      paramFields: [
+        { label: "Patient Name", value: firstName },
+        { label: "Treatment Start Date", value: startDate },
+        { label: "Treatment End Date", value: endDate },
+        { label: "Total Sessions", value: sessions },
+        { label: "Recovery Outcome", value: outcome },
+        { label: "Home Exercise Advice", value: advice }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('discharge');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'patient_discharge_summary',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('discharge');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Discharge Summary notice.');
+        }
+      }
+    });
+  };
+
+  // WhatsApp — Send Clinic Welcome & Location Info
+  const triggerWelcomeConfirm = () => {
+    const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
+    const previewGen = (p: string[]) =>
+      `🌿 Welcome to Health360 Physiotherapy & Craniosacral Therapy Clinic! 🌿\n\nDear ${p[0] || firstName},\n\nThank you for choosing Health360 Physiotherapy Clinic. We are committed to helping you recover, move better, and live pain-free.\n\n📍 Address:\nShop no.1 & 2, Amardeep society, Om Nagar, Vasai West.\n\n🕙 Clinic Timings:\nMorning: 10:00 AM – 2:00 PM | Evening: 5:00 PM – 9:00 PM\n\n📍 Google Maps Location:\nhttps://maps.app.goo.gl/VpvTzGtZy3kCZZWGA?g_st=iw\n\n☎️: 8482812859 / 9834848981\n✉️: health360vasai@gmail.com\n\nWishing you good health! 🌸\nTeam Health360 Physiotherapy Clinic`;
+
+    const initialPreview = previewGen([firstName]);
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
+
+    setConfirmWhatsappModal({
+      isOpen: true,
+      title: 'Send Clinic Welcome & Location Guide',
+      templateName: 'welcome_clinic_info',
+      templateBadge: 'welcome_clinic_info (Utility)',
+      recipientName: patient.fullName,
+      phone: patient.phone,
+      paramFields: [
+        { label: "Patient's First Name", value: firstName }
+      ],
+      previewGenerator: previewGen,
+      messagePreview: initialPreview,
+      waUrl,
+      onSend: async (phoneToSend, params) => {
+        setWhatsappSending('welcome');
+        const result = await sendWhatsAppNotification({
+          phone: phoneToSend,
+          templateName: 'welcome_clinic_info',
+          params: params,
+        });
+        setWhatsappSending(null);
+        if (result.success) {
+          setWhatsappSuccess('welcome');
+          setTimeout(() => setWhatsappSuccess(null), 4000);
+        } else {
+          alert('Failed to send Clinic Welcome info.');
+        }
+      }
+    });
   };
 
   const triggerHandoutShareConfirm = (handout: any) => {
     const preview = `Hi ${patient.fullName?.split(' ')[0] || 'Patient'}, Dr. Rashmita has shared a clinical education handout with you: "${handout.title}" (${handout.category}).`;
-    whatsappConfirmActionRef.current = () => {
-      shareHandoutMutation.mutate({
-        patientId,
-        handoutId: handout.id,
-        sentVia: 'whatsapp',
-      });
-    };
+    const cleanPhone = patient.phone.replace(/\D/g, '');
+    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(preview)}`;
+
     setConfirmWhatsappModal({
       isOpen: true,
       title: `Confirm Sharing Handout: ${handout.title}`,
       recipientName: patient.fullName,
       phone: patient.phone,
       messagePreview: preview,
+      waUrl,
+      onSend: async () => {
+        shareHandoutMutation.mutate({
+          patientId,
+          handoutId: handout.id,
+          sentVia: 'whatsapp',
+        });
+      }
     });
   };
 
@@ -1451,50 +1988,54 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       {/* ROM & Referrals Checklist Tab */}
       {activeTab === 'rom' && (
         <div className="p-6 space-y-8 max-w-5xl mx-auto w-full animate-fadeIn grid grid-cols-1 md:grid-cols-2 gap-8 divide-x-0 md:divide-x divide-white/10">
-          {/* Left panel: Referring Doctor & Checklist */}
+          {/* Left panel: Referring Doctor */}
           <div className="space-y-6 md:pr-8">
-            <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor & Onboarding</h3>
-            
-            {patient.referringDoctor && patient.referringDoctor !== 'Self / Direct' ? (
-              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl space-y-4 shadow-xl">
-                <div>
-                  <p className="text-[10px] font-bold text-white/50 uppercase tracking-wider">Referrer Doctor Name</p>
-                  <h4 className="text-base font-serif font-bold text-emerald-400 mt-0.5">{patient.referringDoctor}</h4>
-                </div>
+            <h3 className="text-lg font-serif font-bold text-white border-b border-white/10 pb-2">Referring Doctor</h3>
 
-                <div className="space-y-3.5 pt-1 border-t border-white/10">
-                  <h5 className="text-[9px] font-bold text-white/50 uppercase tracking-wider">Onboarding Checklist</h5>
-                  
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isThankYouSent}
-                      onChange={handleToggleThankYou}
-                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <p className={isThankYouSent ? 'line-through text-white/40' : ''}>Thank-You Note Sent</p>
-                      <p className="text-[9px] text-white/50 font-semibold leading-none">Send greeting note to referring doctor</p>
+            {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) ? (() => {
+              const rawDoc = patient.referringDoctor;
+              const matchedDoc = (referringDoctors || []).find((d: any) => 
+                d.name?.toLowerCase().trim() === rawDoc.toLowerCase().trim() ||
+                d.name?.replace(/^Dr\.\s*/i, '').toLowerCase().trim() === rawDoc.replace(/^Dr\.\s*/i, '').toLowerCase().trim()
+              );
+              return (
+                <div className="bg-gradient-to-br from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 p-5 rounded-2xl shadow-xl space-y-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-lg shrink-0">
+                      👨‍⚕️
                     </div>
-                  </label>
-
-                  <label className="flex items-start gap-2.5 text-xs font-semibold text-white cursor-pointer">
-                    <input 
-                      type="checkbox" 
-                      checked={isDischargeSent}
-                      onChange={handleToggleDischarge}
-                      className="mt-0.5 rounded border-white/20 accent-emerald-500"
-                    />
-                    <div className="space-y-0.5">
-                      <p className={isDischargeSent ? 'line-through text-white/40' : ''}>Discharge Summary Sent</p>
-                      <p className="text-[9px] text-white/50 font-semibold leading-none">Send final progress report to referring doctor</p>
+                    <div className="flex-1">
+                      <p className="text-[10px] font-bold text-emerald-400/70 uppercase tracking-widest">Referred by</p>
+                      <h4 className="text-sm font-bold text-white mt-0.5">{patient.referringDoctor}</h4>
+                      {matchedDoc?.phone ? (
+                        <p className="text-xs text-[#25D366] font-mono font-bold mt-1 flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5" /> +91 {matchedDoc.phone}
+                        </p>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setDocPhoneModal({ isOpen: true, docName: patient.referringDoctor, phone: '' })}
+                          className="text-amber-400 hover:text-amber-300 underline text-[11px] font-semibold mt-1 flex items-center gap-1 cursor-pointer"
+                        >
+                          <Phone className="w-3 h-3" /> No phone registered (+ Add WhatsApp No.)
+                        </button>
+                      )}
                     </div>
-                  </label>
+                  </div>
+                  <p className="text-[10px] text-white/40 font-medium border-t border-white/10 pt-3">
+                    Use the <span className="text-[#25D366] font-bold">WhatsApp Hub</span> on the right to send a thank-you note or discharge report directly to this doctor.
+                  </p>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-white/5 border border-white/10 p-5 rounded-2xl">
-                <p className="text-xs text-white/50 font-semibold">Patient registered as Direct Intake. No referring doctor checklist required.</p>
+              );
+            })() : (
+              <div className="bg-white/[0.03] border border-white/[0.07] p-5 rounded-2xl">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white/5 flex items-center justify-center text-base shrink-0">🏠</div>
+                  <div>
+                    <p className="text-xs font-bold text-white">Self / Direct Intake</p>
+                    <p className="text-[10px] text-white/40 mt-0.5">No referring doctor assigned</p>
+                  </div>
+                </div>
               </div>
             )}
 
@@ -1510,9 +2051,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               ) : (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-1">
                   {handouts.map((h: any) => (
-                    <div key={h.id} className="p-3 border border-white/10 rounded-xl bg-white/5 flex justify-between items-center gap-3">
-                      <div className="truncate">
-                        <p className="text-xs font-serif font-bold text-white truncate">{h.title}</p>
+                    <div key={h.id} className="p-3 border border-white/10 bg-white/5 rounded-2xl flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-white">{h.title}</p>
                         <p style={{ fontSize: '9px', lineHeight: '12px' }} className="text-white/50 font-bold uppercase mt-1">{h.category} • {h.fileType}</p>
                       </div>
                       <motion.button
@@ -1543,103 +2084,309 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               )}
             </div>
 
-            {/* Patient WhatsApp Communication Section */}
+            {/* Patient WhatsApp Communication Hub */}
             <div className="space-y-4 pt-6 border-t border-white/10">
-              <div className="flex justify-between items-center border-b border-white/10 pb-2">
-                <h4 className="text-base font-serif font-bold text-white">Patient Communication & Outreach</h4>
-                <Share2 className="h-4.5 w-4.5 text-emerald-400 stroke-[1.75]" />
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[#25D366]">
+                    <Share2 className="h-4.5 w-4.5 stroke-[2]" />
+                  </div>
+                  <div>
+                    <h4 className="text-base font-serif font-bold text-white tracking-wide">
+                      WhatsApp Communication Hub
+                    </h4>
+                    <p className="text-[11px] text-white/50 font-medium">
+                      Send official Meta verified templates directly to <span className="text-white font-semibold">{patient?.fullName}</span> ({patient?.phone})
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 self-start sm:self-auto px-2.5 py-1.5 rounded-full bg-[#25D366]/10 border border-[#25D366]/25 text-[#25D366] text-[10px] font-bold tracking-wide">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#25D366] animate-pulse"></span>
+                  Meta API · Live
+                </div>
               </div>
-              <p className="text-xxs text-white/50 font-bold uppercase tracking-wider -mt-2">Send WhatsApp messages directly to {patient?.fullName?.split(' ')[0]}'s number ({patient?.phone})</p>
 
-              <div className="bg-white/5 border border-white/15 p-5 rounded-2xl space-y-4 shadow-xl backdrop-blur-xl">
+              <div className="bg-gradient-to-b from-[#0F1A14]/90 to-[#0B0A10]/95 border border-[#25D366]/10 p-5 rounded-3xl space-y-5 shadow-2xl backdrop-blur-2xl">
 
-                {/* 1. Next Appointment Reminder */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-serif font-bold text-xs text-white flex items-center gap-1.5">
-                        📅 Next Appointment Reminder
-                      </p>
-                      <p className="text-xs text-white/70 font-medium mt-0.5">Sends appointment date & time directly to patient's WhatsApp</p>
+                {/* 1. Appointments & Welcome */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    Appointments & Clinic Guides
+                  </p>
+
+                  {/* Next Appointment Reminder */}
+                  <div className="bg-white/[0.02] hover:bg-white/[0.04] border border-white/[0.08] hover:border-emerald-500/30 p-4 rounded-2xl transition-all duration-200">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-serif font-bold text-white flex items-center gap-2">
+                          📅 Next Session Reminder
+                        </p>
+                        <p className="text-[11px] text-white/50 mt-0.5">
+                          Sends confirmed session date & time directly to patient's WhatsApp
+                        </p>
+                      </div>
+
+                      {whatsappSuccess === 'appt' ? (
+                        <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-3 py-1.5 rounded-xl flex items-center gap-1.5">
+                          ✓ Sent Successfully
+                        </span>
+                      ) : !showApptModal ? (
+                        <button
+                          onClick={() => setShowApptModal(true)}
+                          className="px-4 py-2 bg-[#25D366]/15 hover:bg-[#25D366]/25 border border-[#25D366]/30 text-[#25D366] text-xs font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-sm"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          Send Next Reminder
+                        </button>
+                      ) : null}
                     </div>
-                    {whatsappSuccess === 'appt' && (
-                      <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full">✓ Sent!</span>
+
+                    {showApptModal && (
+                      <div className="mt-3 pt-3 border-t border-white/[0.08] space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div>
+                            <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Date</label>
+                            <input
+                              type="date"
+                              value={nextApptDate}
+                              onChange={(e) => setNextApptDate(e.target.value)}
+                              className="w-full text-xs border border-white/10 rounded-xl px-3 py-2 bg-black/40 text-white focus:outline-none focus:border-emerald-400 mt-1"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[10px] font-bold text-white/40 uppercase tracking-wider">Time</label>
+                            <input
+                              type="time"
+                              value={nextApptTime}
+                              onChange={(e) => setNextApptTime(e.target.value)}
+                              className="w-full text-xs border border-white/10 rounded-xl px-3 py-2 bg-black/40 text-white focus:outline-none focus:border-emerald-400 mt-1"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex gap-2 justify-end">
+                          <button
+                            onClick={() => setShowApptModal(false)}
+                            className="px-3.5 py-1.5 text-xs text-white/60 hover:text-white border border-white/10 rounded-xl cursor-pointer"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={triggerNextApptReminderConfirm}
+                            disabled={!nextApptDate || !nextApptTime || whatsappSending === 'appt'}
+                            className="px-4 py-1.5 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition-all cursor-pointer disabled:opacity-50 flex items-center gap-1.5 shadow-lg shadow-[#25D366]/20"
+                          >
+                            {whatsappSending === 'appt' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+                            {whatsappSending === 'appt' ? 'Sending...' : 'Preview & Dispatch'}
+                          </button>
+                        </div>
+                      </div>
                     )}
                   </div>
 
-                  {!showApptModal ? (
+                  {/* Missed Session & Clinic Welcome Cards */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
-                      onClick={() => setShowApptModal(true)}
-                      className="w-full py-3 px-4 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-[#25D366]/20"
+                      onClick={triggerMissedApptConfirm}
+                      disabled={whatsappSending === 'missed'}
+                      className="group p-4 bg-white/[0.02] hover:bg-rose-500/5 border border-white/[0.08] hover:border-rose-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
                     >
-                      <Send className="h-4 w-4" />
-                      Send Next Appointment Reminder
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <span className="text-sm">🚫</span>
+                        </div>
+                        <p className="text-xs font-bold text-white group-hover:text-rose-200 transition-colors">Missed Session</p>
+                      </div>
+                      <p className="text-[10px] text-white/40 leading-relaxed">Polite re-booking notification</p>
+                      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                        <span className="text-[10px] font-bold text-rose-400/80 group-hover:text-rose-300">{whatsappSuccess === 'missed' ? '✓ Sent' : 'Send ➔'}</span>
+                      </div>
                     </button>
-                  ) : (
-                    <div className="space-y-3 bg-black/40 border border-white/15 rounded-xl p-3.5">
-                      <p className="text-xs font-bold text-white/80 uppercase tracking-wider">Enter appointment details</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-semibold text-white/60 uppercase">Date</label>
-                          <input
-                            type="date"
-                            value={nextApptDate}
-                            onChange={(e) => setNextApptDate(e.target.value)}
-                            className="w-full text-xs border border-white/20 rounded-lg px-2.5 py-2 bg-white/10 text-white focus:outline-none focus:border-emerald-400 mt-0.5"
-                          />
+
+                    <button
+                      onClick={triggerWelcomeConfirm}
+                      disabled={whatsappSending === 'welcome'}
+                      className="group p-4 bg-white/[0.02] hover:bg-teal-500/5 border border-white/[0.08] hover:border-teal-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <span className="text-sm">🌿</span>
                         </div>
-                        <div>
-                          <label className="text-[10px] font-semibold text-white/60 uppercase">Time</label>
-                          <input
-                            type="time"
-                            value={nextApptTime}
-                            onChange={(e) => setNextApptTime(e.target.value)}
-                            className="w-full text-xs border border-white/20 rounded-lg px-2.5 py-2 bg-white/10 text-white focus:outline-none focus:border-emerald-400 mt-0.5"
-                          />
-                        </div>
+                        <p className="text-xs font-bold text-white group-hover:text-teal-200 transition-colors">Clinic Welcome</p>
                       </div>
-                      <div className="flex gap-2 pt-1">
-                        <button
-                          onClick={triggerNextApptReminderConfirm}
-                          disabled={!nextApptDate || !nextApptTime || whatsappSending === 'appt'}
-                          className="flex-1 py-2 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-lg transition-all cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-                        >
-                          {whatsappSending === 'appt' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-                          {whatsappSending === 'appt' ? 'Sending...' : 'Review & Send'}
-                        </button>
-                        <button
-                          onClick={() => setShowApptModal(false)}
-                          className="px-3 py-2 text-xs text-white/60 hover:text-white border border-white/20 rounded-lg cursor-pointer"
-                        >
-                          Cancel
-                        </button>
+                      <p className="text-[10px] text-white/40 leading-relaxed">Timings, address & Maps pin</p>
+                      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                        <span className="text-[10px] font-bold text-teal-400/80 group-hover:text-teal-300">{whatsappSuccess === 'welcome' ? '✓ Sent' : 'Send ➔'}</span>
                       </div>
-                    </div>
-                  )}
+                    </button>
+                  </div>
                 </div>
 
-                <div className="border-t border-white/10" />
+                <div className="border-t border-white/[0.08]" />
 
-                {/* 2. Missed Appointment Notice */}
-                <div className="space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-serif font-bold text-xs text-white flex items-center gap-1.5">
-                        🚫 Missed Appointment Notice
-                      </p>
-                      <p className="text-xs text-white/70 font-medium mt-0.5">Notifies patient they missed their scheduled session today</p>
-                    </div>
-                    {whatsappSuccess === 'missed' && (
-                      <span className="text-[9px] font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 rounded-full">✓ Sent!</span>
+                {/* 2. Clinical Certificates & Insurance */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+                    Clinical Certificates & Discharge Summaries
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                      onClick={triggerDischargeConfirm}
+                      disabled={whatsappSending === 'discharge'}
+                      className="group p-4 bg-white/[0.02] hover:bg-purple-500/5 border border-white/[0.08] hover:border-purple-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-3 mb-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                          <span className="text-sm">🎓</span>
+                        </div>
+                        <p className="text-xs font-bold text-white group-hover:text-purple-200 transition-colors">Discharge Summary</p>
+                      </div>
+                      <p className="text-[10px] text-white/40 leading-relaxed">Program completion & home advice</p>
+                      <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                        <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                        <span className="text-[10px] font-bold text-purple-400/80 group-hover:text-purple-300">{whatsappSuccess === 'discharge' ? '✓ Sent' : 'Send ➔'}</span>
+                      </div>
+                    </button>
+
+                    {patient.referringDoctor && !['self', 'direct', 'self / direct', 'self/direct', 'n/a', 'na', 'none'].includes((patient.referringDoctor || '').toLowerCase().trim()) && (
+                      <button
+                        onClick={triggerDoctorThankYouConfirm}
+                        disabled={whatsappSending === 'referral'}
+                        className="group p-4 bg-white/[0.02] hover:bg-emerald-500/5 border border-white/[0.08] hover:border-emerald-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
+                      >
+                        <div className="flex items-center gap-3 mb-2.5">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <span className="text-sm">👨‍⚕️</span>
+                          </div>
+                          <p className="text-xs font-bold text-white group-hover:text-emerald-200 transition-colors">Doctor Referral Note</p>
+                        </div>
+                        <p className="text-[10px] text-white/40 leading-relaxed">Thank-you to {patient.referringDoctor}</p>
+                        <div className="mt-3 pt-2.5 border-t border-white/[0.06] flex items-center justify-between">
+                          <span className="text-[9px] font-bold text-white/25 uppercase tracking-wider">WhatsApp Template</span>
+                          <span className="text-[10px] font-bold text-emerald-400/80 group-hover:text-emerald-300">{whatsappSuccess === 'referral' ? '✓ Sent' : 'Send ➔'}</span>
+                        </div>
+                      </button>
                     )}
+
+                    <button
+                      onClick={triggerMediclaimConfirm}
+                      disabled={whatsappSending === 'mediclaim'}
+                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-sky-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 group-hover:scale-105 transition-transform">
+                          <span className="text-sm">💰</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-sky-200 transition-colors">
+                            Mediclaim Summary
+                          </p>
+                          <p className="text-[10px] text-white/40 mt-0.5">
+                            Attended sessions & total fees
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-sky-400/80 group-hover:text-sky-300 px-2.5 py-1 rounded-lg bg-sky-500/10 border border-sky-500/20">
+                        {whatsappSuccess === 'mediclaim' ? '✓ Sent' : 'Preview ➔'}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={triggerFitnessConfirm}
+                      disabled={whatsappSending === 'fitness'}
+                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-indigo-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 group-hover:scale-105 transition-transform">
+                          <span className="text-sm">🏃</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-indigo-200 transition-colors">
+                            Fitness Certificate
+                          </p>
+                          <p className="text-[10px] text-white/40 mt-0.5">
+                            Certified fit to resume duties
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-indigo-400/80 group-hover:text-indigo-300 px-2.5 py-1 rounded-lg bg-indigo-500/10 border border-indigo-500/20">
+                        {whatsappSuccess === 'fitness' ? '✓ Sent' : 'Preview ➔'}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={triggerMedicalRestConfirm}
+                      disabled={whatsappSending === 'rest'}
+                      className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-amber-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 group-hover:scale-105 transition-transform">
+                          <span className="text-sm">🛌</span>
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">
+                            Medical Rest Advice
+                          </p>
+                          <p className="text-[10px] text-white/40 mt-0.5">
+                            Recommended rest duration
+                          </p>
+                        </div>
+                      </div>
+                      <span className="text-[10px] font-bold text-amber-400/80 group-hover:text-amber-300 px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                        {whatsappSuccess === 'rest' ? '✓ Sent' : 'Preview ➔'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="border-t border-white/[0.08]" />
+
+                {/* 3. Reputation & Review */}
+                <div className="space-y-3">
+                  <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                    Patient Reviews & Clinic Reputation
+                  </p>
+                  <button
+                    onClick={triggerGoogleReviewConfirm}
+                    disabled={whatsappSending === 'review'}
+                    className="w-full group p-4 bg-gradient-to-r from-amber-500/[0.08] via-orange-500/[0.05] to-amber-500/[0.08] hover:from-amber-500/[0.14] hover:to-orange-500/[0.12] border border-amber-500/25 hover:border-amber-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between shadow-lg shadow-amber-500/5"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <div className="p-2.5 rounded-xl bg-amber-500/20 border border-amber-500/30 text-amber-300 group-hover:scale-105 transition-transform">
+                        <span className="text-base">⭐</span>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-white group-hover:text-amber-200 transition-colors">
+                          Request 5-Star Google Review
+                        </p>
+                        <p className="text-[11px] text-white/50 mt-0.5">
+                          Sends personalized feedback note with direct 1-tap Google Maps review link
+                        </p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-amber-300 bg-amber-500/20 group-hover:bg-amber-500/30 px-3.5 py-1.5 rounded-xl border border-amber-500/30 shrink-0">
+                      {whatsappSuccess === 'review' ? '✓ Request Sent' : 'Preview & Send ➔'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Secret Dev WhatsApp API Tester */}
+                <div className="pt-3 border-t border-white/[0.08] flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#25D366]"></span>
+                    <span className="text-[10px] text-white/40 font-medium">Meta Verified WhatsApp API</span>
                   </div>
                   <button
-                    onClick={triggerMissedApptConfirm}
-                    disabled={whatsappSending === 'missed'}
-                    className="w-full py-3 px-4 flex items-center justify-center gap-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl transition-all cursor-pointer shadow-lg shadow-rose-500/20 disabled:opacity-50"
+                    type="button"
+                    onClick={() => setIsTesterOpen(true)}
+                    className="text-[10px] text-emerald-300 hover:text-white font-bold bg-emerald-500/10 hover:bg-emerald-500/25 border border-emerald-500/30 px-2.5 py-1 rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-sm"
                   >
-                    {whatsappSending === 'missed' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                    {whatsappSending === 'missed' ? 'Sending...' : 'Review & Send Missed Appointment Notice'}
+                    <span>🧪 WhatsApp API Tester</span>
+                    <span className="text-[8px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1 py-0.2 rounded font-bold uppercase">Test Only</span>
                   </button>
                 </div>
 
@@ -2627,71 +3374,257 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             key="wa-backdrop"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="fixed inset-0 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
             onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
           />
           <motion.div
             key="wa-modal"
-            initial={{ scale: 0.92, opacity: 0, y: 20 }}
+            initial={{ scale: 0.94, opacity: 0, y: 20 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{ type: 'spring', damping: 25, stiffness: 350 }}
-            className="relative bg-[#0B0A10] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4"
+            className="relative bg-gradient-to-b from-[#13111C] to-[#0B0A10] border border-white/15 p-6 rounded-3xl shadow-2xl w-full max-w-lg flex flex-col z-[100000] text-left space-y-4 max-h-[90vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center gap-3 border-b border-white/10 pb-3">
-              <div className="p-2.5 bg-[#25D366]/20 border border-[#25D366]/40 text-[#25D366] rounded-xl shrink-0">
-                <Send className="w-5 h-5" />
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] rounded-2xl shrink-0 shadow-lg shadow-[#25D366]/10">
+                  <Send className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-serif font-bold text-white leading-tight">
+                    {confirmWhatsappModal.title}
+                  </h3>
+                  <p className="text-[11px] text-white/50 font-medium mt-0.5">
+                    Official Meta WhatsApp Template Preview
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 className="text-base font-serif font-bold text-white leading-tight">
-                  {confirmWhatsappModal.title}
-                </h3>
-                <p className="text-[11px] text-white/60 font-medium mt-0.5">
-                  Review message preview before dispatching to WhatsApp.
-                </p>
+              <button
+                type="button"
+                onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Recipient & Editable Phone */}
+            <div className="p-3.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs space-y-2">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-[#25D366] animate-pulse"></span>
+                  <span className="font-bold text-white text-xs">
+                    {confirmWhatsappModal.recipientName}
+                  </span>
+                </div>
+                {confirmWhatsappModal.templateBadge && (
+                  <span className="text-[10px] font-bold text-[#25D366] bg-[#25D366]/10 border border-[#25D366]/20 px-2.5 py-0.5 rounded-lg">
+                    {confirmWhatsappModal.templateBadge}
+                  </span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 pt-1 border-t border-white/[0.06]">
+                <label className="text-[10px] font-bold text-white/50 uppercase tracking-wider shrink-0">
+                  Target WhatsApp Phone:
+                </label>
+                <div className="flex items-center gap-1.5 flex-1">
+                  <span className="text-white/40 text-xs font-mono font-bold">+91</span>
+                  <input
+                    type="tel"
+                    value={confirmWhatsappModal.phone.replace(/^91/, '')}
+                    onChange={(e) => handlePhoneChange(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                    className="w-full text-xs font-mono font-bold bg-white/5 border border-white/10 focus:border-[#25D366] rounded-lg px-2.5 py-1 text-white outline-none"
+                    placeholder="10-digit number"
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Recipient Details */}
-            <div className="p-3 bg-white/5 border border-white/10 rounded-xl space-y-1 text-xs">
-              <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider block">Recipient</span>
-              <span className="font-bold text-white block">
-                {confirmWhatsappModal.recipientName} ({confirmWhatsappModal.phone})
-              </span>
-            </div>
+            {/* Interactive Template Parameter Editor */}
+            {confirmWhatsappModal.paramFields && confirmWhatsappModal.paramFields.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-[#12D6C4] uppercase tracking-wider flex items-center gap-1.5">
+                    <Edit3 className="w-3.5 h-3.5 stroke-[2.2]" />
+                    Edit Template Parameters (Variables)
+                  </span>
+                  <span className="text-[10px] text-white/40 font-medium">
+                    Updates message preview live
+                  </span>
+                </div>
 
-            {/* Message Body Preview */}
-            <div className="space-y-1">
-              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider block">
-                Message Text Preview:
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 bg-white/[0.02] border border-white/[0.08] p-3 rounded-2xl max-h-48 overflow-y-auto">
+                  {confirmWhatsappModal.paramFields.map((field, idx) => (
+                    <div
+                      key={idx}
+                      className={confirmWhatsappModal.paramFields!.length % 2 !== 0 && idx === confirmWhatsappModal.paramFields!.length - 1 ? "sm:col-span-2 space-y-1" : "space-y-1"}
+                    >
+                      <label className="text-[10px] font-bold text-white/60 block truncate">
+                        {field.label}
+                      </label>
+                      <input
+                        type="text"
+                        value={field.value}
+                        onChange={(e) => handleParamChange(idx, e.target.value)}
+                        placeholder={field.placeholder || `Enter ${field.label}`}
+                        className="w-full text-xs bg-white/5 border border-white/10 focus:border-[#12D6C4] focus:ring-1 focus:ring-[#12D6C4]/30 rounded-xl px-2.5 py-1.5 text-white font-medium outline-none transition"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Realistic WhatsApp Chat Bubble */}
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold text-white/40 uppercase tracking-widest block">
+                Message Preview:
               </span>
-              <div className="p-3.5 bg-black/60 border border-emerald-500/30 rounded-xl text-xs text-white/90 font-mono leading-relaxed max-h-36 overflow-y-auto">
-                {confirmWhatsappModal.messagePreview}
+              <div className="p-4 bg-[#0B141A] border border-emerald-500/20 rounded-2xl shadow-inner space-y-2">
+                <div className="flex items-center gap-2 pb-2 border-b border-white/[0.06] text-[11px] text-[#25D366] font-bold">
+                  <span>Health 360 Clinic</span>
+                  <span className="text-[9px] font-semibold text-white/40 bg-white/5 px-1.5 py-0.5 rounded">Verified Business</span>
+                </div>
+                
+                <div className="p-3.5 bg-[#005c4b]/30 border border-[#005c4b]/40 rounded-xl rounded-tl-none text-xs text-white/90 leading-relaxed font-sans whitespace-pre-wrap break-words">
+                  {confirmWhatsappModal.messagePreview}
+                  <div className="flex items-center justify-end gap-1 mt-2 text-[10px] text-white/40 font-mono">
+                    <span>Just now</span>
+                    <span className="text-[#53bdeb]">✓✓</span>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Modal Actions */}
-            <div className="flex items-center gap-3 pt-2">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 pt-2">
               <button
                 type="button"
                 onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
-                className="flex-1 py-2.5 px-4 bg-white/10 hover:bg-white/20 border border-white/15 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                className="w-full sm:w-auto py-2.5 px-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer order-3 sm:order-1"
               >
-                Cancel (Do Not Send)
+                Cancel
               </button>
+
+              {confirmWhatsappModal.waUrl && (
+                <a
+                  href={confirmWhatsappModal.waUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={() => setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }))}
+                  className="w-full sm:flex-1 py-2.5 px-3 bg-white/10 hover:bg-white/15 border border-white/15 text-white text-xs font-bold rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 order-2 text-center"
+                >
+                  <Share2 className="w-3.5 h-3.5" /> Open in WhatsApp Web
+                </a>
+              )}
+
               <button
                 type="button"
-                onClick={() => {
-                  const action = whatsappConfirmActionRef.current;
-                  setConfirmWhatsappModal(prev => ({ ...prev, isOpen: false }));
-                  whatsappConfirmActionRef.current = null;
-                  if (action) action();
-                }}
-                className="flex-1 py-2.5 px-4 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5"
+                onClick={handleSendConfirmModal}
+                className="w-full sm:flex-1 py-2.5 px-4 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5 order-1 sm:order-3"
               >
-                <Send className="w-3.5 h-3.5" /> Confirm & Send
+                <Send className="w-3.5 h-3.5 stroke-[2.5]" /> Send Official Message
               </button>
             </div>
+          </motion.div>
+        </div>,
+        document.body
+      )}
+
+      {/* Doctor WhatsApp Phone Number Entry Modal — portaled to document.body */}
+      {docPhoneModal.isOpen && isMounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            onClick={() => setDocPhoneModal({ isOpen: false, docName: '', phone: '' })}
+          />
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="relative bg-gradient-to-b from-[#13111C] to-[#0B0A10] border border-white/15 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-[#25D366]/15 border border-[#25D366]/30 text-[#25D366] rounded-2xl shrink-0">
+                  <Phone className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-serif font-bold text-white leading-tight">
+                    Doctor's WhatsApp Number
+                  </h3>
+                  <p className="text-[11px] text-white/50 font-medium mt-0.5">
+                    Required to send referral thank-you & updates
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDocPhoneModal({ isOpen: false, docName: '', phone: '' })}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-3 bg-white/[0.03] border border-white/[0.08] rounded-2xl text-xs space-y-1">
+              <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-wider">Referring Doctor</p>
+              <p className="text-sm font-bold text-white">{docPhoneModal.docName}</p>
+              <p className="text-[11px] text-white/50 pt-1">
+                Enter this doctor's 10-digit WhatsApp phone number. It will be saved automatically so you never have to re-enter it.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (docPhoneModal.phone.length === 10) {
+                  handleSaveDoctorPhoneAndProceed(docPhoneModal.phone);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                  10-Digit Mobile Number (India)
+                </label>
+                <div className="flex items-center gap-2">
+                  <span className="px-3 py-2 bg-white/5 border border-white/10 rounded-xl text-xs font-mono font-bold text-white/60">
+                    +91
+                  </span>
+                  <input
+                    type="tel"
+                    autoFocus
+                    placeholder="9833333333"
+                    value={docPhoneModal.phone}
+                    onChange={(e) => setDocPhoneModal(prev => ({ ...prev, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                    className="flex-1 text-sm bg-white/5 border border-[#25D366]/40 focus:border-[#25D366] rounded-xl px-3 py-2 text-white font-mono font-bold outline-none placeholder-white/25"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2.5 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDocPhoneModal({ isOpen: false, docName: '', phone: '' })}
+                  className="flex-1 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={docPhoneModal.phone.length < 10 || docPhoneModal.isSaving}
+                  className="flex-1 py-2.5 bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold rounded-xl transition cursor-pointer disabled:opacity-50 shadow-lg shadow-[#25D366]/20 flex items-center justify-center gap-1.5"
+                >
+                  {docPhoneModal.isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  Save &amp; Continue
+                </button>
+              </div>
+            </form>
           </motion.div>
         </div>,
         document.body
@@ -2702,6 +3635,12 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         isOpen={isEditPatientModalOpen}
         patient={patient}
         onClose={() => setIsEditPatientModalOpen(false)}
+      />
+
+      {/* WhatsApp Meta API Tester Modal */}
+      <WhatsAppTesterModal
+        isOpen={isTesterOpen}
+        onClose={() => setIsTesterOpen(false)}
       />
     </div>
   );

@@ -6,10 +6,11 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare, X, CalendarX, Palette, Check } from 'lucide-react';
+import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare, X, CalendarX, Palette, Check, Terminal } from 'lucide-react';
 import GlassPanel from './GlassPanel';
 import BillingSettingsTab from './settings/BillingSettingsTab';
 import StaffSettingsTab from './settings/StaffSettingsTab';
+import WhatsAppTesterModal from './WhatsAppTesterModal';
  
 const settingsSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -84,6 +85,7 @@ interface Props {
  
 export default function SettingsTab({ user }: Props) {
   const [activeTab, setActiveTab] = useState<'general' | 'billing' | 'staff'>('general');
+  const [isTesterOpen, setIsTesterOpen] = useState(false);
   const queryClient = useQueryClient();
   const isAdmin = (user?.role || '').toLowerCase() === 'admin';
   const [holidayDates, setHolidayDates] = useState<string[]>([]);
@@ -205,22 +207,36 @@ export default function SettingsTab({ user }: Props) {
           </p>
         </div>
 
-        {activeTab === 'general' && isAdmin && (
-          <motion.button
+        <div className="flex items-center gap-2.5 shrink-0">
+          <button
             type="button"
-            onClick={handleSubmit(onSubmit)}
-            whileTap={{ scale: 0.95 }}
-            disabled={mutation.isPending}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer focus:outline-hidden shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0 shrink-0"
+            onClick={() => setIsTesterOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2.5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold rounded-xl transition cursor-pointer"
           >
-            {mutation.isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 stroke-[1.75]" />
-            )}
-            Save Configurations
-          </motion.button>
-        )}
+            <Terminal className="w-3.5 h-3.5 text-[#25D366]" />
+            🧪 WhatsApp API Tester
+            <span className="text-[9px] bg-amber-400/20 text-amber-300 border border-amber-400/30 px-1.5 py-0.5 rounded font-bold uppercase tracking-wider">
+              Testing Only
+            </span>
+          </button>
+
+          {activeTab === 'general' && isAdmin && (
+            <motion.button
+              type="button"
+              onClick={handleSubmit(onSubmit)}
+              whileTap={{ scale: 0.95 }}
+              disabled={mutation.isPending}
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-all disabled:opacity-50 cursor-pointer focus:outline-hidden shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0 shrink-0"
+            >
+              {mutation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Save className="h-4 w-4 stroke-[1.75]" />
+              )}
+              Save Configurations
+            </motion.button>
+          )}
+        </div>
       </div>
 
       {/* Sub-tab Navigation */}
@@ -654,6 +670,12 @@ export default function SettingsTab({ user }: Props) {
       </div>
     </form>
     )}
+
+    {/* WhatsApp Meta API Tester Modal */}
+    <WhatsAppTesterModal
+      isOpen={isTesterOpen}
+      onClose={() => setIsTesterOpen(false)}
+    />
   </div>
 );
 }

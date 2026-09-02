@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { AppointmentStatus, AppointmentSource, AppointmentType } from '@prisma/client';
+import { sendWhatsAppMessageDirect } from '@/lib/whatsappTemplates';
 
 const querySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
@@ -131,6 +132,25 @@ export async function POST(req: NextRequest) {
           },
         });
         createdAppointments.push(appointment);
+
+        // Auto-send WhatsApp Next Appointment Confirmation
+        if (appointment.patient?.phone) {
+          try {
+            const dateFormatted = new Date(occurrenceDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+            const [h, m] = body.startTime.split(':');
+            const hour = parseInt(h, 10);
+            const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+            const firstName = appointment.patient.fullName?.split(' ')[0] || appointment.patient.fullName;
+
+            await sendWhatsAppMessageDirect({
+              phone: appointment.patient.phone,
+              templateName: 'next_appointment_reminder',
+              params: [firstName, dateFormatted, timeFormatted],
+            });
+          } catch (waErr) {
+            console.warn('Failed to dispatch CRM automated WhatsApp appointment reminder:', waErr);
+          }
+        }
       }
     }
 

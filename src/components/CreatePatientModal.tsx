@@ -123,6 +123,7 @@ export default function CreatePatientModal({
   // Quick Add Referral Doctor Sub-form State
   const [showQuickAddDoctor, setShowQuickAddDoctor] = useState(false);
   const [quickDocName, setQuickDocName] = useState('');
+  const [quickDocPhone, setQuickDocPhone] = useState('');
   const [quickDocSpecialty, setQuickDocSpecialty] = useState('Orthopedics');
   const [quickDocClinic, setQuickDocClinic] = useState('');
   const [quickDocEmail, setQuickDocEmail] = useState('');
@@ -170,6 +171,7 @@ export default function CreatePatientModal({
       setShowAddressInput(false);
       setShowQuickAddDoctor(false);
       setQuickDocName('');
+      setQuickDocPhone('');
       setQuickDocClinic('');
       setQuickDocEmail('');
     }
@@ -193,20 +195,11 @@ export default function CreatePatientModal({
     },
   });
 
-  const handleDobChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const dobVal = e.target.value;
-    setValue('dateOfBirth', dobVal);
-    if (dobVal) {
-      const { years, months } = calculateAgeFromDob(dobVal);
-      setValue('ageYears', years);
-    } else {
-      setValue('ageYears', '');
-    }
-  };
-
+  // Sync Age with Date of Birth
   const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const years = parseInt(e.target.value || '0', 10);
-    if (years > 0) {
+    const ageValue = e.target.value;
+    const years = parseInt(ageValue, 10);
+    if (!isNaN(years) && years >= 0 && years <= 120) {
       const calculatedDob = calculateDobFromAge(years, 0);
       setValue('dateOfBirth', calculatedDob);
     } else {
@@ -214,7 +207,7 @@ export default function CreatePatientModal({
     }
   };
 
-  const saveNewReferringDoctor = async (name: string, specialty?: string, clinic?: string, email?: string) => {
+  const saveNewReferringDoctor = async (name: string, phone?: string, specialty?: string, clinic?: string, email?: string) => {
     if (!name || !name.trim()) return;
     const cleanName = name.trim();
     const formattedName = cleanName.startsWith('Dr.') || cleanName.toLowerCase().includes('clinic') || cleanName.toLowerCase().includes('hospital') || cleanName.toLowerCase().includes('direct')
@@ -226,6 +219,7 @@ export default function CreatePatientModal({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: formattedName,
+        phone: phone ? phone.replace(/\D/g, '').slice(-10) : undefined,
         specialty: specialty || 'General Practice',
         clinic: clinic || 'General Clinic',
         email: email?.trim() || `${formattedName.toLowerCase().replace(/[\s\.]+/g, '')}@email.com`
@@ -237,6 +231,7 @@ export default function CreatePatientModal({
     setValue('referringDoctor', formattedName);
     setShowQuickAddDoctor(false);
     setQuickDocName('');
+    setQuickDocPhone('');
     setQuickDocClinic('');
     setQuickDocEmail('');
   };
@@ -498,15 +493,28 @@ export default function CreatePatientModal({
                               </div>
                             </div>
 
-                            <div>
-                              <label className="block text-[10px] font-semibold text-white/70 mb-0.5">Contact Email / Phone (Optional)</label>
-                              <input
-                                type="text"
-                                placeholder="e.g. dr.ramesh@clinic.com"
-                                value={quickDocEmail}
-                                onChange={(e) => setQuickDocEmail(e.target.value)}
-                                className="w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none"
-                              />
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[10px] font-semibold text-white/70 mb-0.5">WhatsApp Phone (10 Digits)</label>
+                                <input
+                                  type="tel"
+                                  placeholder="e.g. 9833333333"
+                                  value={quickDocPhone}
+                                  onChange={(e) => setQuickDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                                  className="w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="block text-[10px] font-semibold text-white/70 mb-0.5">Email (Optional)</label>
+                                <input
+                                  type="email"
+                                  placeholder="e.g. dr.ramesh@clinic.com"
+                                  value={quickDocEmail}
+                                  onChange={(e) => setQuickDocEmail(e.target.value)}
+                                  className="w-full text-xs rounded-xl border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white font-semibold focus:border-[#12D6C4] outline-none"
+                                />
+                              </div>
                             </div>
 
                             <div className="flex justify-end gap-2 pt-1">
@@ -519,7 +527,7 @@ export default function CreatePatientModal({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => saveNewReferringDoctor(quickDocName, quickDocSpecialty, quickDocClinic, quickDocEmail)}
+                                onClick={() => saveNewReferringDoctor(quickDocName, quickDocPhone, quickDocSpecialty, quickDocClinic, quickDocEmail)}
                                 className="px-3 py-1 text-xs font-bold bg-white hover:bg-white/90 text-black rounded-lg shadow-md cursor-pointer"
                               >
                                 Save & Select Referrer

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { AppointmentStatus, AppointmentSource } from '@prisma/client';
+import { sendWhatsAppMessageDirect } from '@/lib/whatsappTemplates';
 
 const publicBookingSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -177,6 +178,7 @@ export async function POST(req: NextRequest) {
       where: { phone: body.phone },
     });
 
+    const isNewPatient = !patient;
     if (!patient) {
       patient = await prisma.patient.create({
         data: {
@@ -221,6 +223,32 @@ export async function POST(req: NextRequest) {
         type: 'BOOKING',
       },
     });
+
+    // Send Automatic WhatsApp Confirmation to Patient
+    try {
+      const dateFormatted = new Date(bookingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+      const [h, m] = startTime.split(':');
+      const hour = parseInt(h, 10);
+      const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+      const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
+
+      // 1. Online Appointment Booking Confirmation (uses verified next_appointment_reminder)
+      const res = await sendWhatsAppMessageDirect({
+        phone: patient.phone,
+        templateName: 'next_appointment_reminder',
+        params: [firstName, dateFormatted, timeFormatted],
+      });
+
+      if (!res?.success) {
+        await sendWhatsAppMessageDirect({
+          phone: patient.phone,
+          templateName: 'appointment_booking_confirmation',
+          params: [firstName, dateFormatted, timeFormatted],
+        });
+      }
+    } catch (waErr) {
+      console.warn('Failed to dispatch automated WhatsApp confirmation:', waErr);
+    }
 
     return NextResponse.json({
       success: true,
