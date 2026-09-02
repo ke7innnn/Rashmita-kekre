@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Calendar, Clock, Plus, ChevronLeft, ChevronRight, 
   Search, Loader2, RotateCw, Sparkles, AlertCircle, RefreshCw, 
-  Check, CheckCheck, LogIn, LogOut, User as UserIcon, Link, PhoneCall, Trash2, CheckCircle, Bell, X, Edit3, Settings, FileText
+  Check, CheckCheck, LogIn, LogOut, User as UserIcon, Link, PhoneCall, Trash2, CheckCircle, Bell, X, Edit3, Settings, FileText, Timer
 } from 'lucide-react';
 import QuickActionModal from './QuickActionModal';
 import AddAppointmentModal from './AddAppointmentModal';
@@ -204,6 +204,45 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
   const waitingCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.WAITING).length;
   const doneCount = appointmentsList.filter((a: any) => a.status === AppointmentStatus.COMPLETED).length;
 
+  // Calculate average treatment duration for completed sessions (or scheduled durations)
+  const treatmentTimes = appointmentsList
+    .filter((a: any) => a.status === AppointmentStatus.COMPLETED)
+    .map((a: any) => {
+      if (a.durationMinutes && a.durationMinutes > 0) return a.durationMinutes;
+
+      const startTime = a.seenTime || a.checkInAt || a.checkInTime;
+      const endTime = a.checkOutAt;
+      if (startTime && endTime) {
+        const diffMins = Math.round((new Date(endTime).getTime() - new Date(startTime).getTime()) / (1000 * 60));
+        if (diffMins >= 5 && diffMins <= 180) return diffMins;
+      }
+
+      if (a.startTime && a.endTime) {
+        const [sh, sm] = a.startTime.split(':').map(Number);
+        const [eh, em] = a.endTime.split(':').map(Number);
+        const diff = (eh * 60 + em) - (sh * 60 + sm);
+        if (diff > 0 && diff <= 180) return diff;
+      }
+      return a.assignedSlotDuration || 35;
+    });
+
+  const allScheduledDurations = appointmentsList.map((a: any) => {
+    if (a.durationMinutes && a.durationMinutes > 0) return a.durationMinutes;
+    if (a.startTime && a.endTime) {
+      const [sh, sm] = a.startTime.split(':').map(Number);
+      const [eh, em] = a.endTime.split(':').map(Number);
+      const diff = (eh * 60 + em) - (sh * 60 + sm);
+      if (diff > 0 && diff <= 180) return diff;
+    }
+    return a.assignedSlotDuration || 35;
+  });
+
+  const avgTreatmentTime = treatmentTimes.length > 0 
+    ? Math.round(treatmentTimes.reduce((acc: number, val: number) => acc + val, 0) / treatmentTimes.length) 
+    : (allScheduledDurations.length > 0 
+        ? Math.round(allScheduledDurations.reduce((acc: number, val: number) => acc + val, 0) / allScheduledDurations.length) 
+        : 35);
+
   const waitTimes = appointmentsList
     .filter((a: any) => a.checkInTime && a.seenTime)
     .map((a: any) => {
@@ -307,10 +346,10 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
       color: 'text-[#19E3B1]',
     },
     { 
-      label: 'Avg Waiting Time', 
-      value: `${avgWaitTime}m`, 
-      desc: waitTimes.length > 0 ? 'Based on live check-ins' : 'No records yet',
-      icon: Activity,
+      label: 'Avg Treatment Time', 
+      value: `${avgTreatmentTime}m`, 
+      desc: treatmentTimes.length > 0 ? 'Based on completed sessions' : (appointmentsList.length > 0 ? 'Target session duration' : 'Standard 35m protocol'),
+      icon: Timer,
       accent: 'violet' as const,
       color: 'text-[#22B8FF]',
     }
@@ -599,10 +638,13 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                           const isNoShow = app.status === 'NO_SHOW';
 
                           if (isCheckedOut) {
+                            const diffMins = checkInIso && checkOutIso 
+                              ? Math.round((new Date(checkOutIso).getTime() - new Date(checkInIso).getTime()) / (1000 * 60)) 
+                              : (app.durationMinutes || null);
                             return (
                               <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 text-[10px] font-mono font-bold max-w-full truncate">
                                 <CheckCheck className="h-3.5 w-3.5 text-emerald-400 shrink-0" />
-                                <span className="truncate">✓✓ {formatTimeRecorded(checkInIso) ? `In ${formatTimeRecorded(checkInIso)}` : 'In'} • {formatTimeRecorded(checkOutIso) ? `Out ${formatTimeRecorded(checkOutIso)}` : 'Out'}</span>
+                                <span className="truncate">✓✓ {formatTimeRecorded(checkInIso) ? `In ${formatTimeRecorded(checkInIso)}` : 'In'} • {formatTimeRecorded(checkOutIso) ? `Out ${formatTimeRecorded(checkOutIso)}` : 'Out'}{diffMins && diffMins > 0 ? ` (${diffMins}m session)` : ''}</span>
                               </div>
                             );
                           }
