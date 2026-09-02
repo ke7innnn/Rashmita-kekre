@@ -11,7 +11,8 @@ import {
   Plus, Check, Camera, Image, AlertTriangle, Download, 
   Trash2, Edit2, Edit3, PlayCircle, Folder, File, FolderPlus,
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare,
-  Ban, ShieldCheck, Receipt, Eye, Printer, CreditCard
+  Ban, ShieldCheck, Receipt, Eye, Printer, CreditCard,
+  UploadCloud, Files, FileUp
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -86,15 +87,23 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [exFreq, setExFreq] = useState('Twice daily');
   const [isSharingHandout, setIsSharingHandout] = useState(false);
 
-  // File Explorer path states
+  // File Explorer path states & multi-document upload
   const [currentPath, setCurrentPath] = useState<string[]>([]);
   const [newFolderName, setNewFolderName] = useState('');
   const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
-  const [uploadFileName, setUploadFileName] = useState('');
-  const [uploadFileType, setUploadFileType] = useState('PDF');
-  const [uploadFileObj, setUploadFileObj] = useState<File | null>(null);
   const [isUploadingToSupabase, setIsUploadingToSupabase] = useState(false);
+  const [stagedFiles, setStagedFiles] = useState<Array<{
+    id: string;
+    file: File;
+    displayName: string;
+    category: string;
+    sizeStr: string;
+    status: 'idle' | 'uploading' | 'done' | 'error';
+    error?: string;
+  }>>([]);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [uploadBatchProgress, setUploadBatchProgress] = useState<{ current: number; total: number } | null>(null);
+  const multiFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sub-tab navigation state
   const [activeTab, setActiveTab] = useState<'documents' | 'rom' | 'billing' | 'assessments'>('billing');
@@ -708,73 +717,127 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     });
   };
 
-  const handleUploadFile = async () => {
-    if (!uploadFileName.trim() || !uploadFileObj) return;
+  // Helper: auto-detect medical document category from file name and extension
+  const detectCategory = (filename: string): string => {
+    const lower = filename.toLowerCase();
+    if (lower.includes('xray') || lower.includes('x-ray') || lower.includes('x_ray') || lower.includes('x ray')) return 'X-Ray';
+    if (lower.includes('mri')) return 'MRI';
+    if (lower.includes('ct') || lower.includes('scan') || lower.includes('ultrasound') || lower.includes('sonography')) return 'MRI';
+    if (lower.includes('rx') || lower.includes('prescript') || lower.includes('medication')) return 'Prescription';
+    if (lower.includes('blood') || lower.includes('lab') || lower.includes('cbc') || lower.includes('test') || lower.includes('pathology')) return 'Blood Test';
+    return 'PDF';
+  };
+
+  // Helper: clean display name from filename
+  const cleanDisplayName = (filename: string): string => {
+    const base = filename.replace(/\.[^/.]+$/, '');
+    const withSpaces = base.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim();
+    return withSpaces
+      .split(' ')
+      .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(' ') || 'Medical Document';
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Add multiple files into the staging queue
+  const handleFilesSelected = (files: FileList | File[]) => {
+    const newItems = Array.from(files).map((file) => ({
+      id: `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`,
+      file,
+      displayName: cleanDisplayName(file.name),
+      category: detectCategory(file.name),
+      sizeStr: formatFileSize(file.size),
+      status: 'idle' as const,
+    }));
+    setStagedFiles(prev => [...prev, ...newItems]);
+  };
+
+  const handleRemoveStagedFile = (id: string) => {
+    setStagedFiles(prev => prev.filter(f => f.id !== id));
+  };
+
+  const handleUpdateStagedField = (id: string, field: 'displayName' | 'category', value: string) => {
+    setStagedFiles(prev => prev.map(f => f.id === id ? { ...f, [field]: value } : f));
+  };
+
+  // Batch upload all staged files at once
+  const handleUploadAllStaged = async () => {
+    if (stagedFiles.length === 0 || isUploadingToSupabase) return;
     setIsUploadingToSupabase(true);
-    
-    let filePath = '';
-    try {
-      const fileExt = uploadFileObj.name.split('.').pop();
-      const fileName = `${Date.now()}_${uploadFileName.replace(/\s+/g, '_')}.${fileExt}`;
-      filePath = `${patientId}/${fileName}`;
-      
-      const compressedBlob = await compressImage(uploadFileObj);
+    setUploadBatchProgress({ current: 0, total: stagedFiles.length });
 
-      // Upload via our backend API to bypass DNS, CORS, and adblocker bugs completely!
-      const formData = new FormData();
-      formData.append('file', compressedBlob, uploadFileObj.name);
-      formData.append('patientId', patientId);
-      formData.append('fileName', filePath);
+    const successfullyUploaded: Array<{ name: string; url: string; fileType: string }> = [];
 
-      const uploadRes = await fetch('/api/patients/upload', {
-        method: 'POST',
-        body: formData,
-      });
+    for (let i = 0; i < stagedFiles.length; i++) {
+      const item = stagedFiles[i];
+      if (item.status === 'done') continue;
 
-      if (!uploadRes.ok) {
-        const errorData = await uploadRes.json().catch(() => ({}));
-        throw new Error(errorData.error || `HTTP ${uploadRes.status}`);
-      }
+      setUploadBatchProgress({ current: i + 1, total: stagedFiles.length });
+      setStagedFiles(prev => prev.map(f => f.id === item.id ? { ...f, status: 'uploading' } : f));
 
-      const { publicUrl } = await uploadRes.json();
-      const fullFileName = [...currentPath, uploadFileName.trim()].join('/');
-      updatePatientMutation.mutate({
-        attachment: {
+      try {
+        const fileExt = item.file.name.split('.').pop() || 'pdf';
+        const sanitized = item.displayName.replace(/[^a-zA-Z0-9_-]/g, '_');
+        const uniqueFileName = `${Date.now()}_${sanitized}.${fileExt}`;
+        const filePath = `${patientId}/${uniqueFileName}`;
+
+        const compressedBlob = await compressImage(item.file);
+
+        const formData = new FormData();
+        formData.append('file', compressedBlob, item.file.name);
+        formData.append('patientId', patientId);
+        formData.append('fileName', filePath);
+
+        const uploadRes = await fetch('/api/patients/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!uploadRes.ok) {
+          const errorData = await uploadRes.json().catch(() => ({}));
+          throw new Error(errorData.error || `HTTP ${uploadRes.status}`);
+        }
+
+        const { publicUrl } = await uploadRes.json();
+        const fullFileName = [...currentPath, item.displayName.trim()].join('/');
+
+        successfullyUploaded.push({
           name: fullFileName,
           url: publicUrl,
-          fileType: uploadFileType
-        }
+          fileType: item.category,
+        });
+
+        setStagedFiles(prev => prev.map(f => f.id === item.id ? { ...f, status: 'done' } : f));
+      } catch (err: any) {
+        console.error('Error uploading file:', item.displayName, err);
+        setStagedFiles(prev => prev.map(f => f.id === item.id ? { ...f, status: 'error', error: err.message || 'Upload failed' } : f));
+      }
+    }
+
+    if (successfullyUploaded.length > 0) {
+      updatePatientMutation.mutate({
+        attachments: successfullyUploaded,
       }, {
         onSuccess: () => {
-          setIsUploadingFile(false);
-          setUploadFileName('');
-          setUploadFileObj(null);
           setIsUploadingToSupabase(false);
+          setUploadBatchProgress(null);
+          setTimeout(() => {
+            setStagedFiles(prev => prev.filter(f => f.status === 'error'));
+          }, 1200);
         },
         onError: () => {
           setIsUploadingToSupabase(false);
+          setUploadBatchProgress(null);
         }
       });
-    } catch (err: any) {
-      console.error('File upload failed:', err);
+    } else {
       setIsUploadingToSupabase(false);
-      
-      // Detailed diagnostics for debugging
-      const supabaseUrlVal = process.env.NEXT_PUBLIC_SUPABASE_URL || 'undefined';
-      const cleanUrlVal = supabaseUrlVal.replace(/['"]/g, '');
-      const anonKeyVal = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'undefined';
-      
-      alert(
-        `Failed to upload file!\n\n` +
-        `Error Message: ${err.message || 'Unknown'}\n` +
-        `Error Name: ${err.name || 'Unknown'}\n\n` +
-        `Diagnostics:\n` +
-        `- Original Env URL: ${supabaseUrlVal}\n` +
-        `- Sanitized URL: ${cleanUrlVal}\n` +
-        `- Anon Key Length: ${anonKeyVal.length} (Starts with: ${anonKeyVal.substring(0, 10)}...)\n` +
-        `- Upload Path: health360_documents/${filePath}\n\n` +
-        `Please take a screenshot of this alert!`
-      );
+      setUploadBatchProgress(null);
     }
   };
 
@@ -1783,7 +1846,6 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
               <button
                 onClick={() => {
                   setIsCreatingFolder(true);
-                  setIsUploadingFile(false);
                 }}
                 className="flex items-center gap-1.5 px-4 py-2 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl transition-all shadow-md cursor-pointer"
               >
@@ -1815,65 +1877,232 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             ))}
           </div>
 
-          {/* Large Simulated Upload Dropzone Panel (Big Area) */}
-          <div className="border-2 border-dashed border-white/15 hover:border-[#12D6C4]/50 bg-white/[0.02] hover:bg-white/[0.04] transition-all rounded-3xl p-8 flex flex-col items-center justify-center gap-4 text-center cursor-pointer relative">
-            <div className="p-4 bg-[#12D6C4]/15 rounded-2xl text-[#12D6C4]">
-              <Plus className="h-8 w-8 stroke-[2]" />
-            </div>
-            <div>
-              <h4 className="text-base font-serif font-bold text-white mb-1">Simulate Medical Document Intake</h4>
-              <p className="text-xs text-white/50 max-w-md mx-auto">
-                Select clinical files (Prescriptions, MRI scans, X-rays, lab reports) to register in the patient's record folder.
-              </p>
-            </div>
+          {/* Hidden Multi-file input */}
+          <input 
+            ref={multiFileInputRef}
+            type="file" 
+            multiple
+            accept="image/*,application/pdf,.dcm,.dicom"
+            className="hidden"
+            onChange={(e) => {
+              if (e.target.files && e.target.files.length > 0) {
+                handleFilesSelected(e.target.files);
+                e.target.value = '';
+              }
+            }}
+          />
 
-            <div className="w-full max-w-lg mt-3 bg-[#0B0A10]/95 border border-white/10 rounded-2xl p-5 text-left space-y-4 shadow-2xl cursor-default" onClick={(e) => e.stopPropagation()}>
-              <h5 className="font-serif font-bold text-xs text-white border-b border-white/10 pb-2">Document Details</h5>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-[10px] font-bold text-white/50 block mb-1 uppercase tracking-wider">File Display Name</label>
-                  <input 
-                    type="text" 
-                    placeholder="e.g. Left Knee X-Ray Report"
-                    value={uploadFileName}
-                    onChange={(e) => setUploadFileName(e.target.value)}
-                    className="text-xs bg-white/[0.04] border border-white/10 rounded-xl p-2.5 w-full text-white font-semibold focus:outline-none focus:border-[#12D6C4] transition"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-bold text-white/50 block mb-1 uppercase tracking-wider">Report Category</label>
-                  <select
-                    value={uploadFileType}
-                    onChange={(e) => setUploadFileType(e.target.value)}
-                    className="text-xs bg-[#0B0A10] border border-white/10 rounded-xl p-2.5 w-full text-white font-bold focus:outline-none focus:border-[#12D6C4] transition"
-                  >
-                    <option value="PDF">PDF Report</option>
-                    <option value="X-Ray">X-Ray Image</option>
-                    <option value="MRI">MRI Scan</option>
-                    <option value="Prescription">Prescription Slip</option>
-                    <option value="Blood Test">Blood Test Lab</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-bold text-white/50 block mb-1 uppercase tracking-wider">Select File</label>
-                <input 
-                  type="file" 
-                  onChange={(e) => setUploadFileObj(e.target.files?.[0] || null)}
-                  className="text-xs w-full text-white/70 font-semibold file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#12D6C4]/15 file:text-[#12D6C4] hover:file:bg-[#12D6C4]/25 transition-colors"
-                />
-              </div>
-              <div className="flex justify-end gap-2 pt-2 border-t border-white/10">
-                <button 
-                  onClick={handleUploadFile}
-                  disabled={!uploadFileObj || !uploadFileName.trim() || isUploadingToSupabase}
-                  className="px-4 py-2 bg-white hover:bg-white/90 disabled:opacity-50 text-black text-xs font-bold rounded-xl cursor-pointer transition-all shadow-md flex items-center gap-1.5"
+          {/* Multi-Document Upload Dropzone & Queue */}
+          <div 
+            onDragOver={(e) => {
+              e.preventDefault();
+              setIsDraggingOver(true);
+            }}
+            onDragLeave={() => setIsDraggingOver(false)}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDraggingOver(false);
+              if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleFilesSelected(e.dataTransfer.files);
+              }
+            }}
+            className={`border-2 border-dashed transition-all rounded-3xl p-6 sm:p-8 flex flex-col items-center justify-center gap-4 text-center relative ${
+              isDraggingOver 
+                ? 'border-[#12D6C4] bg-[#12D6C4]/10 scale-[1.005]' 
+                : 'border-white/15 hover:border-[#12D6C4]/40 bg-white/[0.02]'
+            }`}
+          >
+            {stagedFiles.length === 0 ? (
+              // Empty state dropzone
+              <>
+                <div 
+                  onClick={() => multiFileInputRef.current?.click()}
+                  className="p-4 bg-[#12D6C4]/15 hover:bg-[#12D6C4]/25 text-[#12D6C4] rounded-2xl cursor-pointer transition-all hover:scale-105"
                 >
-                  {isUploadingToSupabase && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-                  {isUploadingToSupabase ? 'Uploading...' : 'Upload & Scan File'}
+                  <UploadCloud className="h-8 w-8 stroke-[2]" />
+                </div>
+                <div>
+                  <h4 className="text-base font-serif font-bold text-white mb-1">
+                    Upload Patient Medical Documents
+                  </h4>
+                  <p className="text-xs text-white/50 max-w-md mx-auto">
+                    Drag & drop multiple clinical files here, or click below to select several prescriptions, MRI scans, X-rays, and reports at once.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap justify-center py-1">
+                  <span className="text-[10px] font-semibold bg-white/5 border border-white/10 px-2.5 py-1 rounded-full text-white/60">
+                    📄 PDF Reports
+                  </span>
+                  <span className="text-[10px] font-semibold bg-cyan-500/10 border border-cyan-500/20 px-2.5 py-1 rounded-full text-cyan-300">
+                    🩻 X-Ray Scans
+                  </span>
+                  <span className="text-[10px] font-semibold bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-full text-indigo-300">
+                    🧠 MRI / CT
+                  </span>
+                  <span className="text-[10px] font-semibold bg-orange-500/10 border border-orange-500/20 px-2.5 py-1 rounded-full text-orange-300">
+                    💊 Prescriptions
+                  </span>
+                  <span className="text-[10px] font-semibold bg-rose-500/10 border border-rose-500/20 px-2.5 py-1 rounded-full text-rose-300">
+                    🩸 Lab Reports
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => multiFileInputRef.current?.click()}
+                  className="px-6 py-3 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-2xl cursor-pointer transition-all shadow-xl flex items-center gap-2 hover:scale-[1.02]"
+                >
+                  <Files className="w-4 h-4" />
+                  Select Multiple Files
                 </button>
+
+                <p className="text-[11px] text-white/40">
+                  Target folder: <span className="font-bold text-white/60">Root{currentPath.length > 0 ? ` / ${currentPath.join(' / ')}` : ''}</span>
+                </p>
+              </>
+            ) : (
+              // Staged files review & batch upload queue
+              <div className="w-full text-left space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2 pb-3 border-b border-white/10">
+                  <div>
+                    <h5 className="font-serif font-bold text-sm text-white flex items-center gap-2">
+                      <Files className="w-4 h-4 text-[#12D6C4]" />
+                      {stagedFiles.length} {stagedFiles.length === 1 ? 'Document' : 'Documents'} Ready to Upload
+                    </h5>
+                    <p className="text-[11px] text-white/50">
+                      Auto-detected names and categories. You can tweak names or categories before uploading.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => multiFileInputRef.current?.click()}
+                      disabled={isUploadingToSupabase}
+                      className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 disabled:opacity-50 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> Add More
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setStagedFiles([])}
+                      disabled={isUploadingToSupabase}
+                      className="px-3 py-1.5 text-white/50 hover:text-white hover:bg-white/10 text-xs font-semibold rounded-xl transition disabled:opacity-50 cursor-pointer"
+                    >
+                      Clear List
+                    </button>
+                  </div>
+                </div>
+
+                {/* Staged items list */}
+                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {stagedFiles.map((item, idx) => (
+                    <div 
+                      key={item.id}
+                      className="p-3 bg-[#0B0A10] border border-white/10 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md"
+                    >
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
+                        <span className="text-xs font-mono font-bold text-white/40 w-5 text-center shrink-0">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <input
+                            type="text"
+                            value={item.displayName}
+                            disabled={isUploadingToSupabase || item.status === 'done'}
+                            onChange={(e) => handleUpdateStagedField(item.id, 'displayName', e.target.value)}
+                            placeholder="File display name..."
+                            className="w-full text-xs font-bold bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 text-white focus:outline-none focus:border-[#12D6C4] transition disabled:opacity-60"
+                          />
+                          <p className="text-[10px] text-white/40 truncate mt-0.5 px-0.5">
+                            Original: {item.file.name} · {item.sizeStr}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                        <select
+                          value={item.category}
+                          disabled={isUploadingToSupabase || item.status === 'done'}
+                          onChange={(e) => handleUpdateStagedField(item.id, 'category', e.target.value)}
+                          className="text-xs bg-white/5 border border-white/10 rounded-xl px-2.5 py-1.5 text-white font-semibold focus:outline-none focus:border-[#12D6C4] transition disabled:opacity-60"
+                        >
+                          <option value="PDF" className="bg-[#0B0A10]">PDF Report</option>
+                          <option value="X-Ray" className="bg-[#0B0A10]">X-Ray Image</option>
+                          <option value="MRI" className="bg-[#0B0A10]">MRI Scan</option>
+                          <option value="Prescription" className="bg-[#0B0A10]">Prescription Slip</option>
+                          <option value="Blood Test" className="bg-[#0B0A10]">Blood Test Lab</option>
+                        </select>
+
+                        {/* Status Badge */}
+                        {item.status === 'uploading' && (
+                          <span className="text-[11px] font-bold text-[#12D6C4] flex items-center gap-1 bg-[#12D6C4]/10 px-2 py-1 rounded-lg">
+                            <Loader2 className="w-3 h-3 animate-spin" /> Uploading
+                          </span>
+                        )}
+                        {item.status === 'done' && (
+                          <span className="text-[11px] font-bold text-emerald-400 flex items-center gap-1 bg-emerald-500/10 px-2 py-1 rounded-lg">
+                            <Check className="w-3 h-3" /> Done
+                          </span>
+                        )}
+                        {item.status === 'error' && (
+                          <span className="text-[10px] font-bold text-rose-400 flex items-center gap-1 bg-rose-500/10 px-2 py-1 rounded-lg" title={item.error}>
+                            Failed
+                          </span>
+                        )}
+
+                        {item.status !== 'done' && !isUploadingToSupabase && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveStagedFile(item.id)}
+                            className="p-1.5 text-white/40 hover:text-rose-400 hover:bg-rose-500/10 rounded-lg transition"
+                            title="Remove from queue"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Batch Action Toolbar */}
+                <div className="flex items-center justify-between flex-wrap gap-3 pt-3 border-t border-white/10">
+                  <div className="text-xs text-white/50">
+                    Saving to: <span className="font-bold text-white/70">Root{currentPath.length > 0 ? ` / ${currentPath.join(' / ')}` : ''}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setStagedFiles([])}
+                      disabled={isUploadingToSupabase}
+                      className="px-4 py-2.5 text-xs font-semibold text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition disabled:opacity-50 cursor-pointer"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleUploadAllStaged}
+                      disabled={isUploadingToSupabase || stagedFiles.length === 0}
+                      className="px-6 py-2.5 bg-white hover:bg-white/90 text-black text-xs font-bold rounded-xl cursor-pointer transition-all shadow-xl flex items-center gap-2 disabled:opacity-50"
+                    >
+                      {isUploadingToSupabase ? (
+                        <>
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Uploading {uploadBatchProgress?.current || 1} of {uploadBatchProgress?.total || stagedFiles.length}...
+                        </>
+                      ) : (
+                        <>
+                          <FileUp className="w-4 h-4 stroke-[2.5]" />
+                          Upload All ({stagedFiles.length}) Documents
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Folder creation form */}

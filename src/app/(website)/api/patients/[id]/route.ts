@@ -102,13 +102,21 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       dataToUpdate.tags = Array.isArray(json.tags) ? json.tags.join(', ') : (json.tags || '');
     }
 
-    // Attachments simulation support
-    if (json.attachment) {
+    // Attachments support (single or multiple batch upload)
+    if (json.attachments && Array.isArray(json.attachments) && json.attachments.length > 0) {
+      dataToUpdate.attachments = {
+        create: json.attachments.map((att: any) => ({
+          name: att.name,
+          url: att.url,
+          fileType: att.fileType || 'PDF',
+        }))
+      };
+    } else if (json.attachment) {
       dataToUpdate.attachments = {
         create: {
           name: json.attachment.name,
           url: json.attachment.url,
-          fileType: json.attachment.fileType,
+          fileType: json.attachment.fileType || 'PDF',
         }
       };
     }
