@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -66,7 +66,7 @@ export default function CRMSidebar({ children }: Props) {
     }
   }, [session]);
 
-  // Live timer for elapsed shift duration
+  // Live timer for elapsed shift duration and auto-sync
   useEffect(() => {
     let interval: any;
     if (isClockedIn && clockInTime) {
@@ -75,6 +75,12 @@ export default function CRMSidebar({ children }: Props) {
         const now = Date.now();
         const diff = Math.max(0, Math.floor((now - start) / 60000));
         setElapsedMins(diff);
+
+        // If elapsed time exceeds 8 hours (480 mins), trigger attendance fetch
+        // so backend auto-closes the session immediately
+        if (diff >= 480 && user?.username) {
+          fetchAttendanceStatus(user.username);
+        }
       };
       updateTimer();
       interval = setInterval(updateTimer, 30000);
@@ -82,7 +88,20 @@ export default function CRMSidebar({ children }: Props) {
       setElapsedMins(0);
     }
     return () => clearInterval(interval);
-  }, [isClockedIn, clockInTime]);
+  }, [isClockedIn, clockInTime, user]);
+
+  // Reminder on browser tab close/navigation if still clocked in
+  useEffect(() => {
+    if (isClockedIn && elapsedMins >= 180) {
+      const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+        e.returnValue = 'You are currently clocked in. Please remember to clock out before leaving!';
+        return e.returnValue;
+      };
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+    }
+  }, [isClockedIn, elapsedMins]);
 
   const handleClockToggle = async () => {
     setClockLoading(true);
@@ -308,6 +327,16 @@ export default function CRMSidebar({ children }: Props) {
               </span>
             </div>
 
+            {isClockedIn && (elapsedMins >= 420 || new Date().getHours() >= 19) && (
+              <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-200 text-[11px] flex items-start gap-2 shadow-inner">
+                <BellRing className="h-4 w-4 text-amber-400 shrink-0 mt-0.5 animate-bounce" />
+                <div className="space-y-0.5 leading-tight">
+                  <p className="font-bold text-[10px] text-amber-300">Shift Ending Reminder</p>
+                  <p className="text-[10px] text-white/70">Don't forget to Clock Out before leaving! (Auto-caps at 8h)</p>
+                </div>
+              </div>
+            )}
+
             <button
               type="button"
               onClick={handleClockToggle}
@@ -378,14 +407,22 @@ export default function CRMSidebar({ children }: Props) {
             <button
               onClick={handleClockToggle}
               disabled={clockLoading}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
                 isClockedIn
-                  ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40'
+                  ? (elapsedMins >= 420 || new Date().getHours() >= 19
+                      ? 'bg-amber-400 hover:bg-amber-300 text-black animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.6)] font-extrabold'
+                      : 'bg-rose-500/20 text-rose-300 border border-rose-500/40')
                   : 'bg-[var(--primary)] text-black'
               }`}
             >
-              {isClockedIn ? <LogOut size={13} /> : <Clock size={13} />}
-              <span>{isClockedIn ? 'Clock Out' : 'Clock In'}</span>
+              {isClockedIn ? (
+                (elapsedMins >= 420 || new Date().getHours() >= 19) ? <BellRing size={13} className="animate-bounce" /> : <LogOut size={13} />
+              ) : <Clock size={13} />}
+              <span>
+                {isClockedIn 
+                  ? (elapsedMins >= 420 || new Date().getHours() >= 19 ? 'Clock Out!' : 'Clock Out') 
+                  : 'Clock In'}
+              </span>
             </button>
 
             <button

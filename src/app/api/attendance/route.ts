@@ -2,10 +2,71 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/db';
 import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
-import { Role } from '@prisma/client';
+
+/**
+ * Calculates a realistic auto-clock-out timestamp when staff forgets to clock out.
+ * 1. Maximum shift duration limit: 8 hours (480 mins).
+ * 2. Clinic operational closing cap: 21:30 (9:30 PM) IST on the day of clock-in.
+ * 3. Guarantees no extraordinary 20h+ shifts ever accumulate.
+ */
+export function calculateAutoClockOut(clockInAt: Date): Date {
+  const inMs = clockInAt.getTime();
+  const eightHoursLater = new Date(inMs + 8 * 60 * 60 * 1000);
+
+  // In India Standard Time (UTC+5:30):
+  const istOffsetMs = 5.5 * 60 * 60 * 1000;
+  const inDateIst = new Date(inMs + istOffsetMs);
+
+  const istYear = inDateIst.getUTCFullYear();
+  const istMonth = inDateIst.getUTCMonth();
+  const istDay = inDateIst.getUTCDate();
+
+  // 21:30 IST is 16:00 UTC
+  const clinicClosingUtc = new Date(Date.UTC(istYear, istMonth, istDay, 16, 0, 0, 0));
+
+  // Auto-out is whichever is earlier: 8 hours later or clinic closing time (21:30 IST)
+  if (clinicClosingUtc.getTime() > inMs && clinicClosingUtc.getTime() < eightHoursLater.getTime()) {
+    return clinicClosingUtc;
+  }
+  return eightHoursLater;
+}
+
+/**
+ * Auto-closes any stale open attendance records where the current time
+ * has exceeded the 8-hour shift cap or past clinic closing time.
+ */
+export async function autoCloseStaleAttendance() {
+  try {
+    const now = new Date();
+    const openRecords = await prisma.staffAttendance.findMany({
+      where: { clockOutAt: null }
+    });
+
+    for (const rec of openRecords) {
+      const inTime = new Date(rec.clockInAt);
+      const autoOutTime = calculateAutoClockOut(inTime);
+
+      if (now.getTime() > autoOutTime.getTime()) {
+        const existingNotes = rec.notes ? `${rec.notes} • ` : '';
+        await prisma.staffAttendance.update({
+          where: { id: rec.id },
+          data: {
+            clockOutAt: autoOutTime,
+            notes: `${existingNotes}Auto-clocked out by system (Forgot to clock out • 8h max shift cap)`,
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.error('Error auto-closing stale attendance:', err);
+  }
+}
 
 export async function GET(req: NextRequest) {
   try {
+    // 1. Automatically auto-close any stale or forgotten clock-out records before returning data
+    await autoCloseStaleAttendance();
+
     const session = await getServerSession(authOptions);
     let userId: string | null = null;
     let userRole: string = 'PHYSIO';
@@ -28,7 +89,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!userId) {
-      // Default to rashmita or first staff member
+      // Default to first staff member
       const firstUser = await prisma.user.findFirst();
       if (firstUser) {
         userId = firstUser.id;
@@ -45,7 +106,6 @@ export async function GET(req: NextRequest) {
     const activeRecord = userId ? await prisma.staffAttendance.findFirst({
       where: {
         userId: userId,
-        date: todayStart,
         clockOutAt: null,
       },
       orderBy: { clockInAt: 'desc' },
@@ -78,9 +138,12 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
+    // 1. Auto-close any stale or forgotten clock-out records first
+    await autoCloseStaleAttendance();
+
     const session = await getServerSession(authOptions);
     const body = await req.json();
-    const { action, username, notes } = body;
+    const { action, username, notes, attendanceId, clockOutTime } = body;
 
     let targetUser = null;
 
@@ -107,18 +170,50 @@ export async function POST(req: NextRequest) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
+    // ADMIN FORCE CLOCK-OUT ACTION
+    if (action === 'adminClockOut') {
+      const callerRole = ((session?.user as any)?.role || targetUser.role || '').toUpperCase();
+      if (callerRole !== 'ADMIN') {
+        return NextResponse.json({ error: 'Only admins can clock out other staff members.' }, { status: 403 });
+      }
+
+      if (!attendanceId) {
+        return NextResponse.json({ error: 'Attendance record ID required.' }, { status: 400 });
+      }
+
+      const targetRec = await prisma.staffAttendance.findUnique({
+        where: { id: attendanceId },
+        include: { user: true }
+      });
+
+      if (!targetRec) {
+        return NextResponse.json({ error: 'Attendance record not found.' }, { status: 404 });
+      }
+
+      const effectiveOut = clockOutTime ? new Date(clockOutTime) : new Date();
+      const existingNotes = targetRec.notes ? `${targetRec.notes} • ` : '';
+      const updatedRecord = await prisma.staffAttendance.update({
+        where: { id: attendanceId },
+        data: {
+          clockOutAt: effectiveOut,
+          notes: `${existingNotes}${notes || 'Clocked out by Admin'}`,
+        }
+      });
+
+      return NextResponse.json({ success: true, record: updatedRecord });
+    }
+
     if (action === 'clockIn') {
-      // Check if already clocked in
+      // Check if already clocked in today
       const existing = await prisma.staffAttendance.findFirst({
         where: {
           userId: targetUser.id,
-          date: todayStart,
           clockOutAt: null,
         }
       });
 
       if (existing) {
-        return NextResponse.json({ error: 'Already clocked in for today.' }, { status: 400 });
+        return NextResponse.json({ error: 'Already clocked in. Please clock out of your active shift first.' }, { status: 400 });
       }
 
       const newRecord = await prisma.staffAttendance.create({
@@ -135,14 +230,13 @@ export async function POST(req: NextRequest) {
       const activeRecord = await prisma.staffAttendance.findFirst({
         where: {
           userId: targetUser.id,
-          date: todayStart,
           clockOutAt: null,
         },
         orderBy: { clockInAt: 'desc' }
       });
 
       if (!activeRecord) {
-        return NextResponse.json({ error: 'No active clock-in found for today.' }, { status: 400 });
+        return NextResponse.json({ error: 'No active clock-in found.' }, { status: 400 });
       }
 
       const updatedRecord = await prisma.staffAttendance.update({

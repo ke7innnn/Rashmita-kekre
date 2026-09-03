@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { motion } from 'framer-motion';
-import { Clock, LogIn, LogOut, Calendar, CheckCircle2, UserCheck, ShieldCheck, AlertCircle, RefreshCw } from 'lucide-react';
+import { Clock, LogIn, LogOut, Calendar, CheckCircle2, UserCheck, ShieldCheck, AlertCircle, RefreshCw, BellRing, ShieldAlert } from 'lucide-react';
 import GlassPanel from '@/components/GlassPanel';
 
 export default function AttendancePage() {
@@ -101,15 +101,46 @@ export default function AttendancePage() {
     return `${hrs}h ${m}m`;
   };
 
-  const calculateShiftDuration = (startIso: string, endIso?: string) => {
+  const calculateShiftDuration = (startIso: string, endIso?: string, notes?: string | null) => {
     if (!startIso) return '—';
     const start = new Date(startIso).getTime();
     const end = endIso ? new Date(endIso).getTime() : new Date().getTime();
-    const mins = Math.floor((end - start) / (1000 * 60));
+    let mins = Math.floor((end - start) / (1000 * 60));
+    // Hard protective cap: if unclosed and exceeded 8 hours, show capped
+    if (!endIso && mins > 480) {
+      return `${formatHours(480)} (Auto-Capped)`;
+    }
     return formatHours(mins);
   };
 
   const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN';
+
+  const handleAdminClockOut = async (attendanceId: string, staffName: string) => {
+    if (!confirm(`Are you sure you want to clock out ${staffName}?`)) return;
+    try {
+      setActionLoading(true);
+      const res = await fetch('/api/attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'adminClockOut',
+          attendanceId,
+          notes: 'Manually clocked out by Admin',
+        }),
+      });
+      if (res.ok) {
+        await fetchAttendance();
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to clock out staff');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error clocking out staff');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   return (
     <div className="space-y-8 p-6 lg:p-8 max-w-7xl mx-auto">
@@ -137,6 +168,38 @@ export default function AttendancePage() {
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh Status
         </button>
+      </div>
+
+      {/* Auto-Clockout & Reminder Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-teal-500/10 via-purple-500/10 to-amber-500/10 border border-white/10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-lg">
+        <div className="flex items-center gap-3.5">
+          <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+            <BellRing className="h-5 w-5 animate-bounce" />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h4 className="text-xs font-bold text-foreground">
+                Automatic Clock-Out Protection Active
+              </h4>
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                8h Max Cap • 9:30 PM Cutoff
+              </span>
+            </div>
+            <p className="text-[11px] text-foreground/70 mt-1 leading-relaxed">
+              To prevent accidental overnight hours, all active shifts automatically cap at 8 hours (or 9:30 PM clinic closing) if staff forgets to clock out. <strong>Please remember to press Clock Out at the end of every shift!</strong>
+            </p>
+          </div>
+        </div>
+        {isClockedIn && (
+          <button
+            onClick={handleClockToggle}
+            disabled={actionLoading}
+            className="px-4 py-2 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-xs font-bold transition flex items-center gap-1.5 shrink-0 cursor-pointer shadow-md"
+          >
+            <LogOut size={13} />
+            Clock Out Now
+          </button>
+        )}
       </div>
 
       {/* Main Clock-In Action Grid */}
@@ -290,6 +353,7 @@ export default function AttendancePage() {
                   <th className="py-3 px-4">Clock Out</th>
                   <th className="py-3 px-4">Total Duration</th>
                   <th className="py-3 px-4">Status</th>
+                  {isAdmin && <th className="py-3 px-4 text-right">Actions</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -303,6 +367,7 @@ export default function AttendancePage() {
                     month: 'short',
                     year: 'numeric'
                   });
+                  const isAutoClosed = record.notes?.includes('Auto-clocked out');
 
                   return (
                     <tr key={record.id} className="hover:bg-white/5 transition-colors">
@@ -316,19 +381,44 @@ export default function AttendancePage() {
                       <td className="py-3.5 px-4 font-mono text-emerald-400">{inTime}</td>
                       <td className="py-3.5 px-4 font-mono text-rose-300">{outTime}</td>
                       <td className="py-3.5 px-4 font-mono font-medium text-foreground">
-                        {calculateShiftDuration(record.clockInAt, record.clockOutAt)}
+                        {calculateShiftDuration(record.clockInAt, record.clockOutAt, record.notes)}
                       </td>
                       <td className="py-3.5 px-4">
-                        {record.clockOutAt ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-slate-500/20 text-slate-300 border border-slate-500/30">
+                        {isAutoClosed ? (
+                          <div className="flex flex-col gap-0.5 items-start">
+                            <span 
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                              title={record.notes || 'Auto-closed at 8h shift cap'}
+                            >
+                              <ShieldAlert size={11} className="text-amber-400 shrink-0" />
+                              Auto-Closed (8h Cap)
+                            </span>
+                          </div>
+                        ) : record.clockOutAt ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-white/10 text-foreground/70 border border-white/10">
                             Completed
                           </span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> On Duty
                           </span>
                         )}
                       </td>
+                      {isAdmin && (
+                        <td className="py-3.5 px-4 text-right">
+                          {!record.clockOutAt && (
+                            <button
+                              type="button"
+                              onClick={() => handleAdminClockOut(record.id, record.user?.username || 'Staff User')}
+                              disabled={actionLoading}
+                              className="px-2.5 py-1 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 text-[10px] font-bold transition-all cursor-pointer shadow-sm"
+                              title="Force clock out this staff member"
+                            >
+                              Clock Out
+                            </button>
+                          )}
+                        </td>
+                      )}
                     </tr>
                   );
                 })}
