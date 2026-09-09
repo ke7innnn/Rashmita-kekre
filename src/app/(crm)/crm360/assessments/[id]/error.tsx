@@ -16,7 +16,7 @@ export default function AssessmentError({
   }, [error]);
 
   return (
-    <div className="p-12 text-center text-white/70 space-y-4 max-w-md mx-auto my-12 bg-white/5 border border-white/10 rounded-2xl">
+    <div className="p-12 text-center text-white/70 space-y-4 max-w-md mx-auto my-12 bg-white/5 border border-white/10 rounded-2xl print:hidden">
       <AlertTriangle className="w-10 h-10 text-rose-400 mx-auto" />
       <h3 className="text-base font-bold text-white">Assessment Page Error</h3>
       <p className="text-xs text-white/50">{error?.message || 'An unexpected error occurred.'}</p>

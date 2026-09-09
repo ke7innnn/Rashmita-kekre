@@ -186,7 +186,7 @@ export default function AssessmentDetailPage() {
           </Link>
 
           <Link
-            href={`/crm360/assessments/${id}/print`}
+            href={`/crm360/assessments/${id}/print?autoprint=1`}
             target="_blank"
             className="px-3.5 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition flex items-center gap-1.5 border border-white/15"
           >
