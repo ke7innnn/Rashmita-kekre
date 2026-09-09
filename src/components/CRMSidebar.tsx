@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle, ExternalLink
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -22,7 +22,6 @@ export default function CRMSidebar({ children }: Props) {
   const { data: session, status } = useSession();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [showRedirectModal, setShowRedirectModal] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [user, setUser] = useState<any>({ name: 'Loading', role: 'Staff' });
 
@@ -165,11 +164,6 @@ export default function CRMSidebar({ children }: Props) {
     await signOut({ callbackUrl: '/crm360/login' });
   };
 
-  const handleConfirmRedirect = () => {
-    setShowRedirectModal(false);
-    window.open('https://health360-nu.vercel.app', '_blank');
-  };
-
   const userRole = (session?.user?.role || '').toLowerCase();
   const isAdmin = userRole === 'admin';
 
@@ -179,7 +173,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
-    { href: '/crm360/calls', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'] },
+    { href: 'https://health360-nu.vercel.app/', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'], external: true },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
     { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
@@ -287,7 +281,30 @@ export default function CRMSidebar({ children }: Props) {
               <div className="space-y-1">
                 {navigation.filter(item => item.category === 'management').map((item) => {
                   const Icon = item.icon;
-                  const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
+                  const isActive = !item.external && (item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href)));
+
+                  if (item.external) {
+                    return (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block"
+                      >
+                        <motion.div
+                          whileTap={{ scale: 0.97 }}
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer text-white/60 hover:text-white hover:bg-white/[0.04] group"
+                        >
+                          <span className="flex items-center gap-3 z-10">
+                            <Icon className="h-4 w-4 stroke-[1.75] text-[#12D6C4]" />
+                            {item.name}
+                          </span>
+                          <ExternalLink className="h-3 w-3 text-white/30 group-hover:text-[#12D6C4] transition-colors" />
+                        </motion.div>
+                      </a>
+                    );
+                  }
 
                   return (
                     <Link key={item.href} href={item.href!}>
@@ -447,8 +464,28 @@ export default function CRMSidebar({ children }: Props) {
               <nav className="space-y-1">
                 {navigation.map((item) => {
                   const Icon = item.icon;
-                  const isActive = item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href));
+                  const isActive = !item.external && (item.exact ? pathname === item.href : (item.href && pathname.startsWith(item.href)));
                   
+                  if (item.external) {
+                    return (
+                      <a
+                        key={item.name}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => setMobileMenuOpen(false)}
+                      >
+                        <div className="w-full flex items-center justify-between px-4 py-2.5 text-sm font-semibold rounded-xl text-[rgba(245,243,250,0.62)] hover:bg-[rgba(255,255,255,0.04)]">
+                          <div className="flex items-center gap-3">
+                            <Icon className="h-4.5 w-4.5 stroke-[1.75] text-[#12D6C4]" />
+                            {item.name}
+                          </div>
+                          <ExternalLink className="h-3.5 w-3.5 text-white/40" />
+                        </div>
+                      </a>
+                    );
+                  }
+
                   return (
                     <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}>
                       <div className={`w-full flex items-center gap-3 px-4 py-2.5 text-sm font-semibold rounded-xl ${
@@ -501,60 +538,6 @@ export default function CRMSidebar({ children }: Props) {
           </AnimatePresence>
         </main>
       </div>
-
-      {/* External Voice Agent Redirect Modal */}
-      <AnimatePresence>
-        {showRedirectModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4 select-none">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setShowRedirectModal(false)}
-              className="absolute inset-0 backdrop-blur-md bg-black/60"
-            />
-            <motion.div
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-              className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.12)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.5)] w-full max-w-sm z-10 flex flex-col items-center text-center space-y-4"
-            >
-              <button 
-                onClick={() => setShowRedirectModal(false)}
-                className="absolute right-4 top-4 p-1.5 rounded-full hover:bg-[rgba(255,255,255,0.08)] text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA] cursor-pointer"
-              >
-                <X className="h-4.5 w-4.5 stroke-[1.75]" />
-              </button>
-              <div className="h-12 w-12 rounded-full bg-[rgba(255,255,255,0.04)] border border-primary/30 flex items-center justify-center text-primary">
-                <PhoneCall className="h-5.5 w-5.5 stroke-[1.75]" />
-              </div>
-              <div className="space-y-1.5 px-2">
-                <h3 className="text-xl font-serif font-bold text-[#F5F3FA]">
-                  Redirect to Voice App?
-                </h3>
-                <p className="text-xs text-[rgba(245,243,250,0.62)] leading-relaxed font-medium">
-                  Would you like to open the external Health 360 AI Voice Agent application?
-                </p>
-              </div>
-              <div className="flex w-full gap-3 pt-2">
-                <button
-                  onClick={() => setShowRedirectModal(false)}
-                  className="flex-1 px-4 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors text-[rgba(245,243,250,0.8)]"
-                >
-                  No, Cancel
-                </button>
-                <button
-                  onClick={handleConfirmRedirect}
-                  className="flex-1 px-4 py-2.5 bg-primary hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors shadow-[0_0_20px_rgba(18,214,196,0.4)]"
-                >
-                  Yes, Redirect
-                </button>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       <AICopilotWidget />
     </div>

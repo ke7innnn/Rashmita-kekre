@@ -41,7 +41,7 @@ export default function CRMOverviewRoute() {
 
   return (
     <div className="h-full relative">
-      <OverviewTab onVoiceAgentClick={() => router.push('/crm360/calls')} />
+      <OverviewTab onVoiceAgentClick={() => window.open('https://health360-nu.vercel.app/', '_blank')} />
     </div>
   );
 }
