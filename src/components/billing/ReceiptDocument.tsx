@@ -446,6 +446,11 @@ export default function ReceiptDocument({
           <div className="bill-sign-right">
             <div className="bill-sign-for">For HEALTH 360 CLINIC</div>
             <div className="bill-sign-space">
+              <img
+                src="/signatures/dr-rashmita-signature.png"
+                alt="Dr. Rashmita Karvir Kekre Signature"
+                className="bill-sign-img"
+              />
               <div className="bill-sign-line" />
             </div>
             <div className="bill-sign-name">Dr. Rashmita Karvir Kekre</div>
@@ -823,10 +828,21 @@ const CSS = `
   text-transform: uppercase;
 }
 .bill-sign-space {
-  height: 12mm;
+  min-height: 15mm;
   display: flex;
+  flex-direction: column;
   align-items: flex-end;
   justify-content: flex-end;
+  position: relative;
+}
+.bill-sign-img {
+  height: 14mm;
+  width: auto;
+  max-width: 46mm;
+  object-fit: contain;
+  margin-bottom: -3mm;
+  user-select: none;
+  pointer-events: none;
 }
 .bill-sign-line {
   width: 50mm;
