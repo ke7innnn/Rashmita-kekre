@@ -13,7 +13,7 @@ import CourseMeter from '@/components/billing/CourseMeter';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import CountUpNumber from '@/components/billing/CountUpNumber';
-import { openWhatsAppBill } from '@/lib/whatsappTemplates';
+import { openWhatsAppBill, sendOfficialWhatsAppBill } from '@/lib/whatsappTemplates';
 
 function InvoiceBuilderContent() {
   const router = useRouter();
@@ -341,7 +341,7 @@ function InvoiceBuilderContent() {
       const inv = await res.json();
 
       if (sendWhatsApp && selectedPatient.phone) {
-        openWhatsAppBill({
+        await sendOfficialWhatsAppBill({
           phone: selectedPatient.phone,
           patientName: selectedPatient.fullName,
           invoiceNumber: inv.invoiceNumber,

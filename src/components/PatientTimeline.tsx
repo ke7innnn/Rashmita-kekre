@@ -21,6 +21,7 @@ import CourseMeter from '@/components/billing/CourseMeter';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import EditPatientModal from '@/components/EditPatientModal';
 import WhatsAppTesterModal from '@/components/WhatsAppTesterModal';
+import SendWhatsAppBillModal from '@/components/billing/SendWhatsAppBillModal';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -115,6 +116,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const [nextApptTime, setNextApptTime] = useState('');
   const [whatsappSending, setWhatsappSending] = useState<string | null>(null);
   const [whatsappSuccess, setWhatsappSuccess] = useState<string | null>(null);
+  const [timelineWhatsAppInvoice, setTimelineWhatsAppInvoice] = useState<any | null>(null);
 
   // Fetch referring doctors to look up referring doctor's phone number
   const { data: referringDoctors = [], refetch: refetchReferringDoctors } = useQuery({
@@ -3203,20 +3205,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                                 alert('No phone number recorded for this patient.');
                                 return;
                               }
-                              openWhatsAppBill({
-                                phone: patient.phone,
-                                patientName: patient.fullName,
-                                invoiceNumber: inv.invoiceNumber,
-                                issueDate: new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-                                lines: inv.lines,
-                                total,
-                                amountPaid: paid,
-                                balanceDue: balance,
-                                paymentMode: inv.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid'),
-                              });
+                              setTimelineWhatsAppInvoice(inv);
                             }}
                             className="p-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
-                            title="Send bill receipt to patient on WhatsApp"
+                            title="Send bill receipt via Clinic Calling Number (+91 8482812859)"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
                             <span className="hidden md:inline">WhatsApp</span>
@@ -4025,6 +4017,23 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         isOpen={isTesterOpen}
         onClose={() => setIsTesterOpen(false)}
       />
+
+      {/* Official Calling Number WhatsApp Bill Modal */}
+      {timelineWhatsAppInvoice && (
+        <SendWhatsAppBillModal
+          isOpen={!!timelineWhatsAppInvoice}
+          onClose={() => setTimelineWhatsAppInvoice(null)}
+          patientName={patient.fullName}
+          patientPhone={patient.phone || ''}
+          invoiceNumber={timelineWhatsAppInvoice.invoiceNumber}
+          issueDate={new Date(timelineWhatsAppInvoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          lines={timelineWhatsAppInvoice.lines}
+          total={Number(timelineWhatsAppInvoice.totalAmount || 0)}
+          amountPaid={Number(timelineWhatsAppInvoice.paidAmount || 0)}
+          balanceDue={Math.max(0, Number(timelineWhatsAppInvoice.totalAmount || 0) - Number(timelineWhatsAppInvoice.paidAmount || 0))}
+          paymentMode={timelineWhatsAppInvoice.payments?.[0]?.paymentMode || (Number(timelineWhatsAppInvoice.paidAmount || 0) > 0 ? 'UPI / Cash' : 'Unpaid')}
+        />
+      )}
     </div>
   );
 }

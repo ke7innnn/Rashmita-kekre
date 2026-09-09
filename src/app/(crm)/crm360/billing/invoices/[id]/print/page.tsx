@@ -6,6 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Printer, Download, ArrowLeft, Loader2, RotateCcw, Edit3, MessageSquare } from 'lucide-react';
 import ReceiptDocument, { ClinicProfile, ReceiptData, PaymentMode } from '@/components/billing/ReceiptDocument';
+import SendWhatsAppBillModal from '@/components/billing/SendWhatsAppBillModal';
 import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 function InvoicePrintContent() {
@@ -18,6 +19,7 @@ function InvoicePrintContent() {
   const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (id) {
@@ -204,20 +206,10 @@ function InvoicePrintContent() {
                   alert('No patient phone number recorded for this invoice.');
                   return;
                 }
-                openWhatsAppBill({
-                  phone: receiptData.patientPhone,
-                  patientName: receiptData.patientName,
-                  invoiceNumber: receiptData.documentNumber,
-                  issueDate: receiptData.issueDate,
-                  lines: receiptData.lines,
-                  total: receiptData.total,
-                  amountPaid: receiptData.amountPaid,
-                  balanceDue: receiptData.balanceDue,
-                  paymentMode: receiptData.paymentMode,
-                });
+                setWhatsappModalOpen(true);
               }}
               className="px-3.5 py-1.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
-              title="Quick send official bill receipt to patient on WhatsApp"
+              title="Quick send official bill receipt via Clinic Calling Number (+91 8482812859)"
             >
               <MessageSquare className="w-3.5 h-3.5" /> Send WhatsApp
             </button>
@@ -246,6 +238,23 @@ function InvoicePrintContent() {
           onSelectPaymentMode={handleSelectPaymentMode}
         />
       </div>
+
+      {/* Official Calling Number WhatsApp Bill Modal */}
+      {receiptData && (
+        <SendWhatsAppBillModal
+          isOpen={whatsappModalOpen}
+          onClose={() => setWhatsappModalOpen(false)}
+          patientName={receiptData.patientName}
+          patientPhone={receiptData.patientPhone || ''}
+          invoiceNumber={receiptData.documentNumber}
+          issueDate={receiptData.issueDate}
+          lines={receiptData.lines}
+          total={receiptData.total}
+          amountPaid={receiptData.amountPaid}
+          balanceDue={receiptData.balanceDue}
+          paymentMode={receiptData.paymentMode}
+        />
+      )}
     </div>
   );
 }

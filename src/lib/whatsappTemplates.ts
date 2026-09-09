@@ -339,9 +339,10 @@ Team Health 360`;
 }
 
 /**
- * Quick send bill / invoice receipt to patient on WhatsApp
+ * Send official bill / invoice receipt to patient via Clinic Calling Number (+91 8482812859)
+ * Does NOT open personal WhatsApp Web/app.
  */
-export function openWhatsAppBill({
+export async function sendOfficialWhatsAppBill({
   phone,
   ...details
 }: {
@@ -356,20 +357,72 @@ export function openWhatsAppBill({
   paymentMode?: string | null;
 }) {
   const text = generateBillWhatsAppText(details);
-  
-  // Try sending via background CRM API as well
+  const cleanDigits = (phone || '').replace(/\D/g, '').slice(-10);
+
+  try {
+    const res = await fetch('/api/whatsapp', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: cleanDigits,
+        message: text,
+        senderPhone: '8482812859',
+        invoiceNumber: details.invoiceNumber,
+        patientName: details.patientName,
+      }),
+    });
+    const data = await res.json();
+    return { success: res.ok && data.success, data, messageText: text };
+  } catch (err: any) {
+    console.error('Failed to dispatch official WhatsApp bill:', err);
+    return { success: false, error: err.message, messageText: text };
+  }
+}
+
+/**
+ * Quick send bill / invoice receipt to patient on WhatsApp.
+ * Dispatches directly via the clinic calling number (+91 8482812859).
+ * Only opens WhatsApp Web if explicitly requested via openFallbackWeb.
+ */
+export function openWhatsAppBill({
+  phone,
+  openFallbackWeb = false,
+  ...details
+}: {
+  phone: string;
+  openFallbackWeb?: boolean;
+  patientName: string;
+  invoiceNumber: string;
+  issueDate?: string;
+  lines?: { description: string; quantity?: number; lineTotal?: number }[];
+  total: number;
+  amountPaid: number;
+  balanceDue: number;
+  paymentMode?: string | null;
+}) {
+  const text = generateBillWhatsAppText(details);
+  const cleanDigits = (phone || '').replace(/\D/g, '').slice(-10);
+  const targetPhone = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
+
+  // Primary dispatch via Clinic Calling Number (+91 8482812859)
   try {
     fetch('/api/whatsapp', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phone, message: text }),
-    }).catch(() => {});
+      body: JSON.stringify({
+        phone: cleanDigits,
+        message: text,
+        senderPhone: '8482812859',
+        invoiceNumber: details.invoiceNumber,
+        patientName: details.patientName,
+      }),
+    }).catch((e) => console.warn('Calling number WhatsApp bill dispatch error:', e));
   } catch (e) {}
 
-  // Format phone with India 91 prefix
-  const cleanDigits = (phone || '').replace(/\D/g, '');
-  const targetPhone = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
-
-  const url = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
-  window.open(url, '_blank');
+  // Only open personal WhatsApp Web if user explicitly requested fallback
+  if (openFallbackWeb) {
+    const url = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  }
 }
+

@@ -9,6 +9,7 @@ import {
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import RecordPaymentModal from '@/components/billing/RecordPaymentModal';
+import SendWhatsAppBillModal from '@/components/billing/SendWhatsAppBillModal';
 import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 export default function InvoiceDetailPage() {
@@ -18,6 +19,7 @@ export default function InvoiceDetailPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [paymentModalOpen, setPaymentModalOpen] = useState<boolean>(false);
+  const [whatsappModalOpen, setWhatsappModalOpen] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
 
   // Quick Edit States
@@ -208,20 +210,10 @@ export default function InvoiceDetailPage() {
                 alert('No patient phone number available for this invoice.');
                 return;
               }
-              openWhatsAppBill({
-                phone: invoice.patient.phone,
-                patientName: invoice.patient.fullName,
-                invoiceNumber: invoice.invoiceNumber,
-                issueDate: new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-                lines: invoice.lines,
-                total,
-                amountPaid: paid,
-                balanceDue: balance,
-                paymentMode: invoice.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid'),
-              });
+              setWhatsappModalOpen(true);
             }}
             className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
-            title="Send official bill summary and receipt to patient on WhatsApp"
+            title="Send official bill receipt via Clinic Calling Number (+91 8482812859)"
           >
             <MessageSquare className="w-4 h-4" /> Send WhatsApp
           </button>
@@ -484,6 +476,21 @@ export default function InvoiceDetailPage() {
         totalAmount={total}
         paidAmount={paid}
         onPaymentSuccess={fetchInvoice}
+      />
+
+      {/* Official Calling Number WhatsApp Bill Modal */}
+      <SendWhatsAppBillModal
+        isOpen={whatsappModalOpen}
+        onClose={() => setWhatsappModalOpen(false)}
+        patientName={invoice.patient?.fullName || 'Patient'}
+        patientPhone={invoice.patient?.phone || ''}
+        invoiceNumber={invoice.invoiceNumber}
+        issueDate={new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+        lines={invoice.lines}
+        total={total}
+        amountPaid={paid}
+        balanceDue={balance}
+        paymentMode={invoice.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid')}
       />
     </div>
   );

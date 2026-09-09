@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
+import SendWhatsAppBillModal from '@/components/billing/SendWhatsAppBillModal';
 import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 export default function InvoiceListPage() {
@@ -17,6 +18,7 @@ export default function InvoiceListPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>('');
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL');
+  const [selectedInvoiceForWhatsApp, setSelectedInvoiceForWhatsApp] = useState<any | null>(null);
 
   useEffect(() => {
     fetchInvoices();
@@ -188,20 +190,10 @@ export default function InvoiceListPage() {
                                 alert('No phone number recorded for this patient.');
                                 return;
                               }
-                              openWhatsAppBill({
-                                phone: inv.patient.phone,
-                                patientName: inv.patient.fullName,
-                                invoiceNumber: inv.invoiceNumber,
-                                issueDate: new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
-                                lines: inv.lines,
-                                total,
-                                amountPaid: paid,
-                                balanceDue: balance,
-                                paymentMode: inv.payments?.[0]?.paymentMode || (paid > 0 ? 'UPI / Cash' : 'Unpaid'),
-                              });
+                              setSelectedInvoiceForWhatsApp(inv);
                             }}
                             className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 rounded-lg transition cursor-pointer"
-                            title="Send bill receipt on WhatsApp"
+                            title="Send bill receipt via Clinic Calling Number (+91 8482812859)"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
                           </button>
@@ -229,6 +221,23 @@ export default function InvoiceListPage() {
             </table>
           </div>
         </div>
+      )}
+
+      {/* Official Calling Number WhatsApp Bill Modal */}
+      {selectedInvoiceForWhatsApp && (
+        <SendWhatsAppBillModal
+          isOpen={!!selectedInvoiceForWhatsApp}
+          onClose={() => setSelectedInvoiceForWhatsApp(null)}
+          patientName={selectedInvoiceForWhatsApp.patient?.fullName || 'Patient'}
+          patientPhone={selectedInvoiceForWhatsApp.patient?.phone || ''}
+          invoiceNumber={selectedInvoiceForWhatsApp.invoiceNumber}
+          issueDate={new Date(selectedInvoiceForWhatsApp.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+          lines={selectedInvoiceForWhatsApp.lines}
+          total={Number(selectedInvoiceForWhatsApp.totalAmount || 0)}
+          amountPaid={Number(selectedInvoiceForWhatsApp.paidAmount || 0)}
+          balanceDue={Math.max(0, Number(selectedInvoiceForWhatsApp.totalAmount || 0) - Number(selectedInvoiceForWhatsApp.paidAmount || 0))}
+          paymentMode={selectedInvoiceForWhatsApp.payments?.[0]?.paymentMode || (Number(selectedInvoiceForWhatsApp.paidAmount || 0) > 0 ? 'UPI / Cash' : 'Unpaid')}
+        />
       )}
     </div>
   );

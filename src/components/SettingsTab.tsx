@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion } from 'framer-motion';
-import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare, X, CalendarX, Palette, Check, Terminal } from 'lucide-react';
+import { Save, Loader2, ShieldAlert, Eye, EyeOff, Building, Clock, MessageSquare, X, CalendarX, Palette, Check, Terminal, ShieldCheck } from 'lucide-react';
 import GlassPanel from './GlassPanel';
 import BillingSettingsTab from './settings/BillingSettingsTab';
 import StaffSettingsTab from './settings/StaffSettingsTab';
@@ -638,6 +638,13 @@ export default function SettingsTab({ user }: Props) {
             </h4>
  
             <div className="space-y-4">
+              <div className="p-3 bg-emerald-500/10 border border-emerald-500/25 rounded-xl flex items-center gap-2.5 text-xs text-emerald-300">
+                <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+                <div className="text-[11px] leading-relaxed">
+                  <strong className="text-emerald-200">Official Calling Number: +91 8482812859</strong>. All patient billing receipts and automated WhatsApp reminders route through the clinic calling line to protect staff privacy.
+                </div>
+              </div>
+
               <div>
                 <label className="eyebrow text-[9px] block mb-1.5">
                   24-Hour Reminder Copy
