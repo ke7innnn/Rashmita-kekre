@@ -63,6 +63,12 @@ export default function AssessmentPrintPage() {
     }
   } catch (e) {}
 
+  const romList: any[] = Array.isArray(assessment.romMeasurements) ? assessment.romMeasurements : [];
+  const specialTestsList: any[] = Array.isArray(assessment.specialTestResults)
+    ? assessment.specialTestResults
+    : (Array.isArray(assessment.specialTests) ? assessment.specialTests : []);
+  const goalsList: any[] = Array.isArray(assessment.goals) ? assessment.goals : [];
+
   return (
     <div className="min-h-screen bg-neutral-100 print:bg-white py-6 print:py-0">
       {/* Action Bar (hidden when printing) */}
@@ -205,12 +211,12 @@ export default function AssessmentPrintPage() {
           </h2>
           <div>
             <span className="font-bold block pb-1">Range of Motion:</span>
-            {assessment.romMeasurements.length === 0 ? (
+            {romList.length === 0 ? (
               <p className="text-gray-500 italic">No specific ROM recorded</p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                {assessment.romMeasurements.map((m: any) => (
-                  <div key={m.id} className="border-b border-gray-100 py-1">
+                {romList.map((m: any) => (
+                  <div key={m.id || `${m.joint}-${m.movement}`} className="border-b border-gray-100 py-1">
                     <strong>{m.joint} {m.movement} ({m.side}):</strong> {m.activeRomDegrees}° (Normal: {m.normalDegrees}°)
                     {m.painWithMovement && <span className="text-red-500 ml-1">(!Pain)</span>}
                   </div>
@@ -221,11 +227,11 @@ export default function AssessmentPrintPage() {
 
           <div className="pt-2">
             <span className="font-bold block pb-1">Special Clinical Tests:</span>
-            {assessment.specialTests.length === 0 ? (
+            {specialTestsList.length === 0 ? (
               <p className="text-gray-500 italic">No special tests recorded</p>
             ) : (
-              assessment.specialTests.map((t: any) => (
-                <div key={t.id} className="py-0.5">
+              specialTestsList.map((t: any) => (
+                <div key={t.id || t.testName} className="py-0.5">
                   <strong>{t.testName} ({t.side}):</strong> {t.result} {t.note ? `— ${t.note}` : ''}
                 </div>
               ))
@@ -269,11 +275,17 @@ export default function AssessmentPrintPage() {
           <p><strong>Prognosis:</strong> {assessment.prognosis || 'GOOD'}</p>
           <div className="pt-2">
             <strong>Treatment Goals:</strong>
-            <ul className="list-disc pl-5 pt-1 space-y-1">
-              {assessment.goals.map((g: any) => (
-                <li key={g.id}>{g.text} (Target: {g.targetValue || 'Met'}, Date: {new Date(g.targetDate).toLocaleDateString()})</li>
-              ))}
-            </ul>
+            {goalsList.length === 0 ? (
+              <p className="text-gray-500 italic pt-0.5">No specific goals recorded</p>
+            ) : (
+              <ul className="list-disc pl-5 pt-1 space-y-1">
+                {goalsList.map((g: any) => (
+                  <li key={g.id || g.text}>
+                    {g.text} {g.targetValue ? `(Target: ${g.targetValue})` : ''} {g.targetDate ? `— Target Date: ${new Date(g.targetDate).toLocaleDateString()}` : ''}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
 
