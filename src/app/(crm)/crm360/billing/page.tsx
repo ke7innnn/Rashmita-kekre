@@ -175,7 +175,7 @@ export default function BillingOverviewPage() {
               <CountUpNumber value={Number(metrics?.activeCoursesCount || 0)} duration={500} /> <span className="text-sm font-normal text-white/40">courses</span>
             </div>
             <p className="text-xs text-white/40 mt-1.5 font-medium tabular-nums">
-              {metrics?.totalDaysRemaining || 0} total treatment days remaining across patients
+              {metrics?.totalDaysRemaining || 0} total treatment sessions remaining across patients
             </p>
           </div>
         </motion.div>
@@ -209,7 +209,7 @@ export default function BillingOverviewPage() {
                     </div>
                     <div className="text-right">
                       <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-300 bg-amber-500/20 border border-amber-500/30 px-3 py-1 rounded-full">
-                        {pkg.remainingDays} {pkg.remainingDays === 1 ? 'day' : 'days'} unused, expires in {pkg.daysToExpiry} {pkg.daysToExpiry === 1 ? 'day' : 'days'}
+                        {pkg.remainingDays} {pkg.remainingDays === 1 ? 'session' : 'sessions'} remaining · Expires in {pkg.daysToExpiry} {pkg.daysToExpiry === 1 ? 'day' : 'days'}
                       </span>
                     </div>
                   </div>

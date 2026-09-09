@@ -64,12 +64,12 @@ export default function CourseMeter({
             )}
             {isExpiringCritical && daysToExpiry !== null && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/40 px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(244,63,94,0.3)] animate-pulse">
-                <Clock className="w-3 h-3" /> {remaining} {remaining === 1 ? 'day' : 'days'} unused, expires in {daysToExpiry} {daysToExpiry === 1 ? 'day' : 'days'}
+                <Clock className="w-3 h-3" /> {remaining} {remaining === 1 ? 'session' : 'sessions'} remaining · Expires in {daysToExpiry} {daysToExpiry === 1 ? 'day' : 'days'}
               </span>
             )}
             {isExpiringWarning && !isExpiringCritical && daysToExpiry !== null && (
               <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 py-0.5 rounded-full">
-                <Clock className="w-3 h-3" /> {remaining} {remaining === 1 ? 'day' : 'days'} unused, expires in {daysToExpiry} {daysToExpiry === 1 ? 'day' : 'days'}
+                <Clock className="w-3 h-3" /> {remaining} {remaining === 1 ? 'session' : 'sessions'} remaining · Expires in {daysToExpiry} {daysToExpiry === 1 ? 'day' : 'days'}
               </span>
             )}
             {isExhausted && (
