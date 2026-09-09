@@ -28,37 +28,26 @@ interface Props {
   modalities?: any[];
 }
 
-const TIME_SLOTS_12H = [
-  { label: '07:00 AM', value: '07:00' },
-  { label: '07:30 AM', value: '07:30' },
-  { label: '08:00 AM', value: '08:00' },
-  { label: '08:30 AM', value: '08:30' },
-  { label: '09:00 AM', value: '09:00' },
-  { label: '09:30 AM', value: '09:30' },
-  { label: '10:00 AM', value: '10:00' },
-  { label: '10:30 AM', value: '10:30' },
-  { label: '11:00 AM', value: '11:00' },
-  { label: '11:30 AM', value: '11:30' },
-  { label: '12:00 PM', value: '12:00' },
-  { label: '12:30 PM', value: '12:30' },
-  { label: '01:00 PM', value: '13:00' },
-  { label: '01:30 PM', value: '13:30' },
-  { label: '02:00 PM', value: '14:00' },
-  { label: '02:30 PM', value: '14:30' },
-  { label: '03:00 PM', value: '15:00' },
-  { label: '03:30 PM', value: '15:30' },
-  { label: '04:00 PM', value: '16:00' },
-  { label: '04:30 PM', value: '16:30' },
-  { label: '05:00 PM', value: '17:00' },
-  { label: '05:30 PM', value: '17:30' },
-  { label: '06:00 PM', value: '18:00' },
-  { label: '06:30 PM', value: '18:30' },
-  { label: '07:00 PM', value: '19:00' },
-  { label: '07:30 PM', value: '19:30' },
-  { label: '08:00 PM', value: '20:00' },
-  { label: '08:30 PM', value: '20:30' },
-  { label: '09:00 PM', value: '21:00' },
-];
+// 15-minute interval time slots from 07:00 AM to 10:00 PM
+const TIME_SLOTS_12H: { label: string; value: string }[] = (() => {
+  const slots: { label: string; value: string }[] = [];
+  for (let h = 7; h <= 21; h++) {
+    for (let m = 0; m < 60; m += 15) {
+      const hh = String(h).padStart(2, '0');
+      const mm = String(m).padStart(2, '0');
+      const period = h >= 12 ? 'PM' : 'AM';
+      let h12 = h % 12;
+      if (h12 === 0) h12 = 12;
+      slots.push({
+        label: `${String(h12).padStart(2, '0')}:${mm} ${period}`,
+        value: `${hh}:${mm}`,
+      });
+    }
+  }
+  slots.push({ label: '10:00 PM', value: '22:00' });
+  return slots;
+})();
+
 
 export default function AddAppointmentModal({ onClose }: Props) {
   const queryClient = useQueryClient();
@@ -92,6 +81,29 @@ export default function AddAppointmentModal({ onClose }: Props) {
   });
 
   const watchIsRecurring = watch('isRecurring');
+  const watchStartTime = watch('startTime') || '08:00';
+  const watchSlotDuration = Number(watch('assignedSlotDuration')) || 15;
+
+  const getFormattedSlotWindow = () => {
+    try {
+      const [h, m] = watchStartTime.split(':').map(Number);
+      const startTotal = h * 60 + m;
+      const endTotal = startTotal + watchSlotDuration;
+
+      const formatTime = (totalMinutes: number) => {
+        const hh = Math.floor(totalMinutes / 60) % 24;
+        const mm = totalMinutes % 60;
+        const period = hh >= 12 ? 'PM' : 'AM';
+        let h12 = hh % 12;
+        if (h12 === 0) h12 = 12;
+        return `${String(h12).padStart(2, '0')}:${String(mm).padStart(2, '0')} ${period}`;
+      };
+
+      return `${formatTime(startTotal)} – ${formatTime(endTotal)} (${watchSlotDuration} mins)`;
+    } catch {
+      return `${watchStartTime} (${watchSlotDuration} mins)`;
+    }
+  };
 
   const handleCreatePatient = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -420,7 +432,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {/* Date */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
@@ -434,10 +446,10 @@ export default function AddAppointmentModal({ onClose }: Props) {
               {errors.date?.message && <p className="text-xs text-rose-400 mt-1">{errors.date.message as string}</p>}
             </div>
 
-            {/* Start Time (12-Hour Format) */}
+            {/* Start Time (15-Minute Granularity) */}
             <div>
               <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
-                Start Time (12H)
+                Start Time (15m)
               </label>
               <select
                 {...register('startTime')}
@@ -451,6 +463,33 @@ export default function AddAppointmentModal({ onClose }: Props) {
               </select>
               {errors.startTime?.message && <p className="text-xs text-rose-400 mt-1">{errors.startTime.message as string}</p>}
             </div>
+
+            {/* Slot Duration */}
+            <div>
+              <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
+                Duration
+              </label>
+              <select
+                {...register('assignedSlotDuration', { valueAsNumber: true })}
+                className="block w-full text-sm rounded-xl border border-white/15 bg-[#130E26] px-3 py-2 text-white focus:border-[var(--primary)] focus:outline-none font-semibold cursor-pointer"
+              >
+                <option value={15}>15 Mins (Default)</option>
+                <option value={30}>30 Mins</option>
+                <option value={45}>45 Mins</option>
+                <option value={60}>60 Mins</option>
+              </select>
+              {errors.assignedSlotDuration?.message && (
+                <p className="text-xs text-rose-400 mt-1">{errors.assignedSlotDuration.message as string}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Computed Slot Preview */}
+          <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-xs">
+            <span className="text-white/70 font-medium">Scheduled Time Window:</span>
+            <span className="font-bold text-[var(--primary)] tracking-wide">
+              {getFormattedSlotWindow()}
+            </span>
           </div>
 
           {/* Recurring Appointments Toggle */}

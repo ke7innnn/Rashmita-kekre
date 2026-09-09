@@ -54,7 +54,7 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
   // Quick settings forms fields
   const [startTimeInput, setStartTimeInput] = useState('09:00');
   const [endTimeInput, setEndTimeInput] = useState('18:00');
-  const [durationInput, setDurationInput] = useState(30);
+  const [durationInput, setDurationInput] = useState(15);
 
   // Fetch settings
   const { data: settings } = useQuery({

@@ -20,7 +20,7 @@ export async function generateDailyMetricSnapshot(date: Date = new Date()): Prom
   const noShowCount = appointmentsToday.filter(a => a.status === 'NO_SHOW').length;
   const lateCancelCount = appointmentsToday.filter(a => a.status === 'CANCELLED').length;
 
-  const totalMinutesBooked = appointmentsToday.reduce((sum, a) => sum + (a.assignedSlotDuration || 30), 0);
+  const totalMinutesBooked = appointmentsToday.reduce((sum, a) => sum + (a.assignedSlotDuration || 15), 0);
   const chairHoursBooked = Math.round((totalMinutesBooked / 60) * 10) / 10;
   const chairHoursAvailable = 22.0; // 11 operating hours * 2 concurrent chairs
   const utilizationPct = Math.min(100, Math.round((chairHoursBooked / chairHoursAvailable) * 100));

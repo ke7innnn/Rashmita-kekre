@@ -11,7 +11,7 @@ const promoteSchema = z.object({
   startTime: z.string(),
   endTime: z.string(),
   treatmentType: z.string(),
-  assignedSlotDuration: z.number().int().default(30),
+  assignedSlotDuration: z.number().int().default(15),
 });
 
 export async function POST(req: NextRequest) {
