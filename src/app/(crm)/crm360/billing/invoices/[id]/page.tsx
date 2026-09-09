@@ -485,6 +485,7 @@ export default function InvoiceDetailPage() {
         patientName={invoice.patient?.fullName || 'Patient'}
         patientPhone={invoice.patient?.phone || ''}
         invoiceNumber={invoice.invoiceNumber}
+        invoiceId={invoice.id}
         issueDate={new Date(invoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
         lines={invoice.lines}
         total={total}

@@ -231,6 +231,7 @@ export default function InvoiceListPage() {
           patientName={selectedInvoiceForWhatsApp.patient?.fullName || 'Patient'}
           patientPhone={selectedInvoiceForWhatsApp.patient?.phone || ''}
           invoiceNumber={selectedInvoiceForWhatsApp.invoiceNumber}
+          invoiceId={selectedInvoiceForWhatsApp.id}
           issueDate={new Date(selectedInvoiceForWhatsApp.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           lines={selectedInvoiceForWhatsApp.lines}
           total={Number(selectedInvoiceForWhatsApp.totalAmount || 0)}

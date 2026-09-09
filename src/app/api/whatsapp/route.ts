@@ -137,29 +137,32 @@ export async function POST(req: Request) {
             waUrl 
           });
         } else {
-          console.warn('Meta WhatsApp API rejected payload, logging direct calling number dispatch:', metaData);
+          console.warn('Meta WhatsApp API rejected payload:', metaData);
+          const isOutside24h = metaData?.error?.code === 131047;
+          return NextResponse.json({
+            success: false,
+            error: isOutside24h
+              ? 'Patient has not messaged clinic in 24 hours. Freeform text requires WhatsApp Web or an approved Meta Template.'
+              : (metaData?.error?.message || 'Meta WhatsApp API failed to deliver message.'),
+            isOutside24h,
+            waUrl,
+            metaError: metaData?.error
+          }, { status: 400 });
         }
-      } catch (err) {
-        console.warn('Meta WhatsApp API error, logging direct calling number dispatch:', err);
+      } catch (err: any) {
+        console.warn('Meta WhatsApp API error:', err);
+        return NextResponse.json({
+          success: false,
+          error: err.message || 'Network error connecting to Meta WhatsApp API.',
+          waUrl
+        }, { status: 500 });
       }
     }
 
-    // Direct CRM dispatch routed through clinic calling number (+91 8482812859)
-    await prisma.notification.create({
-      data: {
-        title: invoiceNumber ? `Official Bill Dispatched (#${invoiceNumber})` : `WhatsApp Notification Queued`,
-        message: `Dispatched from clinic calling number (+91 ${senderPhone}) to ${patientName || 'Patient'} (+${cleanPhone})`,
-        type: 'CALL_FOLLOWUP',
-        isRead: true,
-      }
-    }).catch(() => {});
-
     return NextResponse.json({
       success: true,
-      method: 'official_calling_number',
-      senderPhone,
+      method: 'manual_web',
       recipientPhone: cleanPhone,
-      message: `Official bill dispatched via Clinic Calling Number (+91 ${senderPhone})`,
       waUrl,
       messageText: textMessage
     });

@@ -247,6 +247,7 @@ function InvoicePrintContent() {
           patientName={receiptData.patientName}
           patientPhone={receiptData.patientPhone || ''}
           invoiceNumber={receiptData.documentNumber}
+          invoiceId={id}
           issueDate={receiptData.issueDate}
           lines={receiptData.lines}
           total={receiptData.total}

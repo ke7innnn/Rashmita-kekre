@@ -287,6 +287,7 @@ export async function sendWhatsAppMessageDirect({
 export function generateBillWhatsAppText({
   patientName,
   invoiceNumber,
+  invoiceId,
   issueDate,
   lines,
   total,
@@ -296,6 +297,7 @@ export function generateBillWhatsAppText({
 }: {
   patientName: string;
   invoiceNumber: string;
+  invoiceId?: string;
   issueDate?: string;
   lines?: { description: string; quantity?: number; lineTotal?: number }[];
   total: number;
@@ -309,6 +311,9 @@ export function generateBillWhatsAppText({
 
   const isPaid = balanceDue <= 0 && amountPaid > 0;
   const statusStr = isPaid ? '✅ Paid in Full' : amountPaid > 0 ? '⚠️ Partial Payment' : '⏳ Payment Due';
+  const receiptUrl = invoiceId || invoiceNumber
+    ? `https://thehealth360.in/receipt/${invoiceId || invoiceNumber}`
+    : '';
 
   return `🏥 *Health 360 Physiotherapy & Craniosacral Clinic*
 *Official Payment Receipt & Bill*
@@ -326,8 +331,8 @@ Thank you for choosing Health 360 Clinic. Here are your official billing details
 ${itemsText}
 
 💰 *Total Amount:* ₹${total.toLocaleString('en-IN')}
-💵 *Amount Paid:* ₹${amountPaid.toLocaleString('en-IN')}
-${balanceDue > 0 ? `⚠️ *Balance Due:* ₹${balanceDue.toLocaleString('en-IN')}\n` : ''}
+💵 *Amount Paid:* ₹${amountPaid.toLocaleString('en-IN')}${balanceDue > 0 ? `\n⚠️ *Balance Due:* ₹${balanceDue.toLocaleString('en-IN')}` : ''}${receiptUrl ? `\n\n📄 *View & Download Official PDF Receipt:*\n${receiptUrl}` : ''}
+
 📍 *Clinic Address:*
 Shop No.1 & 2, Amardeep Society, Om Nagar, Vasai (West), Dist. Palghar - 401202
 ☎️ *Contact:* +91 8482812859 / 9834848981

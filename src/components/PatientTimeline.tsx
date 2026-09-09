@@ -4026,6 +4026,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           patientName={patient.fullName}
           patientPhone={patient.phone || ''}
           invoiceNumber={timelineWhatsAppInvoice.invoiceNumber}
+          invoiceId={timelineWhatsAppInvoice.id}
           issueDate={new Date(timelineWhatsAppInvoice.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
           lines={timelineWhatsAppInvoice.lines}
           total={Number(timelineWhatsAppInvoice.totalAmount || 0)}
