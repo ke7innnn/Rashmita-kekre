@@ -22,6 +22,8 @@ import SellCourseModal from '@/components/billing/SellCourseModal';
 import EditPatientModal from '@/components/EditPatientModal';
 import WhatsAppTesterModal from '@/components/WhatsAppTesterModal';
 import SendWhatsAppBillModal from '@/components/billing/SendWhatsAppBillModal';
+import CertificateModal from '@/components/certificates/CertificateModal';
+import { CertificateData } from '@/components/certificates/CertificateDocument';
 
 const AppointmentStatus = { WAITING: 'WAITING', IN_PROGRESS: 'IN_PROGRESS', COMPLETED: 'COMPLETED', SCHEDULED: 'SCHEDULED', NO_SHOW: 'NO_SHOW', CANCELLED: 'CANCELLED' } as const;
 type AppointmentStatus = typeof AppointmentStatus[keyof typeof AppointmentStatus];
@@ -166,6 +168,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   });
 
   const [isTesterOpen, setIsTesterOpen] = useState(false);
+  const [activeCertificateModal, setActiveCertificateModal] = useState<{
+    isOpen: boolean;
+    data: CertificateData;
+  } | null>(null);
 
   const [confirmWhatsappModal, setConfirmWhatsappModal] = useState<{
     isOpen: boolean;
@@ -1143,111 +1149,63 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     });
   };
 
-  // WhatsApp — Send Mediclaim Certificate Summary
+  // Clinical Certificate — Treatment & Payment Certificate (Mediclaim)
   const triggerMediclaimConfirm = () => {
-    const firstName = patient.fullName;
-    const diagnosis = patient.diagnosis || 'Physiotherapy & CST Rehabilitation';
-    const startDate = patient.createdAt ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent';
+    const pName = patient.fullName;
+    const age = patient.age ? String(patient.age) : '35';
+    const diagnosis = patient.diagnosis || 'Cervical Spondylosis / Musculoskeletal Pain';
+    const startDate = patient.createdAt
+      ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '1 Aug 2026';
     const endDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 10);
-    const totalAmount = String(patient.invoices?.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0) || '6500');
+    const totalAmount = String(patient.invoices?.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0) || '6,500.00');
 
-    const previewGen = (p: string[]) =>
-      `Hello ${p[0] || firstName},\n\nYour Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:\n\n• Diagnosis: ${p[1] || diagnosis}\n• Treatment Period: ${p[2] || startDate} to ${p[3] || endDate}\n• Total Sessions Attended: ${p[4] || sessions}\n• Total Amount Paid: ₹${p[5] || totalAmount}\n\nPlease let us know if you or your insurance provider need any additional details.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-
-    const initialPreview = previewGen([firstName, diagnosis, startDate, endDate, sessions, totalAmount]);
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
-
-    setConfirmWhatsappModal({
+    setActiveCertificateModal({
       isOpen: true,
-      title: 'Send Mediclaim Reimbursement Summary',
-      templateName: 'mediclaim_certificate_notice',
-      templateBadge: 'mediclaim_certificate_notice (Utility)',
-      recipientName: patient.fullName,
-      phone: patient.phone,
-      paramFields: [
-        { label: "Patient Name", value: firstName },
-        { label: "Clinical Diagnosis", value: diagnosis },
-        { label: "Treatment Start Date", value: startDate },
-        { label: "Treatment End Date", value: endDate },
-        { label: "Total Sessions", value: sessions },
-        { label: "Total Amount (₹)", value: totalAmount }
-      ],
-      previewGenerator: previewGen,
-      messagePreview: initialPreview,
-      waUrl,
-      onSend: async (phoneToSend, params) => {
-        setWhatsappSending('mediclaim');
-        const result = await sendWhatsAppNotification({
-          phone: phoneToSend,
-          templateName: 'mediclaim_certificate_notice',
-          params: params,
-        });
-        setWhatsappSending(null);
-        if (result.success) {
-          setWhatsappSuccess('mediclaim');
-          setTimeout(() => setWhatsappSuccess(null), 4000);
-        } else {
-          alert('Failed to send Mediclaim Certificate notice.');
-        }
-      }
+      data: {
+        type: 'treatment_payment',
+        issueDate: endDate,
+        patientName: pName,
+        age,
+        diagnosis,
+        startDate,
+        endDate,
+        sessions: `${sessions} Sessions`,
+        treatmentProvided: 'Manual Therapy, Spinal Mobilization, Postural Ergonomics & Strengthening',
+        chargesPerSession: '650.00',
+        totalAmount,
+      },
     });
   };
 
-  // WhatsApp — Send Fitness Certificate Notice
+  // Clinical Certificate — Fitness Certificate
   const triggerFitnessConfirm = () => {
-    const firstName = patient.fullName;
+    const pName = patient.fullName;
+    const age = patient.age ? String(patient.age) : '30';
     const assessmentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    const status = 'Fit to resume regular work and sports activities';
-    const remarks = 'Perform prescribed warmup and ergonomic exercises daily';
 
-    const previewGen = (p: string[]) =>
-      `Hello ${p[0] || firstName},\n\nBased on your clinical evaluation at Health 360 Clinic on ${p[1] || assessmentDate}, you are certified:\n\n✅ ${p[2] || status}\n\nPhysiotherapist Advice:\n${p[3] || remarks}\n\nKeep up the great progress and continue your home routine!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-
-    const initialPreview = previewGen([firstName, assessmentDate, status, remarks]);
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
-
-    setConfirmWhatsappModal({
+    setActiveCertificateModal({
       isOpen: true,
-      title: 'Send Fitness Certificate Notice',
-      templateName: 'fitness_certificate_notice',
-      templateBadge: 'fitness_certificate_notice (Utility)',
-      recipientName: patient.fullName,
-      phone: patient.phone,
-      paramFields: [
-        { label: "Patient Name", value: firstName },
-        { label: "Assessment Date", value: assessmentDate },
-        { label: "Fitness Status", value: status },
-        { label: "Physiotherapist Remarks", value: remarks }
-      ],
-      previewGenerator: previewGen,
-      messagePreview: initialPreview,
-      waUrl,
-      onSend: async (phoneToSend, params) => {
-        setWhatsappSending('fitness');
-        const result = await sendWhatsAppNotification({
-          phone: phoneToSend,
-          templateName: 'fitness_certificate_notice',
-          params: params,
-        });
-        setWhatsappSending(null);
-        if (result.success) {
-          setWhatsappSuccess('fitness');
-          setTimeout(() => setWhatsappSuccess(null), 4000);
-        } else {
-          alert('Failed to send Fitness Certificate notice.');
-        }
-      }
+      data: {
+        type: 'fitness',
+        issueDate: assessmentDate,
+        patientName: pName,
+        age,
+        assessmentDate,
+        fitnessOptions: { work: true, sports: true, gym: true, travel: true, daily: true, regular: true },
+        adviceRestrictions: 'Perform daily warmups, maintain ergonomic posture, avoid unassisted heavy lifting > 15kg for 2 weeks',
+        remarks: 'Patient demonstrates full pain-free functional range of motion and normal muscle power. Fit to resume duties.',
+      },
     });
   };
 
-  // WhatsApp — Send Medical Rest Notice
+  // Clinical Certificate — Unfitness for Work Certificate (Medical Rest)
   const triggerMedicalRestConfirm = () => {
-    const firstName = patient.fullName;
-    const diagnosis = patient.diagnosis || 'Acute Musculoskeletal Condition';
-    const startDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const pName = patient.fullName;
+    const age = patient.age ? String(patient.age) : '35';
+    const assessmentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const startDate = assessmentDate;
     const endDateObj = new Date();
     endDateObj.setDate(endDateObj.getDate() + 7);
     const endDate = endDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -1255,97 +1213,58 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     reviewDateObj.setDate(reviewDateObj.getDate() + 8);
     const reviewDate = reviewDateObj.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
-    const previewGen = (p: string[]) =>
-      `Hello ${p[0] || firstName},\n\nFollowing your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${p[1] || diagnosis}.\n\n• Recommended Rest: ${p[2] || startDate} to ${p[3] || endDate}\n• Next Review Date: ${p[4] || reviewDate}\n\nPlease avoid strenuous activities and continue your prescribed rehabilitation.\n\nWishing you a speedy recovery,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-
-    const initialPreview = previewGen([firstName, diagnosis, startDate, endDate, reviewDate]);
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
-
-    setConfirmWhatsappModal({
+    setActiveCertificateModal({
       isOpen: true,
-      title: 'Send Medical Rest Notice',
-      templateName: 'medical_rest_notice',
-      templateBadge: 'medical_rest_notice (Utility)',
-      recipientName: patient.fullName,
-      phone: patient.phone,
-      paramFields: [
-        { label: "Patient Name", value: firstName },
-        { label: "Clinical Diagnosis", value: diagnosis },
-        { label: "Rest Start Date", value: startDate },
-        { label: "Rest End Date", value: endDate },
-        { label: "Next Review Date", value: reviewDate }
-      ],
-      previewGenerator: previewGen,
-      messagePreview: initialPreview,
-      waUrl,
-      onSend: async (phoneToSend, params) => {
-        setWhatsappSending('rest');
-        const result = await sendWhatsAppNotification({
-          phone: phoneToSend,
-          templateName: 'medical_rest_notice',
-          params: params,
-        });
-        setWhatsappSending(null);
-        if (result.success) {
-          setWhatsappSuccess('rest');
-          setTimeout(() => setWhatsappSuccess(null), 4000);
-        } else {
-          alert('Failed to send Medical Rest advice.');
-        }
-      }
+      data: {
+        type: 'unfitness',
+        issueDate: assessmentDate,
+        patientName: pName,
+        age,
+        assessmentDate,
+        symptomsCondition: patient.diagnosis || 'Acute Lumbar Radiculopathy with Severe Muscle Spasms',
+        startDate,
+        endDate,
+        reviewDate,
+        remarks: 'Patient advised complete physical rest, daily modalities therapy, and avoidance of prolonged sitting or lifting.',
+      },
     });
   };
 
-  // WhatsApp — Send Discharge Summary Notice
+  // Clinical Certificate — Physiotherapy Discharge Summary (2 Pages)
   const triggerDischargeConfirm = () => {
-    const firstName = patient.fullName;
-    const startDate = patient.createdAt ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Initial Session';
+    const pName = patient.fullName;
+    const age = patient.age ? String(patient.age) : '38';
+    const gender = patient.gender || 'Female';
+    const startDate = patient.createdAt
+      ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+      : '10 Aug 2026';
     const endDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 12);
-    const outcome = 'Pain-free mobility and full functional strength achieved';
-    const advice = 'Continue home maintenance exercises 3 times a week';
 
-    const previewGen = (p: string[]) =>
-      `Congratulations ${p[0] || firstName}! 🎉\n\nYou have successfully completed your physiotherapy program at Health 360 Clinic.\n\n• Treatment Period: ${p[1] || startDate} to ${p[2] || endDate}\n• Total Sessions: ${p[3] || sessions}\n• Recovery Outcome: ${p[4] || outcome}\n• Home Exercise Advice: ${p[5] || advice}\n\nThank you for trusting us with your recovery. Feel free to reach out whenever you need guidance!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`;
-
-    const initialPreview = previewGen([firstName, startDate, endDate, sessions, outcome, advice]);
-    const cleanPhone = patient.phone.replace(/\D/g, '');
-    const waUrl = `https://wa.me/${cleanPhone.length === 10 ? '91' + cleanPhone : cleanPhone}?text=${encodeURIComponent(initialPreview)}`;
-
-    setConfirmWhatsappModal({
+    setActiveCertificateModal({
       isOpen: true,
-      title: 'Send Patient Discharge Summary',
-      templateName: 'patient_discharge_summary',
-      templateBadge: 'patient_discharge_summary (Utility)',
-      recipientName: patient.fullName,
-      phone: patient.phone,
-      paramFields: [
-        { label: "Patient Name", value: firstName },
-        { label: "Treatment Start Date", value: startDate },
-        { label: "Treatment End Date", value: endDate },
-        { label: "Total Sessions", value: sessions },
-        { label: "Recovery Outcome", value: outcome },
-        { label: "Home Exercise Advice", value: advice }
-      ],
-      previewGenerator: previewGen,
-      messagePreview: initialPreview,
-      waUrl,
-      onSend: async (phoneToSend, params) => {
-        setWhatsappSending('discharge');
-        const result = await sendWhatsAppNotification({
-          phone: phoneToSend,
-          templateName: 'patient_discharge_summary',
-          params: params,
-        });
-        setWhatsappSending(null);
-        if (result.success) {
-          setWhatsappSuccess('discharge');
-          setTimeout(() => setWhatsappSuccess(null), 4000);
-        } else {
-          alert('Failed to send Discharge Summary notice.');
-        }
-      }
+      data: {
+        type: 'discharge_summary',
+        issueDate: endDate,
+        patientName: pName,
+        age,
+        gender,
+        diagnosis: patient.diagnosis || 'Rehabilitation Program Completed',
+        startDate,
+        endDate,
+        sessions: `${sessions} Sessions`,
+        complaints: 'Severe initial pain and restriction of movement affecting occupational duties and self-care.',
+        findings: 'Initial examination revealed marked restriction in active range of motion, focal tenderness, and postural compensation.',
+        otherTreatment: 'Craniosacral therapy balancing & myofascial trigger release',
+        progressOptions: { pain: true, rom: true, strength: true, functional: true, posture: true, balance: true, goals: true },
+        outcome: 'Full active range of motion restored (Abduction 170°, ER 75°), pain decreased from VAS 8/10 to 1/10. Functional independence achieved.',
+        homeAdvice: 'Continue prescribed home exercise program with light resistance bands 3 times per week.',
+        precautions: 'Avoid sudden heavy unassisted lifting and maintain core ergonomics during desk work.',
+        followupOptions: { hep: true, recur: true, review: true },
+        reviewWeeks: '4 weeks',
+        dischargeStatusOptions: { success: true },
+        remarks: 'Patient completed rehabilitation successfully with excellent compliance and functional outcomes.',
+      },
     });
   };
 
@@ -3906,6 +3825,21 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
           </motion.div>
         </div>,
         document.body
+      )}
+
+      {/* 4 Clinical Certificates & Discharge Summaries Modal */}
+      {activeCertificateModal && (
+        <CertificateModal
+          isOpen={activeCertificateModal.isOpen}
+          onClose={() => setActiveCertificateModal(null)}
+          patientId={patient.id}
+          patientPhone={patient.phone}
+          initialData={activeCertificateModal.data}
+          onSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['patient', patient.id] });
+            queryClient.invalidateQueries({ queryKey: ['patients'] });
+          }}
+        />
       )}
 
       {/* Doctor WhatsApp Phone Number Entry Modal — portaled to document.body */}
