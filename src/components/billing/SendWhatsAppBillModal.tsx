@@ -95,11 +95,20 @@ export default function SendWhatsAppBillModal({
     setErrorMessage(null);
 
     try {
+      const formattedAmt = (amountPaid > 0 ? amountPaid : total).toLocaleString('en-IN', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      });
+
       const res = await fetch('/api/whatsapp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phone: cleanPhone,
+          templateName: 'invoice_bill_receipt',
+          params: [patientName, invoiceNumber, formattedAmt],
+          documentUrl: `https://thehealth360.in/receipt/${invoiceId || invoiceNumber}`,
+          documentFilename: `Health360_Receipt_${invoiceNumber}.pdf`,
           message: billMessageText,
           senderPhone: '8482812859',
           invoiceNumber,

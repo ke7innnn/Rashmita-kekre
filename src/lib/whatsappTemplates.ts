@@ -182,6 +182,21 @@ For appointments or any assistance, feel free to contact us. We look forward to 
 Wishing you good health! 🌸
 Team Health360 Physiotherapy & Craniosacral Therapy Clinic`,
   },
+
+  INVOICE_BILL_RECEIPT: {
+    name: 'invoice_bill_receipt',
+    formatText: (patientName: string, invoiceNumber: string, amount: string) => `Hello ${patientName},
+
+Thank you for choosing Health 360 Clinic for your care.
+
+Your official clinic receipt ${invoiceNumber} for ₹${amount} has been generated and is attached above as a PDF for your records and mediclaim purposes.
+
+If you have any questions regarding your treatment or invoice, feel free to reply to this message.
+
+Warm regards,
+Dr. Rashmita Karvir-Kekre (PT)
+Health 360 Physiotherapy & Craniosacral Therapy Clinic`,
+  },
 };
 
 /**

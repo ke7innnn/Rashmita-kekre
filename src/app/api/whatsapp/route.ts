@@ -34,6 +34,9 @@ const WHATSAPP_TEMPLATES: Record<string, Function> = {
 
   welcome_clinic_info: (pat: string) =>
     `🌿 Welcome to Health360 Physiotherapy & Craniosacral Therapy Clinic! 🌿\n\nDear ${pat},\n\nThank you for choosing Health360 Physiotherapy & Craniosacral Therapy Clinic. We are committed to helping you recover, move better, and live pain-free.\n\n📍 Address:\nHealth360 Physiotherapy & Craniosacral Therapy Clinic, Shop no.1 & 2, Amardeep society,\nOm Nagar, Vasai West.\n\n🕙 Clinic Timings:\nMorning: 10:00 AM – 2:00 PM\nEvening: 5:00 PM – 9:00 PM\n\n📍 Google Location:\nhttps://maps.app.goo.gl/VpvTzGtZy3kCZZWGA?g_st=iw\n\nFor appointments or any assistance, feel free to contact us. We look forward to being a part of your recovery journey.\n☎️: 8482812859 / 9834848981\n✉️: health360vasai@gmail.com\n\nWishing you good health! 🌸\nTeam Health360 Physiotherapy & Craniosacral Therapy Clinic`,
+
+  invoice_bill_receipt: (pat: string, inv: string, amt: string) =>
+    `Hello ${pat},\n\nThank you for choosing Health 360 Clinic for your care.\n\nYour official clinic receipt ${inv} for ₹${amt} has been generated and is attached above as a PDF for your records and mediclaim purposes.\n\nIf you have any questions regarding your treatment or invoice, feel free to reply to this message.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Physiotherapy & Craniosacral Therapy Clinic`,
 };
 
 export async function POST(req: Request) {
@@ -46,7 +49,9 @@ export async function POST(req: Request) {
       message, 
       senderPhone = '8482812859',
       invoiceNumber,
-      patientName 
+      patientName,
+      documentUrl,
+      documentFilename,
     } = body;
 
     if (!phone) {
@@ -80,6 +85,33 @@ export async function POST(req: Request) {
         let metaPayload: any;
 
         if (templateName) {
+          const components: any[] = [];
+
+          if (documentUrl) {
+            components.push({
+              type: 'header',
+              parameters: [
+                {
+                  type: 'document',
+                  document: {
+                    link: documentUrl,
+                    filename: documentFilename || (invoiceNumber ? `Receipt_${invoiceNumber}.pdf` : 'Health360_Receipt.pdf')
+                  }
+                }
+              ]
+            });
+          }
+
+          if (params.length > 0) {
+            components.push({
+              type: 'body',
+              parameters: params.map((p: any) => ({
+                type: 'text',
+                text: String(p)
+              }))
+            });
+          }
+
           metaPayload = {
             messaging_product: 'whatsapp',
             to: cleanPhone,
@@ -87,15 +119,7 @@ export async function POST(req: Request) {
             template: {
               name: templateName,
               language: { code: 'en' },
-              components: params.length > 0 ? [
-                {
-                  type: 'body',
-                  parameters: params.map((p: any) => ({
-                    type: 'text',
-                    text: String(p)
-                  }))
-                }
-              ] : []
+              components
             }
           };
         } else {
