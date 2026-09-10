@@ -159,15 +159,29 @@ export default function AssessmentDetailPage() {
           </Link>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wider uppercase bg-emerald-500/[0.08] text-emerald-300 border border-emerald-500/20 backdrop-blur-md">
+                <span className="w-1 h-1 rounded-full bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.6)]" />
                 {assessment.type}
               </span>
-              <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-white/10 text-white/70 border border-white/20 rounded-md">
+              <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wider uppercase backdrop-blur-md border ${
+                assessment.status === 'SIGNED'
+                  ? 'bg-emerald-500/[0.06] text-emerald-300/90 border-emerald-500/20'
+                  : assessment.status === 'DRAFT'
+                  ? 'bg-amber-500/[0.06] text-amber-300/90 border-amber-500/20'
+                  : 'bg-white/[0.04] text-white/70 border-white/10'
+              }`}>
+                <span className={`w-1 h-1 rounded-full ${
+                  assessment.status === 'SIGNED'
+                    ? 'bg-emerald-400 shadow-[0_0_5px_rgba(52,211,153,0.5)]'
+                    : assessment.status === 'DRAFT'
+                    ? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.5)]'
+                    : 'bg-white/60'
+                }`} />
                 {assessment.status}
               </span>
               {hasRedFlag && (
-                <span className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 rounded-md flex items-center gap-1">
-                  <ShieldAlert className="w-3 h-3" /> Red Flag Logged
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-medium tracking-wider uppercase bg-rose-500/[0.08] text-rose-300 border border-rose-500/20 backdrop-blur-md">
+                  <ShieldAlert className="w-3 h-3 text-rose-400" /> Red Flag Logged
                 </span>
               )}
             </div>
