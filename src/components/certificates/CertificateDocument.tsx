@@ -43,12 +43,14 @@ export interface CertificateData {
 interface CertificateDocumentProps {
   data: CertificateData;
   isEditable?: boolean;
+  previewOnly?: boolean;
   onUpdate?: (updated: CertificateData) => void;
 }
 
 export default function CertificateDocument({
   data,
   isEditable = false,
+  previewOnly = false,
   onUpdate,
 }: CertificateDocumentProps) {
   const handleChange = (field: keyof CertificateData, value: any) => {
@@ -61,7 +63,7 @@ export default function CertificateDocument({
     category: 'fitnessOptions' | 'progressOptions' | 'followupOptions' | 'dischargeStatusOptions',
     key: string
   ) => {
-    if (!isEditable && !onUpdate) return;
+    if ((!isEditable || previewOnly) && !onUpdate) return;
     const current = data[category] || {};
     const updated = { ...current, [key]: !current[key] };
     handleChange(category, updated);
@@ -74,14 +76,14 @@ export default function CertificateDocument({
     className: string = ''
   ) => {
     const val = (data[field] as string) || fallback;
-    if (isEditable) {
+    if (isEditable && !previewOnly) {
       return (
         <span
           contentEditable
           suppressContentEditableWarning
           onBlur={(e) => handleChange(field, e.currentTarget.textContent || '')}
           className={`cert-editable-field ${className}`}
-          title="Click to edit"
+          title="Click to edit parameter directly"
         >
           {val || placeholder}
         </span>
@@ -843,20 +845,28 @@ const certStyles = `
 
 /* Editable highlight styling */
 .cert-editable-field {
-  background: #e0e7ff;
-  border-bottom: 1px dashed #4f46e5;
+  background: rgba(2, 132, 199, 0.08);
+  border-bottom: 1.5px dashed #0284c7;
   padding: 0 4px;
-  border-radius: 2px;
+  border-radius: 3px;
   cursor: text;
   outline: none;
   display: inline-block;
-  min-width: 30px;
-  color: #1e1b4b;
+  min-width: 24px;
+  color: #0f172a;
+  transition: all 0.15s ease-in-out;
+}
+
+.cert-editable-field:hover {
+  background: rgba(2, 132, 199, 0.16);
+  border-bottom-color: #0369a1;
 }
 
 .cert-editable-field:focus {
-  background: #fef08a;
-  border-bottom: 2px solid #ca8a04;
+  background: #f0fdf4;
+  border-bottom: 2px solid #16a34a;
+  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+  color: #14532d;
 }
 
 /* Signatory */
