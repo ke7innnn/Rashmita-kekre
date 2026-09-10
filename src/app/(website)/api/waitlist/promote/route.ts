@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { AppointmentSource, AppointmentStatus } from '@prisma/client';
+import { syncPatientToCallingAgent } from '@/lib/syncCallingAgent';
 
 const promoteSchema = z.object({
   waitlistId: z.string(),
@@ -54,6 +55,14 @@ export async function POST(req: NextRequest) {
       where: { id: body.waitlistId },
       data: { status: 'FILLED' },
     });
+
+    // 4. Non-blocking sync to Health 360 Calling Agent app
+    if (entry.patient) {
+      syncPatientToCallingAgent({
+        ...entry.patient,
+        treatment: body.treatmentType,
+      });
+    }
 
     return NextResponse.json({ success: true, appointment });
   } catch (error: any) {

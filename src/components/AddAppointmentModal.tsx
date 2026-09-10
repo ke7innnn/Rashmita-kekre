@@ -147,6 +147,22 @@ export default function AddAppointmentModal({ onClose }: Props) {
         throw new Error(data.error || 'Failed to create patient.');
       }
 
+      // Non-blocking sync to Health 360 Calling Agent app
+      try {
+        fetch('https://health360-nu.vercel.app/api/sync-patient', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patient_name: data.fullName || cleanName,
+            contact: data.phone || cleanPhone,
+            age: String(newPatientAge || ''),
+            patient_type: newPatientDiagnosis.trim() || 'General',
+          }),
+        }).catch((err) => console.error('Calling Agent sync error:', err));
+      } catch (e) {
+        // Non-blocking, continue normal CRM operation
+      }
+
       // Automatically select new patient
       setSelectedPatientName(data.fullName);
       setValue('patientId', data.id);

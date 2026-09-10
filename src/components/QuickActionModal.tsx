@@ -156,6 +156,21 @@ export default function QuickActionModal({ appointmentId, onClose, modalities }:
                     }),
                   });
                   if (res.ok) {
+                    try {
+                      fetch('https://health360-nu.vercel.app/api/sync-patient', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                          patient_name: match.patient?.fullName || match.patient?.name || 'Patient',
+                          contact: match.patient?.phone || match.patient?.contact || '',
+                          age: String(match.patient?.age || ''),
+                          patient_type: app.treatmentType || match.patient?.treatmentModalityAssigned || match.patient?.diagnosis || 'General',
+                        }),
+                      }).catch((err) => console.error('Calling Agent sync error:', err));
+                    } catch (e) {
+                      // Non-blocking, continue normal CRM operation
+                    }
+
                     queryClient.invalidateQueries({ queryKey: ['appointments'] });
                     onClose();
                   }

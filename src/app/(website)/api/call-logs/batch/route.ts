@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { CallDirection, CallOutcome } from '@prisma/client';
+import { syncPatientToCallingAgent } from '@/lib/syncCallingAgent';
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -61,6 +62,11 @@ export async function POST(req: NextRequest) {
         message: `${createdLogs.length} patient(s) transferred to the outbound call list.`,
         type: 'CALL_FOLLOWUP',
       },
+    });
+
+    // Non-blocking sync to Health 360 Calling Agent app
+    patients.forEach((p) => {
+      syncPatientToCallingAgent(p);
     });
 
     return NextResponse.json({

@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { AppointmentStatus, AppointmentSource } from '@prisma/client';
 import { sendWhatsAppMessageDirect } from '@/lib/whatsappTemplates';
+import { syncPatientToCallingAgent } from '@/lib/syncCallingAgent';
 
 const publicBookingSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
@@ -190,6 +191,14 @@ export async function POST(req: NextRequest) {
           diagnosis: body.diagnosis || body.presentingComplaint || '',
           tags: 'website-lead',
         },
+      });
+
+      syncPatientToCallingAgent({
+        fullName: patient.fullName,
+        phone: patient.phone,
+        dateOfBirth: patient.dateOfBirth,
+        presentingComplaint: patient.presentingComplaint,
+        diagnosis: patient.diagnosis,
       });
     }
 

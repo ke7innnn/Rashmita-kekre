@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
 import { CallDirection, CallOutcome, AppointmentStatus, AppointmentSource } from '@prisma/client';
+import { syncPatientToCallingAgent } from '@/lib/syncCallingAgent';
 
 const webhookSchema = z.object({
   patientId: z.string().optional(),
@@ -122,6 +123,13 @@ export async function POST(req: NextRequest) {
           presentingComplaint: 'Created via AI Phone Agent Call.',
           tags: 'ai-agent-lead',
         },
+      });
+
+      syncPatientToCallingAgent({
+        fullName: patient.fullName,
+        phone: patient.phone,
+        dateOfBirth: patient.dateOfBirth,
+        presentingComplaint: patient.presentingComplaint,
       });
     }
 

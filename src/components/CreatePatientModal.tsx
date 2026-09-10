@@ -187,7 +187,22 @@ export default function CreatePatientModal({
       if (!res.ok) throw new Error('Creation failed');
       return res.json();
     },
-    onSuccess: () => {
+    onSuccess: (newPatient: any) => {
+      try {
+        fetch('https://health360-nu.vercel.app/api/sync-patient', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            patient_name: newPatient?.fullName || newPatient?.name,
+            contact: newPatient?.phone || newPatient?.contact,
+            age: String(newPatient?.age || ''),
+            patient_type: newPatient?.treatmentModalityAssigned || newPatient?.diagnosis || newPatient?.condition || newPatient?.treatment || 'General'
+          })
+        }).catch(err => console.error('Calling Agent sync error:', err));
+      } catch (e) {
+        // Non-blocking, continue normal CRM operation
+      }
+
       queryClient.invalidateQueries({ queryKey: ['patients'] });
       queryClient.invalidateQueries({ queryKey: ['patients-all'] });
       onClose();

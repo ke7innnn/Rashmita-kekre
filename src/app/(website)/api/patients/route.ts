@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { z } from 'zod';
+import { syncPatientToCallingAgent } from '@/lib/syncCallingAgent';
 
 const createPatientSchema = z.object({
   fullName: z.string().trim().min(1, 'Full name is required'),
@@ -105,6 +106,16 @@ export async function POST(req: NextRequest) {
 
     const patient = await prisma.patient.create({
       data: dataToCreate,
+    });
+
+    // Automatic background sync to Calling Agent app
+    syncPatientToCallingAgent({
+      fullName: patient.fullName,
+      phone: patient.phone,
+      dateOfBirth: patient.dateOfBirth,
+      treatmentModalityAssigned: patient.treatmentModalityAssigned,
+      diagnosis: patient.diagnosis,
+      presentingComplaint: patient.presentingComplaint,
     });
 
     const parsedPatient = {
