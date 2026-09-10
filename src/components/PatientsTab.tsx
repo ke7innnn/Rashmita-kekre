@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Search, Plus, User, Phone, MapPin, Tag, FileText, 
-  Calendar, Check, AlertCircle, X, Loader2, ChevronRight,
+  Calendar, Check, AlertCircle, X, Loader2, ChevronRight, ChevronLeft,
   Table as TableIcon, LayoutGrid, Edit2, PhoneCall, PhoneOutgoing,
   CheckSquare, Square, ArrowRight, Sparkles, Ban
 } from 'lucide-react';
@@ -43,6 +43,10 @@ export default function PatientsTab({
   const [transferToast, setTransferToast] = useState<{ count: number; message: string } | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'needs_review' | 'linked_contact'>('all');
 
+  // Pagination State (Default 50 per page, option to view all or customize)
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState<number | 'all'>(50);
+
   // 1. Fetch Patients (fetch all to enable quick filtering and count badges)
   const { data: allPatients = [], isLoading } = useQuery({
     queryKey: ['patients', search],
@@ -75,6 +79,54 @@ export default function PatientsTab({
     return allPatients;
   }, [allPatients, statusFilter]);
 
+  // Reset to page 1 whenever search, filter, or page size changes
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [search, statusFilter, pageSize]);
+
+  // Pagination derived calculations
+  const totalItems = patients.length;
+  const totalPages = pageSize === 'all' ? 1 : Math.max(1, Math.ceil(totalItems / (pageSize as number)));
+  const safeCurrentPage = Math.min(Math.max(1, currentPage), totalPages);
+
+  const paginatedPatients = React.useMemo(() => {
+    if (pageSize === 'all') return patients;
+    const start = (safeCurrentPage - 1) * (pageSize as number);
+    return patients.slice(start, start + (pageSize as number));
+  }, [patients, safeCurrentPage, pageSize]);
+
+  const startItemIndex = totalItems === 0 ? 0 : pageSize === 'all' ? 1 : (safeCurrentPage - 1) * (pageSize as number) + 1;
+  const endItemIndex = pageSize === 'all' ? totalItems : Math.min(safeCurrentPage * (pageSize as number), totalItems);
+
+  const handlePageChange = (page: number) => {
+    const clamped = Math.min(Math.max(1, page), totalPages);
+    setCurrentPage(clamped);
+    if (typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (safeCurrentPage <= 4) {
+      return [1, 2, 3, 4, 5, '...', totalPages];
+    }
+    if (safeCurrentPage >= totalPages - 3) {
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, '...', safeCurrentPage - 1, safeCurrentPage, safeCurrentPage + 1, '...', totalPages];
+  };
+
+  const computeAge = (dob: any) => {
+    if (!dob) return '—';
+    const d = new Date(dob);
+    if (isNaN(d.getTime())) return '—';
+    const diff = new Date().getFullYear() - d.getFullYear();
+    return diff > 0 && diff < 125 ? diff : '—';
+  };
+
   const toggleSelectPatient = (id: string) => {
     setSelectedPatientIds(prev => {
       const next = new Set(prev);
@@ -88,13 +140,25 @@ export default function PatientsTab({
   };
 
   const toggleSelectAll = () => {
-    if (patients.length === 0) return;
-    const allSelected = patients.every((p: any) => selectedPatientIds.has(p.id));
-    if (allSelected) {
-      setSelectedPatientIds(new Set());
+    if (paginatedPatients.length === 0) return;
+    const allPageSelected = paginatedPatients.every((p: any) => selectedPatientIds.has(p.id));
+    if (allPageSelected) {
+      setSelectedPatientIds(prev => {
+        const next = new Set(prev);
+        paginatedPatients.forEach((p: any) => next.delete(p.id));
+        return next;
+      });
     } else {
-      setSelectedPatientIds(new Set(patients.map((p: any) => p.id)));
+      setSelectedPatientIds(prev => {
+        const next = new Set(prev);
+        paginatedPatients.forEach((p: any) => next.add(p.id));
+        return next;
+      });
     }
+  };
+
+  const selectAllInDirectory = () => {
+    setSelectedPatientIds(new Set(patients.map((p: any) => p.id)));
   };
 
   const handleBatchTransferToCallList = async () => {
@@ -234,38 +298,94 @@ export default function PatientsTab({
                 </div>
               </div>
 
-              {/* Status Filter Tabs */}
-              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.08]">
-                {[
-                  { key: 'all', label: 'All Patients', count: counts.all },
-                  { key: 'active', label: 'Active', count: counts.active },
-                  { key: 'needs_review', label: 'Needs Review', count: counts.needsReview },
-                  { key: 'linked_contact', label: 'Linked Contacts', count: counts.linkedContact },
-                ].map((tab) => {
-                  const isActive = statusFilter === tab.key;
-                  return (
+              {/* Status Filter Tabs & Per-Page Controls */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-white/[0.08]">
+                <div className="flex flex-wrap items-center gap-2">
+                  {[
+                    { key: 'all', label: 'All Patients', count: counts.all },
+                    { key: 'active', label: 'Active', count: counts.active },
+                    { key: 'needs_review', label: 'Needs Review', count: counts.needsReview },
+                    { key: 'linked_contact', label: 'Linked Contacts', count: counts.linkedContact },
+                  ].map((tab) => {
+                    const isActive = statusFilter === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => setStatusFilter(tab.key as any)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center gap-2 select-none ${
+                          isActive
+                            ? 'bg-white text-black font-bold shadow-sm'
+                            : 'bg-white/[0.04] hover:bg-white/[0.08] text-[rgba(245,243,250,0.7)] hover:text-white border border-white/10'
+                        }`}
+                      >
+                        <span>{tab.label}</span>
+                        <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono leading-none ${
+                          isActive
+                            ? 'bg-black/15 text-black font-bold'
+                            : 'bg-white/10 text-white/60'
+                        }`}>
+                          {tab.count}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Per-Page / View All Toggle */}
+                <div className="flex items-center gap-2 text-xs text-white/70">
+                  <span className="text-[11px] font-medium text-white/40 hidden sm:inline">Rows per page:</span>
+                  <div className="flex items-center bg-white/[0.04] border border-white/10 rounded-xl p-0.5 shadow-inner">
+                    {([25, 50, 100] as const).map((sz) => (
+                      <button
+                        key={sz}
+                        onClick={() => setPageSize(sz)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-mono transition-all cursor-pointer select-none ${
+                          pageSize === sz 
+                            ? 'bg-white text-black font-bold shadow-sm' 
+                            : 'text-white/60 hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {sz}
+                      </button>
+                    ))}
                     <button
-                      key={tab.key}
-                      onClick={() => setStatusFilter(tab.key as any)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center gap-2 select-none ${
-                        isActive
-                          ? 'bg-white text-black font-bold shadow-sm'
-                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-[rgba(245,243,250,0.7)] hover:text-white border border-white/10'
+                      onClick={() => setPageSize('all')}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer flex items-center gap-1 select-none ${
+                        pageSize === 'all' 
+                          ? 'bg-emerald-400 text-black font-bold shadow-sm' 
+                          : 'text-white/60 hover:text-white hover:bg-white/5'
                       }`}
+                      title="View all contacts in a single view"
                     >
-                      <span>{tab.label}</span>
-                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono leading-none ${
-                        isActive
-                          ? 'bg-black/15 text-black font-bold'
-                          : 'bg-white/10 text-white/60'
-                      }`}>
-                        {tab.count}
-                      </span>
+                      <span>View All</span>
+                      {pageSize === 'all' && <Check className="h-3 w-3 stroke-[2.5]" />}
                     </button>
-                  );
-                })}
+                  </div>
+                </div>
               </div>
             </GlassPanel>
+
+            {/* Banner when all on active page are selected */}
+            {paginatedPatients.length > 0 &&
+              paginatedPatients.every((p: any) => selectedPatientIds.has(p.id)) &&
+              selectedPatientIds.size < patients.length && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-emerald-500/15 border border-emerald-500/30 rounded-2xl px-4 py-2.5 text-xs flex items-center justify-between text-emerald-200"
+                >
+                  <span className="flex items-center gap-1.5">
+                    <CheckSquare className="h-4 w-4 text-emerald-400" />
+                    All <strong>{paginatedPatients.length}</strong> patients on page <strong>{safeCurrentPage}</strong> are selected.
+                  </span>
+                  <button
+                    onClick={selectAllInDirectory}
+                    className="underline hover:text-white font-bold cursor-pointer transition-colors text-xs"
+                  >
+                    Select all {patients.length} patients in this list
+                  </button>
+                </motion.div>
+              )}
 
           {/* Directory Content */}
           {isLoading ? (
@@ -279,7 +399,8 @@ export default function PatientsTab({
               <p className="text-xs text-[rgba(245,243,250,0.4)] mt-1 font-medium">Try adjusting your search criteria or register a new patient.</p>
             </GlassPanel>
           ) : (
-            <AnimatePresence mode="wait" initial={false}>
+            <>
+              <AnimatePresence mode="wait" initial={false}>
               {viewMode === 'table' ? (
                 <motion.div
                   key="tabular-view"
@@ -297,9 +418,9 @@ export default function PatientsTab({
                       <th className="py-3.5 px-3 text-center w-10">
                         <input
                           type="checkbox"
-                          checked={patients.length > 0 && patients.every((p: any) => selectedPatientIds.has(p.id))}
+                          checked={paginatedPatients.length > 0 && paginatedPatients.every((p: any) => selectedPatientIds.has(p.id))}
                           onChange={toggleSelectAll}
-                          aria-label="Select all patients"
+                          aria-label="Select all patients on this page"
                           className="rounded border-white/20 bg-white/10 text-emerald-400 focus:ring-0 cursor-pointer h-4 w-4 accent-emerald-500"
                         />
                       </th>
@@ -315,14 +436,17 @@ export default function PatientsTab({
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/[0.06] font-medium text-[rgba(245,243,250,0.85)]">
-                    {patients.map((p: any, index: number) => {
+                    {paginatedPatients.map((p: any, index: number) => {
                       const isSelected = selectedPatientIds.has(p.id);
                       const initials = (p.fullName || 'PT').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'PT';
-                      const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
+                      const age = computeAge(p.dateOfBirth);
                       const regDate = p.createdAt 
                         ? new Date(p.createdAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
                         : '—';
                       const diagnosis = p.diagnosis || p.presentingComplaint || p.treatmentModalityAssigned || '—';
+                      const srNo = pageSize === 'all' 
+                        ? index + 1 
+                        : (safeCurrentPage - 1) * (pageSize as number) + index + 1;
 
                       return (
                         <tr 
@@ -345,7 +469,7 @@ export default function PatientsTab({
 
                           {/* SR. No. */}
                           <td className="py-3.5 px-3 text-center font-mono text-xs text-[rgba(245,243,250,0.5)]">
-                            {index + 1}
+                            {srNo}
                           </td>
 
                           {/* Registered On */}
@@ -393,15 +517,23 @@ export default function PatientsTab({
                           </td>
 
                           {/* Age */}
-                          <td className="py-3.5 px-4 text-center font-mono text-xs text-[rgba(245,243,250,0.85)]">
-                            {age !== '—' ? `${age} Yrs` : '—'}
+                          <td className="py-3.5 px-4 text-center font-mono text-xs">
+                            {age !== '—' ? (
+                              <span className="font-mono text-xs text-[rgba(245,243,250,0.85)] whitespace-nowrap">{age} Yrs</span>
+                            ) : (
+                              <span className="text-white/30 font-mono text-xs">—</span>
+                            )}
                           </td>
 
                           {/* Gender */}
-                          <td className="py-3.5 px-4 text-xs text-[rgba(245,243,250,0.75)]">
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[11px] font-mono">
-                              {p.gender || '—'}
-                            </span>
+                          <td className="py-3.5 px-4 text-xs">
+                            {p.gender && p.gender.trim() ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[11px] font-mono text-[rgba(245,243,250,0.85)]">
+                                {p.gender}
+                              </span>
+                            ) : (
+                              <span className="text-white/30 font-mono text-xs">—</span>
+                            )}
                           </td>
 
                           {/* Cont No. */}
@@ -479,10 +611,10 @@ export default function PatientsTab({
             transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
           >
-              {patients.map((p: any) => {
+              {paginatedPatients.map((p: any) => {
                 const isSelected = selectedPatientIds.has(p.id);
                 const initials = (p.fullName || 'PT').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'PT';
-                const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
+                const age = computeAge(p.dateOfBirth);
                 
                 return (
                   <GlassPanel
@@ -544,7 +676,7 @@ export default function PatientsTab({
                               )}
                             </div>
                             <p className="eyebrow text-[9px] mt-0.5 text-white/60">
-                              {[p.gender, age !== '—' ? `${age} Yrs` : null].filter(Boolean).join(' • ') || '—'}
+                              {[p.gender && p.gender.trim() ? p.gender : null, age !== '—' ? `${age} Yrs` : null].filter(Boolean).join(' • ') || '—'}
                             </p>
                           </div>
                         </div>
@@ -615,9 +747,100 @@ export default function PatientsTab({
             </motion.div>
           )}
         </AnimatePresence>
-      )}
-    </motion.div>
-  )}
+
+        {/* Pagination Controls Footer */}
+        {totalItems > 0 && (
+          <GlassPanel className="p-4 flex flex-col md:flex-row items-center justify-between gap-4 border border-white/10 mt-6 shadow-lg">
+            {/* Left: Range and Total Count */}
+            <div className="text-xs text-[rgba(245,243,250,0.7)]">
+              Showing <span className="font-mono font-bold text-white">{startItemIndex}–{endItemIndex}</span> of <span className="font-mono font-bold text-white">{totalItems}</span> patients
+              {pageSize === 'all' && (
+                <span className="ml-2 px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-medium text-[10px]">
+                  View All Mode
+                </span>
+              )}
+            </div>
+
+            {/* Center: Interactive Page Numbers (Only if paginated & > 1 page) */}
+            {pageSize !== 'all' && totalPages > 1 ? (
+              <div className="flex items-center gap-1.5 select-none">
+                <button
+                  onClick={() => handlePageChange(safeCurrentPage - 1)}
+                  disabled={safeCurrentPage <= 1}
+                  aria-label="Previous Page"
+                  className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1 font-medium cursor-pointer text-xs"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <span>Prev</span>
+                </button>
+
+                <div className="flex items-center gap-1">
+                  {getPageNumbers().map((item, idx) => {
+                    if (item === '...') {
+                      return (
+                        <span key={`dots-${idx}`} className="px-1.5 py-1 text-white/30 font-mono text-xs select-none">
+                          …
+                        </span>
+                      );
+                    }
+                    const pageNum = item as number;
+                    const isActive = pageNum === safeCurrentPage;
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`h-8 min-w-8 px-2 rounded-xl font-mono text-xs font-semibold transition-all cursor-pointer flex items-center justify-center ${
+                          isActive
+                            ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)]'
+                            : 'border border-white/10 bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08]'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => handlePageChange(safeCurrentPage + 1)}
+                  disabled={safeCurrentPage >= totalPages}
+                  aria-label="Next Page"
+                  className="px-3 py-1.5 rounded-xl border border-white/10 bg-white/[0.04] text-white/70 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:pointer-events-none transition flex items-center gap-1 font-medium cursor-pointer text-xs"
+                >
+                  <span>Next</span>
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="text-xs text-white/40">
+                {pageSize === 'all' ? 'All contacts displayed on single page' : 'Single page view'}
+              </div>
+            )}
+
+            {/* Right: Quick View All / Paginated Mode Switcher */}
+            <div className="flex items-center gap-2">
+              {pageSize === 'all' ? (
+                <button
+                  onClick={() => setPageSize(50)}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/12 border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  Switch to Pages (50/page)
+                </button>
+              ) : (
+                <button
+                  onClick={() => setPageSize('all')}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/12 border border-white/10 text-xs font-semibold text-white/80 hover:text-white transition cursor-pointer"
+                >
+                  View All ({totalItems})
+                </button>
+              )}
+            </div>
+          </GlassPanel>
+        )}
+      </>
+    )}
+  </motion.div>
+)}
 </AnimatePresence>
 
       {/* FLOATING ACTION BAR FOR MULTI-PATIENT SELECTION */}

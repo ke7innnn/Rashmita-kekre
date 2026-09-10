@@ -216,7 +216,10 @@ export default function CRMSidebar({ children }: Props) {
       <div className="print:hidden"><AuroraBackground /></div>
 
       {/* Sidebar Navigation (Desktop) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none print:hidden sticky top-0 h-screen overflow-y-auto">
+      <aside 
+        className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none print:hidden sticky top-0 h-screen self-start overflow-y-auto"
+        style={{ position: 'sticky', top: 0, height: '100vh', alignSelf: 'flex-start' }}
+      >
         <div className="space-y-5">
           {/* Logo Branding */}
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
