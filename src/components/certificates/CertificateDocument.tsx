@@ -163,8 +163,9 @@ export default function CertificateDocument({
         <div className="cert-body-content">
           <p className="cert-paragraph leading-relaxed">
             This is to certify that Mr./Ms.{' '}
-            {renderEditable('patientName', 'Patient Name', 'Patient Name')}, aged{' '}
-            {renderEditable('age', '35', 'Age')} years, was treated at Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic, Vasai West for{' '}
+            {renderEditable('patientName', 'Patient Name', 'Patient Name')}
+            {data.age ? <>, aged {renderEditable('age', data.age, 'Age')} years,</> : null}{' '}
+            was treated at Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic, Vasai West for{' '}
             {renderEditable('diagnosis', 'Cervical Spondylosis / Musculoskeletal Pain', 'Diagnosis')}.
           </p>
 
@@ -250,8 +251,9 @@ export default function CertificateDocument({
         <div className="cert-body-content">
           <p className="cert-paragraph leading-relaxed">
             This is to certify that Mr./Ms.{' '}
-            {renderEditable('patientName', 'Patient Name', 'Patient Name')}, aged{' '}
-            {renderEditable('age', '30', 'Age')} years, has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic.
+            {renderEditable('patientName', 'Patient Name', 'Patient Name')}
+            {data.age ? <>, aged {renderEditable('age', data.age, 'Age')} years,</> : null}{' '}
+            has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic.
           </p>
 
           <p className="cert-paragraph leading-relaxed mt-3">
@@ -331,8 +333,9 @@ export default function CertificateDocument({
         <div className="cert-body-content">
           <p className="cert-paragraph leading-relaxed">
             This is to certify that Mr./Ms.{' '}
-            {renderEditable('patientName', 'Patient Name', 'Patient Name')}, aged{' '}
-            {renderEditable('age', '35', 'Age')} years, has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic.
+            {renderEditable('patientName', 'Patient Name', 'Patient Name')}
+            {data.age ? <>, aged {renderEditable('age', data.age, 'Age')} years,</> : null}{' '}
+            has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic.
           </p>
 
           <p className="cert-paragraph leading-relaxed mt-3">
@@ -427,7 +430,7 @@ export default function CertificateDocument({
           <div className="cert-meta-row">
             <span className="cert-meta-label">Age / Gender:</span>
             <span className="cert-meta-val">
-              {renderEditable('age', '38', 'Age')} Yrs / {renderEditable('gender', 'Female', 'Gender')}
+              {data.age ? `${renderEditable('age', data.age, 'Age')} Yrs` : '—'} / {renderEditable('gender', data.gender || '—', 'Gender')}
             </span>
           </div>
           <div className="cert-meta-row">

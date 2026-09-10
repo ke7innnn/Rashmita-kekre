@@ -78,7 +78,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     if (json.fullName !== undefined) dataToUpdate.fullName = json.fullName;
     if (json.gender !== undefined) dataToUpdate.gender = json.gender;
     if (json.dateOfBirth !== undefined) {
-      dataToUpdate.dateOfBirth = json.dateOfBirth ? new Date(json.dateOfBirth) : new Date('1990-01-01');
+      dataToUpdate.dateOfBirth = json.dateOfBirth ? new Date(json.dateOfBirth) : null;
     }
     if (json.phone !== undefined) dataToUpdate.phone = json.phone;
     if (json.secondaryPhone !== undefined) dataToUpdate.secondaryPhone = json.secondaryPhone;

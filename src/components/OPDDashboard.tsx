@@ -588,9 +588,15 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
                             {app.patient.fullName}
                           </h4>
                           <div className="flex items-center gap-2 text-[10px] font-semibold text-white/60 uppercase tracking-wider mt-0.5">
-                            <span>{app.patient.gender}</span>
-                            <span>•</span>
-                            <span className="num-tabular">{new Date().getFullYear() - new Date(app.patient.dateOfBirth).getFullYear()} Years</span>
+                            {[
+                              app.patient.gender,
+                              app.patient.dateOfBirth ? `${new Date().getFullYear() - new Date(app.patient.dateOfBirth).getFullYear()} Years` : null
+                            ].filter(Boolean).map((part, i) => (
+                              <React.Fragment key={i}>
+                                {i > 0 && <span>•</span>}
+                                <span>{part}</span>
+                              </React.Fragment>
+                            ))}
                           </div>
                         </div>
                       </div>

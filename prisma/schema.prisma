@@ -49,13 +49,43 @@ enum AppointmentType {
   CRANIOSACRAL_THERAPY
 }
 
+enum ImportStatus {
+  ACTIVE
+  NEEDS_REVIEW
+  REJECTED
+}
+
+enum PatientEntryType {
+  PATIENT
+  LINKED_CONTACT
+}
+
+enum ReferralCategory {
+  DOCTOR
+  PHYSIOTHERAPIST
+  FACILITY
+  VENDOR
+}
+
 model Patient {
   id                        String           @id @default(cuid())
   fullName                  String
-  gender                    String
-  dateOfBirth               DateTime
-  phone                     String
+  gender                    String?
+  dateOfBirth               DateTime?
+  phone                     String?          @unique
   secondaryPhone            String?
+  phoneAlt                  String?
+  entryType                 PatientEntryType @default(PATIENT)
+  relationNote              String?
+  importStatus              ImportStatus     @default(ACTIVE)
+  importReason              String?
+  rawContactName            String?
+  rawPhone                  String?
+  importBatchId             String?
+  importBatch               ImportBatch?     @relation(fields: [importBatchId], references: [id])
+  mergedIntoId              String?
+  mergedInto                Patient?         @relation("PatientMerges", fields: [mergedIntoId], references: [id])
+  mergedPatients            Patient[]        @relation("PatientMerges")
   email                     String?
   thirdPartyUid             String?
   bloodGroup                String?
@@ -907,4 +937,38 @@ model ReferringDoctor {
   email       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+model ReferralContact {
+  id             String           @id @default(cuid())
+  name           String
+  phone          String?          @unique
+  phoneAlt       String?
+  category       ReferralCategory
+  specialty      String?
+  location       String?
+  organisation   String?
+  isActive       Boolean          @default(true)
+  importStatus   ImportStatus     @default(ACTIVE)
+  importReason   String?
+  rawContactName String?
+  rawPhone       String?
+  importBatchId  String?
+  importBatch    ImportBatch?     @relation(fields: [importBatchId], references: [id])
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+}
+
+model ImportBatch {
+  id           String            @id @default(cuid())
+  fileName     String
+  rowsRead     Int
+  rowsCreated  Int
+  rowsUpdated  Int
+  rowsSkipped  Int
+  rowsFlagged  Int
+  errors       Json?
+  runAt        DateTime          @default(now())
+  patients     Patient[]
+  referrals    ReferralContact[]
 }

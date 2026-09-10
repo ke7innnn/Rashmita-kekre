@@ -8,12 +8,12 @@ import { syncPatientToCallingAgent } from '@/lib/syncCallingAgent';
 const publicBookingSchema = z.object({
   fullName: z.string().min(1, 'Full name is required'),
   phone: z.string().min(10, 'Valid phone number is required'),
-  gender: z.string().optional().default('Female'),
-  dateOfBirth: z.union([z.string(), z.date()]).optional().transform((val) => {
-    if (!val) return new Date('1990-01-01');
-    if (val instanceof Date) return val;
+  gender: z.string().optional().nullable(),
+  dateOfBirth: z.union([z.string(), z.date()]).optional().nullable().transform((val) => {
+    if (!val) return null;
+    if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
     const d = new Date(val);
-    return isNaN(d.getTime()) ? new Date('1990-01-01') : d;
+    return isNaN(d.getTime()) ? null : d;
   }),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format'),
   startTime: z.string().regex(/^\d{2}:\d{2}$/, 'Start time must be in HH:MM format'),
@@ -185,7 +185,7 @@ export async function POST(req: NextRequest) {
         data: {
           fullName: body.fullName,
           phone: body.phone,
-          gender: body.gender || 'Female',
+          gender: body.gender || null,
           dateOfBirth: body.dateOfBirth,
           presentingComplaint: body.presentingComplaint || body.treatmentType || 'Booked via Website.',
           diagnosis: body.diagnosis || body.presentingComplaint || '',
@@ -195,7 +195,7 @@ export async function POST(req: NextRequest) {
 
       syncPatientToCallingAgent({
         fullName: patient.fullName,
-        phone: patient.phone,
+        phone: patient.phone || '',
         dateOfBirth: patient.dateOfBirth,
         presentingComplaint: patient.presentingComplaint,
         diagnosis: patient.diagnosis,
@@ -204,56 +204,51 @@ export async function POST(req: NextRequest) {
 
     // Calculate end time based on settings or default 15 mins
     const slotDuration = settings?.slotDuration || 15;
-    const [hours, minutes] = startTime.split(':').map(Number);
-    const endMinutes = minutes + slotDuration;
-    const endHours = hours + Math.floor(endMinutes / 60);
-    const finalMinutes = endMinutes % 60;
-    const endTime = `${String(endHours).padStart(2, '0')}:${String(finalMinutes).padStart(2, '0')}`;
+    const [startHours, startMinutes] = body.startTime.split(':').map(Number);
+    const endTotalMinutes = startHours * 60 + startMinutes + slotDuration;
+    const endHours = Math.floor(endTotalMinutes / 60);
+    const endMins = endTotalMinutes % 60;
+    const computedEndTime = `${String(endHours).padStart(2, '0')}:${String(endMins).padStart(2, '0')}`;
 
-    // 6. Create the Appointment
+    // Create Appointment
     const appointment = await prisma.appointment.create({
       data: {
         patientId: patient.id,
         date: bookingDate,
-        startTime,
-        endTime,
-        treatmentType: body.treatmentType,
+        startTime: body.startTime,
+        endTime: computedEndTime,
         assignedSlotDuration: slotDuration,
+        treatmentType: body.treatmentType || 'General Consultation',
+        notes: body.notes || 'Booked via Website Public Booking Engine.',
         source: AppointmentSource.WEBSITE,
-        notes: body.notes || 'Inbound online web booking.',
+        status: AppointmentStatus.SCHEDULED,
       },
     });
 
-    // Create Notification
-    await prisma.notification.create({
-      data: {
-        title: 'New Web Booking',
-        message: `${patient.fullName} booked ${body.treatmentType} on ${body.date} @ ${startTime}.`,
-        type: 'BOOKING',
-      },
-    });
-
-    // Send Automatic WhatsApp Confirmation to Patient
+    // ─── Automated WhatsApp Dispatch (Verified Utility Templates) ───
     try {
-      const dateFormatted = new Date(bookingDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-      const [h, m] = startTime.split(':');
+      const [y, mth, d] = body.date.split('-');
+      const dateFormatted = `${d}/${mth}/${y}`;
+      const [h, m] = body.startTime.split(':');
       const hour = parseInt(h, 10);
       const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
       const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
 
-      // 1. Online Appointment Booking Confirmation (uses verified next_appointment_reminder)
-      const res = await sendWhatsAppMessageDirect({
-        phone: patient.phone,
-        templateName: 'next_appointment_reminder',
-        params: [firstName, dateFormatted, timeFormatted],
-      });
-
-      if (!res?.success) {
-        await sendWhatsAppMessageDirect({
+      if (patient.phone) {
+        // 1. Online Appointment Booking Confirmation (uses verified next_appointment_reminder)
+        const res = await sendWhatsAppMessageDirect({
           phone: patient.phone,
-          templateName: 'appointment_booking_confirmation',
+          templateName: 'next_appointment_reminder',
           params: [firstName, dateFormatted, timeFormatted],
         });
+
+        if (!res?.success) {
+          await sendWhatsAppMessageDirect({
+            phone: patient.phone,
+            templateName: 'appointment_booking_confirmation',
+            params: [firstName, dateFormatted, timeFormatted],
+          });
+        }
       }
     } catch (waErr) {
       console.warn('Failed to dispatch automated WhatsApp confirmation:', waErr);

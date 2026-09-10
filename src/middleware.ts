@@ -69,9 +69,28 @@ export async function middleware(req: NextRequest) {
     }
   }
 
+  // 3. Admin Routes protection (/admin/imports/review, /api/admin/*)
+  if (pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) {
+    if (!token) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+      const loginUrl = new URL('/crm360/login', req.url);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    const role = (token.role as string)?.toUpperCase();
+    if (role !== 'ADMIN') {
+      return NextResponse.json(
+        { error: 'Forbidden. Admin role required.' },
+        { status: 403 }
+      );
+    }
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ['/crm360/:path*', '/api/:path*'],
+  matcher: ['/crm360/:path*', '/api/:path*', '/admin/:path*'],
 };

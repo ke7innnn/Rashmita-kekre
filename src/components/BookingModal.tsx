@@ -191,12 +191,12 @@ export default function BookingModal({ onClose }: BookingPageProps) {
         const parsedAge = parseInt(age, 10);
         const calculatedDob = !isNaN(parsedAge) && parsedAge > 0
           ? `${new Date().getFullYear() - parsedAge}-01-01`
-          : '1990-01-01';
+          : undefined;
 
         const payload = {
           fullName: name,
           phone: phone.replace(/\D/g, '').slice(-10),
-          gender: gender || 'Female',
+          gender: gender || undefined,
           dateOfBirth: calculatedDob,
           date: dateKey(selectedDate!),
           startTime: selectedTime,

@@ -20,10 +20,11 @@ export async function GET(req: NextRequest) {
     // Sub-search patient records containing clinical complaint or notes
     const patients = await prisma.patient.findMany({
       where: {
+        importStatus: 'ACTIVE',
         OR: [
-          { fullName: { contains: q } },
-          { presentingComplaint: { contains: q } },
-          { notes: { contains: q } },
+          { fullName: { contains: q, mode: 'insensitive' } },
+          { presentingComplaint: { contains: q, mode: 'insensitive' } },
+          { notes: { contains: q, mode: 'insensitive' } },
         ],
       },
       include: {

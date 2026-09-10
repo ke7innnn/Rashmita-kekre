@@ -44,10 +44,10 @@ export async function POST(req: NextRequest) {
           data: {
             patientId: p.id,
             direction: CallDirection.OUTBOUND,
-            phoneNumber: p.phone,
+            phoneNumber: p.phone || '',
             duration: 0,
             summary: `${note} for ${p.fullName} (${p.treatmentModalityAssigned || 'General Consultation'}).`,
-            transcript: `[System] Patient ${p.fullName} (${p.phone}) queued for outbound telecalling.`,
+            transcript: `[System] Patient ${p.fullName} (${p.phone || 'no phone'}) queued for outbound telecalling.`,
             outcome: CallOutcome.FOLLOW_UP_NEEDED,
             followUpActioned: false,
           },

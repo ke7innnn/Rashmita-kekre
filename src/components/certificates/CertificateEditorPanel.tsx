@@ -130,7 +130,7 @@ export default function CertificateEditorPanel({
                 value={data.age || ''}
                 onChange={(e) => updateField('age', e.target.value)}
                 className="w-full bg-slate-800 border border-slate-700 focus:border-sky-500 rounded-lg px-2.5 py-1.5 text-xs text-white outline-none transition font-mono"
-                placeholder="35"
+                placeholder="e.g. 35"
               />
             </div>
           </div>

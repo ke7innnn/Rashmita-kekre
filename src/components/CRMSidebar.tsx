@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle, ExternalLink
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle, ExternalLink, ShieldCheck
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -178,6 +178,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
     { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/insights', name: 'Insights & Action Queue', icon: Sparkles, category: 'management', roles: ['admin'] },
+    { href: '/admin/imports/review', name: 'Import Review Queue', icon: ShieldCheck, category: 'management', roles: ['admin'] },
     { href: '/crm360/referrals', name: 'Referral Network', icon: Network, category: 'management', roles: ['admin'] },
     { href: '/crm360/settings', name: 'Clinic Settings', icon: Settings, category: 'management', roles: ['admin'] },
   ];
@@ -215,7 +216,7 @@ export default function CRMSidebar({ children }: Props) {
       <div className="print:hidden"><AuroraBackground /></div>
 
       {/* Sidebar Navigation (Desktop) */}
-      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 justify-between shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none print:hidden">
+      <aside className="hidden lg:flex lg:flex-col lg:w-64 bg-[#0B0A10] border-r border-white/10 p-4 shrink-0 z-20 shadow-[4px_0_30px_rgba(0,0,0,0.5)] select-none print:hidden sticky top-0 h-screen overflow-y-auto">
         <div className="space-y-5">
           {/* Logo Branding */}
           <div className="flex items-center justify-between pb-3 border-b border-white/10">
@@ -258,15 +259,24 @@ export default function CRMSidebar({ children }: Props) {
                   return (
                     <Link key={item.href} href={item.href!}>
                       <motion.div
+                        whileHover={{ x: 3 }}
                         whileTap={{ scale: 0.97 }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors duration-200 relative cursor-pointer select-none ${
                           isActive 
-                            ? 'text-white bg-gradient-to-r from-[var(--primary)]/30 via-[var(--primary)]/15 to-transparent border-r-2 border-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)] font-bold' 
+                            ? 'text-white font-bold' 
                             : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
                         }`}
                       >
-                        <span className="flex items-center gap-3 z-10">
-                          <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-[var(--primary)]' : ''}`} />
+                        {isActive && (
+                          <motion.div
+                            layoutId="sidebarActivePill"
+                            className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/25 via-[var(--primary)]/10 to-transparent rounded-2xl border-l-2 border-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)]"
+                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                            style={{ zIndex: 0 }}
+                          />
+                        )}
+                        <span className="flex items-center gap-3 z-10 relative">
+                          <Icon className={`h-4 w-4 stroke-[1.75] transition-colors duration-200 ${isActive ? 'text-[var(--primary)]' : ''}`} />
                           {item.name}
                         </span>
                       </motion.div>
@@ -293,8 +303,9 @@ export default function CRMSidebar({ children }: Props) {
                         className="block"
                       >
                         <motion.div
+                          whileHover={{ x: 3 }}
                           whileTap={{ scale: 0.97 }}
-                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer text-white/60 hover:text-white hover:bg-white/[0.04] group"
+                          className="w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer text-white/60 hover:text-white hover:bg-white/[0.04] group select-none"
                         >
                           <span className="flex items-center gap-3 z-10">
                             <Icon className="h-4 w-4 stroke-[1.75] text-[#12D6C4]" />
@@ -309,15 +320,24 @@ export default function CRMSidebar({ children }: Props) {
                   return (
                     <Link key={item.href} href={item.href!}>
                       <motion.div
+                        whileHover={{ x: 3 }}
                         whileTap={{ scale: 0.97 }}
-                        className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-all duration-150 relative cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3.5 py-2.5 text-xs font-semibold rounded-2xl transition-colors duration-200 relative cursor-pointer select-none ${
                           isActive 
-                            ? 'text-white bg-gradient-to-r from-[var(--primary)]/30 via-[var(--primary)]/15 to-transparent border-r-2 border-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)] font-bold' 
+                            ? 'text-white font-bold' 
                             : 'text-white/60 hover:text-white hover:bg-white/[0.04]'
                         }`}
                       >
-                        <span className="flex items-center gap-3 z-10">
-                          <Icon className={`h-4 w-4 stroke-[1.75] ${isActive ? 'text-[var(--primary)]' : ''}`} />
+                        {isActive && (
+                          <motion.div
+                            layoutId="sidebarActivePill"
+                            className="absolute inset-0 bg-gradient-to-r from-[var(--primary)]/25 via-[var(--primary)]/10 to-transparent rounded-2xl border-l-2 border-[var(--primary)] shadow-[0_0_20px_var(--primary-glow)]"
+                            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+                            style={{ zIndex: 0 }}
+                          />
+                        )}
+                        <span className="flex items-center gap-3 z-10 relative">
+                          <Icon className={`h-4 w-4 stroke-[1.75] transition-colors duration-200 ${isActive ? 'text-[var(--primary)]' : ''}`} />
                           {item.name}
                         </span>
                       </motion.div>
@@ -329,7 +349,7 @@ export default function CRMSidebar({ children }: Props) {
           </nav>
         </div>
 
-        <div className="space-y-3 pt-3">
+        <div className="space-y-3 pt-6 mt-auto">
 
           {/* Dedicated Clock In / Clock Out Card */}
           <div className="bg-white/[0.04] border border-white/10 p-3 rounded-2xl space-y-2">
@@ -524,13 +544,13 @@ export default function CRMSidebar({ children }: Props) {
 
         {/* Tab Content Area */}
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-transparent print:p-0 print:overflow-visible">
-          <AnimatePresence mode="wait">
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 26 }}
+              initial={{ opacity: 0, y: 8, filter: 'blur(2px)' }}
+              animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+              exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
               className="h-full"
             >
               {children}

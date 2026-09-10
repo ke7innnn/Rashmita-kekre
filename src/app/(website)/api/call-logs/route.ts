@@ -118,8 +118,8 @@ export async function POST(req: NextRequest) {
         data: {
           fullName: body.actionDetails.fullName,
           phone: body.phoneNumber,
-          gender: 'Female', // Default placeholder
-          dateOfBirth: new Date('1990-01-01'),
+          gender: null,
+          dateOfBirth: null,
           presentingComplaint: 'Created via AI Phone Agent Call.',
           tags: 'ai-agent-lead',
         },

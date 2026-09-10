@@ -340,32 +340,50 @@ export default function AssessmentForm({
       </div>
 
       {/* Step Navigation Wizard Bar */}
-      <div className="grid grid-cols-3 sm:grid-cols-9 gap-1 bg-white/5 p-1.5 border border-white/10 rounded-2xl">
+      <div className="grid grid-cols-3 sm:grid-cols-9 gap-1 bg-white/5 p-1.5 border border-white/10 rounded-2xl relative shadow-md backdrop-blur-md">
         {STEPS.map(s => {
           const Icon = s.icon;
           const isActive = currentStep === s.id;
           return (
-            <button
+            <motion.button
               key={s.id}
               type="button"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.96 }}
               onClick={() => setCurrentStep(s.id)}
-              className={`p-2 rounded-xl text-center flex flex-col items-center gap-1 transition cursor-pointer ${
+              className={`p-2 rounded-xl text-center flex flex-col items-center gap-1 transition-colors cursor-pointer relative select-none z-10 ${
                 isActive
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold shadow-xs backdrop-blur-md'
-                  : 'text-white/60 hover:text-white hover:bg-white/5 border border-transparent'
+                  ? 'text-emerald-300 font-bold'
+                  : 'text-white/60 hover:text-white hover:bg-white/5'
               }`}
             >
-              <Icon className="w-4 h-4" />
-              <span className="text-[10px] truncate">{s.title}</span>
-            </button>
+              {isActive && (
+                <motion.div
+                  layoutId="assessmentStepHighlight"
+                  className="absolute inset-0 bg-emerald-500/20 border border-emerald-500/40 rounded-xl shadow-[0_0_15px_rgba(16,185,129,0.2)] backdrop-blur-md"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  style={{ zIndex: -1 }}
+                />
+              )}
+              <Icon className={`w-4 h-4 transition-colors ${isActive ? 'text-emerald-400' : ''}`} />
+              <span className="text-[10px] truncate relative z-10">{s.title}</span>
+            </motion.button>
           );
         })}
       </div>
 
       {/* Step Content */}
-      <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl space-y-6 backdrop-blur-xl">
-        {/* STEP 1: Patient Profile */}
-        {currentStep === 1 && (
+      <div className="p-6 bg-white/[0.03] border border-white/10 rounded-3xl space-y-6 backdrop-blur-xl overflow-hidden">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentStep}
+            initial={{ opacity: 0, y: 8, filter: 'blur(2px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            {/* STEP 1: Patient Profile */}
+            {currentStep === 1 && (
           <div className="space-y-4">
             <h3 className="text-base font-serif font-bold text-white border-b border-white/10 pb-2">1. Patient Profile & Demographics</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
@@ -1054,6 +1072,8 @@ export default function AssessmentForm({
             </div>
           </div>
         )}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   );

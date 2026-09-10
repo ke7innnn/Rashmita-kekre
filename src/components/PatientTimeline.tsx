@@ -1152,7 +1152,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Clinical Certificate — Treatment & Payment Certificate (Mediclaim)
   const triggerMediclaimConfirm = () => {
     const pName = patient.fullName;
-    const age = patient.age ? String(patient.age) : '35';
+    const age = patient.dateOfBirth 
+      ? String(new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()) 
+      : (patient.age ? String(patient.age) : '');
     const diagnosis = patient.diagnosis || 'Cervical Spondylosis / Musculoskeletal Pain';
     const startDate = patient.createdAt
       ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -1182,7 +1184,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Clinical Certificate — Fitness Certificate
   const triggerFitnessConfirm = () => {
     const pName = patient.fullName;
-    const age = patient.age ? String(patient.age) : '30';
+    const age = patient.dateOfBirth 
+      ? String(new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()) 
+      : (patient.age ? String(patient.age) : '');
     const assessmentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 
     setActiveCertificateModal({
@@ -1203,7 +1207,9 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Clinical Certificate — Unfitness for Work Certificate (Medical Rest)
   const triggerMedicalRestConfirm = () => {
     const pName = patient.fullName;
-    const age = patient.age ? String(patient.age) : '35';
+    const age = patient.dateOfBirth 
+      ? String(new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()) 
+      : (patient.age ? String(patient.age) : '');
     const assessmentDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
     const startDate = assessmentDate;
     const endDateObj = new Date();
@@ -1233,8 +1239,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   // Clinical Certificate — Physiotherapy Discharge Summary (2 Pages)
   const triggerDischargeConfirm = () => {
     const pName = patient.fullName;
-    const age = patient.age ? String(patient.age) : '38';
-    const gender = patient.gender || 'Female';
+    const age = patient.dateOfBirth 
+      ? String(new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()) 
+      : (patient.age ? String(patient.age) : '');
+    const gender = patient.gender || '';
     const startDate = patient.createdAt
       ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
       : '10 Aug 2026';
@@ -1487,12 +1495,16 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             <div className="space-y-1">
               <h2 className="text-3xl font-serif font-bold text-white tracking-wide leading-none">{patient.fullName}</h2>
               <div className="flex flex-wrap items-center gap-2 mt-2">
-                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
-                  {patient.gender}
-                </span>
-                <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
-                  {new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} Years Old
-                </span>
+                {patient.gender && (
+                  <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
+                    {patient.gender}
+                  </span>
+                )}
+                {patient.dateOfBirth && (
+                  <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
+                    {new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} Years Old
+                  </span>
+                )}
                 <span className="inline-block text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 bg-white/10 text-white/70 border border-white/20 rounded-full">
                   Intake: {new Date(patient.intakeDate).toLocaleDateString()}
                 </span>
@@ -1704,47 +1716,35 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       </div>
 
       {/* Sub-tab Switcher */}
-      <div className="flex border border-white/10 bg-white/[0.03] p-1.5 gap-2 shrink-0 overflow-x-auto my-4 rounded-2xl">
-        <button
-          onClick={() => setActiveTab('documents')}
-          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'documents'
-              ? 'bg-white text-black shadow-md'
-              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
-          }`}
-        >
-          Documents & Case Files
-        </button>
-        <button
-          onClick={() => setActiveTab('rom')}
-          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'rom'
-              ? 'bg-white text-black shadow-md'
-              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
-          }`}
-        >
-          Clinical ROM & Referrals
-        </button>
-        <button
-          onClick={() => setActiveTab('billing')}
-          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'billing'
-              ? 'bg-white text-black shadow-md'
-              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
-          }`}
-        >
-          Session Packages & Billing
-        </button>
-        <button
-          onClick={() => setActiveTab('assessments')}
-          className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-all cursor-pointer whitespace-nowrap ${
-            activeTab === 'assessments'
-              ? 'bg-white text-black shadow-md'
-              : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
-          }`}
-        >
-          Initial Assessments
-        </button>
+      <div className="flex border border-white/10 bg-white/[0.03] p-1.5 gap-2 shrink-0 overflow-x-auto my-4 rounded-2xl relative shadow-md backdrop-blur-md">
+        {[
+          { id: 'documents', label: 'Documents & Case Files' },
+          { id: 'rom', label: 'Clinical ROM & Referrals' },
+          { id: 'billing', label: 'Session Packages & Billing' },
+          { id: 'assessments', label: 'Initial Assessments' },
+        ].map((tab) => {
+          const isActive = activeTab === tab.id;
+          return (
+            <motion.button
+              key={tab.id}
+              whileTap={{ scale: 0.97 }}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`px-4 py-2.5 text-xs font-serif font-bold rounded-xl transition-colors cursor-pointer whitespace-nowrap relative select-none z-10 ${
+                isActive ? 'text-black' : 'text-white/60 hover:text-white hover:bg-white/5 font-medium'
+              }`}
+            >
+              {isActive && (
+                <motion.div
+                  layoutId="timelineActiveTabHighlight"
+                  className="absolute inset-0 bg-white rounded-xl shadow-md"
+                  transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                  style={{ zIndex: -1 }}
+                />
+              )}
+              <span>{tab.label}</span>
+            </motion.button>
+          );
+        })}
       </div>
 
       {/* Tab Contents */}

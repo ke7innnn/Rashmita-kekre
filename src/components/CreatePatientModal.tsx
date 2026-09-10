@@ -80,7 +80,7 @@ const POPULAR_DIAGNOSES = [
 
 const createPatientSchema = z.object({
   fullName: z.string().min(1, 'Patient Name is required'),
-  gender: z.string().min(1, 'Gender is required'),
+  gender: z.string().optional(),
   dateOfBirth: z.string().optional(),
   phoneCountryCode: z.string().default('+91'),
   phoneLocal: z.string().min(10, 'Valid 10-digit mobile number is required'),
@@ -259,8 +259,8 @@ export default function CreatePatientModal({
   const onSubmit = (data: any) => {
     const payload = {
       fullName: data.fullName,
-      gender: data.gender,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : new Date(),
+      gender: data.gender || null,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       phone: `${data.phoneCountryCode}${data.phoneLocal}`,
       address: data.address || '',
       referringDoctor: data.referringDoctor || '',

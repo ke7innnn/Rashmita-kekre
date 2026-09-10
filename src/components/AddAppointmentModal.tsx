@@ -125,7 +125,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
     const parsedAge = parseInt(newPatientAge, 10);
     const calculatedDob = !isNaN(parsedAge) && parsedAge > 0
       ? `${new Date().getFullYear() - parsedAge}-01-01`
-      : '1990-01-01';
+      : undefined;
 
     try {
       const res = await fetch('/api/patients', {
@@ -134,7 +134,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
         body: JSON.stringify({
           fullName: cleanName,
           phone: cleanPhone,
-          gender: newPatientGender || 'Female',
+          gender: newPatientGender || undefined,
           dateOfBirth: calculatedDob,
           presentingComplaint: newPatientDiagnosis.trim() || 'Direct Consultation Intake',
           diagnosis: newPatientDiagnosis.trim() || '',

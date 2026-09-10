@@ -375,7 +375,9 @@ export default function ManageAppointmentPage({ appointmentId, onBack }: Props) 
                 {initials}
               </div>
               <h3 className="text-xl font-serif font-bold text-white mt-3 leading-tight">{patient.fullName}</h3>
-              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">{patient.gender} • {new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} Years</span>
+              <span className="text-[10px] font-bold text-white/50 uppercase tracking-wider mt-1">
+                {[patient.gender, patient.dateOfBirth ? `${new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()} Years` : null].filter(Boolean).join(' • ') || '—'}
+              </span>
             </div>
 
             <div className="border-t border-white/15 pt-4 text-left space-y-3">

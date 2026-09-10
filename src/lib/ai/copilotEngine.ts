@@ -24,8 +24,9 @@ export async function extractMicroContext(query: string): Promise<MicroContextRe
   try {
     // ─── 1. PATIENT SPECIFIC QUERIES ───
     const allPatients = await prisma.patient.findMany({
+      where: { importStatus: 'ACTIVE' },
       select: { id: true, fullName: true },
-      take: 100
+      take: 200
     });
 
     const matchedPatient = allPatients.find(p => 
@@ -186,7 +187,7 @@ export async function extractMicroContext(query: string): Promise<MicroContextRe
       domain = 'CLINIC_OVERVIEW';
 
       const [patientCount, activePackageCount, unpaidInvCount] = await Promise.all([
-        prisma.patient.count(),
+        prisma.patient.count({ where: { importStatus: 'ACTIVE' } }),
         prisma.patientPackage.count({ where: { status: 'ACTIVE' } }),
         prisma.invoice.count({ where: { status: 'PENDING' } })
       ]);

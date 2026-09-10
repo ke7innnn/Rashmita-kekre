@@ -6,7 +6,8 @@
     "dev": "next dev -p 3002",
     "build": "prisma generate && next build",
     "start": "next start -p 3002",
-    "lint": "eslint"
+    "lint": "eslint",
+    "import:contacts": "tsx scripts/import-contacts.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
@@ -18,6 +19,7 @@
     "@types/pdfkit": "^0.17.6",
     "better-sqlite3": "^12.11.1",
     "clsx": "^2.1.1",
+    "csv-parse": "^7.0.2",
     "firebase": "^12.16.0",
     "framer-motion": "^12.42.2",
     "lenis": "^1.3.25",

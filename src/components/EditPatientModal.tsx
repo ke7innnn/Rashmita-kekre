@@ -194,8 +194,8 @@ export default function EditPatientModal({
 
     const payload = {
       fullName: fullName.trim(),
-      gender,
-      dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : new Date('1990-01-01').toISOString(),
+      gender: gender || null,
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth).toISOString() : null,
       phone: phone.trim(),
       secondaryPhone: secondaryPhone.trim() || null,
       email: email.trim() || null,

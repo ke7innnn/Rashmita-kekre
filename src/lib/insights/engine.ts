@@ -28,6 +28,7 @@ export async function generateDailyMetricSnapshot(date: Date = new Date()): Prom
   // 2. Fetch Patients & Lapsed status
   const now = date.getTime();
   const allPatients = await prisma.patient.findMany({
+    where: { importStatus: 'ACTIVE' },
     include: {
       appointments: {
         orderBy: { date: 'desc' }
@@ -216,6 +217,7 @@ export async function runInsightsPipeline(
   });
 
   const patients = await prisma.patient.findMany({
+    where: { importStatus: 'ACTIVE' },
     include: { appointments: true }
   });
 

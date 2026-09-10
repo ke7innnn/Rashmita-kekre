@@ -41,16 +41,39 @@ export default function PatientsTab({
   const [selectedPatientIds, setSelectedPatientIds] = useState<Set<string>>(new Set());
   const [isBatchTransferring, setIsBatchTransferring] = useState(false);
   const [transferToast, setTransferToast] = useState<{ count: number; message: string } | null>(null);
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'needs_review' | 'linked_contact'>('all');
 
-  // 1. Fetch Patients
-  const { data: patients = [], isLoading } = useQuery({
+  // 1. Fetch Patients (fetch all to enable quick filtering and count badges)
+  const { data: allPatients = [], isLoading } = useQuery({
     queryKey: ['patients', search],
     queryFn: async () => {
-      const res = await fetch(`/api/patients?q=${search}`);
+      const res = await fetch(`/api/patients?q=${encodeURIComponent(search)}&status=all`);
       if (!res.ok) throw new Error('Failed to fetch patients');
       return res.json();
     },
   });
+
+  const counts = React.useMemo(() => {
+    return {
+      all: allPatients.length,
+      active: allPatients.filter((p: any) => p.importStatus === 'ACTIVE').length,
+      needsReview: allPatients.filter((p: any) => p.importStatus === 'NEEDS_REVIEW').length,
+      linkedContact: allPatients.filter((p: any) => p.entryType === 'LINKED_CONTACT').length,
+    };
+  }, [allPatients]);
+
+  const patients = React.useMemo(() => {
+    if (statusFilter === 'active') {
+      return allPatients.filter((p: any) => p.importStatus === 'ACTIVE');
+    }
+    if (statusFilter === 'needs_review') {
+      return allPatients.filter((p: any) => p.importStatus === 'NEEDS_REVIEW');
+    }
+    if (statusFilter === 'linked_contact') {
+      return allPatients.filter((p: any) => p.entryType === 'LINKED_CONTACT');
+    }
+    return allPatients;
+  }, [allPatients, statusFilter]);
 
   const toggleSelectPatient = (id: string) => {
     setSelectedPatientIds(prev => {
@@ -108,73 +131,141 @@ export default function PatientsTab({
 
   return (
     <div className="space-y-6 select-none relative pb-16">
-      {selectedPatientId ? (
-        <GlassPanel className="p-6 min-h-[calc(100vh-140px)] flex flex-col">
-          <PatientTimeline 
-            patientId={selectedPatientId} 
-            onBack={() => setSelectedPatientId(null)}
-          />
-        </GlassPanel>
-      ) : (
-        <>
-          {/* Search & Actions Header */}
-          <GlassPanel className="p-5 flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
-            <div>
-              <h3 className="text-2xl font-serif text-[#F5F3FA] font-bold">Patients Directory</h3>
-              <p className="text-xs text-[rgba(245,243,250,0.62)] font-medium mt-0.5">Manage details, case sheets, and history logs of registered patients.</p>
-            </div>
+      <AnimatePresence mode="wait" initial={false}>
+        {selectedPatientId ? (
+          <motion.div
+            key={`patient-detail-${selectedPatientId}`}
+            initial={{ opacity: 0, y: 8, filter: 'blur(2px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          >
+            <GlassPanel className="p-6 min-h-[calc(100vh-140px)] flex flex-col">
+              <PatientTimeline 
+                patientId={selectedPatientId} 
+                onBack={() => setSelectedPatientId(null)}
+              />
+            </GlassPanel>
+          </motion.div>
+        ) : (
+          <motion.div
+            key="patients-directory-main"
+            initial={{ opacity: 0, y: 8, filter: 'blur(2px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, y: -8, filter: 'blur(2px)' }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            className="space-y-6"
+          >
+            {/* Search & Actions Header */}
+            <GlassPanel className="p-5 flex flex-col gap-4">
+              <div className="flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
+                <div>
+                  <h3 className="text-2xl font-serif text-[#F5F3FA] font-bold">Patients Directory</h3>
+                  <p className="text-xs text-[rgba(245,243,250,0.62)] font-medium mt-0.5">Manage details, case sheets, and history logs of registered patients.</p>
+                </div>
 
-            <div className="flex items-center gap-3">
-              {/* View Switcher: Table vs Grid */}
-              <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl gap-1">
-                <button
-                  onClick={() => setViewMode('table')}
-                  title="Tabular View"
-                  className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === 'table' 
-                      ? 'bg-white text-black shadow-sm' 
-                      : 'text-[rgba(245,243,250,0.6)] hover:text-white'
-                  }`}
-                >
-                  <TableIcon className="h-4 w-4 stroke-[2]" />
-                  <span className="hidden sm:inline text-[11px]">Table</span>
-                </button>
-                <button
-                  onClick={() => setViewMode('grid')}
-                  title="Grid View"
-                  className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                    viewMode === 'grid' 
-                      ? 'bg-white text-black shadow-sm' 
-                      : 'text-[rgba(245,243,250,0.6)] hover:text-white'
-                  }`}
-                >
-                  <LayoutGrid className="h-4 w-4 stroke-[2]" />
-                  <span className="hidden sm:inline text-[11px]">Grid</span>
-                </button>
+                <div className="flex items-center gap-3">
+                  {/* View Switcher: Table vs Grid */}
+                  <div className="flex items-center bg-white/5 border border-white/10 p-1 rounded-xl gap-1 relative shadow-inner">
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => setViewMode('table')}
+                      title="Tabular View"
+                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer relative z-10 select-none ${
+                        viewMode === 'table' 
+                          ? 'text-black font-bold' 
+                          : 'text-[rgba(245,243,250,0.6)] hover:text-white'
+                      }`}
+                    >
+                      {viewMode === 'table' && (
+                        <motion.div
+                          layoutId="patientsViewModePill"
+                          className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      <TableIcon className="h-4 w-4 stroke-[2]" />
+                      <span className="hidden sm:inline text-[11px]">Table</span>
+                    </motion.button>
+                    <motion.button
+                      whileTap={{ scale: 0.96 }}
+                      onClick={() => setViewMode('grid')}
+                      title="Grid View"
+                      className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer relative z-10 select-none ${
+                        viewMode === 'grid' 
+                          ? 'text-black font-bold' 
+                          : 'text-[rgba(245,243,250,0.6)] hover:text-white'
+                      }`}
+                    >
+                      {viewMode === 'grid' && (
+                        <motion.div
+                          layoutId="patientsViewModePill"
+                          className="absolute inset-0 bg-white rounded-lg shadow-sm"
+                          transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                          style={{ zIndex: -1 }}
+                        />
+                      )}
+                      <LayoutGrid className="h-4 w-4 stroke-[2]" />
+                      <span className="hidden sm:inline text-[11px]">Grid</span>
+                    </motion.button>
+                  </div>
+
+                  <div className="relative flex-1 md:flex-initial">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(245,243,250,0.4)] stroke-[2]" />
+                    <input
+                      type="text"
+                      placeholder="Search directory..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="pl-9 pr-4.5 py-2.5 w-full md:w-60 text-xs glass-input font-medium placeholder-[rgba(245,243,250,0.4)]"
+                    />
+                  </div>
+
+                  <motion.button
+                    whileHover={{ y: -1 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="flex items-center gap-2 bg-white hover:bg-white/90 text-black text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.25)] border-0"
+                  >
+                    <Plus className="h-4 w-4 stroke-[2.5]" />
+                    Add Patient
+                  </motion.button>
+                </div>
               </div>
 
-              <div className="relative flex-1 md:flex-initial">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[rgba(245,243,250,0.4)] stroke-[2]" />
-                <input
-                  type="text"
-                  placeholder="Search directory..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 pr-4.5 py-2.5 w-full md:w-60 text-xs glass-input font-medium placeholder-[rgba(245,243,250,0.4)]"
-                />
+              {/* Status Filter Tabs */}
+              <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-white/[0.08]">
+                {[
+                  { key: 'all', label: 'All Patients', count: counts.all },
+                  { key: 'active', label: 'Active', count: counts.active },
+                  { key: 'needs_review', label: 'Needs Review', count: counts.needsReview },
+                  { key: 'linked_contact', label: 'Linked Contacts', count: counts.linkedContact },
+                ].map((tab) => {
+                  const isActive = statusFilter === tab.key;
+                  return (
+                    <button
+                      key={tab.key}
+                      onClick={() => setStatusFilter(tab.key as any)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-medium transition-all cursor-pointer flex items-center gap-2 select-none ${
+                        isActive
+                          ? 'bg-white text-black font-bold shadow-sm'
+                          : 'bg-white/[0.04] hover:bg-white/[0.08] text-[rgba(245,243,250,0.7)] hover:text-white border border-white/10'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono leading-none ${
+                        isActive
+                          ? 'bg-black/15 text-black font-bold'
+                          : 'bg-white/10 text-white/60'
+                      }`}>
+                        {tab.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-
-              <motion.button
-                whileHover={{ y: -1 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsCreateModalOpen(true)}
-                className="flex items-center gap-2 bg-white hover:bg-white/90 text-black text-xs font-bold px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.25)] border-0"
-              >
-                <Plus className="h-4 w-4 stroke-[2.5]" />
-                Add Patient
-              </motion.button>
-            </div>
-          </GlassPanel>
+            </GlassPanel>
 
           {/* Directory Content */}
           {isLoading ? (
@@ -187,13 +278,22 @@ export default function PatientsTab({
               <h4 className="text-sm font-semibold text-[rgba(245,243,250,0.62)]">No patients found.</h4>
               <p className="text-xs text-[rgba(245,243,250,0.4)] mt-1 font-medium">Try adjusting your search criteria or register a new patient.</p>
             </GlassPanel>
-          ) : viewMode === 'table' ? (
-            /* TABULAR FORMAT VIEW */
-            <GlassPanel className="overflow-hidden p-0 border border-white/10">
+          ) : (
+            <AnimatePresence mode="wait" initial={false}>
+              {viewMode === 'table' ? (
+                <motion.div
+                  key="tabular-view"
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -6 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  {/* TABULAR FORMAT VIEW */}
+                  <GlassPanel className="overflow-hidden p-0 border border-white/10">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="border-b border-white/10 bg-white/[0.03] text-[rgba(245,243,250,0.5)] font-mono text-[10px] uppercase tracking-wider">
+                  <thead className="sticky top-0 z-10 bg-[#0B0A10]/95 backdrop-blur-md shadow-sm">
+                    <tr className="border-b border-white/10 text-[rgba(245,243,250,0.5)] font-mono text-[10px] uppercase tracking-wider">
                       <th className="py-3.5 px-3 text-center w-10">
                         <input
                           type="checkbox"
@@ -260,10 +360,27 @@ export default function PatientsTab({
                                 {initials}
                               </div>
                               <div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
                                   <span className="font-serif font-bold text-sm text-[#F5F3FA] group-hover:text-white transition-colors block">
                                     {p.fullName}
                                   </span>
+                                  {p.importStatus === 'NEEDS_REVIEW' && (
+                                    <span 
+                                      className="inline-flex items-center gap-1 text-[9px] font-mono font-medium px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded"
+                                      title={p.importReason || 'Flagged for review'}
+                                    >
+                                      <AlertCircle className="h-2.5 w-2.5" />
+                                      Review
+                                    </span>
+                                  )}
+                                  {p.entryType === 'LINKED_CONTACT' && (
+                                    <span 
+                                      className="inline-flex items-center gap-1 text-[9px] font-mono font-medium px-1.5 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/40 rounded"
+                                      title={p.relationNote || 'Linked Contact'}
+                                    >
+                                      Linked Contact
+                                    </span>
+                                  )}
                                   {((p.tags || []).includes('blocked') || (typeof p.tags === 'string' && p.tags.includes('blocked'))) && (
                                     <span className="inline-flex items-center gap-0.5 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded shadow-xxs">
                                       <Ban className="h-2.5 w-2.5" />
@@ -277,13 +394,13 @@ export default function PatientsTab({
 
                           {/* Age */}
                           <td className="py-3.5 px-4 text-center font-mono text-xs text-[rgba(245,243,250,0.85)]">
-                            {age} Yrs
+                            {age !== '—' ? `${age} Yrs` : '—'}
                           </td>
 
                           {/* Gender */}
                           <td className="py-3.5 px-4 text-xs text-[rgba(245,243,250,0.75)]">
                             <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-white/[0.05] border border-white/[0.08] text-[11px] font-mono">
-                              {p.gender}
+                              {p.gender || '—'}
                             </span>
                           </td>
 
@@ -352,9 +469,16 @@ export default function PatientsTab({
                 </table>
               </div>
             </GlassPanel>
-          ) : (
-            /* GRID FORMAT VIEW */
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          </motion.div>
+        ) : (
+          <motion.div
+            key="grid-view"
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          >
               {patients.map((p: any) => {
                 const isSelected = selectedPatientIds.has(p.id);
                 const initials = (p.fullName || 'PT').split(' ').filter(Boolean).map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'PT';
@@ -393,17 +517,35 @@ export default function PatientsTab({
                             </div>
                           </div>
                           <div className="truncate">
-                            <div className="flex items-center gap-1.5 truncate">
+                            <div className="flex items-center gap-1.5 truncate flex-wrap">
                               <h4 className="text-base font-serif font-bold text-[#F5F3FA] tracking-wide truncate group-hover:text-white transition-colors leading-snug">
                                 {p.fullName}
                               </h4>
+                              {p.importStatus === 'NEEDS_REVIEW' && (
+                                <span 
+                                  className="inline-flex items-center gap-0.5 text-[8px] font-mono font-medium px-1.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded shrink-0"
+                                  title={p.importReason || 'Flagged for review'}
+                                >
+                                  Review
+                                </span>
+                              )}
+                              {p.entryType === 'LINKED_CONTACT' && (
+                                <span 
+                                  className="inline-flex items-center gap-0.5 text-[8px] font-mono font-medium px-1.5 py-0.5 bg-sky-500/20 text-sky-300 border border-sky-500/40 rounded shrink-0"
+                                  title={p.relationNote || 'Linked Contact'}
+                                >
+                                  Linked
+                                </span>
+                              )}
                               {((p.tags || []).includes('blocked') || (typeof p.tags === 'string' && p.tags.includes('blocked'))) && (
                                 <span className="inline-flex items-center gap-0.5 text-[8px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 bg-rose-500/20 text-rose-300 border border-rose-500/40 rounded shrink-0">
                                   BLOCKED
                                 </span>
                               )}
                             </div>
-                            <p className="eyebrow text-[9px] mt-0.5">{p.gender} • {age} Yrs</p>
+                            <p className="eyebrow text-[9px] mt-0.5 text-white/60">
+                              {[p.gender, age !== '—' ? `${age} Yrs` : null].filter(Boolean).join(' • ') || '—'}
+                            </p>
                           </div>
                         </div>
 
@@ -470,10 +612,13 @@ export default function PatientsTab({
                   </GlassPanel>
                 );
               })}
-            </div>
+            </motion.div>
           )}
-        </>
+        </AnimatePresence>
       )}
+    </motion.div>
+  )}
+</AnimatePresence>
 
       {/* FLOATING ACTION BAR FOR MULTI-PATIENT SELECTION */}
       <AnimatePresence>
