@@ -197,7 +197,7 @@ export default function ReceiptDocument({
             <p className="bill-doctor-credentials">B.PTh. (M.I.A.P.) · BCST</p>
             <p className="bill-doctor-title">Consultant Physiotherapist & Craniosacral Therapist</p>
             <p className="bill-doctor-contact">
-              Tel: +91 8482812859 · health360vasai@gmail.com
+              Tel: +91 8071 583 519 · health360vasai@gmail.com
             </p>
           </div>
         </div>
@@ -460,7 +460,7 @@ export default function ReceiptDocument({
 
         {/* ================= 8. FOOTER ================= */}
         <div className="bill-footer">
-          Shop No.1, Amardeep Society, Om Nagar, Vasai (W), Dist. Palghar - 401202 · Tel: +91 8482812859 · Email: health360vasai@gmail.com
+          Shop No.1, Amardeep Society, Om Nagar, Vasai (W), Dist. Palghar - 401202 · Tel: +91 8071 583 519 · Email: health360vasai@gmail.com
         </div>
       </div>
     </>

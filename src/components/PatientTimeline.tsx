@@ -1597,13 +1597,17 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
 
         {/* Demographics details (Consolidated Borders) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-semibold mt-1">
-          <div className="flex items-center gap-3.5 text-white/80 bg-white/5 border border-white/10 p-3 rounded-xl">
+          <a
+            href={`tel:${patient.phone}`}
+            className="flex items-center gap-3.5 text-white/80 bg-white/5 hover:bg-white/10 hover:text-white border border-white/10 p-3 rounded-xl transition cursor-pointer"
+            title={`Click to call ${patient.fullName} (${patient.phone})`}
+          >
             <Phone className="h-4 w-4 text-emerald-400 shrink-0 stroke-[1.75]" />
             <div>
-              <p className="font-bold">{patient.phone}</p>
+              <p className="font-bold hover:underline">{patient.phone}</p>
               {patient.secondaryPhone && <p className="text-[10px] text-white/50 mt-0.5">Sec: {patient.secondaryPhone}</p>}
             </div>
-          </div>
+          </a>
           <div className="flex items-center gap-3.5 text-white/80 bg-white/5 border border-white/10 p-3 rounded-xl">
             <MapPin className="h-4 w-4 text-emerald-400 shrink-0 stroke-[1.75]" />
             <span className="truncate" title={patient.address}>{patient.address || 'No address registered'}</span>
