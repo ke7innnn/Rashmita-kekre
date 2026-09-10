@@ -75,7 +75,7 @@ ${publicCertificateUrl}
 
 Warm regards,
 *Dr. Rashmita Karvir-Kekre (PT)*
-Health 360 Clinic · Vasai West (+91 8482812859)`;
+Health 360 Clinic · Vasai West (+91 8071 583 519)`;
     }
 
     if (data.type === 'fitness') {
@@ -93,7 +93,7 @@ ${publicCertificateUrl}
 
 Warm regards,
 *Dr. Rashmita Karvir-Kekre (PT)*
-Health 360 Clinic · Vasai West (+91 8482812859)`;
+Health 360 Clinic · Vasai West (+91 8071 583 519)`;
     }
 
     if (data.type === 'unfitness') {
@@ -112,7 +112,7 @@ ${publicCertificateUrl}
 
 Warm regards,
 *Dr. Rashmita Karvir-Kekre (PT)*
-Health 360 Clinic · Vasai West (+91 8482812859)`;
+Health 360 Clinic · Vasai West (+91 8071 583 519)`;
     }
 
     // Discharge Summary
@@ -131,7 +131,7 @@ ${publicCertificateUrl}
 
 Warm regards,
 *Dr. Rashmita Karvir-Kekre (PT)*
-Health 360 Clinic · Vasai West (+91 8482812859)`;
+Health 360 Clinic · Vasai West (+91 8071 583 519)`;
   };
 
   const messageText = generateWhatsAppMessage();

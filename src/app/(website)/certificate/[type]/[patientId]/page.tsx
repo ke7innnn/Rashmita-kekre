@@ -89,7 +89,7 @@ export default async function PublicCertificatePage({ params, searchParams }: Ce
 
           <div className="flex items-center gap-2.5">
             <a
-              href="tel:+918482812859"
+              href="tel:+918071583519"
               className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition flex items-center gap-1.5 border border-white/20"
             >
               <Phone className="w-3.5 h-3.5 text-emerald-400" />
@@ -107,7 +107,7 @@ export default async function PublicCertificatePage({ params, searchParams }: Ce
       </div>
 
       <div className="no-print print:hidden text-center py-6 text-xs text-white/40">
-        Shop No.1 &amp; 2, Shree Amardeep Enclave, Om Nagar, Vasai (West), Dist. Palghar - 401202 · Tel: +91 8482812859
+        Shop No.1 &amp; 2, Shree Amardeep Enclave, Om Nagar, Vasai (West), Dist. Palghar - 401202 · Tel: +91 8071 583 519
       </div>
     </div>
   );

@@ -98,10 +98,6 @@ export default function CertificateDocument({
           alt="Health 360 Clinic"
           className="cert-logo"
         />
-        <div className="cert-clinic-meta">
-          <div className="cert-clinic-title">Health 360</div>
-          <div className="cert-clinic-sub">PHYSIOTHERAPY AND CRANIOSACRAL THERAPY CLINIC</div>
-        </div>
       </div>
 
       <div className="cert-header-right">
@@ -109,7 +105,7 @@ export default function CertificateDocument({
         <div className="cert-doc-creds">B.P.Th. (M.I.A.P.)</div>
         <div className="cert-doc-creds">BCST</div>
         <div className="cert-contact-item mt-1">
-          <span>8482812859</span>
+          <span>+91 8071 583 519</span>
           <span className="cert-icon-badge">📞</span>
         </div>
         <div className="cert-contact-item">
@@ -647,7 +643,7 @@ const certStyles = `
 .cert-header {
   display: flex;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   padding-bottom: 4mm;
   border-bottom: 2px solid #0284c7;
   margin-bottom: 4mm;
@@ -656,36 +652,14 @@ const certStyles = `
 .cert-header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-  max-width: 60%;
+  max-width: 55%;
 }
 
 .cert-logo {
-  height: 58px;
+  height: 84px;
   width: auto;
+  max-width: 280px;
   object-fit: contain;
-}
-
-.cert-clinic-meta {
-  display: flex;
-  flex-direction: column;
-}
-
-.cert-clinic-title {
-  font-size: 15pt;
-  font-weight: 800;
-  color: #0f172a;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-}
-
-.cert-clinic-sub {
-  font-size: 6.8pt;
-  font-weight: 700;
-  color: #0284c7;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin-top: 2px;
 }
 
 .cert-header-right {
@@ -948,6 +922,11 @@ const certStyles = `
     width: 100% !important;
     min-height: auto !important;
     margin: 0 !important;
+  }
+  .cert-logo {
+    height: 22mm !important;
+    max-width: 75mm !important;
+    object-fit: contain !important;
   }
   .cert-editable-field {
     background: transparent !important;
