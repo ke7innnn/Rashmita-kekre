@@ -144,7 +144,7 @@ export default function AICopilotWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 select-none font-sans">
+    <div className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-40 select-none font-sans">
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -152,7 +152,7 @@ export default function AICopilotWidget() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 20, scale: 0.96 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="w-[360px] sm:w-[400px] h-[520px] bg-[#0E0C16]/95 border border-white/15 rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden mb-4 backdrop-blur-2xl text-white"
+            className="w-[calc(100vw-2rem)] sm:w-[400px] max-w-[400px] h-[480px] sm:h-[520px] bg-[#0E0C16]/95 border border-white/15 rounded-3xl shadow-[0_25px_70px_rgba(0,0,0,0.85)] flex flex-col overflow-hidden mb-3 backdrop-blur-2xl text-white"
           >
             {/* Header */}
             <div className="bg-white/[0.05] text-white p-4 flex justify-between items-center shrink-0 border-b border-white/10">

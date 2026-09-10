@@ -300,7 +300,7 @@ export default function PatientsTab({
 
               {/* Status Filter Tabs & Per-Page Controls */}
               <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-white/[0.08]">
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar max-w-full pb-1">
                   {[
                     { key: 'all', label: 'All Patients', count: counts.all },
                     { key: 'active', label: 'Active', count: counts.active },

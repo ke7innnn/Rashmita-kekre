@@ -295,8 +295,8 @@ export default function CreatePatientModal({
             className="relative bg-[#0F0D16] border border-white/20 w-full max-w-3xl rounded-3xl shadow-2xl overflow-visible flex flex-col z-10 text-white"
           >
             {/* Header */}
-            <div className="flex justify-between items-center px-6 py-4 border-b border-white/10 shrink-0 rounded-t-3xl">
-              <h3 className="text-2xl font-serif text-white font-semibold">Add Patient</h3>
+            <div className="flex justify-between items-center px-4 sm:px-6 py-3.5 sm:py-4 border-b border-white/10 shrink-0 rounded-t-3xl">
+              <h3 className="text-xl sm:text-2xl font-serif text-white font-semibold">Add Patient</h3>
               <motion.button 
                 type="button"
                 whileTap={{ scale: 0.9 }}
@@ -310,7 +310,7 @@ export default function CreatePatientModal({
             {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} className="flex flex-col h-full overflow-visible">
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 p-8 overflow-visible max-h-[60vh] overflow-y-auto bg-[#0F0D16]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 p-4 sm:p-8 overflow-visible max-h-[70vh] overflow-y-auto bg-[#0F0D16]">
                 
                 {/* Left Column */}
                 <div className="space-y-4">

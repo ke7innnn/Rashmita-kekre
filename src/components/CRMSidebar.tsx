@@ -7,10 +7,12 @@ import { useSession, signOut } from 'next-auth/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
-  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle, ExternalLink, ShieldCheck
+  LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle, ExternalLink, ShieldCheck,
+  Plus, ChevronRight
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
+import CreatePatientModal from './CreatePatientModal';
 
 interface Props {
   children: React.ReactNode;
@@ -31,6 +33,7 @@ export default function CRMSidebar({ children }: Props) {
   const [clockInTime, setClockInTime] = useState<string | null>(null);
   const [elapsedMins, setElapsedMins] = useState<number>(0);
   const [showStaffPopup, setShowStaffPopup] = useState<boolean>(false);
+  const [isCreatePatientOpen, setIsCreatePatientOpen] = useState<boolean>(false);
 
   // Smart Staff Members Roster Data
   const staffMembers = [
@@ -426,50 +429,79 @@ export default function CRMSidebar({ children }: Props) {
       {/* Main Content Shell */}
       <div className="flex-1 flex flex-col min-w-0 z-10 print:p-0">
         {/* Mobile Header Bar */}
-        <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-[rgba(18,13,31,0.8)] backdrop-blur-xl border-b border-[rgba(255,255,255,0.08)] sticky top-0 z-30 print:hidden">
-          <div className="flex items-center gap-3">
-            <div className="relative shrink-0">
-              <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-30" />
-              <img 
-                src="/logo/rklogo.png" 
-                alt="Health 360 Icon" 
-                className="h-9 w-9 object-contain relative z-10"
-              />
-            </div>
-            <div>
-              <h1 className="text-base font-serif font-semibold text-[#F5F3FA]">Health 360</h1>
-              <p className="text-[9px] text-white/40">4 Staff On Duty</p>
-            </div>
+        <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-[rgba(18,13,31,0.85)] backdrop-blur-2xl border-b border-white/10 sticky top-0 z-30 print:hidden">
+          <div className="flex items-center gap-2.5">
+            <Link href="/crm360/patients" className="flex items-center gap-2.5">
+              <div className="relative shrink-0">
+                <div className="absolute inset-0 rounded-full bg-primary blur-md opacity-30" />
+                <img 
+                  src="/logo/rklogo.png" 
+                  alt="Health 360 Icon" 
+                  className="h-8 w-8 object-contain relative z-10"
+                />
+              </div>
+              <div>
+                <h1 className="text-sm font-serif font-bold text-[#F5F3FA] leading-tight">Health 360</h1>
+              </div>
+            </Link>
+
+            {/* Quick Interactive Staff Duty Pill */}
+            <button
+              onClick={() => setShowStaffPopup(true)}
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-mono text-emerald-300 font-bold hover:bg-emerald-500/25 transition cursor-pointer"
+              title="Click to check staff on duty"
+            >
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>4 On Duty</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick Clock Out Button for Mobile */}
+            {/* 1-Tap Quick Add Patient from Header */}
+            <button
+              onClick={() => setIsCreatePatientOpen(true)}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold bg-white text-black flex items-center gap-1 shadow-[0_0_12px_rgba(255,255,255,0.3)] active:scale-95 transition-all cursor-pointer"
+              title="Quick Add Patient"
+            >
+              <Plus size={13} strokeWidth={3} />
+              <span className="text-[11px] font-bold hidden xs:inline">Patient</span>
+            </button>
+
+            {/* Quick Clock Toggle */}
             <button
               onClick={handleClockToggle}
               disabled={clockLoading}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all ${
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
                 isClockedIn
                   ? (elapsedMins >= 420 || new Date().getHours() >= 19
-                      ? 'bg-amber-400 hover:bg-amber-300 text-black animate-pulse shadow-[0_0_15px_rgba(251,191,36,0.6)] font-extrabold'
+                      ? 'bg-amber-400 text-black animate-pulse shadow-[0_0_12px_rgba(251,191,36,0.6)]'
                       : 'bg-rose-500/20 text-rose-300 border border-rose-500/40')
-                  : 'bg-[var(--primary)] text-black'
+                  : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40'
               }`}
+              title={isClockedIn ? `Clocked in for ${formatShiftTime(elapsedMins)}` : 'Clock in'}
             >
-              {isClockedIn ? (
-                (elapsedMins >= 420 || new Date().getHours() >= 19) ? <BellRing size={13} className="animate-bounce" /> : <LogOut size={13} />
-              ) : <Clock size={13} />}
-              <span>
-                {isClockedIn 
-                  ? (elapsedMins >= 420 || new Date().getHours() >= 19 ? 'Clock Out!' : 'Clock Out') 
-                  : 'Clock In'}
-              </span>
+              {clockLoading ? (
+                <div className="h-3 w-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : isClockedIn ? (
+                <>
+                  <LogOut size={12} />
+                  <span className="text-[10px] font-mono">{formatShiftTime(elapsedMins)}</span>
+                </>
+              ) : (
+                <>
+                  <Clock size={12} />
+                  <span className="text-[10px]">Clock In</span>
+                </>
+              )}
             </button>
 
+            {/* Hamburger Menu Toggle */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl bg-[rgba(255,255,255,0.04)] border border-[rgba(255,255,255,0.08)] text-[#F5F3FA] cursor-pointer"
+              className="p-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-white cursor-pointer"
+              aria-label="Toggle menu"
             >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {mobileMenuOpen ? <X className="h-4.5 w-4.5" /> : <Menu className="h-4.5 w-4.5" />}
             </button>
           </div>
         </header>
@@ -484,6 +516,31 @@ export default function CRMSidebar({ children }: Props) {
               transition={{ duration: 0.2, ease: 'easeInOut' }}
               className="lg:hidden bg-[#120D1F] border-b border-[rgba(255,255,255,0.08)] px-6 py-4 space-y-3 shadow-2xl overflow-hidden"
             >
+              {/* Quick Actions Strip */}
+              <div className="grid grid-cols-2 gap-2 pb-2 border-b border-white/10">
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsCreatePatientOpen(true);
+                  }}
+                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-white text-black font-bold text-xs shadow-md active:scale-95 transition-transform cursor-pointer"
+                >
+                  <Plus className="h-3.5 w-3.5 stroke-[3]" />
+                  <span>Add Patient</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowStaffPopup(true);
+                  }}
+                  className="flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 font-bold text-xs active:scale-95 transition-transform cursor-pointer"
+                >
+                  <Clock className="h-3.5 w-3.5" />
+                  <span>Check Staff ({isClockedIn ? 'In' : 'Out'})</span>
+                </button>
+              </div>
+
               <nav className="space-y-1">
                 {navigation.map((item) => {
                   const Icon = item.icon;
@@ -525,8 +582,8 @@ export default function CRMSidebar({ children }: Props) {
               </nav>
               <div className="border-t border-[rgba(255,255,255,0.08)] pt-3 flex justify-between items-center">
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(255,255,255,0.04)] text-primary border border-primary/30">
-                    <UserIcon className="h-4 w-4 stroke-[1.75]" />
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(255,255,255,0.04)] text-primary border border-primary/30 font-bold text-xs">
+                    {session?.user?.name ? session.user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'U'}
                   </span>
                   <div>
                     <p className="text-xs font-bold text-[#F5F3FA] capitalize">{user?.name || session?.user?.name || 'Staff'}</p>
@@ -535,7 +592,7 @@ export default function CRMSidebar({ children }: Props) {
                 </div>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,93,122,0.3)] text-[#FF5D7A] hover:bg-[rgba(255,93,122,0.1)] text-xs font-semibold rounded-xl transition-all"
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-[rgba(255,93,122,0.3)] text-[#FF5D7A] hover:bg-[rgba(255,93,122,0.1)] text-xs font-semibold rounded-xl transition-all cursor-pointer"
                 >
                   <LogOut className="h-3.5 w-3.5 stroke-[1.75]" />
                   Sign Out
@@ -545,8 +602,8 @@ export default function CRMSidebar({ children }: Props) {
           )}
         </AnimatePresence>
 
-        {/* Tab Content Area */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-transparent print:p-0 print:overflow-visible">
+        {/* Tab Content Area with mobile bottom bar clearance */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 md:p-8 bg-transparent print:p-0 print:overflow-visible pb-28 lg:pb-8">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
@@ -561,6 +618,228 @@ export default function CRMSidebar({ children }: Props) {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Mobile Sticky Bottom Navigation Bar */}
+      <nav 
+        aria-label="Mobile Navigation Bar"
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#0B0A10]/95 backdrop-blur-2xl border-t border-white/10 px-3 py-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom))] shadow-[0_-10px_35px_rgba(0,0,0,0.85)] flex items-center justify-around print:hidden select-none"
+      >
+        {/* Tab 1: Patients */}
+        <Link
+          href="/crm360/patients"
+          className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all ${
+            pathname.startsWith('/crm360/patients')
+              ? 'text-white font-bold'
+              : 'text-white/50 hover:text-white'
+          }`}
+        >
+          <Users className="h-5 w-5" />
+          <span className="text-[10px] mt-0.5 font-medium">Patients</span>
+        </Link>
+
+        {/* Tab 2: Check Staff & Shift */}
+        <button
+          onClick={() => setShowStaffPopup(true)}
+          className="flex flex-col items-center py-1 px-3 rounded-xl text-white/60 hover:text-white transition-all cursor-pointer relative"
+        >
+          <div className="relative">
+            <Clock className="h-5 w-5" />
+            <span className={`absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full ${isClockedIn ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+          </div>
+          <span className="text-[10px] mt-0.5 font-medium">Staff</span>
+        </button>
+
+        {/* Center: Quick Add Patient Floating Elevated Button */}
+        <button
+          onClick={() => setIsCreatePatientOpen(true)}
+          className="flex flex-col items-center -mt-6 cursor-pointer group active:scale-95 transition-transform"
+          title="Quick Add Patient"
+        >
+          <div className="h-12 w-12 rounded-full bg-white text-black font-extrabold flex items-center justify-center shadow-[0_0_20px_rgba(255,255,255,0.4)] border-4 border-[#0B0A10] group-hover:brightness-110">
+            <Plus className="h-6 w-6 stroke-[3]" />
+          </div>
+          <span className="text-[9px] font-bold text-white/90 mt-0.5">Add</span>
+        </button>
+
+        {/* Tab 4: Appointments */}
+        <Link
+          href="/crm360/appointments"
+          className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all ${
+            pathname.startsWith('/crm360/appointments')
+              ? 'text-white font-bold'
+              : 'text-white/50 hover:text-white'
+          }`}
+        >
+          <Activity className="h-5 w-5" />
+          <span className="text-[10px] mt-0.5 font-medium">Appts</span>
+        </Link>
+
+        {/* Tab 5: Menu / More */}
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className={`flex flex-col items-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
+            mobileMenuOpen ? 'text-white font-bold' : 'text-white/50 hover:text-white'
+          }`}
+        >
+          <Menu className="h-5 w-5" />
+          <span className="text-[10px] mt-0.5 font-medium">More</span>
+        </button>
+      </nav>
+
+      {/* Quick Staff & Shift Hub (Mobile Bottom Sheet / Modal) */}
+      <AnimatePresence>
+        {showStaffPopup && (
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center select-none">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowStaffPopup(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            />
+
+            <motion.div
+              initial={{ y: '100%' }}
+              animate={{ y: 0 }}
+              exit={{ y: '100%' }}
+              transition={{ type: 'spring', stiffness: 350, damping: 32 }}
+              className="relative w-full max-w-lg bg-[#120D22] border-t sm:border border-white/15 rounded-t-3xl sm:rounded-3xl p-5 pb-8 sm:pb-5 shadow-2xl z-10 text-white space-y-4 max-h-[85vh] overflow-y-auto"
+            >
+              {/* Pull Bar */}
+              <div className="w-12 h-1.5 bg-white/20 rounded-full mx-auto sm:hidden" />
+
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                    <Clock className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-serif font-bold text-white">Staff & Shift Hub</h3>
+                    <p className="text-[10px] text-white/50">Live Clinic Duty & Attendance</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowStaffPopup(false)}
+                  className="p-1.5 rounded-full hover:bg-white/10 text-white/50 hover:text-white cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Current Shift Status Card */}
+              <div className="p-4 rounded-2xl bg-white/[0.04] border border-white/10 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-9 w-9 rounded-full bg-white/10 border border-white/20 flex items-center justify-center font-bold text-xs text-white">
+                      {session?.user?.name ? session.user.name.split(' ').map((n: string) => n[0]).join('').toUpperCase() : 'DR'}
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-white capitalize">{session?.user?.name || 'Dr. Rashmita'}</p>
+                      <p className="text-[10px] text-white/50 capitalize">{session?.user?.role || 'Lead Physio'} Operator</p>
+                    </div>
+                  </div>
+
+                  <span className={`px-2.5 py-1 rounded-full text-[10px] font-mono font-bold flex items-center gap-1.5 ${
+                    isClockedIn 
+                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' 
+                      : 'bg-white/10 text-white/50'
+                  }`}>
+                    <span className={`h-1.5 w-1.5 rounded-full ${isClockedIn ? 'bg-emerald-400 animate-pulse' : 'bg-white/40'}`} />
+                    {isClockedIn ? `In • ${formatShiftTime(elapsedMins)}` : 'Clocked Out'}
+                  </span>
+                </div>
+
+                {/* Clock In / Out Toggle Button */}
+                <button
+                  onClick={handleClockToggle}
+                  disabled={clockLoading}
+                  className={`w-full py-2.5 px-4 rounded-xl font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg ${
+                    isClockedIn
+                      ? 'bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/40 shadow-[0_0_15px_rgba(244,63,94,0.2)]'
+                      : 'bg-white hover:bg-white/90 text-black shadow-[0_0_15px_rgba(255,255,255,0.25)]'
+                  }`}
+                >
+                  {clockLoading ? (
+                    <div className="h-4 w-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : isClockedIn ? (
+                    <>
+                      <LogOut className="h-4 w-4" />
+                      <span>Clock Out My Shift</span>
+                    </>
+                  ) : (
+                    <>
+                      <Clock className="h-4 w-4" />
+                      <span>Clock In My Shift</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Team Members On Duty List */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between px-1">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">Staff On Duty Today</span>
+                  <span className="text-[10px] font-mono text-emerald-400 font-bold">4 Active</span>
+                </div>
+
+                <div className="space-y-1.5">
+                  {staffMembers.map((staff) => (
+                    <div
+                      key={staff.id}
+                      className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.07] hover:bg-white/[0.06] transition"
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <div className="h-8 w-8 rounded-full bg-white/10 text-white flex items-center justify-center font-bold text-[11px] border border-white/10 shrink-0">
+                          {staff.avatar}
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white leading-tight">{staff.name}</p>
+                          <p className="text-[10px] text-white/50">{staff.role}</p>
+                        </div>
+                      </div>
+
+                      <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                        <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        {staff.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Navigation Shortcuts */}
+              <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2">
+                <Link
+                  href="/crm360/attendance"
+                  onClick={() => setShowStaffPopup(false)}
+                  className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-center transition flex flex-col items-center gap-1"
+                >
+                  <Clock className="h-4 w-4 text-emerald-400" />
+                  <span className="text-[11px] font-semibold text-white">Full Attendance Logs</span>
+                </Link>
+
+                <button
+                  onClick={() => {
+                    setShowStaffPopup(false);
+                    handleSignOut();
+                  }}
+                  className="p-2.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-center transition flex flex-col items-center gap-1 cursor-pointer"
+                >
+                  <LogOut className="h-4 w-4 text-rose-400" />
+                  <span className="text-[11px] font-semibold text-rose-300">Sign Out</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Global Create Patient Modal - 1-Tap Trigger from anywhere */}
+      <CreatePatientModal 
+        isOpen={isCreatePatientOpen}
+        onClose={() => setIsCreatePatientOpen(false)}
+      />
 
       <AICopilotWidget />
     </div>
