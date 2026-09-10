@@ -87,7 +87,7 @@ Health 360 Clinic`,
   },
 
   MEDICLAIM_CERTIFICATE: {
-    name: 'mediclaim_certificate_notice',
+    name: 'health360_treatment_certificate',
     formatText: (patientName: string, diagnosis: string, startDate: string, endDate: string, sessions: string, totalAmount: string) => `Hello ${patientName},
 
 Your Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:
@@ -105,7 +105,7 @@ Health 360 Clinic`,
   },
 
   FITNESS_CERTIFICATE: {
-    name: 'fitness_certificate_notice',
+    name: 'health360_fitness_certificate',
     formatText: (patientName: string, assessmentDate: string, fitnessStatus: string, remarks: string) => `Hello ${patientName},
 
 Based on your clinical evaluation at Health 360 Clinic on ${assessmentDate}, you are certified:
@@ -123,7 +123,7 @@ Health 360 Clinic`,
   },
 
   MEDICAL_REST: {
-    name: 'medical_rest_notice',
+    name: 'health360_unfitness_certificate',
     formatText: (patientName: string, diagnosis: string, startDate: string, endDate: string, reviewDate: string) => `Hello ${patientName},
 
 Following your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${diagnosis}.
@@ -139,7 +139,7 @@ Health 360 Clinic`,
   },
 
   DISCHARGE_SUMMARY: {
-    name: 'patient_discharge_summary',
+    name: 'health360_discharge_summary',
     formatText: (patientName: string, startDate: string, endDate: string, sessions: string, outcome: string, homeAdvice: string) => `Congratulations ${patientName}! 🎉
 
 You have successfully completed your physiotherapy program at Health 360 Clinic.

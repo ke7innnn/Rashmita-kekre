@@ -157,10 +157,10 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
 
     // Map template name
     const templateMap: Record<string, string> = {
-      treatment_payment: 'mediclaim_certificate_notice',
-      fitness: 'fitness_certificate_notice',
-      unfitness: 'medical_rest_notice',
-      discharge_summary: 'patient_discharge_summary',
+      treatment_payment: 'health360_treatment_certificate',
+      fitness: 'health360_fitness_certificate',
+      unfitness: 'health360_unfitness_certificate',
+      discharge_summary: 'health360_discharge_summary',
     };
 
     const templateName = templateMap[data.type] || 'welcome_clinic_info';

@@ -20,6 +20,20 @@ const WHATSAPP_TEMPLATES: Record<string, Function> = {
   google_review_request: (pat: string, url: string = 'https://g.page/r/CSdQGRuzUnLrEAE/review') =>
     `Hello ${pat},\n\nThank you for visiting Health 360 Physiotherapy & Craniosacral Therapy Clinic.\n\nWe would love to know about your recovery journey! Please take a quick moment to share your review on our Google profile:\n${url}\n\nYour feedback helps others find the right care.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`,
 
+  // Clinical Certificates (New Meta Templates)
+  health360_treatment_certificate: (pat: string, diagnosis: string, startDate: string, endDate: string, sessions: string, totalAmount: string) =>
+    `Hello ${pat},\n\nYour Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:\n\n• Diagnosis: ${diagnosis}\n• Treatment Period: ${startDate} to ${endDate}\n• Total Sessions Attended: ${sessions}\n• Total Amount Paid: ₹${totalAmount}\n\nPlease let us know if you or your insurance provider need any additional details.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`,
+
+  health360_fitness_certificate: (pat: string, assessmentDate: string, fitnessStatus: string, remarks: string) =>
+    `Hello ${pat},\n\nBased on your clinical evaluation at Health 360 Clinic on ${assessmentDate}, you are certified:\n\n✅ ${fitnessStatus}\n\nPhysiotherapist Advice:\n${remarks}\n\nKeep up the great progress and continue your home routine!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`,
+
+  health360_unfitness_certificate: (pat: string, diagnosis: string, startDate: string, endDate: string, reviewDate: string) =>
+    `Hello ${pat},\n\nFollowing your clinical assessment at Health 360 Clinic, you have been advised medical rest to support your recovery for ${diagnosis}.\n\n• Recommended Rest: ${startDate} to ${endDate}\n• Next Review Date: ${reviewDate}\n\nPlease avoid strenuous activities and continue your prescribed rehabilitation.\n\nWishing you a speedy recovery,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`,
+
+  health360_discharge_summary: (pat: string, startDate: string, endDate: string, sessions: string, outcome: string, homeAdvice: string) =>
+    `Congratulations ${pat}! 🎉\n\nYou have successfully completed your physiotherapy program at Health 360 Clinic.\n\n• Treatment Period: ${startDate} to ${endDate}\n• Total Sessions: ${sessions}\n• Recovery Outcome: ${outcome}\n• Home Exercise Advice: ${homeAdvice}\n\nThank you for trusting us with your recovery. Feel free to reach out whenever you need guidance!\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`,
+
+  // Legacy fallback aliases
   mediclaim_certificate_notice: (pat: string, diagnosis: string, startDate: string, endDate: string, sessions: string, totalAmount: string) =>
     `Hello ${pat},\n\nYour Physiotherapy Treatment & Mediclaim Certificate from Health 360 Clinic is ready:\n\n• Diagnosis: ${diagnosis}\n• Treatment Period: ${startDate} to ${endDate}\n• Total Sessions Attended: ${sessions}\n• Total Amount Paid: ₹${totalAmount}\n\nPlease let us know if you or your insurance provider need any additional details.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Clinic`,
 

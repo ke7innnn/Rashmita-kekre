@@ -62,8 +62,8 @@ const TEST_TEMPLATES: TemplateTestItem[] = [
     defaultParams: ['Irene', 'https://g.page/r/CSdQGRuzUnLrEAE/review']
   },
   {
-    id: 'mediclaim_certificate_notice',
-    templateName: 'mediclaim_certificate_notice',
+    id: 'health360_treatment_certificate',
+    templateName: 'health360_treatment_certificate',
     displayName: 'Mediclaim Certificate Summary',
     category: 'Certificates & Billing',
     description: 'Treatment duration, session count, and total amount summary for insurance reimbursement.',
@@ -71,8 +71,8 @@ const TEST_TEMPLATES: TemplateTestItem[] = [
     defaultParams: ['Irene', 'Lumbar Spine Rehabilitation', '1 Aug 2026', '25 Aug 2026', '10', '12500']
   },
   {
-    id: 'fitness_certificate_notice',
-    templateName: 'fitness_certificate_notice',
+    id: 'health360_fitness_certificate',
+    templateName: 'health360_fitness_certificate',
     displayName: 'Fitness Certificate Notice',
     category: 'Certificates & Billing',
     description: 'Clinical evaluation clearance notice and home exercise advice.',
@@ -80,8 +80,8 @@ const TEST_TEMPLATES: TemplateTestItem[] = [
     defaultParams: ['Irene', '1 Sep 2026', 'Fit for regular physical activities', 'Perform daily ergonomic stretches']
   },
   {
-    id: 'medical_rest_notice',
-    templateName: 'medical_rest_notice',
+    id: 'health360_unfitness_certificate',
+    templateName: 'health360_unfitness_certificate',
     displayName: 'Medical Rest Certificate',
     category: 'Certificates & Billing',
     description: 'Prescribed rest period and follow-up clinical review date notice.',
@@ -89,8 +89,8 @@ const TEST_TEMPLATES: TemplateTestItem[] = [
     defaultParams: ['Irene', 'Acute Lumbar Sprain', '2 Sep 2026', '9 Sep 2026', '10 Sep 2026']
   },
   {
-    id: 'patient_discharge_summary',
-    templateName: 'patient_discharge_summary',
+    id: 'health360_discharge_summary',
+    templateName: 'health360_discharge_summary',
     displayName: 'Patient Discharge Summary',
     category: 'Clinical Outcomes',
     description: 'Celebratory completion notice with recovery outcome and home maintenance exercise regimen.',
