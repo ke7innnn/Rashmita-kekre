@@ -69,6 +69,7 @@ export default function CertificateModal({
   // Generate safe state-encoded link for patient public view
   const encodedState = typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(data))) : '';
   const publicCertificateUrl = `https://thehealth360.in/certificate/${data.type}/${patientId}?s=${encodedState}`;
+  const pdfDownloadUrl = `https://thehealth360.in/api/certificate/pdf?type=${data.type}&s=${encodedState}`;
 
   // Formatted summary text for WhatsApp
   const generateWhatsAppMessage = () => {
@@ -232,7 +233,7 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
           templateName,
           params,
           message: messageText,
-          documentUrl: publicCertificateUrl,
+          documentUrl: pdfDownloadUrl,
           documentFilename: `Health360_${data.type}_${data.patientName?.replace(/\s+/g, '_') || 'Patient'}.pdf`,
           senderPhone: '8482812859',
           patientName: data.patientName,
