@@ -444,7 +444,7 @@ function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | n
     doc.moveDown(0.2);
   });
 
-  renderSignature(doc, sigPath, Math.max(doc.y + 16, 680));
+  // Page 1 ends with treatment list and footer; signature is placed only on Page 2
   renderFooter(doc, 1, 2);
 
   // ─── PAGE 2 ─────────────────────────────────────────────────────────────
