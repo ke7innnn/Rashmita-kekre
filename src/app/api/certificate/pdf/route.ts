@@ -71,7 +71,7 @@ function renderHeader(doc: any, logoPath: string | null) {
     .text('B.P.Th. (M.I.A.P.)  |  BCST', rightX, 38, { align: 'right', width: 210 });
   doc.font('Helvetica').fontSize(7.5).fillColor('#334155')
     .text('+91 8071 583 519  ·  8482812859', rightX, 50, { align: 'right', width: 210 })
-    .text('rashmita.karvir@gmail.com', rightX, 61, { align: 'right', width: 210 })
+    .text('health360vasai@gmail.com', rightX, 61, { align: 'right', width: 210 })
     .text('Shop no. 1 & 2, Shree Amardeep Enclave', rightX, 72, { align: 'right', width: 210 })
     .text('Om Nagar, Vasai West', rightX, 83, { align: 'right', width: 210 });
 

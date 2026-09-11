@@ -297,7 +297,7 @@ export async function sendWhatsAppMessageDirect({
       };
     }
 
-    const res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+    let res = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -306,7 +306,30 @@ export async function sendWhatsAppMessageDirect({
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    let data = await res.json();
+
+    // If template not found in 'en', auto-retry with 'en_US' just in case Meta registered it as English (US)
+    if (!res.ok && templateName && payload?.template?.language?.code === 'en') {
+      const retryPayload = {
+        ...payload,
+        template: {
+          ...payload.template,
+          language: { code: 'en_US' }
+        }
+      };
+      const retryRes = await fetch(`https://graph.facebook.com/v18.0/${phoneId}/messages`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(retryPayload)
+      });
+      if (retryRes.ok) {
+        return { success: true, data: await retryRes.json() };
+      }
+    }
+
     return { success: res.ok, data };
   } catch (err: any) {
     console.error('Direct WhatsApp dispatch error:', err);

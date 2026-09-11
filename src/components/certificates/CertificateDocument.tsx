@@ -111,7 +111,7 @@ export default function CertificateDocument({
           <span className="cert-icon-badge">📞</span>
         </div>
         <div className="cert-contact-item">
-          <span>rashmita.karvir@gmail.com</span>
+          <span>health360vasai@gmail.com</span>
           <span className="cert-icon-badge">✉️</span>
         </div>
         <div className="cert-contact-item">
