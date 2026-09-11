@@ -8,6 +8,9 @@ const WHATSAPP_TEMPLATES: Record<string, Function> = {
   referral_thankyou_short: (doc: string, pat: string) => 
     `Dear Dr. ${doc},\n\nThank you for referring ${pat} to us. We sincerely appreciate your trust and support. The patient has been evaluated, and treatment has been started. We look forward to working together to achieve the best outcome.\n\nWarm regards,\nDr. Rashmita Karvir-Kekre (PT)\nHealth 360 Physiotherapy & Craniosacral Therapy Clinic`,
   
+  online_booking_confirmation: (pat: string, date: string, time: string) =>
+    `Hello ${pat},\n\nThank you for booking your appointment with Health 360 Physiotherapy & Craniosacral Therapy Clinic. Your session has been confirmed for:\n\n📅 ${date}\n⏰ ${time}\n\n📍 Address: Shop no. 1 & 2, Shree Amardeep Enclave, Om Nagar, Vasai West.\n📍 Google Maps: https://maps.app.goo.gl/VpvTzGtZy3kCZZWGA\n\nPlease reply to this message if you need to reschedule or have any questions. We look forward to seeing you!\n\nWarm regards,\nTeam Health 360`,
+
   appointment_booking_confirmation: (pat: string, date: string, time: string) =>
     `Hello ${pat},\n\nThank you for booking your appointment with Health 360 Physiotherapy & Craniosacral Therapy Clinic. Your session is confirmed for:\n\n📅 ${date}\n⏰ ${time}\n\n📍 Address: Shop no.1 & 2, Amardeep society, Om Nagar, Vasai West.\n📍 Google Maps: https://maps.app.goo.gl/VpvTzGtZy3kCZZWGA\n\nWe look forward to seeing you. Please reply if you need any assistance or need to reschedule.\n\nWarm regards,\nTeam Health 360`,
 

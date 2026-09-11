@@ -227,25 +227,37 @@ export async function POST(req: NextRequest) {
 
     // ─── Automated WhatsApp Dispatch (Verified Utility Templates) ───
     try {
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sept', 'Oct', 'Nov', 'Dec'];
       const [y, mth, d] = body.date.split('-');
-      const dateFormatted = `${d}/${mth}/${y}`;
+      const monthName = months[parseInt(mth, 10) - 1] || mth;
+      const dateFormatted = `${parseInt(d, 10)} ${monthName} ${y}`;
       const [h, m] = body.startTime.split(':');
       const hour = parseInt(h, 10);
       const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
       const firstName = patient.fullName?.split(' ')[0] || patient.fullName;
 
       if (patient.phone) {
-        // 1. Online Appointment Booking Confirmation (uses verified next_appointment_reminder)
-        const res = await sendWhatsAppMessageDirect({
+        // Priority 1: New dedicated template 'online_booking_confirmation' (auto-activates as soon as verified on Meta)
+        let res = await sendWhatsAppMessageDirect({
           phone: patient.phone,
-          templateName: 'next_appointment_reminder',
+          templateName: 'online_booking_confirmation',
           params: [firstName, dateFormatted, timeFormatted],
         });
 
+        // Priority 2: Verified booking template 'appointment_booking_confirmation' (active & approved now; no "visit today" text)
+        if (!res?.success) {
+          res = await sendWhatsAppMessageDirect({
+            phone: patient.phone,
+            templateName: 'appointment_booking_confirmation',
+            params: [firstName, dateFormatted, timeFormatted],
+          });
+        }
+
+        // Priority 3: Fail-safe fallback if both above templates fail
         if (!res?.success) {
           await sendWhatsAppMessageDirect({
             phone: patient.phone,
-            templateName: 'appointment_booking_confirmation',
+            templateName: 'next_appointment_reminder',
             params: [firstName, dateFormatted, timeFormatted],
           });
         }

@@ -27,6 +27,24 @@ Dr. Rashmita Karvir-Kekre (PT)
 Health 360 Physiotherapy & Craniosacral Therapy Clinic`,
   },
 
+  ONLINE_BOOKING_CONFIRMATION: {
+    name: 'online_booking_confirmation',
+    formatText: (patientName: string, date: string, time: string) => `Hello ${patientName},
+
+Thank you for booking your appointment with Health 360 Physiotherapy & Craniosacral Therapy Clinic. Your session has been confirmed for:
+
+📅 ${date}
+⏰ ${time}
+
+📍 Address: Shop no. 1 & 2, Shree Amardeep Enclave, Om Nagar, Vasai West.
+📍 Google Maps: https://maps.app.goo.gl/VpvTzGtZy3kCZZWGA
+
+Please reply to this message if you need to reschedule or have any questions. We look forward to seeing you!
+
+Warm regards,
+Team Health 360`,
+  },
+
   APPOINTMENT_BOOKING_CONFIRMATION: {
     name: 'appointment_booking_confirmation',
     formatText: (patientName: string, date: string, time: string) => `Hello ${patientName},

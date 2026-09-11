@@ -142,11 +142,35 @@ export async function POST(req: NextRequest) {
             const timeFormatted = `${hour > 12 ? hour - 12 : (hour === 0 ? 12 : hour)}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
             const firstName = appointment.patient.fullName?.split(' ')[0] || appointment.patient.fullName;
 
-            await sendWhatsAppMessageDirect({
-              phone: appointment.patient.phone,
-              templateName: 'next_appointment_reminder',
-              params: [firstName, dateFormatted, timeFormatted],
-            });
+            const isInitial = body.appointmentType === 'CONSULTATION' || (body.source as any) === 'WEBSITE';
+
+            if (isInitial) {
+              let res = await sendWhatsAppMessageDirect({
+                phone: appointment.patient.phone,
+                templateName: 'online_booking_confirmation',
+                params: [firstName, dateFormatted, timeFormatted],
+              });
+              if (!res?.success) {
+                res = await sendWhatsAppMessageDirect({
+                  phone: appointment.patient.phone,
+                  templateName: 'appointment_booking_confirmation',
+                  params: [firstName, dateFormatted, timeFormatted],
+                });
+              }
+              if (!res?.success) {
+                await sendWhatsAppMessageDirect({
+                  phone: appointment.patient.phone,
+                  templateName: 'next_appointment_reminder',
+                  params: [firstName, dateFormatted, timeFormatted],
+                });
+              }
+            } else {
+              await sendWhatsAppMessageDirect({
+                phone: appointment.patient.phone,
+                templateName: 'next_appointment_reminder',
+                params: [firstName, dateFormatted, timeFormatted],
+              });
+            }
           } catch (waErr) {
             console.warn('Failed to dispatch CRM automated WhatsApp appointment reminder:', waErr);
           }

@@ -44,13 +44,22 @@ const TEST_TEMPLATES: TemplateTestItem[] = [
     defaultParams: ['Irene']
   },
   {
+    id: 'online_booking_confirmation',
+    templateName: 'online_booking_confirmation',
+    displayName: 'New Online Booking Confirmation (Pending/Active)',
+    category: 'Online Bookings',
+    description: 'Fresh online booking intake confirmation. Auto-activates as soon as verified by Meta.',
+    paramLabels: ['Patient Name', 'Booking Date', 'Booking Time'],
+    defaultParams: ['Rashmita', '12 Sept 2026', '10:30 AM']
+  },
+  {
     id: 'appointment_booking_confirmation',
     templateName: 'appointment_booking_confirmation',
-    displayName: 'Website Booking Confirmation',
+    displayName: 'Website Booking Confirmation (Active)',
     category: 'Online Bookings',
     description: 'Instant booking receipt with clinic address & Google Maps link sent to online booking intakes.',
     paramLabels: ['Patient Name', 'Booking Date', 'Booking Time'],
-    defaultParams: ['Irene', 'Wednesday, 2 September 2026', '11:00 AM']
+    defaultParams: ['Rashmita', '12 Sept 2026', '10:30 AM']
   },
   {
     id: 'google_review_request',
