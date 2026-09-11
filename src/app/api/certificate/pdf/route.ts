@@ -257,6 +257,8 @@ function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | n
   bullet(doc, 'Diagnosis:', d.diagnosis || '—');
   bullet(doc, 'Treatment Period:', `${d.startDate || '—'} to ${d.endDate || '—'}`);
   bullet(doc, 'Sessions Completed:', `${d.sessions || '—'}`);
+  // Add a new page for the rest of the discharge summary
+  doc.addPage();
 
   if (d.complaints) {
     sectionHeading(doc, 'Presenting Complaints');
