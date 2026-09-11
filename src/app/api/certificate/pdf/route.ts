@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import PDFDocument from 'pdfkit';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PDFDocument = require('pdfkit') as typeof import('pdfkit');
 import path from 'path';
 import fs from 'fs';
 
@@ -347,7 +348,7 @@ export async function GET(req: NextRequest) {
     };
     const filename = `Health360_${typeLabel[type] || type}_${safeName}.pdf`;
 
-    return new NextResponse(pdf, {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         'Content-Type': 'application/pdf',
