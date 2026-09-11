@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const PDFDocument = require('pdfkit') as typeof import('pdfkit');
+// @ts-ignore – pdfkit is CJS-only; types are in @types/pdfkit but not ESM-resolvable
+const PDFDocument = require('pdfkit');
 import path from 'path';
 import fs from 'fs';
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CertificateType = 'treatment_payment' | 'fitness' | 'unfitness' | 'discharge_summary';
@@ -45,14 +47,14 @@ const LIGHT  = '#F8FAFC';
 const BLACK  = '#1E293B';
 
 // ─── Helper: draw a divider line ──────────────────────────────────────────────
-function divider(doc: InstanceType<typeof PDFDocument>, y?: number) {
+function divider(doc: any, y?: number) {
   const posY = y ?? doc.y;
   doc.moveTo(40, posY).lineTo(doc.page.width - 40, posY)
     .strokeColor('#E2E8F0').lineWidth(0.5).stroke();
 }
 
 // ─── Helper: bullet item ─────────────────────────────────────────────────────
-function bullet(doc: InstanceType<typeof PDFDocument>, label: string, value: string) {
+function bullet(doc: any, label: string, value: string) {
   const startY = doc.y;
   doc.font('Helvetica-Bold').fontSize(9).fillColor(BLACK).text(`• ${label}`, 60, startY, { continued: true });
   doc.font('Helvetica').fillColor(GRAY).text(` ${value}`);
@@ -60,7 +62,7 @@ function bullet(doc: InstanceType<typeof PDFDocument>, label: string, value: str
 }
 
 // ─── Helper: section heading ──────────────────────────────────────────────────
-function sectionHeading(doc: InstanceType<typeof PDFDocument>, text: string) {
+function sectionHeading(doc: any, text: string) {
   doc.moveDown(0.5);
   divider(doc);
   doc.moveDown(0.4);
@@ -69,7 +71,7 @@ function sectionHeading(doc: InstanceType<typeof PDFDocument>, text: string) {
 }
 
 // ─── Render clinic header ─────────────────────────────────────────────────────
-function renderHeader(doc: InstanceType<typeof PDFDocument>, logoPath: string | null) {
+function renderHeader(doc: any, logoPath: string | null) {
   const pageW = doc.page.width;
 
   // Teal header bar
@@ -95,7 +97,7 @@ function renderHeader(doc: InstanceType<typeof PDFDocument>, logoPath: string | 
 }
 
 // ─── Signature block ──────────────────────────────────────────────────────────
-function renderSignature(doc: InstanceType<typeof PDFDocument>, sigPath: string | null) {
+function renderSignature(doc: any, sigPath: string | null) {
   doc.moveDown(1.2);
   doc.font('Helvetica').fontSize(10).fillColor(BLACK).text('Sincerely,', 40);
   doc.moveDown(0.4);
@@ -117,7 +119,7 @@ function renderSignature(doc: InstanceType<typeof PDFDocument>, sigPath: string 
 }
 
 // ─── Certificate builders ─────────────────────────────────────────────────────
-function buildTreatmentPayment(doc: InstanceType<typeof PDFDocument>, d: CertificateData, sigPath: string | null) {
+function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | null) {
   doc.moveDown(0.4);
   doc.font('Helvetica').fontSize(9).fillColor(GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
@@ -167,7 +169,7 @@ function buildTreatmentPayment(doc: InstanceType<typeof PDFDocument>, d: Certifi
   renderSignature(doc, sigPath);
 }
 
-function buildFitness(doc: InstanceType<typeof PDFDocument>, d: CertificateData, sigPath: string | null) {
+function buildFitness(doc: any, d: CertificateData, sigPath: string | null) {
   doc.moveDown(0.4);
   doc.font('Helvetica').fontSize(9).fillColor(GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
@@ -205,7 +207,7 @@ function buildFitness(doc: InstanceType<typeof PDFDocument>, d: CertificateData,
   renderSignature(doc, sigPath);
 }
 
-function buildUnfitness(doc: InstanceType<typeof PDFDocument>, d: CertificateData, sigPath: string | null) {
+function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null) {
   doc.moveDown(0.4);
   doc.font('Helvetica').fontSize(9).fillColor(GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
@@ -237,7 +239,7 @@ function buildUnfitness(doc: InstanceType<typeof PDFDocument>, d: CertificateDat
   renderSignature(doc, sigPath);
 }
 
-function buildDischargeSummary(doc: InstanceType<typeof PDFDocument>, d: CertificateData, sigPath: string | null) {
+function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | null) {
   doc.moveDown(0.4);
   doc.font('Helvetica').fontSize(9).fillColor(GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
