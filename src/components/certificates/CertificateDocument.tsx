@@ -139,6 +139,13 @@ export default function CertificateDocument({
       </div>
       <div className="cert-sign-doc-name">Dr. Rashmita Karvir-Kekre (PT)</div>
       <div className="cert-sign-clinic-name">Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic</div>
+      <div className="cert-stamp-container">
+        <img
+          src="/signatures/dr-rashmita-stamp.png"
+          alt="Doctor Registration Stamp"
+          className="cert-stamp-img"
+        />
+      </div>
     </div>
   );
 
@@ -918,6 +925,19 @@ const certStyles = `
 .cert-sign-clinic-name {
   font-size: 7.5pt;
   color: #64748b;
+}
+
+.cert-stamp-container {
+  margin-top: 2mm;
+}
+
+.cert-stamp-img {
+  height: 11mm;
+  width: auto;
+  max-width: 46mm;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
 }
 
 /* Print Rules */

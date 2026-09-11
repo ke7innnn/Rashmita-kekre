@@ -150,7 +150,7 @@ function renderDashedBox(doc: any, x: number, y: number, w: number, h: number, t
   }
 }
 
-function renderSignature(doc: any, sigPath: string | null, yPos: number) {
+function renderSignature(doc: any, sigPath: string | null, yPos: number, stampPath: string | null = null) {
   doc.font('Helvetica').fontSize(9.5).fillColor('#475569').text('Sincerely,', LEFT_X, yPos);
 
   const sigImgY = yPos + 12;
@@ -170,6 +170,12 @@ function renderSignature(doc: any, sigPath: string | null, yPos: number) {
     .text('Dr. Rashmita Karvir-Kekre (PT)', LEFT_X, lineY + 6);
   doc.font('Helvetica').fontSize(8.5).fillColor(MUTED_GRAY)
     .text('Health 360 Physiotherapy & Craniosacral Therapy Clinic', LEFT_X, lineY + 19);
+
+  if (stampPath && fs.existsSync(stampPath)) {
+    try {
+      doc.image(stampPath, LEFT_X, lineY + 33, { width: 135, fit: [135, 34] });
+    } catch {}
+  }
 }
 
 function renderFooter(doc: any, pageNum?: number, totalPages?: number) {
@@ -194,7 +200,7 @@ function renderFooter(doc: any, pageNum?: number, totalPages?: number) {
 }
 
 // ─── 1. Fitness Certificate (Full, Majestic, Balanced) ─────────────────────────
-function buildFitness(doc: any, d: CertificateData, sigPath: string | null) {
+function buildFitness(doc: any, d: CertificateData, sigPath: string | null, stampPath: string | null = null) {
   renderDateRow(doc, d.issueDate || '10 Sept 2026', 122);
   renderTitleBlock(doc, 'FITNESS CERTIFICATE', 'To Whomsoever It May Concern', 154);
 
@@ -257,12 +263,12 @@ function buildFitness(doc: any, d: CertificateData, sigPath: string | null) {
     LEFT_X, doc.y, { width: USABLE_W }
   );
 
-  renderSignature(doc, sigPath, Math.max(doc.y + 28, 560));
+  renderSignature(doc, sigPath, Math.max(doc.y + 16, 560), stampPath);
   renderFooter(doc, 1, 1);
 }
 
 // ─── 2. Treatment & Payment Certificate (Spacious & Boxed) ────────────────────
-function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | null) {
+function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | null, stampPath: string | null = null) {
   renderDateRow(doc, d.issueDate || '10 Sept 2026', 122);
   renderTitleBlock(doc, 'TREATMENT & PAYMENT CERTIFICATE', 'To Whomsoever It May Concern', 154);
 
@@ -322,12 +328,12 @@ function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | n
     LEFT_X, doc.y, { width: USABLE_W, lineGap: 2.5 }
   );
 
-  renderSignature(doc, sigPath, Math.max(doc.y + 28, 550));
+  renderSignature(doc, sigPath, Math.max(doc.y + 16, 530), stampPath);
   renderFooter(doc, 1, 1);
 }
 
 // ─── 3. Unfitness for Work Certificate (Exact Match with Reference) ───────────
-function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null) {
+function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null, stampPath: string | null = null) {
   renderDateRow(doc, d.issueDate || '10 Sept 2026', 122);
   renderTitleBlock(doc, 'UNFITNESS FOR WORK CERTIFICATE', 'To Whomsoever It May Concern', 154);
 
@@ -378,12 +384,12 @@ function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null) {
     LEFT_X, doc.y, { width: USABLE_W }
   );
 
-  renderSignature(doc, sigPath, Math.max(doc.y + 28, 550));
+  renderSignature(doc, sigPath, Math.max(doc.y + 16, 550), stampPath);
   renderFooter(doc, 1, 1);
 }
 
 // ─── 4. Physiotherapy Discharge Summary (2 Complete Pages) ─────────────────────
-function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | null) {
+function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | null, stampPath: string | null = null) {
   // ─── PAGE 1 ─────────────────────────────────────────────────────────────
   renderDateRow(doc, d.issueDate || '10 Sept 2026', 122);
   renderTitleBlock(doc, 'PHYSIOTHERAPY DISCHARGE SUMMARY', 'To Whomsoever It May Concern', 154);
@@ -512,7 +518,7 @@ function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | n
   renderDashedBox(doc, LEFT_X, rem2Y, USABLE_W, 34, null, d.remarks || 'Patient was compliant with therapy sessions and achieved excellent functional recovery. Advised to maintain active lifestyle.');
   doc.y = rem2Y + 46;
 
-  renderSignature(doc, sigPath, Math.max(doc.y + 14, 680));
+  renderSignature(doc, sigPath, Math.max(doc.y + 14, 620), stampPath);
   renderFooter(doc, 2, 2);
 }
 
@@ -538,6 +544,7 @@ export async function GET(req: NextRequest) {
     const publicDir = path.join(process.cwd(), 'public');
     const logoPath  = path.join(publicDir, 'logo', 'rklogo.png');
     const sigPath   = path.join(publicDir, 'signatures', 'dr-rashmita-signature.png');
+    const stampPath = path.join(publicDir, 'signatures', 'dr-rashmita-stamp.png');
 
     // Build PDF in memory with safe margins
     const doc = new PDFDocument({
@@ -558,19 +565,22 @@ export async function GET(req: NextRequest) {
     // Render White Official Letterhead (NO dark background bar!)
     renderHeader(doc, fs.existsSync(logoPath) ? logoPath : null);
 
+    const finalSig = fs.existsSync(sigPath) ? sigPath : null;
+    const finalStamp = fs.existsSync(stampPath) ? stampPath : null;
+
     // Render body by type
     switch (type) {
       case 'fitness':
-        buildFitness(doc, data, fs.existsSync(sigPath) ? sigPath : null);
+        buildFitness(doc, data, finalSig, finalStamp);
         break;
       case 'unfitness':
-        buildUnfitness(doc, data, fs.existsSync(sigPath) ? sigPath : null);
+        buildUnfitness(doc, data, finalSig, finalStamp);
         break;
       case 'discharge_summary':
-        buildDischargeSummary(doc, data, fs.existsSync(sigPath) ? sigPath : null);
+        buildDischargeSummary(doc, data, finalSig, finalStamp);
         break;
       default:
-        buildTreatmentPayment(doc, data, fs.existsSync(sigPath) ? sigPath : null);
+        buildTreatmentPayment(doc, data, finalSig, finalStamp);
     }
 
     doc.end();
