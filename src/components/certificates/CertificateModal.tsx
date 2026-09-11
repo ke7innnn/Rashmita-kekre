@@ -69,8 +69,8 @@ export default function CertificateModal({
   // Generate safe state-encoded link for patient public view
   const encodedState = typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(data))) : '';
   const safeStateParam = encodeURIComponent(encodedState);
-  const publicCertificateUrl = `https://thehealth360.in/certificate/${data.type}/${patientId}?s=${safeStateParam}`;
-  const pdfDownloadUrl = `https://thehealth360.in/api/certificate/pdf?type=${data.type}&s=${safeStateParam}`;
+  const publicCertificateUrl = `https://www.thehealth360.in/certificate/${data.type}/${patientId}?s=${safeStateParam}`;
+  const pdfDownloadUrl = `https://www.thehealth360.in/api/certificate/pdf?type=${data.type}&s=${safeStateParam}&t=${Date.now()}`;
 
   // Formatted summary text for WhatsApp
   const generateWhatsAppMessage = () => {
