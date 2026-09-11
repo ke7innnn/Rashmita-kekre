@@ -5,7 +5,6 @@ const PDFDocument = require('pdfkit');
 import path from 'path';
 import fs from 'fs';
 
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 type CertificateType = 'treatment_payment' | 'fitness' | 'unfitness' | 'discharge_summary';
 
@@ -40,284 +39,384 @@ interface CertificateData {
   dischargeStatusOptions?: Record<string, boolean>;
 }
 
-// ─── Colour Palette ───────────────────────────────────────────────────────────
-const TEAL   = '#0D9488';
-const DARK   = '#0F172A';
-const GRAY   = '#64748B';
-const LIGHT  = '#F8FAFC';
-const BLACK  = '#1E293B';
+// ─── Colours matching CertificateDocument.tsx ──────────────────────────────────
+const PRIMARY_BLUE = '#0284C7';
+const DARK_SLATE   = '#0F172A';
+const BODY_SLATE   = '#1E293B';
+const MUTED_GRAY   = '#64748B';
+const LIGHT_BG     = '#F8FAFC';
+const BORDER_COLOR = '#E2E8F0';
 
-// ─── Helper: draw a divider line ──────────────────────────────────────────────
-function divider(doc: any, y?: number) {
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function divider(doc: any, y?: number, color = BORDER_COLOR, lineWidth = 0.5) {
   const posY = y ?? doc.y;
   doc.moveTo(40, posY).lineTo(doc.page.width - 40, posY)
-    .strokeColor('#E2E8F0').lineWidth(0.5).stroke();
+    .strokeColor(color).lineWidth(lineWidth).stroke();
 }
 
-// ─── Helper: bullet item ─────────────────────────────────────────────────────
-function bullet(doc: any, label: string, value: string) {
-  const startY = doc.y;
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(BLACK).text(`• ${label}`, 60, startY, { continued: true });
-  doc.font('Helvetica').fillColor(GRAY).text(` ${value}`);
-  doc.moveDown(0.2);
-}
-
-// ─── Helper: section heading ──────────────────────────────────────────────────
-function sectionHeading(doc: any, text: string) {
-  doc.moveDown(0.35);
-  divider(doc);
-  doc.moveDown(0.3);
-  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(TEAL).text(text, 40);
-  doc.moveDown(0.25);
-}
-
-// ─── Running Header for Multi-page Documents ─────────────────────────────────
-function renderRunningHeader(doc: any, title: string, pageNum: number) {
-  const pageW = doc.page.width;
-  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(TEAL).text('HEALTH 360  ', 40, 25, { continued: true });
-  doc.font('Helvetica').fontSize(8).fillColor(GRAY).text('Health 360 Physiotherapy & Craniosacral Therapy Clinic', { continued: false });
-  doc.font('Helvetica-Bold').fontSize(8).fillColor(DARK).text(`${title} · Page ${pageNum}`, 40, 25, { align: 'right', width: pageW - 80 });
-  divider(doc, 40);
-  doc.y = 50;
-}
-
-// ─── Footer for all pages ─────────────────────────────────────────────────────
-function renderFooter(doc: any, pageNum?: number, totalPages?: number) {
-  const pageH = doc.page.height;
-  divider(doc, pageH - 38);
-  const text =
-    'Health 360 Physiotherapy & Craniosacral Therapy Clinic · Shop No. 1 & 2, Shree Amardeep Enclave, Om Nagar, Vasai West · +91 8071 583 519' +
-    (pageNum && totalPages ? `  |  Page ${pageNum} of ${totalPages}` : '');
-  doc.fontSize(7.5).fillColor('#94A3B8').text(text, 40, pageH - 28, { align: 'center', width: doc.page.width - 80 });
-}
-
-// ─── Render clinic header ─────────────────────────────────────────────────────
 function renderHeader(doc: any, logoPath: string | null) {
   const pageW = doc.page.width;
 
-  // Teal header bar
-  doc.rect(0, 0, pageW, 85).fill(DARK);
-
-  // Logo
+  // Logo on Left
   if (logoPath && fs.existsSync(logoPath)) {
     try {
-      doc.image(logoPath, 30, 10, { height: 65, fit: [110, 65] });
-    } catch { /* skip if image fails */ }
+      doc.image(logoPath, 40, 24, { height: 56, fit: [160, 56] });
+    } catch {}
   }
 
-  // Clinic name + credentials
-  doc.fillColor('#FFFFFF').font('Helvetica-Bold').fontSize(13)
-    .text('Dr. Rashmita Karvir Kekre', 155, 12);
-  doc.font('Helvetica').fontSize(8.5).fillColor('#94A3B8')
-    .text('B.P.Th. (M.I.A.P.)  |  BCST', 155, 29)
-    .text('Health 360 Physiotherapy & Craniosacral Therapy Clinic', 155, 41)
-    .text('+91 8071 583 519  ·  rashmita.karvir@gmail.com', 155, 53)
-    .text('Shop No. 1 & 2, Shree Amardeep Enclave, Om Nagar, Vasai West', 155, 65);
+  // Doctor credentials on Right
+  const rightX = pageW - 240;
+  doc.font('Helvetica-Bold').fontSize(10.5).fillColor(DARK_SLATE)
+    .text('Dr. Rashmita Karvir Kekre', rightX, 22, { align: 'right', width: 200 });
+  doc.font('Helvetica-Bold').fontSize(7.5).fillColor(PRIMARY_BLUE)
+    .text('B.P.Th. (M.I.A.P.)  |  BCST', rightX, 36, { align: 'right', width: 200 });
+  doc.font('Helvetica').fontSize(7).fillColor('#475569')
+    .text('+91 8071 583 519', rightX, 48, { align: 'right', width: 200 })
+    .text('rashmita.karvir@gmail.com', rightX, 58, { align: 'right', width: 200 })
+    .text('Shop no. 1 & 2, Shree Amardeep Enclave', rightX, 68, { align: 'right', width: 200 })
+    .text('Om Nagar, Vasai West', rightX, 78, { align: 'right', width: 200 });
 
-  doc.y = 98;
+  // Blue Divider Bar (matching CertificateDocument.tsx: border-bottom: 2px solid #0284c7)
+  divider(doc, 92, PRIMARY_BLUE, 2);
+  doc.y = 104;
 }
 
-// ─── Signature block ──────────────────────────────────────────────────────────
+function renderRunningHeader(doc: any, title: string, pageNum: number) {
+  const pageW = doc.page.width;
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(PRIMARY_BLUE).text('HEALTH 360  ', 40, 22, { continued: true });
+  doc.font('Helvetica').fontSize(7.5).fillColor(MUTED_GRAY).text('Health 360 Physiotherapy & Craniosacral Therapy Clinic', { continued: false });
+  doc.font('Helvetica-Bold').fontSize(8).fillColor(DARK_SLATE).text(`${title} · Page ${pageNum}`, 40, 22, { align: 'right', width: pageW - 80 });
+  divider(doc, 36, '#CBD5E1', 0.8);
+  doc.y = 48;
+}
+
+function renderFooter(doc: any, pageNum?: number, totalPages?: number) {
+  const pageH = doc.page.height;
+  const oldBottom = doc.page.margins.bottom;
+  doc.page.margins.bottom = 0; // Prevent auto-page break
+
+  divider(doc, pageH - 30, BORDER_COLOR, 0.5);
+  const text =
+    'Health 360 Physiotherapy & Craniosacral Therapy Clinic · Shop No. 1 & 2, Shree Amardeep Enclave, Om Nagar, Vasai West · Tel: +91 8071 583 519' +
+    (pageNum && totalPages ? `  |  Page ${pageNum} of ${totalPages}` : '');
+  doc.fontSize(7).fillColor('#94A3B8').text(text, 40, pageH - 22, {
+    align: 'center',
+    width: doc.page.width - 80,
+    lineBreak: false,
+  });
+
+  doc.page.margins.bottom = oldBottom;
+}
+
 function renderSignature(doc: any, sigPath: string | null) {
-  doc.moveDown(0.8);
-  doc.font('Helvetica').fontSize(9).fillColor(BLACK).text('Sincerely,', 40);
-  doc.moveDown(0.2);
+  doc.moveDown(0.6);
+  doc.font('Helvetica').fontSize(9).fillColor(BODY_SLATE).text('Sincerely,', 40);
+  doc.moveDown(0.15);
 
   if (sigPath && fs.existsSync(sigPath)) {
     try {
       doc.image(sigPath, 40, doc.y, { height: 36, fit: [110, 36] });
-      doc.y += 39;
-    } catch { doc.moveDown(1.2); }
+      doc.y += 38;
+    } catch {
+      doc.moveDown(1.2);
+    }
   } else {
     doc.moveDown(1.2);
   }
 
   // Signature line
-  doc.moveTo(40, doc.y).lineTo(190, doc.y).strokeColor(BLACK).lineWidth(0.8).stroke();
+  doc.moveTo(40, doc.y).lineTo(190, doc.y).strokeColor(BODY_SLATE).lineWidth(0.8).stroke();
   doc.moveDown(0.2);
-  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(BLACK).text('Dr. Rashmita Karvir-Kekre (PT)', 40);
-  doc.font('Helvetica').fontSize(8.5).fillColor(GRAY).text('Health 360 Physiotherapy & Craniosacral Therapy Clinic', 40);
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(DARK_SLATE).text('Dr. Rashmita Karvir-Kekre (PT)', 40);
+  doc.font('Helvetica').fontSize(8).fillColor(MUTED_GRAY).text('Health 360 Physiotherapy & Craniosacral Therapy Clinic', 40);
 }
 
-// ─── Certificate builders ─────────────────────────────────────────────────────
+// ─── 1. Treatment & Payment Certificate ─────────────────────────────────────────
 function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | null) {
-  doc.moveDown(0.4);
-  doc.font('Helvetica').fontSize(9).fillColor(GRAY)
+  doc.font('Helvetica').fontSize(8.5).fillColor(MUTED_GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
-  doc.moveDown(0.5);
+  doc.moveDown(0.4);
 
-  // Title
-  doc.font('Helvetica-Bold').fontSize(16).fillColor(DARK)
+  // Title Block
+  doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK_SLATE)
     .text('TREATMENT & PAYMENT CERTIFICATE', { align: 'center' });
-  doc.font('Helvetica').fontSize(10).fillColor(GRAY)
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(MUTED_GRAY)
     .text('To Whomsoever It May Concern', { align: 'center' });
   doc.moveDown(0.8);
-  divider(doc);
+
+  // Body Paragraphs
+  const pName = d.patientName || 'Patient Name';
+  const ageStr = d.age ? `, aged ${d.age} years,` : '';
+  const diagStr = d.diagnosis || 'Cervical Spondylosis / Musculoskeletal Pain';
+
+  doc.font('Helvetica').fontSize(9.5).fillColor(BODY_SLATE)
+    .text(`This is to certify that Mr./Ms. `, { continued: true })
+    .font('Helvetica-Bold').text(pName, { continued: true })
+    .font('Helvetica').text(`${ageStr} was treated at Health 360 Physiotherapy & Craniosacral Therapy Clinic, Vasai West for `)
+    .font('Helvetica-Bold').text(diagStr, { continued: true })
+    .font('Helvetica').text('.');
+  doc.moveDown(0.5);
+
+  doc.text(`The patient underwent physiotherapy treatment from ${d.startDate || 'Recent'} to ${d.endDate || 'Present'}.`);
   doc.moveDown(0.6);
 
-  // Opening paragraph
-  doc.font('Helvetica').fontSize(10).fillColor(BLACK)
-    .text(
-      `This is to certify that Mr./Ms. `,
-      40, doc.y, { continued: true }
-    )
-    .font('Helvetica-Bold').text(`${d.patientName || 'Patient'}`, { continued: true })
-    .font('Helvetica').text(`, aged ${d.age || '—'} years, was treated at Health 360 Physiotherapy & Craniosacral Therapy Clinic, Vasai West for `)
-    .font('Helvetica-Bold').fillColor(TEAL).text(d.diagnosis || 'Musculoskeletal Condition', { continued: true })
-    .font('Helvetica').fillColor(BLACK).text('.');
-  doc.moveDown(0.5);
-  doc.text(
-    `The patient underwent physiotherapy treatment from ${d.startDate || '—'} to ${d.endDate || '—'}.`
+  // Details Box
+  const boxY = doc.y;
+  doc.roundedRect(40, boxY, doc.page.width - 80, 106, 4).fillAndStroke(LIGHT_BG, BORDER_COLOR);
+  doc.y = boxY + 8;
+
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(DARK_SLATE)
+    .text('Treatment details are as follows:', 52);
+  doc.moveDown(0.3);
+
+  const bulletItem = (label: string, val: string, isBoldVal = false) => {
+    const yPos = doc.y;
+    doc.font('Helvetica-Bold').fontSize(8.5).fillColor(BODY_SLATE).text(`• ${label}`, 52, yPos, { continued: true });
+    if (isBoldVal) {
+      doc.font('Helvetica-Bold').fillColor(DARK_SLATE).text(`  ${val}`);
+    } else {
+      doc.font('Helvetica').fillColor(BODY_SLATE).text(`  ${val}`);
+    }
+    doc.moveDown(0.15);
+  };
+
+  bulletItem('Diagnosis / Condition:', d.diagnosis || 'Cervical Spine Rehabilitation');
+  bulletItem('Treatment Period:', `${d.startDate || '1 Aug 2026'} to ${d.endDate || '10 Sept 2026'}`);
+  bulletItem('Number of Sessions Attended:', `${d.sessions || '10 Sessions'}`);
+  bulletItem('Treatment Provided:', d.treatmentProvided || 'Manual Therapy, Spinal Mobilization, Postural Ergonomics & Strengthening');
+  bulletItem('Consultation & Physiotherapy Charges per Session:', `₹ ${d.chargesPerSession || '650.00'}`);
+  bulletItem('Total Amount Paid:', `₹ ${d.totalAmount || '6,500.00'}`, true);
+
+  doc.y = boxY + 118;
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(MUTED_GRAY).text(
+    'The above treatment was medically necessary and was provided under the supervision of a qualified physiotherapist for the management and rehabilitation of the condition.',
+    40, doc.y, { width: doc.page.width - 80 }
   );
 
-  sectionHeading(doc, 'Treatment Details');
-  bullet(doc, 'Diagnosis / Condition:', d.diagnosis || '—');
-  bullet(doc, 'Treatment Period:', `${d.startDate || '—'} to ${d.endDate || '—'}`);
-  bullet(doc, 'Number of Sessions Attended:', `${d.sessions || '—'} Sessions`);
-  bullet(doc, 'Treatment Provided:', d.treatmentProvided || 'Manual Therapy, Physiotherapy');
-  bullet(doc, 'Consultation & Physiotherapy Charges per Session:', `₹ ${d.chargesPerSession || '650.00'}`);
-  bullet(doc, 'Total Amount Paid:', `₹ ${d.totalAmount || '—'}`);
-
-  doc.moveDown(0.8);
-  divider(doc);
-  doc.moveDown(0.5);
-  doc.font('Helvetica').fontSize(9.5).fillColor(BLACK)
-    .text(
-      'The above treatment was medically necessary and was provided under the supervision of a qualified physiotherapist for the management and rehabilitation of the condition.',
-      40, doc.y, { width: doc.page.width - 80 }
-    );
-
   renderSignature(doc, sigPath);
   renderFooter(doc, 1, 1);
 }
 
+// ─── 2. Fitness Certificate ───────────────────────────────────────────────────
 function buildFitness(doc: any, d: CertificateData, sigPath: string | null) {
-  doc.moveDown(0.4);
-  doc.font('Helvetica').fontSize(9).fillColor(GRAY)
+  doc.font('Helvetica').fontSize(8.5).fillColor(MUTED_GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
-  doc.moveDown(0.5);
+  doc.moveDown(0.35);
 
-  doc.font('Helvetica-Bold').fontSize(16).fillColor(DARK)
+  // Title Block
+  doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK_SLATE)
     .text('FITNESS CERTIFICATE', { align: 'center' });
-  doc.font('Helvetica').fontSize(10).fillColor(GRAY)
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(MUTED_GRAY)
     .text('To Whomsoever It May Concern', { align: 'center' });
-  doc.moveDown(0.8);
-  divider(doc);
-  doc.moveDown(0.6);
+  doc.moveDown(0.7);
 
-  doc.font('Helvetica').fontSize(10).fillColor(BLACK)
-    .text(
-      `This is to certify that Mr./Ms. `,
-      40, doc.y, { continued: true }
-    )
-    .font('Helvetica-Bold').text(`${d.patientName || 'Patient'}`, { continued: true })
-    .font('Helvetica').text(`, aged ${d.age || '—'} years, has been examined on ${d.assessmentDate || d.issueDate || '—'} and is found to be:`);
+  // Intro Paragraph
+  const pName = d.patientName || 'Patient Name';
+  const ageStr = d.age ? `, aged ${d.age} years,` : '';
 
-  sectionHeading(doc, 'Fitness Assessment');
-  const fo = d.fitnessOptions || {};
-  if (fo.work)    bullet(doc, 'Fit to resume work / duties', '✓');
-  if (fo.daily)   bullet(doc, 'Fit for daily activities', '✓');
-  if (fo.regular) bullet(doc, 'Fit for regular exercises / activities', '✓');
-  if (!fo.work && !fo.daily && !fo.regular)
-    doc.font('Helvetica').fontSize(10).fillColor(BLACK).text('Fit to resume normal activities.', 60);
-
-  if (d.remarks) {
-    sectionHeading(doc, 'Advice / Remarks');
-    doc.font('Helvetica').fontSize(10).fillColor(BLACK).text(d.remarks, 60, doc.y, { width: doc.page.width - 100 });
-  }
-
-  renderSignature(doc, sigPath);
-  renderFooter(doc, 1, 1);
-}
-
-function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null) {
+  doc.font('Helvetica').fontSize(9.5).fillColor(BODY_SLATE)
+    .text(`This is to certify that Mr./Ms. `, { continued: true })
+    .font('Helvetica-Bold').text(pName, { continued: true })
+    .font('Helvetica').text(`${ageStr} has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy & Craniosacral Therapy Clinic.`);
   doc.moveDown(0.4);
-  doc.font('Helvetica').fontSize(9).fillColor(GRAY)
-    .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
+
+  doc.text(`Upon assessment on ${d.assessmentDate || d.issueDate || 'Today'}, the individual is found to be:`);
   doc.moveDown(0.5);
 
-  doc.font('Helvetica-Bold').fontSize(16).fillColor(DARK)
-    .text('UNFITNESS FOR WORK CERTIFICATE', { align: 'center' });
-  doc.font('Helvetica').fontSize(10).fillColor(GRAY)
-    .text('(Medical Rest Certificate)', { align: 'center' });
-  doc.moveDown(0.8);
-  divider(doc);
-  doc.moveDown(0.6);
+  // All 8 Fitness Clearance Checkboxes matching preview exactly
+  const fitnessItems = [
+    { key: 'work', label: 'Fit for Work Duties' },
+    { key: 'sports', label: 'Fit for Sports Participation' },
+    { key: 'gym', label: 'Fit for Gym / Fitness Activities' },
+    { key: 'school', label: 'Fit for School / College Activities' },
+    { key: 'travel', label: 'Fit for Travel' },
+    { key: 'daily', label: 'Fit for Daily Activities' },
+    { key: 'regular', label: 'Fit to Resume Regular Activities' },
+  ];
 
-  doc.font('Helvetica').fontSize(10).fillColor(BLACK)
-    .text(`This is to certify that Mr./Ms. `, 40, doc.y, { continued: true })
-    .font('Helvetica-Bold').text(`${d.patientName || 'Patient'}`, { continued: true })
-    .font('Helvetica').text(`, aged ${d.age || '—'} years, has been examined and is advised to take medical rest.`);
+  const fo = d.fitnessOptions || { work: true, sports: true, gym: true, daily: true, regular: true };
 
-  sectionHeading(doc, 'Clinical Details');
-  bullet(doc, 'Diagnosis / Condition:', d.symptomsCondition || d.diagnosis || '—');
-  bullet(doc, 'Recommended Rest Period:', `${d.startDate || '—'} to ${d.endDate || '—'}`);
-  bullet(doc, 'Review Assessment On or After:', d.reviewDate || '—');
+  fitnessItems.forEach((item) => {
+    const checked = !!fo[item.key];
+    const yPos = doc.y;
+
+    // Checkbox square
+    doc.rect(48, yPos + 1, 8.5, 8.5).lineWidth(0.8).strokeColor(checked ? PRIMARY_BLUE : '#CBD5E1').stroke();
+    if (checked) {
+      doc.fillColor(PRIMARY_BLUE).rect(48 + 1.5, yPos + 2.5, 5.5, 5.5).fill();
+    }
+
+    doc.font('Helvetica').fontSize(9).fillColor(BODY_SLATE).text(item.label, 62, yPos);
+    doc.moveDown(0.2);
+  });
+
+  // Advice & Restrictions Item
+  const adviceChecked = !!fo['advice'] || !!d.adviceRestrictions;
+  const advY = doc.y;
+  doc.rect(48, advY + 1, 8.5, 8.5).lineWidth(0.8).strokeColor(adviceChecked ? PRIMARY_BLUE : '#CBD5E1').stroke();
+  if (adviceChecked) {
+    doc.fillColor(PRIMARY_BLUE).rect(48 + 1.5, advY + 2.5, 5.5, 5.5).fill();
+  }
+  doc.font('Helvetica').fontSize(9).fillColor(BODY_SLATE).text('Fit with the Following Advice / Restrictions:', 62, advY);
+  doc.moveDown(0.15);
 
   if (d.adviceRestrictions) {
-    sectionHeading(doc, 'Advice & Restrictions');
-    doc.font('Helvetica').fontSize(10).fillColor(BLACK).text(d.adviceRestrictions, 60, doc.y, { width: doc.page.width - 100 });
+    doc.font('Helvetica-Oblique').fontSize(8.5).fillColor('#0369A1').text(
+      d.adviceRestrictions,
+      62, doc.y, { width: doc.page.width - 110 }
+    );
+    doc.moveDown(0.2);
   }
+
+  // Remarks
+  doc.moveDown(0.4);
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(DARK_SLATE).text('Remarks:', 40);
+  doc.moveDown(0.15);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
+    d.remarks || 'Patient demonstrates full pain-free functional range of motion and normal muscle power. Fit to resume duties.',
+    40, doc.y, { width: doc.page.width - 80 }
+  );
+
+  doc.moveDown(0.4);
+  doc.font('Helvetica-Oblique').fontSize(8).fillColor(MUTED_GRAY).text(
+    "This certificate is issued based on the individual's current functional status and assessment findings and is valid as of the date of examination.",
+    40, doc.y, { width: doc.page.width - 80 }
+  );
 
   renderSignature(doc, sigPath);
   renderFooter(doc, 1, 1);
 }
 
+// ─── 3. Unfitness for Work Certificate ─────────────────────────────────────────
+function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null) {
+  doc.font('Helvetica').fontSize(8.5).fillColor(MUTED_GRAY)
+    .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
+  doc.moveDown(0.35);
+
+  // Title Block
+  doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK_SLATE)
+    .text('UNFITNESS FOR WORK CERTIFICATE', { align: 'center' });
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(MUTED_GRAY)
+    .text('(Medical Rest Certificate)', { align: 'center' });
+  doc.moveDown(0.7);
+
+  const pName = d.patientName || 'Patient Name';
+  const ageStr = d.age ? `, aged ${d.age} years,` : '';
+
+  doc.font('Helvetica').fontSize(9.5).fillColor(BODY_SLATE)
+    .text(`This is to certify that Mr./Ms. `, { continued: true })
+    .font('Helvetica-Bold').text(pName, { continued: true })
+    .font('Helvetica').text(`${ageStr} has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy & Craniosacral Therapy Clinic.`);
+  doc.moveDown(0.4);
+
+  doc.text(`Upon assessment on ${d.assessmentDate || d.issueDate || 'Today'}, the individual is currently experiencing `)
+    .font('Helvetica-Bold').text(d.symptomsCondition || d.diagnosis || 'Acute Lumbar Radiculopathy with Severe Muscle Spasms', { continued: true })
+    .font('Helvetica').text(' and is ')
+    .font('Helvetica-Bold').fillColor('#DC2626').text('NOT FIT TO PERFORM REGULAR WORK DUTIES', { continued: true })
+    .font('Helvetica').fillColor(BODY_SLATE).text(` from ${d.startDate || 'Today'} to ${d.endDate || 'Next Week'}.`);
+  doc.moveDown(0.4);
+
+  doc.text('The patient has been advised to rest and continue the prescribed treatment program during this period to facilitate recovery and prevent aggravation of the condition.');
+  doc.moveDown(0.5);
+
+  // Remarks box
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(DARK_SLATE).text('Remarks:', 40);
+  doc.moveDown(0.15);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
+    d.remarks || 'Patient advised complete spinal offloading, modalities treatment daily, and avoidance of prolonged sitting or lifting.',
+    40, doc.y, { width: doc.page.width - 80 }
+  );
+  doc.moveDown(0.5);
+
+  doc.font('Helvetica-Bold').fontSize(9).fillColor(DARK_SLATE).text(
+    `A review assessment is advised on or after ${d.reviewDate || 'Next Week'} to determine fitness for return to work.`,
+    40, doc.y, { width: doc.page.width - 80 }
+  );
+
+  doc.moveDown(0.4);
+  doc.font('Helvetica-Oblique').fontSize(8).fillColor(MUTED_GRAY).text(
+    "This certificate is issued based on the individual's current functional status and assessment findings.",
+    40, doc.y, { width: doc.page.width - 80 }
+  );
+
+  renderSignature(doc, sigPath);
+  renderFooter(doc, 1, 1);
+}
+
+// ─── 4. Physiotherapy Discharge Summary (2 Pages) ──────────────────────────────
 function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | null) {
   // ─── PAGE 1 ─────────────────────────────────────────────────────────────
-  doc.moveDown(0.3);
-  doc.font('Helvetica').fontSize(8.5).fillColor(GRAY)
+  doc.font('Helvetica').fontSize(8.5).fillColor(MUTED_GRAY)
     .text(`Date: ${d.issueDate || new Date().toLocaleDateString('en-IN')}`, { align: 'right' });
-  doc.moveDown(0.25);
-
-  doc.font('Helvetica-Bold').fontSize(14).fillColor(DARK)
-    .text('PHYSIOTHERAPY DISCHARGE SUMMARY', { align: 'center' });
-  doc.moveDown(0.4);
-  divider(doc);
   doc.moveDown(0.3);
 
-  sectionHeading(doc, 'Patient Information');
-  bullet(doc, 'Patient Name:', d.patientName || 'Patient Name');
-  bullet(doc, 'Age / Gender:', `${d.age ? `${d.age} Yrs` : '—'} / ${d.gender || '—'}`);
-  bullet(doc, 'Diagnosis:', d.diagnosis || 'Frozen Shoulder (Adhesive Capsulitis)');
-  bullet(doc, 'Date of Initial Assessment:', d.startDate || '—');
-  bullet(doc, 'Date of Discharge:', d.endDate || '—');
-  bullet(doc, 'Total Sessions Attended:', d.sessions ? (d.sessions.toLowerCase().includes('session') ? d.sessions : `${d.sessions} Sessions`) : '—');
+  doc.font('Helvetica-Bold').fontSize(13).fillColor(DARK_SLATE)
+    .text('PHYSIOTHERAPY DISCHARGE SUMMARY', { align: 'center' });
+  doc.moveDown(0.6);
 
-  sectionHeading(doc, 'Presenting Complaints');
-  doc.font('Helvetica').fontSize(8.5).fillColor(BLACK).text(
+  // Meta table with neat borders
+  const metaBoxY = doc.y;
+  doc.roundedRect(40, metaBoxY, doc.page.width - 80, 84, 4).fillAndStroke(LIGHT_BG, BORDER_COLOR);
+
+  const row = (label: string, val: string, yOff: number) => {
+    doc.font('Helvetica-Bold').fontSize(8.5).fillColor(MUTED_GRAY).text(label, 52, metaBoxY + yOff, { width: 170 });
+    doc.font('Helvetica-Bold').fontSize(8.5).fillColor(DARK_SLATE).text(val, 225, metaBoxY + yOff, { width: 320 });
+  };
+
+  row('Patient Name:', d.patientName || 'Patient Name', 8);
+  row('Age / Gender:', `${d.age ? `${d.age} Yrs` : '—'} / ${d.gender || '—'}`, 21);
+  row('Diagnosis:', d.diagnosis || 'Frozen Shoulder (Adhesive Capsulitis)', 34);
+  row('Date of Initial Assessment:', d.startDate || '10 Aug 2026', 47);
+  row('Date of Discharge:', d.endDate || '10 Sept 2026', 60);
+  row('Total Sessions Attended:', d.sessions ? (d.sessions.toLowerCase().includes('session') ? d.sessions : `${d.sessions} Sessions`) : '12 Sessions', 73);
+
+  doc.y = metaBoxY + 94;
+
+  // Presenting Complaints
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Presenting Complaints', 40);
+  doc.moveDown(0.2);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
     d.complaints || 'Severe shoulder pain (VAS 8/10), sleep disturbance, restricted overhead reach, inability to perform self-care.',
-    60, doc.y, { width: doc.page.width - 100 }
+    40, doc.y, { width: doc.page.width - 80 }
   );
+  doc.moveDown(0.5);
 
-  sectionHeading(doc, 'Assessment Findings');
-  doc.font('Helvetica').fontSize(8.5).fillColor(BLACK).text(
+  // Assessment Findings
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Assessment Findings', 40);
+  doc.moveDown(0.2);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
     d.findings || 'Initial assessment revealed significant capsular restriction, active abduction limited to 70°, external rotation limited to 20°.',
-    60, doc.y, { width: doc.page.width - 100 }
+    40, doc.y, { width: doc.page.width - 80 }
   );
+  doc.moveDown(0.5);
 
-  sectionHeading(doc, 'Treatment Provided');
+  // Treatment Provided
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Treatment Provided', 40);
+  doc.moveDown(0.2);
   const defaultTreatments = [
-    'Physiotherapy Assessment & Functional Evaluation',
-    'Manual Therapy & Soft Tissue Mobilization',
-    'Therapeutic Exercise Prescription & Rehabilitation',
-    'Electrotherapy Modalities (if applicable)',
-    'Patient Education & Ergonomic Postural Advice',
-    `Other: ${d.otherTreatment || d.treatmentProvided || 'Craniosacral therapy balancing & myofascial trigger release'}`
+    '• Physiotherapy Assessment',
+    '• Manual Therapy',
+    '• Therapeutic Exercises',
+    '• Electrotherapy Modalities (if applicable)',
+    '• Patient Education & Home Exercise Program',
+    `• Other: ${d.otherTreatment || d.treatmentProvided || 'Craniosacral therapy balancing & myofascial trigger release'}`
   ];
   defaultTreatments.forEach((t) => {
-    doc.font('Helvetica').fontSize(8).fillColor(BLACK).text(`•  ${t}`, 60);
+    doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(t, 48);
     doc.moveDown(0.12);
   });
 
   renderFooter(doc, 1, 2);
 
   // ─── PAGE 2 ─────────────────────────────────────────────────────────────
-  doc.addPage({ size: 'A4', margin: 40 });
+  doc.addPage({ size: 'A4', margins: { top: 30, bottom: 20, left: 40, right: 40 } });
   renderRunningHeader(doc, 'PHYSIOTHERAPY DISCHARGE SUMMARY', 2);
 
-  sectionHeading(doc, 'Progress Achieved');
-  const progressList = [
+  // Progress Achieved
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Progress Achieved', 40);
+  doc.moveDown(0.2);
+
+  const progressItems = [
     { key: 'pain', label: 'Pain Reduced' },
     { key: 'rom', label: 'Range of Motion Improved' },
     { key: 'strength', label: 'Strength Improved' },
@@ -327,58 +426,77 @@ function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | n
     { key: 'goals', label: 'Goals Achieved' },
   ];
 
-  const startY = doc.y;
-  progressList.forEach((item, idx) => {
+  const gridStartY = doc.y;
+  progressItems.forEach((item, idx) => {
     const checked = d.progressOptions ? d.progressOptions[item.key] !== false : true;
     const col = idx % 2;
-    const row = Math.floor(idx / 2);
-    const x = col === 0 ? 60 : 300;
-    const y = startY + row * 14;
-    doc.rect(x, y + 1, 7.5, 7.5).lineWidth(0.8).strokeColor(checked ? TEAL : '#CBD5E1').stroke();
+    const r = Math.floor(idx / 2);
+    const x = col === 0 ? 48 : 290;
+    const y = gridStartY + r * 13.5;
+
+    doc.rect(x, y + 1, 7.5, 7.5).lineWidth(0.8).strokeColor(checked ? PRIMARY_BLUE : '#CBD5E1').stroke();
     if (checked) {
-      doc.fillColor(TEAL).rect(x + 1.5, y + 2.5, 4.5, 4.5).fill();
+      doc.fillColor(PRIMARY_BLUE).rect(x + 1.5, y + 2.5, 4.5, 4.5).fill();
     }
-    doc.font('Helvetica').fontSize(8).fillColor(BLACK).text(item.label, x + 12, y);
+    doc.font('Helvetica').fontSize(8).fillColor(BODY_SLATE).text(item.label, x + 12, y);
   });
-  doc.y = startY + Math.ceil(progressList.length / 2) * 14 + 4;
+  doc.y = gridStartY + Math.ceil(progressItems.length / 2) * 13.5 + 4;
 
-  sectionHeading(doc, 'Outcome at Discharge');
-  doc.font('Helvetica').fontSize(8.5).fillColor(BLACK).text(
-    d.outcome || 'Full active range of motion restored, pain decreased significantly. Functional independence achieved.',
-    60, doc.y, { width: doc.page.width - 100 }
+  // Outcome at Discharge
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Outcome at Discharge', 40);
+  doc.moveDown(0.15);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
+    d.outcome || 'Full active range of motion restored (Abduction 170°, ER 75°), pain decreased from VAS 8/10 to 1/10. Functional independence achieved.',
+    40, doc.y, { width: doc.page.width - 80 }
   );
+  doc.moveDown(0.4);
 
-  sectionHeading(doc, 'Home Exercise Program / Advice');
-  doc.font('Helvetica').fontSize(8.5).fillColor(BLACK).text(
-    d.homeAdvice || 'Continue prescribed stretches, mobility drills, and rotator cuff strengthening exercises with resistance band 3 times per week.',
-    60, doc.y, { width: doc.page.width - 100 }
+  // Home Exercise Program / Advice
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Home Exercise Program / Advice', 40);
+  doc.moveDown(0.15);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
+    d.homeAdvice || 'Continue shoulder pendular swings, wand stretches, and rotator cuff strengthening exercises with light band 3 times per week.',
+    40, doc.y, { width: doc.page.width - 80 }
   );
+  doc.moveDown(0.4);
 
-  sectionHeading(doc, 'Precautions / Restrictions (if any)');
-  doc.font('Helvetica').fontSize(8.5).fillColor(BLACK).text(
+  // Precautions / Restrictions
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Precautions / Restrictions (if any)', 40);
+  doc.moveDown(0.15);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
     d.precautions || 'Avoid sudden jerky overhead jerks or lifting weights exceeding 12 kg without adequate warm-up.',
-    60, doc.y, { width: doc.page.width - 100 }
+    40, doc.y, { width: doc.page.width - 80 }
   );
+  doc.moveDown(0.4);
 
-  sectionHeading(doc, 'Follow-up & Discharge Status');
+  // Follow-up Recommendations & Discharge Status
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Follow-up Recommendations & Discharge Status', 40);
+  doc.moveDown(0.15);
+
   const followupText = d.followupOptions?.review
     ? `Review after ${d.reviewWeeks || '4 weeks'} if needed · Continue Home Exercise Program`
     : 'Follow-up only if symptoms recur · Continue Home Exercise Program';
   const statusLabel = d.dischargeStatusOptions?.request
     ? 'Discharged on Patient Request'
     : d.dischargeStatusOptions?.referred
-    ? 'Referred to Another Specialist'
+    ? 'Referred to Another Healthcare Professional'
     : d.dischargeStatusOptions?.discontinued
     ? 'Treatment Discontinued'
     : 'Successfully Discharged';
 
-  bullet(doc, 'Follow-up Recommendation:', followupText);
-  bullet(doc, 'Discharge Status:', statusLabel);
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(BODY_SLATE).text('• Follow-up Recommendation: ', 48, doc.y, { continued: true });
+  doc.font('Helvetica').fillColor(BODY_SLATE).text(followupText);
+  doc.moveDown(0.15);
+  doc.font('Helvetica-Bold').fontSize(8.5).fillColor(BODY_SLATE).text('• Discharge Status: ', 48, doc.y, { continued: true });
+  doc.font('Helvetica-Bold').fillColor(PRIMARY_BLUE).text(statusLabel);
+  doc.moveDown(0.4);
 
-  sectionHeading(doc, 'Remarks');
-  doc.font('Helvetica').fontSize(8.5).fillColor(BLACK).text(
+  // Remarks
+  doc.font('Helvetica-Bold').fontSize(9.5).fillColor(PRIMARY_BLUE).text('Remarks:', 40);
+  doc.moveDown(0.15);
+  doc.font('Helvetica').fontSize(8.5).fillColor(BODY_SLATE).text(
     d.remarks || 'Patient was compliant with therapy sessions and achieved excellent functional recovery. Advised to maintain active lifestyle.',
-    60, doc.y, { width: doc.page.width - 100 }
+    40, doc.y, { width: doc.page.width - 80 }
   );
 
   renderSignature(doc, sigPath);
@@ -407,8 +525,13 @@ export async function GET(req: NextRequest) {
     const logoPath  = path.join(publicDir, 'logo', 'rklogo.png');
     const sigPath   = path.join(publicDir, 'signatures', 'dr-rashmita-signature.png');
 
-    // Build PDF in memory
-    const doc = new PDFDocument({ size: 'A4', margin: 40, compress: true });
+    // Build PDF in memory with safe margins
+    const doc = new PDFDocument({
+      size: 'A4',
+      margins: { top: 30, bottom: 20, left: 40, right: 40 },
+      compress: true,
+      autoFirstPage: true,
+    });
     const chunks: Buffer[] = [];
 
     doc.on('data', (chunk: Buffer) => chunks.push(chunk));
@@ -418,7 +541,7 @@ export async function GET(req: NextRequest) {
       doc.on('error', reject);
     });
 
-    // Render header
+    // Render White Official Letterhead
     renderHeader(doc, fs.existsSync(logoPath) ? logoPath : null);
 
     // Render body by type
