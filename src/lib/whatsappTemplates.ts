@@ -441,19 +441,17 @@ export async function sendOfficialWhatsAppBill({
 }
 
 /**
- * Quick send bill / invoice receipt to patient on WhatsApp.
- * Dispatches directly via the clinic calling number (+91 8482812859).
- * Only opens WhatsApp Web if explicitly requested via openFallbackWeb.
+ * Open bill / invoice receipt to patient on WhatsApp Web.
  */
 export function openWhatsAppBill({
   phone,
-  openFallbackWeb = false,
   ...details
 }: {
   phone: string;
   openFallbackWeb?: boolean;
   patientName: string;
   invoiceNumber: string;
+  invoiceId?: string;
   issueDate?: string;
   lines?: { description: string; quantity?: number; lineTotal?: number }[];
   total: number;
@@ -465,23 +463,7 @@ export function openWhatsAppBill({
   const cleanDigits = (phone || '').replace(/\D/g, '').slice(-10);
   const targetPhone = cleanDigits.length === 10 ? `91${cleanDigits}` : cleanDigits;
 
-  // Primary dispatch via Clinic Calling Number (+91 8482812859)
-  try {
-    fetch('/api/whatsapp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: cleanDigits,
-        message: text,
-        senderPhone: '8482812859',
-        invoiceNumber: details.invoiceNumber,
-        patientName: details.patientName,
-      }),
-    }).catch((e) => console.warn('Calling number WhatsApp bill dispatch error:', e));
-  } catch (e) {}
-
-  // Only open personal WhatsApp Web if user explicitly requested fallback
-  if (openFallbackWeb) {
+  if (typeof window !== 'undefined') {
     const url = `https://wa.me/${targetPhone}?text=${encodeURIComponent(text)}`;
     window.open(url, '_blank');
   }

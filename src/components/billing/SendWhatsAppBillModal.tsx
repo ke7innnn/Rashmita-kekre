@@ -1,10 +1,9 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { 
-  MessageSquare, Send, CheckCircle, AlertTriangle, 
-  Loader2, X, Phone, Copy, Check, ShieldCheck, ExternalLink 
+  MessageSquare, Send, X, Phone, Copy, Check, ExternalLink, AlertCircle
 } from 'lucide-react';
 import { generateBillWhatsAppText } from '@/lib/whatsappTemplates';
 
@@ -40,10 +39,8 @@ export default function SendWhatsAppBillModal({
   onSuccess,
 }: SendWhatsAppBillModalProps) {
   const [phone, setPhone] = useState(patientPhone || '');
-  const [isSending, setIsSending] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   useEffect(() => {
     if (patientPhone) {
@@ -75,71 +72,19 @@ export default function SendWhatsAppBillModal({
     }
   };
 
-  const handleOpenDirectWhatsApp = () => {
+  const handleOpenWhatsAppWeb = () => {
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      setPhoneError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    setPhoneError(null);
+
     const target = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const url = `https://wa.me/${target}?text=${encodeURIComponent(billMessageText)}`;
     window.open(url, '_blank');
     if (onSuccess) onSuccess();
     onClose();
-  };
-
-  const handleSendViaCallingNumber = async () => {
-    const cleanPhone = phone.replace(/\D/g, '').slice(-10);
-    if (!cleanPhone || cleanPhone.length < 10) {
-      setErrorMessage('Please enter a valid 10-digit mobile number.');
-      return;
-    }
-
-    setIsSending(true);
-    setErrorMessage(null);
-
-    try {
-      const formattedAmt = (amountPaid > 0 ? amountPaid : total).toLocaleString('en-IN', {
-        minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
-      });
-
-      const res = await fetch('/api/whatsapp', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          phone: cleanPhone,
-          templateName: 'invoice_bill_receipt',
-          params: [patientName, invoiceNumber, formattedAmt],
-          documentUrl: `https://thehealth360.in/receipt/${invoiceId || invoiceNumber}`,
-          documentFilename: `Health360_Receipt_${invoiceNumber}.pdf`,
-          message: billMessageText,
-          senderPhone: '8482812859',
-          invoiceNumber,
-          patientName,
-        }),
-      });
-
-      const data = await res.json();
-
-      if (res.ok && data.success) {
-        setIsSuccess(true);
-        if (onSuccess) onSuccess();
-        setTimeout(() => {
-          setIsSuccess(false);
-          onClose();
-        }, 2500);
-      } else {
-        // If Meta blocked outside 24-hr window, automatically open WhatsApp Web so it delivers!
-        const cleanTarget = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
-        const webUrl = `https://wa.me/${cleanTarget}?text=${encodeURIComponent(billMessageText)}`;
-        window.open(webUrl, '_blank');
-        
-        setErrorMessage(
-          'Meta Cloud API blocks freeform text outside the 24-hour reply window. We opened WhatsApp Web for you so you can hit Send directly!'
-        );
-      }
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Network error dispatching WhatsApp bill.');
-    } finally {
-      setIsSending(false);
-    }
   };
 
   return (
@@ -168,14 +113,14 @@ export default function SendWhatsAppBillModal({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h2 className="text-base font-bold text-white leading-tight">
-                  Send Invoice &amp; Receipt on WhatsApp
+                  Send Invoice via WhatsApp Web
                 </h2>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-400/10 border border-emerald-400/30 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Official Receipt
+                <span className="text-[10px] font-bold text-[#25D366] bg-[#25D366]/10 border border-[#25D366]/30 px-2 py-0.5 rounded-full uppercase tracking-wider flex items-center gap-1">
+                  WhatsApp Web
                 </span>
               </div>
               <p className="text-xs text-white/50 font-medium mt-0.5">
-                Sends itemized invoice #{invoiceNumber} with direct link to view &amp; download official PDF
+                Opens WhatsApp Web with pre-formatted invoice #{invoiceNumber} and direct PDF receipt link
               </p>
             </div>
           </div>
@@ -217,26 +162,35 @@ export default function SendWhatsAppBillModal({
               <input
                 type="tel"
                 value={phone}
-                onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                onChange={(e) => {
+                  setPhone(e.target.value.replace(/\D/g, '').slice(0, 10));
+                  if (phoneError) setPhoneError(null);
+                }}
                 className="w-full text-xs font-mono font-bold bg-white/5 border border-[#25D366]/40 focus:border-[#25D366] rounded-lg px-2.5 py-1 text-white outline-none"
                 placeholder="10-digit mobile"
               />
             </div>
           </div>
+          {phoneError && (
+            <div className="flex items-center gap-1.5 text-rose-400 text-[11px] font-medium pt-1">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <span>{phoneError}</span>
+            </div>
+          )}
         </div>
 
         {/* Message Preview */}
         <div className="space-y-1.5">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider">
-              WhatsApp Message Preview (Includes PDF Link):
+              WhatsApp Message Preview:
             </span>
             <button
               type="button"
               onClick={handleCopyText}
               className="text-[10px] text-emerald-400 hover:text-emerald-300 font-bold flex items-center gap-1 transition cursor-pointer"
             >
-              {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'Copied' : 'Copy Text'}</span>
             </button>
           </div>
@@ -246,76 +200,31 @@ export default function SendWhatsAppBillModal({
           </div>
         </div>
 
-        {/* Error / Alert Banner */}
-        {errorMessage && (
-          <div className="p-3 bg-amber-500/15 border border-amber-500/30 text-amber-300 rounded-xl text-xs flex items-start gap-2">
-            <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-            <div className="flex-1 text-[11px] leading-relaxed">
-              {errorMessage}
-            </div>
-          </div>
-        )}
+        {/* Action Controls */}
+        <div className="space-y-2 pt-2 border-t border-white/10">
+          <button
+            type="button"
+            onClick={handleOpenWhatsAppWeb}
+            className="w-full py-3.5 px-4 bg-[#25D366] hover:bg-[#1ebe59] active:scale-[0.99] text-white text-xs font-bold rounded-2xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/25"
+          >
+            <Send className="w-4 h-4 stroke-[2.2]" />
+            <span>Open in WhatsApp Web (+91 {phone || '...'})</span>
+            <ExternalLink className="w-3.5 h-3.5 opacity-80" />
+          </button>
 
-        {/* Success Confirmation */}
-        <AnimatePresence>
-          {isSuccess && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0 }}
-              className="p-4 bg-emerald-500/20 border border-emerald-500/40 rounded-2xl text-center space-y-1.5"
-            >
-              <CheckCircle className="w-8 h-8 text-emerald-400 mx-auto animate-bounce" />
-              <h3 className="text-sm font-bold text-white">
-                Official Bill Sent Successfully!
-              </h3>
-              <p className="text-xs text-emerald-300">
-                Dispatched to {patientName} (+91 {phone}) from Health 360 Calling Number (+91 8482812859).
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Action Buttons */}
-        {!isSuccess && (
-          <div className="space-y-2 pt-2 border-t border-white/10">
-            {/* PRIMARY: Direct 1-Click WhatsApp Dispatch */}
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-[11px] text-white/40">
+              Opens WhatsApp Web with the message pre-filled. Just tap Send.
+            </p>
             <button
               type="button"
-              onClick={handleOpenDirectWhatsApp}
-              className="w-full py-3 px-4 bg-[#25D366] hover:bg-[#1ebe59] active:scale-[0.99] text-white text-xs font-bold rounded-2xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-[#25D366]/25"
+              onClick={onClose}
+              className="py-1.5 px-3 text-white/50 hover:text-white text-xs transition cursor-pointer"
             >
-              <Send className="w-4 h-4 stroke-[2.2]" />
-              <span>Send Directly via WhatsApp to +91 {phone || '...'}</span>
+              Cancel
             </button>
-
-            {/* SECONDARY: Meta Cloud API Dispatch */}
-            <div className="flex items-center justify-between gap-3 pt-1">
-              <button
-                type="button"
-                disabled={isSending}
-                onClick={handleSendViaCallingNumber}
-                className="flex-1 py-2 px-3 bg-white/5 hover:bg-white/10 border border-white/15 text-white/80 hover:text-white text-[11px] font-semibold rounded-xl transition cursor-pointer disabled:opacity-50 flex items-center justify-center gap-1.5"
-                title="Attempts automated Meta Cloud API dispatch"
-              >
-                {isSending ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                )}
-                <span>Send via Meta API (+91 8482812859)</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onClose}
-                className="py-2 px-3 text-white/50 hover:text-white text-xs transition cursor-pointer"
-              >
-                Cancel
-              </button>
-            </div>
           </div>
-        )}
+        </div>
       </motion.div>
     </div>
   );

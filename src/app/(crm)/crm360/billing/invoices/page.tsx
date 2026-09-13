@@ -193,7 +193,7 @@ export default function InvoiceListPage() {
                               setSelectedInvoiceForWhatsApp(inv);
                             }}
                             className="p-1.5 bg-emerald-500/10 hover:bg-emerald-500/25 text-emerald-400 hover:text-emerald-300 rounded-lg transition cursor-pointer"
-                            title="Send bill receipt via Clinic Calling Number (+91 8482812859)"
+                            title="Send bill receipt via WhatsApp Web"
                           >
                             <MessageSquare className="w-3.5 h-3.5" />
                           </button>

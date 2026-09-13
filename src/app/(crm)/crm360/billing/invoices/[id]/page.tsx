@@ -212,10 +212,10 @@ export default function InvoiceDetailPage() {
               }
               setWhatsappModalOpen(true);
             }}
-            className="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
-            title="Send official bill receipt via Clinic Calling Number (+91 8482812859)"
+            className="px-3.5 py-2 rounded-xl bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold transition flex items-center gap-1.5 shadow-md cursor-pointer"
+            title="Send bill receipt via WhatsApp Web"
           >
-            <MessageSquare className="w-4 h-4" /> Send WhatsApp
+            <MessageSquare className="w-4 h-4" /> WhatsApp Web
           </button>
 
           <Link

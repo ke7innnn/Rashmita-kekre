@@ -13,7 +13,7 @@ import CourseMeter from '@/components/billing/CourseMeter';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
 import SellCourseModal from '@/components/billing/SellCourseModal';
 import CountUpNumber from '@/components/billing/CountUpNumber';
-import { openWhatsAppBill, sendOfficialWhatsAppBill } from '@/lib/whatsappTemplates';
+import { openWhatsAppBill } from '@/lib/whatsappTemplates';
 
 function InvoiceBuilderContent() {
   const router = useRouter();
@@ -352,16 +352,18 @@ function InvoiceBuilderContent() {
       const inv = await res.json();
 
       if (sendWhatsApp && selectedPatient.phone) {
-        await sendOfficialWhatsAppBill({
+        openWhatsAppBill({
           phone: selectedPatient.phone,
           patientName: selectedPatient.fullName,
           invoiceNumber: inv.invoiceNumber,
+          invoiceId: inv.id,
           issueDate: new Date(inv.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }),
           lines: inv.lines,
           total: Number(inv.totalAmount || 0),
           amountPaid: Number(inv.paidAmount || 0),
           balanceDue: Math.max(0, Number(inv.totalAmount || 0) - Number(inv.paidAmount || 0)),
           paymentMode: 'UPI / Cash',
+          openFallbackWeb: true,
         });
       }
 
@@ -902,14 +904,14 @@ function InvoiceBuilderContent() {
                 type="button"
                 onClick={() => handleSaveInvoice(true)}
                 disabled={saving || !selectedPatient || lines.length === 0 || lines.some(l => l.isUnresolvedFollowUp)}
-                className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                title="Create invoice and immediately open WhatsApp with formatted bill receipt"
+                className="w-full py-3 rounded-xl bg-[#25D366] hover:bg-[#1ebe59] text-white text-xs font-bold uppercase tracking-wider transition flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,211,102,0.3)] disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                title="Create invoice and open WhatsApp Web with formatted bill receipt"
               >
                 {saving ? (
                   <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 ) : (
                   <>
-                    <MessageSquare className="w-4 h-4" /> Issue & Send WhatsApp
+                    <MessageSquare className="w-4 h-4" /> Issue & Send via WhatsApp Web
                   </>
                 )}
               </button>
