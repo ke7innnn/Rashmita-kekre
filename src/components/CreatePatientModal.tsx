@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -108,7 +109,12 @@ export default function CreatePatientModal({
   onSuccess 
 }: CreatePatientModalProps) {
   const queryClient = useQueryClient();
+  const [isMounted, setIsMounted] = useState(false);
   const [showAddressInput, setShowAddressInput] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   // Custom doctors from API
   const { data: customDoctors = [], refetch: refetchDoctors } = useQuery({
@@ -275,16 +281,18 @@ export default function CreatePatientModal({
     createPatientMutation.mutate(payload);
   };
 
-  return (
+  if (!isOpen) return null;
+
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center px-4 select-none">
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 select-none">
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/80 backdrop-blur-md"
+            className="fixed inset-0 bg-black/80 backdrop-blur-md"
           />
 
           <motion.div 
@@ -653,4 +661,10 @@ export default function CreatePatientModal({
       )}
     </AnimatePresence>
   );
+
+  if (isMounted && typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Save, UserCheck, AlertCircle, Ban, ShieldCheck } from 'lucide-react';
@@ -51,6 +52,11 @@ export default function EditPatientModal({
   onSuccess
 }: EditPatientModalProps) {
   const queryClient = useQueryClient();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const { data: customDoctors = [] } = useQuery({
     queryKey: ['referring-doctors'],
@@ -236,9 +242,9 @@ export default function EditPatientModal({
 
   if (!isOpen || !patient) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 select-none">
+      <div className="fixed inset-0 z-[99999] flex items-center justify-center p-3 sm:p-4 select-none">
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -612,4 +618,10 @@ export default function EditPatientModal({
       </div>
     </AnimatePresence>
   );
+
+  if (isMounted && typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+
+  return modalContent;
 }

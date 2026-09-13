@@ -35,7 +35,14 @@ export default function PublicReceiptPage() {
   };
 
   const handlePrint = () => {
+    const patientName = (receipt?.patientName || 'Patient').replace(/\s+/g, '-');
+    const invNum = (receipt?.invoiceNumber || 'Invoice').replace(/\s+/g, '-');
+    const originalTitle = document.title;
+    document.title = `Health360-Receipt-${invNum}-${patientName}.pdf`;
     window.print();
+    setTimeout(() => {
+      document.title = originalTitle;
+    }, 1500);
   };
 
   if (loading) {
@@ -77,16 +84,16 @@ export default function PublicReceiptPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F172A] print:bg-white text-black font-sans relative py-6 px-3 sm:px-6">
+    <div className="min-h-screen bg-[#0F172A] print:bg-white print:min-h-0 print:p-0 print:m-0 text-black font-sans relative py-4 sm:py-6 px-2 sm:px-6">
       {/* Top Banner for Patient */}
-      <div className="max-w-[210mm] mx-auto mb-4 bg-[#1E293B] border border-slate-700 p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-white print:hidden shadow-lg">
-        <div className="flex items-center gap-2.5">
+      <div className="max-w-[210mm] mx-auto mb-4 bg-[#1E293B] border border-slate-700 p-3.5 sm:p-4 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-3 text-white print:hidden shadow-lg">
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
           <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
             <CheckCircle className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-sm font-bold text-white">Official Tax Invoice &amp; Payment Receipt</h1>
-            <p className="text-[11px] text-white/50">Receipt #{receipt.invoiceNumber} • Issued to {receipt.patientName}</p>
+            <h1 className="text-xs sm:text-sm font-bold text-white">Official Tax Invoice &amp; Payment Receipt</h1>
+            <p className="text-[10px] sm:text-[11px] text-white/50">Receipt #{receipt.invoiceNumber} • Issued to {receipt.patientName}</p>
           </div>
         </div>
 
@@ -100,14 +107,14 @@ export default function PublicReceiptPage() {
       </div>
 
       {/* Actual Paper Canvas Receipt */}
-      <div className="max-w-[210mm] mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden print:shadow-none print:rounded-none">
+      <div className="w-full max-w-[210mm] mx-auto bg-white rounded-2xl shadow-2xl overflow-x-auto print:overflow-visible print:shadow-none print:rounded-none print:m-0 print:p-0 print:w-full print:max-w-none">
         <ReceiptDocument 
           clinic={clinic}
           data={receiptData}
         />
       </div>
 
-      <div className="max-w-[210mm] mx-auto mt-6 text-center text-xs text-white/40 print:hidden">
+      <div className="max-w-[210mm] mx-auto mt-6 text-center text-[11px] sm:text-xs text-white/40 print:hidden px-2">
         <p>Health 360 Physiotherapy &amp; Craniosacral Therapy Clinic • Shop No.1 &amp; 2, Amardeep Society, Om Nagar, Vasai West</p>
         <p className="mt-1">Tel: +91 8482812859 • Email: health360vasai@gmail.com</p>
       </div>

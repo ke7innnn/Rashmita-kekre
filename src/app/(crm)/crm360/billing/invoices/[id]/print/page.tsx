@@ -230,7 +230,7 @@ function InvoicePrintContent() {
       </div>
 
       {/* Paper Canvas Container */}
-      <div className="relative z-10 max-w-[210mm] mx-auto my-8 print:my-0 print:p-0 print:m-0 print:w-full print:max-w-none shadow-[0_25px_70px_rgba(0,0,0,0.85)] print:shadow-none">
+      <div className="relative z-10 w-full max-w-[210mm] mx-auto my-4 sm:my-8 print:my-0 print:p-0 print:m-0 print:w-full print:max-w-none shadow-[0_25px_70px_rgba(0,0,0,0.85)] print:shadow-none overflow-x-auto print:overflow-visible">
         <ReceiptDocument 
           clinic={clinic} 
           data={receiptData} 

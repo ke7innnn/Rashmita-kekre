@@ -883,6 +883,126 @@ const CSS = `
 .editable-field[contenteditable="true"]:focus {
   background: rgba(14, 165, 233, 0.15);
   outline: 1.5px solid #0284c7;
+}
+
+/* ================= MOBILE SCREEN RESPONSIVE RULES ================= */
+@media screen and (max-width: 768px) {
+  .bill-paper {
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    padding: 16px 14px !important;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2) !important;
+    border-radius: 16px !important;
+    font-size: 9pt !important;
+  }
+  .bill-header {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    padding-bottom: 12px !important;
+  }
+  .bill-header-left {
+    max-width: 100% !important;
+    gap: 10px !important;
+  }
+  .bill-clinic-logo {
+    height: 44px !important;
+  }
+  .bill-clinic-name {
+    font-size: 16px !important;
+  }
+  .bill-clinic-tagline {
+    font-size: 9px !important;
+  }
+  .bill-clinic-address {
+    font-size: 10px !important;
+  }
+  .bill-header-right {
+    max-width: 100% !important;
+    text-align: left !important;
+    border-top: 1px dashed #e2e8f0 !important;
+    padding-top: 10px !important;
+  }
+  .bill-doctor-name {
+    font-size: 14px !important;
+  }
+  .bill-doctor-credentials {
+    font-size: 11px !important;
+  }
+  .bill-title-bar {
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+  }
+  .bill-meta-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+  }
+  .bill-meta-card {
+    border-radius: 8px !important;
+  }
+  .bill-table-wrapper {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+    margin-bottom: 12px !important;
+    border-radius: 8px !important;
+  }
+  .bill-table {
+    min-width: 480px !important;
+    font-size: 11px !important;
+  }
+  .bill-table thead th {
+    padding: 8px 10px !important;
+    font-size: 10px !important;
+  }
+  .bill-table tbody td {
+    padding: 8px 10px !important;
+  }
+  .bill-words-ribbon {
+    flex-direction: column !important;
+    gap: 4px !important;
+    padding: 8px 12px !important;
+    margin-bottom: 12px !important;
+    border-radius: 8px !important;
+  }
+  .bill-bottom-grid {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+    margin-bottom: 14px !important;
+  }
+  .bill-payment-modes-box,
+  .bill-terms-box,
+  .bill-notes-box {
+    border-radius: 8px !important;
+    padding: 10px 12px !important;
+  }
+  .bill-totals-table {
+    border-radius: 8px !important;
+    overflow: hidden !important;
+  }
+  .bill-totals-table td {
+    padding: 8px 12px !important;
+    font-size: 12px !important;
+  }
+  .bill-sign-section {
+    flex-direction: column !important;
+    gap: 16px !important;
+    align-items: stretch !important;
+    padding-top: 10px !important;
+    margin-top: 10px !important;
+  }
+  .bill-sign-left {
+    max-width: 100% !important;
+  }
+  .bill-sign-right {
+    text-align: right !important;
+    min-width: 0 !important;
+    align-self: flex-end !important;
+  }
+}
+
 /* ================= PRINT RULES ================= */
 @page {
   size: A4 portrait;
@@ -933,6 +1053,83 @@ const CSS = `
     display: block !important;
     page-break-inside: avoid !important;
     break-inside: avoid !important;
+    border-radius: 0 !important;
+  }
+  .bill-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-start !important;
+    gap: 8mm !important;
+    padding-bottom: 4mm !important;
+    border-bottom: 2px solid #0f172a !important;
+  }
+  .bill-header-left {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 3.5mm !important;
+    max-width: 105mm !important;
+  }
+  .bill-header-right {
+    text-align: right !important;
+    max-width: 85mm !important;
+    border-top: none !important;
+    padding-top: 0 !important;
+  }
+  .bill-title-bar {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    padding: 2mm 4mm !important;
+    margin-bottom: 3.5mm !important;
+  }
+  .bill-meta-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 3.5mm !important;
+    margin-bottom: 3.5mm !important;
+  }
+  .bill-table-wrapper {
+    overflow: visible !important;
+    border: 1px solid #cbd5e1 !important;
+    margin-bottom: 3.5mm !important;
+  }
+  .bill-table {
+    width: 100% !important;
+    min-width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8.5pt !important;
+  }
+  .bill-words-ribbon {
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 2mm !important;
+    align-items: baseline !important;
+    margin-bottom: 4mm !important;
+  }
+  .bill-bottom-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 78mm !important;
+    gap: 4mm !important;
+    margin-bottom: 5mm !important;
+    align-items: start !important;
+  }
+  .bill-sign-section {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: flex-end !important;
+    padding-top: 3mm !important;
+    margin-top: 4mm !important;
+  }
+  .bill-sign-left {
+    max-width: 105mm !important;
+  }
+  .bill-sign-right {
+    text-align: right !important;
+    min-width: 60mm !important;
+    align-self: flex-end !important;
   }
   .editable-field {
     outline: none !important;

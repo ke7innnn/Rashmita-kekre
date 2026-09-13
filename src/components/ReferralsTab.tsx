@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -17,6 +18,12 @@ interface Props {
 
 export default function ReferralsTab({ onViewPatient }: Props) {
   const queryClient = useQueryClient();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const [search, setSearch] = useState('');
   const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
 
@@ -274,7 +281,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
       const cleanPhone = editingDocPhone.replace(/\D/g, '').slice(-10);
       const formattedName = editingDocName.startsWith('Dr.') ? editingDocName.trim() : `Dr. ${editingDocName.trim()}`;
 
-      await fetch('/api/referring-doctors', {
+      const res = await fetch('/api/referring-doctors', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -288,15 +295,20 @@ export default function ReferralsTab({ onViewPatient }: Props) {
         })
       });
 
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to save doctor changes');
+      }
+
       await refetchDoctors();
       queryClient.invalidateQueries({ queryKey: ['referring-doctors'] });
       queryClient.invalidateQueries({ queryKey: ['patients-all'] });
       queryClient.invalidateQueries({ queryKey: ['patients'] });
 
       setIsEditDocOpen(false);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to edit doctor:', err);
-      alert('Failed to save doctor changes');
+      alert(err.message || 'Failed to save doctor changes');
     } finally {
       setIsSavingEditDoc(false);
     }
@@ -656,215 +668,210 @@ export default function ReferralsTab({ onViewPatient }: Props) {
       )}
 
       {/* Manual Doctor Creation Modal */}
-      <AnimatePresence>
-        {isAddDocOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setIsAddDocOpen(false)} />
-            <motion.div
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.12)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.5)] w-full max-w-sm z-10 space-y-4"
-            >
-              <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3">
-                <h4 className="text-lg font-serif font-bold text-[#F5F3FA]">Add Referral Doctor</h4>
-                <button onClick={() => setIsAddDocOpen(false)} className="text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA]">
-                  <X className="h-4.5 w-4.5" />
-                </button>
+      {isMounted && isAddDocOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsAddDocOpen(false)} />
+          <motion.div
+            initial={{ scale: 0.95, y: 15, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.95, y: 15, opacity: 0 }}
+            className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.12)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.5)] w-full max-w-sm z-10 space-y-4 text-white"
+          >
+            <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3">
+              <h4 className="text-lg font-serif font-bold text-[#F5F3FA]">Add Referral Doctor</h4>
+              <button onClick={() => setIsAddDocOpen(false)} className="text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA] cursor-pointer">
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddDoctorSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Doctor Name *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="E.g., Dr. Jane Smith"
+                  value={docName}
+                  onChange={(e) => setDocName(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                />
               </div>
 
-              <form onSubmit={handleAddDoctorSubmit} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Doctor Name *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="E.g., Dr. Jane Smith"
-                    value={docName}
-                    onChange={(e) => setDocName(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block text-[#25D366]">Doctor's WhatsApp Phone (10 Digits)</label>
+                <input
+                  type="tel"
+                  placeholder="E.g., 9833333333"
+                  value={docPhone}
+                  onChange={(e) => setDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="block w-full text-xs glass-input p-2.5 font-mono font-bold text-[#25D366] placeholder-[rgba(245,243,250,0.4)] border-[#25D366]/30"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block text-[#25D366]">Doctor's WhatsApp Phone (10 Digits)</label>
-                  <input
-                    type="tel"
-                    placeholder="E.g., 9833333333"
-                    value={docPhone}
-                    onChange={(e) => setDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="block w-full text-xs glass-input p-2.5 font-mono font-bold text-[#25D366] placeholder-[rgba(245,243,250,0.4)] border-[#25D366]/30"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Specialty</label>
+                <select
+                  value={docSpecialty}
+                  onChange={(e) => setDocSpecialty(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 cursor-pointer font-bold bg-[#120D1F] text-[#F5F3FA]"
+                >
+                  <option value="Orthopedics & Spine">Orthopedics & Spine</option>
+                  <option value="Neurology & Rehab">Neurology & Rehab</option>
+                  <option value="Rheumatology Specialists">Rheumatology</option>
+                  <option value="Cardiology & Sports">Cardiology & Sports</option>
+                  <option value="Pediatrics Rehab">Pediatrics Rehab</option>
+                  <option value="General Practice">General Practice</option>
+                </select>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Specialty</label>
-                  <select
-                    value={docSpecialty}
-                    onChange={(e) => setDocSpecialty(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 cursor-pointer font-bold bg-[#120D1F] text-[#F5F3FA]"
-                  >
-                    <option value="Orthopedics & Spine">Orthopedics & Spine</option>
-                    <option value="Neurology & Rehab">Neurology & Rehab</option>
-                    <option value="Rheumatology Specialists">Rheumatology</option>
-                    <option value="Cardiology & Sports">Cardiology & Sports</option>
-                    <option value="Pediatrics Rehab">Pediatrics Rehab</option>
-                    <option value="General Practice">General Practice</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Clinic / Hospital</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="E.g., City Bone & Joint Clinic"
+                  value={docClinic}
+                  onChange={(e) => setDocClinic(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Clinic / Hospital</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="E.g., City Bone & Joint Clinic"
-                    value={docClinic}
-                    onChange={(e) => setDocClinic(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Email Address (Optional)</label>
+                <input
+                  type="email"
+                  placeholder="E.g., doctor@email.com (optional)"
+                  value={docEmail}
+                  onChange={(e) => setDocEmail(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Email Address (Optional)</label>
-                  <input
-                    type="email"
-                    placeholder="E.g., doctor@email.com (optional)"
-                    value={docEmail}
-                    onChange={(e) => setDocEmail(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddDocOpen(false)}
-                    className="flex-1 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors cursor-pointer text-[rgba(245,243,250,0.8)]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-2.5 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0"
-                  >
-                    Add Referrer
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              <div className="flex gap-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setIsAddDocOpen(false)}
+                  className="flex-1 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors cursor-pointer text-[rgba(245,243,250,0.8)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0"
+                >
+                  Add Referrer
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>,
+        document.body
+      )}
 
       {/* Edit Doctor Info & Phone Modal */}
-      <AnimatePresence>
-        {isEditDocOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-            <div className="absolute inset-0 bg-black/75 backdrop-blur-md" onClick={() => setIsEditDocOpen(false)} />
-            <motion.div
-              initial={{ scale: 0.95, y: 15, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.95, y: 15, opacity: 0 }}
-              className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.15)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.6)] w-full max-w-sm z-10 space-y-4"
-            >
-              <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3">
-                <div className="flex items-center gap-2">
-                  <Edit3 className="h-4 w-4 text-[#12D6C4]" />
-                  <h4 className="text-lg font-serif font-bold text-[#F5F3FA]">Edit Doctor Profile</h4>
-                </div>
-                <button onClick={() => setIsEditDocOpen(false)} className="text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA]">
-                  <X className="h-4.5 w-4.5" />
-                </button>
+      {isMounted && isEditDocOpen && typeof document !== 'undefined' && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsEditDocOpen(false)} />
+          <motion.div
+            initial={{ scale: 0.95, y: 15, opacity: 0 }}
+            animate={{ scale: 1, y: 0, opacity: 1 }}
+            exit={{ scale: 0.95, y: 15, opacity: 0 }}
+            className="relative bg-[#120D1F] border border-[rgba(255,255,255,0.15)] p-6 rounded-3xl shadow-[0_24px_50px_rgba(0,0,0,0.6)] w-full max-w-sm z-10 space-y-4 text-white"
+          >
+            <div className="flex justify-between items-center border-b border-[rgba(255,255,255,0.08)] pb-3">
+              <div className="flex items-center gap-2">
+                <Edit3 className="h-4 w-4 text-[#12D6C4]" />
+                <h4 className="text-lg font-serif font-bold text-[#F5F3FA]">Edit Doctor Profile</h4>
+              </div>
+              <button onClick={() => setIsEditDocOpen(false)} className="text-[rgba(245,243,250,0.4)] hover:text-[#F5F3FA] cursor-pointer">
+                <X className="h-4.5 w-4.5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleEditDoctorSubmit} className="space-y-4">
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Doctor Name</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="E.g., Dr. Jane Smith"
+                  value={editingDocName}
+                  onChange={(e) => setEditingDocName(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 font-bold text-white placeholder-[rgba(245,243,250,0.4)]"
+                />
               </div>
 
-              <form onSubmit={handleEditDoctorSubmit} className="space-y-4">
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Doctor Name</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="E.g., Dr. Jane Smith"
-                    value={editingDocName}
-                    onChange={(e) => setEditingDocName(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 font-bold text-white placeholder-[rgba(245,243,250,0.4)]"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block text-[#25D366]">Doctor WhatsApp Phone (10 Digits)</label>
+                <input
+                  type="tel"
+                  placeholder="E.g., 9833333333"
+                  value={editingDocPhone}
+                  onChange={(e) => setEditingDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                  className="block w-full text-xs glass-input p-2.5 font-mono font-bold text-[#25D366] placeholder-[rgba(245,243,250,0.4)] border-[#25D366]/30"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block text-[#25D366] flex items-center justify-between">
-                    <span>WhatsApp Phone Number</span>
-                    <span className="text-[8px] text-white/40 font-normal">Used for Referral Thank-You</span>
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="10-digit mobile number (e.g. 9833333333)"
-                    value={editingDocPhone}
-                    onChange={(e) => setEditingDocPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                    className="block w-full text-xs glass-input p-2.5 font-mono font-bold text-[#25D366] placeholder-[rgba(245,243,250,0.4)] border-[#25D366]/40"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Specialty</label>
+                <select
+                  value={editingDocSpecialty}
+                  onChange={(e) => setEditingDocSpecialty(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 cursor-pointer font-bold bg-[#120D1F] text-[#F5F3FA]"
+                >
+                  <option value="Orthopedics & Spine">Orthopedics & Spine</option>
+                  <option value="Neurology & Rehab">Neurology & Rehab</option>
+                  <option value="Rheumatology Specialists">Rheumatology</option>
+                  <option value="Cardiology & Sports">Cardiology & Sports</option>
+                  <option value="Pediatrics Rehab">Pediatrics Rehab</option>
+                  <option value="General Practice">General Practice</option>
+                </select>
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Specialty</label>
-                  <select
-                    value={editingDocSpecialty}
-                    onChange={(e) => setEditingDocSpecialty(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 cursor-pointer font-bold bg-[#120D1F] text-[#F5F3FA]"
-                  >
-                    <option value="Orthopedics & Spine">Orthopedics & Spine</option>
-                    <option value="Neurology & Rehab">Neurology & Rehab</option>
-                    <option value="Rheumatology Specialists">Rheumatology</option>
-                    <option value="Cardiology & Sports">Cardiology & Sports</option>
-                    <option value="Pediatrics Rehab">Pediatrics Rehab</option>
-                    <option value="General Practice">General Practice</option>
-                  </select>
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Clinic / Hospital</label>
+                <input
+                  type="text"
+                  placeholder="E.g., City Bone & Joint Clinic"
+                  value={editingDocClinic}
+                  onChange={(e) => setEditingDocClinic(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Clinic / Hospital</label>
-                  <input
-                    type="text"
-                    placeholder="E.g., City Bone & Joint Clinic"
-                    value={editingDocClinic}
-                    onChange={(e) => setEditingDocClinic(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
-                  />
-                </div>
+              <div className="space-y-1">
+                <label className="eyebrow text-[9px] block">Email Address</label>
+                <input
+                  type="email"
+                  placeholder="E.g., doctor@email.com"
+                  value={editingDocEmail}
+                  onChange={(e) => setEditingDocEmail(e.target.value)}
+                  className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
+                />
+              </div>
 
-                <div className="space-y-1">
-                  <label className="eyebrow text-[9px] block">Email Address</label>
-                  <input
-                    type="email"
-                    placeholder="E.g., doctor@email.com"
-                    value={editingDocEmail}
-                    onChange={(e) => setEditingDocEmail(e.target.value)}
-                    className="block w-full text-xs glass-input p-2.5 font-medium placeholder-[rgba(245,243,250,0.4)]"
-                  />
-                </div>
-
-                <div className="flex gap-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditDocOpen(false)}
-                    className="flex-1 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors cursor-pointer text-[rgba(245,243,250,0.8)]"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSavingEditDoc}
-                    className="flex-1 py-2.5 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0 flex items-center justify-center gap-1.5"
-                  >
-                    {isSavingEditDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                    {isSavingEditDoc ? 'Saving...' : 'Save Changes'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              <div className="flex gap-3 pt-3 border-t border-[rgba(255,255,255,0.08)]">
+                <button
+                  type="button"
+                  onClick={() => setIsEditDocOpen(false)}
+                  className="flex-1 py-2.5 border border-[rgba(255,255,255,0.1)] hover:bg-[rgba(255,255,255,0.04)] text-xs font-bold rounded-xl transition-colors cursor-pointer text-[rgba(245,243,250,0.8)]"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingEditDoc}
+                  className="flex-1 py-2.5 bg-[#12D6C4] hover:bg-[#0FBDAE] text-[#06231D] text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-[0_0_20px_rgba(18,214,196,0.3)] border-0 flex items-center justify-center gap-1.5"
+                >
+                  {isSavingEditDoc ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                  {isSavingEditDoc ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>,
+        document.body
+      )}
 
       <CreatePatientModal 
         isOpen={isCreatePatientModalOpen} 
