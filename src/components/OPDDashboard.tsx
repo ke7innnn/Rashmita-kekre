@@ -255,9 +255,11 @@ export default function OPDDashboard({ onManageAppointment }: OPDDashboardProps 
     ? Math.round(waitTimes.reduce((acc: number, val: number) => acc + val, 0) / waitTimes.length) 
     : 0;
 
-  const filteredAppointments = appointmentsList.filter((app: any) => {
-    const matchesSearch = app.patient.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      app.patient.phone.includes(searchQuery);
+  const filteredAppointments = (appointmentsList || []).filter((app: any) => {
+    const q = (searchQuery || '').trim().toLowerCase();
+    const name = (app.patient?.fullName || '').toLowerCase();
+    const phone = (app.patient?.phone || '');
+    const matchesSearch = name.includes(q) || phone.includes(q);
 
     if (!matchesSearch) return false;
     if (selectedTimeSegment === 'ALL') return true;

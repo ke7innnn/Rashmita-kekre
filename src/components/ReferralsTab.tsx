@@ -293,9 +293,11 @@ export default function ReferralsTab({ onViewPatient }: Props) {
     }
   };
 
-  const assignablePatients = patients.filter((p: any) => {
-    const query = patientSearch.toLowerCase();
-    const matchesQuery = p.fullName.toLowerCase().includes(query) || p.phone.includes(query);
+  const assignablePatients = (patients || []).filter((p: any) => {
+    const query = (patientSearch || '').trim().toLowerCase();
+    const name = (p.fullName || '').toLowerCase();
+    const phone = (p.phone || '');
+    const matchesQuery = name.includes(query) || phone.includes(query);
     const notAlreadyReferredByThisDoc = p.referringDoctor !== isAssigningPatientToDoc;
     return matchesQuery && notAlreadyReferredByThisDoc;
   });
@@ -570,7 +572,7 @@ export default function ReferralsTab({ onViewPatient }: Props) {
                               ))
                             )}
                             
-                            {patientSearch.trim().length > 0 && !assignablePatients.some((p: any) => p.fullName.toLowerCase() === patientSearch.trim().toLowerCase()) && (
+                            {patientSearch.trim().length > 0 && !assignablePatients.some((p: any) => (p.fullName || '').toLowerCase() === patientSearch.trim().toLowerCase()) && (
                               <button
                                 onClick={() => setIsCreatePatientModalOpen(true)}
                                 className="w-full text-left p-2 mt-1 border border-[rgba(18,214,196,0.3)] bg-[rgba(18,214,196,0.1)] hover:bg-[rgba(18,214,196,0.2)] rounded-lg flex items-center gap-2 text-xs font-bold text-[#12D6C4] transition-colors cursor-pointer"

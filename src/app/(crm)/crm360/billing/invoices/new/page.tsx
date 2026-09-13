@@ -63,14 +63,21 @@ function InvoiceBuilderContent() {
 
       if (patientsRes.ok) {
         const patientList = await patientsRes.json();
-        setPatients(patientList);
+        const list = Array.isArray(patientList) ? patientList : [];
+        setPatients(list);
         if (patientIdParam) {
-          const match = patientList.find((p: any) => p.id === patientIdParam);
+          const match = list.find((p: any) => p.id === patientIdParam);
           if (match) setSelectedPatient(match);
         }
       }
-      if (plansRes.ok) setPlans(await plansRes.json());
-      if (consumablesRes.ok) setConsumables(await consumablesRes.json());
+      if (plansRes.ok) {
+        const planList = await plansRes.json();
+        setPlans(Array.isArray(planList) ? planList : []);
+      }
+      if (consumablesRes.ok) {
+        const consList = await consumablesRes.json();
+        setConsumables(Array.isArray(consList) ? consList : []);
+      }
     } catch (e) {
       console.error('Error fetching builder initial data:', e);
     }
@@ -89,11 +96,12 @@ function InvoiceBuilderContent() {
       const appRes = await fetch(`/api/appointments?patientId=${patientId}&status=COMPLETED`);
       if (appRes.ok) {
         const appData = await appRes.json();
-        setCompletedAppointments(appData);
+        const appList = Array.isArray(appData) ? appData : [];
+        setCompletedAppointments(appList);
 
         // Pre-populate suggestions for unbilled appointments
         const appMap: Record<string, string> = {};
-        appData.forEach((app: any) => {
+        appList.forEach((app: any) => {
           const suggested = suggestPlanFromModalities(app.treatmentType, plans);
           if (suggested) {
             appMap[app.id] = suggested.id;
@@ -109,11 +117,14 @@ function InvoiceBuilderContent() {
   };
 
   const filteredPatients = useMemo(() => {
-    if (!patientSearch) return patients.slice(0, 5);
-    return patients.filter(p =>
-      p.fullName.toLowerCase().includes(patientSearch.toLowerCase()) ||
-      p.phone.includes(patientSearch)
-    ).slice(0, 8);
+    const list = Array.isArray(patients) ? patients : [];
+    const query = (patientSearch || '').trim().toLowerCase();
+    if (!query) return list.slice(0, 6);
+    return list.filter(p => {
+      const name = (p.fullName || '').toLowerCase();
+      const phone = (p.phone || '');
+      return name.includes(query) || phone.includes(query);
+    }).slice(0, 8);
   }, [patients, patientSearch]);
 
   // Add Treatment Plan Line (Walk-in Rate)
@@ -400,8 +411,8 @@ function InvoiceBuilderContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-3.5 bg-white/[0.04] border border-white/30 rounded-xl">
                   <div>
-                    <h4 className="text-sm font-bold text-white">{selectedPatient.fullName}</h4>
-                    <p className="text-xs text-white/50">{selectedPatient.phone}</p>
+                    <h4 className="text-sm font-bold text-white">{selectedPatient.fullName || 'Unnamed Patient'}</h4>
+                    <p className="text-xs text-white/50">{selectedPatient.phone || 'No phone number'}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -454,8 +465,8 @@ function InvoiceBuilderContent() {
                       className="p-3 bg-white/[0.03] hover:bg-white/[0.07] border border-white/5 rounded-xl cursor-pointer transition flex items-center justify-between"
                     >
                       <div>
-                        <p className="text-xs font-semibold text-white">{p.fullName}</p>
-                        <p className="text-[10px] text-white/40">{p.phone}</p>
+                        <p className="text-xs font-semibold text-white">{p.fullName || 'Unnamed Patient'}</p>
+                        <p className="text-[10px] text-white/40">{p.phone || 'No phone number'}</p>
                       </div>
                       <Plus className="w-4 h-4 text-white" />
                     </div>
