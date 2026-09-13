@@ -205,14 +205,14 @@ function buildFitness(doc: any, d: CertificateData, sigPath: string | null, stam
   renderTitleBlock(doc, 'FITNESS CERTIFICATE', 'To Whomsoever It May Concern', 154);
 
   const pName = d.patientName || 'Malin Fernandes';
-  const ageStr = d.age ? `, aged ${d.age} years,` : ', aged 30 years,';
+  const ageStr = d.age ? `, aged ${d.age} years,` : '';
 
   doc.y = 208;
   doc.x = LEFT_X;
   doc.font('Helvetica').fontSize(10).fillColor(BODY_SLATE)
     .text('This is to certify that Mr./Ms. ', LEFT_X, doc.y, { continued: true, width: USABLE_W, lineGap: 3.5 })
     .font('Helvetica-Bold').fillColor(DARK_SLATE).text(pName, { continued: true })
-    .font('Helvetica').fillColor(BODY_SLATE).text(`${ageStr} has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy & Craniosacral Therapy Clinic.`);
+    .font('Helvetica').fillColor(BODY_SLATE).text(`${ageStr ? `${ageStr} ` : ' '}has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy & Craniosacral Therapy Clinic.`);
   doc.moveDown(0.8);
 
   doc.font('Helvetica').fontSize(10).fillColor(BODY_SLATE)
@@ -273,7 +273,7 @@ function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | n
   renderTitleBlock(doc, 'TREATMENT & PAYMENT CERTIFICATE', 'To Whomsoever It May Concern', 154);
 
   const pName = d.patientName || 'Malin Fernandes';
-  const ageStr = d.age ? `, aged ${d.age} years,` : ', aged 35 years,';
+  const ageStr = d.age ? `, aged ${d.age} years,` : '';
   const diagStr = d.diagnosis || 'Cervical Spondylosis / Musculoskeletal Pain';
 
   doc.y = 208;
@@ -281,7 +281,7 @@ function buildTreatmentPayment(doc: any, d: CertificateData, sigPath: string | n
   doc.font('Helvetica').fontSize(10).fillColor(BODY_SLATE)
     .text('This is to certify that Mr./Ms. ', LEFT_X, doc.y, { continued: true, width: USABLE_W, lineGap: 3.5 })
     .font('Helvetica-Bold').fillColor(DARK_SLATE).text(pName, { continued: true })
-    .font('Helvetica').fillColor(BODY_SLATE).text(`${ageStr} was treated at Health 360 Physiotherapy & Craniosacral Therapy Clinic, Vasai West for `)
+    .font('Helvetica').fillColor(BODY_SLATE).text(`${ageStr ? `${ageStr} ` : ' '}was treated at Health 360 Physiotherapy & Craniosacral Therapy Clinic, Vasai West for `)
     .font('Helvetica-Bold').fillColor(DARK_SLATE).text(diagStr, { continued: true })
     .font('Helvetica').fillColor(BODY_SLATE).text('.');
   doc.moveDown(0.9);
@@ -338,14 +338,14 @@ function buildUnfitness(doc: any, d: CertificateData, sigPath: string | null, st
   renderTitleBlock(doc, 'UNFITNESS FOR WORK CERTIFICATE', 'To Whomsoever It May Concern', 154);
 
   const pName = d.patientName || 'Malin Fernandes';
-  const ageStr = d.age ? `, aged ${d.age} years,` : ', aged 35 years,';
+  const ageStr = d.age ? `, aged ${d.age} years,` : '';
 
   doc.y = 208;
   doc.x = LEFT_X;
   doc.font('Helvetica').fontSize(10).fillColor(BODY_SLATE)
     .text('This is to certify that Mr./Ms. ', LEFT_X, doc.y, { continued: true, width: USABLE_W, lineGap: 3.5 })
     .font('Helvetica-Bold').fillColor(DARK_SLATE).text(pName, { continued: true })
-    .font('Helvetica').fillColor(BODY_SLATE).text(`${ageStr} has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy & Craniosacral Therapy Clinic.`);
+    .font('Helvetica').fillColor(BODY_SLATE).text(`${ageStr ? `${ageStr} ` : ' '}has undergone physiotherapy assessment and/or treatment at Health 360 Physiotherapy & Craniosacral Therapy Clinic.`);
   doc.moveDown(0.9);
 
   doc.font('Helvetica').fontSize(10).fillColor(BODY_SLATE)
@@ -412,7 +412,7 @@ function buildDischargeSummary(doc: any, d: CertificateData, sigPath: string | n
   };
 
   metaRow('Patient Name:', d.patientName || 'Malin Fernandes', 0);
-  metaRow('Age / Gender:', `${d.age ? `${d.age} Yrs` : '38 Yrs'} / ${d.gender || 'Female'}`, 1);
+  metaRow('Age / Gender:', `${d.age ? `${d.age} Yrs` : '—'} / ${d.gender || '—'}`, 1);
   metaRow('Diagnosis:', d.diagnosis || 'Frozen Shoulder (Adhesive Capsulitis)', 2);
   metaRow('Date of Initial Assessment:', d.startDate || '10 Aug 2026', 3);
   metaRow('Date of Discharge:', d.endDate || '10 Sept 2026', 4);
