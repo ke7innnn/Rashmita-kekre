@@ -160,11 +160,20 @@ export default function ReferralsTab({ onViewPatient }: Props) {
       docNameLower === 'none'
     ) return;
 
-    if (!docMap[docName]) {
-      const meta = getDoctorMetadata(docName);
-      docMap[docName] = {
+    // Case-insensitive / normalized match against registered doctors in docMap
+    const matchedKey = Object.keys(docMap).find(
+      (k) =>
+        k.toLowerCase().trim() === docNameLower ||
+        k.toLowerCase().replace(/[^a-z]/g, '') === docNameLower.replace(/[^a-z]/g, '')
+    );
+
+    const targetKey = matchedKey || docName;
+
+    if (!docMap[targetKey]) {
+      const meta = getDoctorMetadata(targetKey);
+      docMap[targetKey] = {
         id: meta.id,
-        name: docName,
+        name: targetKey,
         specialty: meta.specialty,
         clinic: meta.clinic,
         email: meta.email,
@@ -176,14 +185,14 @@ export default function ReferralsTab({ onViewPatient }: Props) {
       };
     }
 
-    docMap[docName].patientsCount += 1;
-    docMap[docName].referredPatients.push(p);
+    docMap[targetKey].patientsCount += 1;
+    docMap[targetKey].referredPatients.push(p);
 
     if (p.notes?.includes('Thank-You Note Sent') || p.notes?.includes('[x] Onboarding Thank-You')) {
-      docMap[docName].thankYouSentCount += 1;
+      docMap[targetKey].thankYouSentCount += 1;
     }
     if (p.notes?.includes('Discharge Report Sent') || p.notes?.includes('[x] Onboarding Discharge')) {
-      docMap[docName].dischargeReportCount += 1;
+      docMap[targetKey].dischargeReportCount += 1;
     }
   });
 
