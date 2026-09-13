@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Save, UserCheck, AlertCircle, Ban, ShieldCheck } from 'lucide-react';
 
@@ -51,6 +51,16 @@ export default function EditPatientModal({
   onSuccess
 }: EditPatientModalProps) {
   const queryClient = useQueryClient();
+
+  const { data: customDoctors = [] } = useQuery({
+    queryKey: ['referring-doctors'],
+    queryFn: async () => {
+      const res = await fetch('/api/referring-doctors');
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: isOpen
+  });
 
   const [fullName, setFullName] = useState('');
   const [gender, setGender] = useState('Female');
@@ -391,11 +401,19 @@ export default function EditPatientModal({
                 </label>
                 <input
                   type="text"
+                  list="edit-referring-doctors"
                   value={referringDoctor}
                   onChange={(e) => setReferringDoctor(e.target.value)}
                   placeholder="e.g. Dr. Mehta / Self / Direct"
                   className="w-full text-xs bg-white/[0.04] border border-white/15 rounded-xl p-2.5 text-white font-semibold focus:outline-none focus:border-[#12D6C4]"
                 />
+                <datalist id="edit-referring-doctors">
+                  {customDoctors.map((doc: any) => (
+                    <option key={doc.id || doc.name} value={doc.name}>
+                      {doc.specialty ? `${doc.name} (${doc.specialty})` : doc.name}
+                    </option>
+                  ))}
+                </datalist>
               </div>
             </div>
 
