@@ -455,6 +455,13 @@ export default function ReceiptDocument({
             </div>
             <div className="bill-sign-name">Dr. Rashmita Karvir Kekre</div>
             <div className="bill-sign-role">Authorized Signatory / Consultant</div>
+            <div className="bill-stamp-container">
+              <img
+                src="/signatures/dr-rashmita-stamp.png"
+                alt="Doctor Registration Stamp"
+                className="bill-stamp-img"
+              />
+            </div>
           </div>
         </div>
 
@@ -858,6 +865,19 @@ const CSS = `
   font-size: 7.5pt;
   color: #64748b;
 }
+.bill-stamp-container {
+  margin-top: 1.5mm;
+  display: flex;
+  justify-content: flex-end;
+}
+.bill-stamp-img {
+  height: 9.5mm;
+  width: auto;
+  max-width: 42mm;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
 
 /* 8. Footer */
 .bill-footer {
@@ -1001,6 +1021,14 @@ const CSS = `
     min-width: 0 !important;
     align-self: flex-end !important;
   }
+  .bill-stamp-container {
+    justify-content: flex-end !important;
+    margin-top: 4px !important;
+  }
+  .bill-stamp-img {
+    height: 30px !important;
+    max-width: 130px !important;
+  }
 }
 
 /* ================= PRINT RULES ================= */
@@ -1130,6 +1158,19 @@ const CSS = `
     text-align: right !important;
     min-width: 60mm !important;
     align-self: flex-end !important;
+  }
+  .bill-stamp-container {
+    display: flex !important;
+    justify-content: flex-end !important;
+    margin-top: 1.5mm !important;
+  }
+  .bill-stamp-img {
+    height: 9mm !important;
+    width: auto !important;
+    max-width: 40mm !important;
+    object-fit: contain !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
   .editable-field {
     outline: none !important;
