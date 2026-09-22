@@ -6,15 +6,15 @@ import {
   Download, 
   CheckCircle2, 
   Zap, 
-  ShieldCheck, 
   HardDrive,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Apple
 } from 'lucide-react';
-import { usePWAInstall } from './PWAInstallProvider';
+import { usePWAInstall, AndroidIcon } from './PWAInstallProvider';
 
 export default function DownloadAppSection() {
-  const { installApp, isInstalled, isIOS, isAndroid } = usePWAInstall();
+  const { installAndroid, installIOS, installApp, isInstalled, isIOS, isAndroid } = usePWAInstall();
 
   return (
     <section id="download-app" className="relative py-24 px-6 overflow-hidden bg-[#0A0910] text-white">
@@ -45,7 +45,7 @@ export default function DownloadAppSection() {
             </h2>
 
             <p className="text-sm sm:text-base text-white/70 max-w-xl mx-auto lg:mx-0 leading-relaxed font-normal">
-              No APK files to download, no storage clutter, and no App Store search. Install the official Health 360 app icon directly to your home screen with a single tap.
+              No APK files to download, no storage clutter, and no App Store search. Install the official Health 360 app icon directly to your mobile home screen in seconds.
             </p>
 
             {/* Feature Points Grid */}
@@ -60,7 +60,7 @@ export default function DownloadAppSection() {
 
               <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-xs text-left">
                 <div className="w-7 h-7 rounded-lg bg-[#12D6C4]/20 text-[#12D6C4] flex items-center justify-center mb-2">
-                  <Smartphone className="w-3.5 h-3.5" />
+                  <Apple className="w-3.5 h-3.5" />
                 </div>
                 <div className="font-bold text-xs text-white">2-Tap on iOS</div>
                 <div className="text-[11px] text-white/50">Via Safari Share</div>
@@ -75,23 +75,91 @@ export default function DownloadAppSection() {
               </div>
             </div>
 
-            {/* Primary Action Button */}
-            <div className="pt-4 flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start">
+            {/* Detected Device Status Pill */}
+            <div className="pt-2 flex items-center justify-center lg:justify-start">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white/[0.05] border border-white/10 text-white/80">
+                <span className="w-2 h-2 rounded-full bg-[#12D6C4] animate-pulse" />
+                <span>
+                  {isIOS && '📱 Detected: Apple iPhone / iPad (iOS)'}
+                  {isAndroid && '🤖 Detected: Android Phone'}
+                  {!isIOS && !isAndroid && '💻 Detected: Desktop / Laptop Browser'}
+                </span>
+                {isInstalled && (
+                  <span className="text-emerald-400 font-bold ml-1">· Installed ✓</span>
+                )}
+              </div>
+            </div>
+
+            {/* Both Action Buttons (Android & iOS Side-by-Side) */}
+            <div className="pt-1 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 justify-center lg:justify-start">
+              
+              {/* Android Button */}
               <button
-                onClick={installApp}
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-gradient-to-r from-[#0284c7] to-[#12D6C4] hover:opacity-95 text-white font-extrabold text-sm shadow-xl shadow-[#0284c7]/30 flex items-center justify-center gap-3 transition-all duration-200 active:scale-[0.98] cursor-pointer"
+                onClick={installAndroid}
+                className={`group relative px-6 py-4 rounded-2xl font-extrabold text-sm flex items-center justify-between sm:justify-center gap-3 transition-all duration-200 active:scale-[0.98] cursor-pointer ${
+                  isAndroid 
+                    ? 'bg-gradient-to-r from-[#0284c7] to-[#12D6C4] text-white shadow-xl shadow-[#0284c7]/30 border-none' 
+                    : 'bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/15'
+                }`}
               >
-                <Download className="w-5 h-5" />
-                {isInstalled ? 'App Already Installed ✓' : (isIOS ? 'Install on iPhone' : (isAndroid ? 'Install on Android' : 'Download Mobile App'))}
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isAndroid ? 'bg-white/20 text-white' : 'bg-[#12D6C4]/20 text-[#12D6C4]'}`}>
+                    <AndroidIcon className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-sm leading-tight flex items-center gap-1.5">
+                      Install on Android
+                      {isAndroid && (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] bg-white/20 font-bold uppercase tracking-wider">
+                          For You
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-white/60 font-normal">1-Tap Direct Install</div>
+                  </div>
+                </div>
+                <Download className="w-4 h-4 text-white/70 group-hover:translate-y-0.5 transition" />
               </button>
 
+              {/* iPhone / iOS Button */}
+              <button
+                onClick={installIOS}
+                className={`group relative px-6 py-4 rounded-2xl font-extrabold text-sm flex items-center justify-between sm:justify-center gap-3 transition-all duration-200 active:scale-[0.98] cursor-pointer ${
+                  isIOS 
+                    ? 'bg-gradient-to-r from-[#0284c7] to-[#12D6C4] text-white shadow-xl shadow-[#0284c7]/30 border-none' 
+                    : 'bg-white/[0.06] hover:bg-white/[0.1] text-white border border-white/15'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-xl flex items-center justify-center ${isIOS ? 'bg-white/20 text-white' : 'bg-white/10 text-white'}`}>
+                    <Apple className="w-4 h-4" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-bold text-sm leading-tight flex items-center gap-1.5">
+                      Install on iPhone
+                      {isIOS && (
+                        <span className="px-1.5 py-0.2 rounded text-[10px] bg-white/20 font-bold uppercase tracking-wider">
+                          For You
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-white/60 font-normal">2-Tap Safari Guide</div>
+                  </div>
+                </div>
+                <Download className="w-4 h-4 text-white/70 group-hover:translate-y-0.5 transition" />
+              </button>
+
+            </div>
+
+            {/* Secondary App Preview Link */}
+            <div className="flex items-center justify-center lg:justify-start gap-4 pt-1">
               <a
                 href="/app"
                 target="_blank"
-                className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white/80 hover:text-white font-bold text-sm flex items-center justify-center gap-2 transition"
+                className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-[#12D6C4] transition font-semibold"
               >
-                <span>Launch App Preview</span>
-                <ArrowRight className="w-4 h-4 text-white/50" />
+                <span>Preview standalone app shell</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </a>
             </div>
 
@@ -157,7 +225,7 @@ export default function DownloadAppSection() {
                         <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Offline cache &amp; fast launch
                       </div>
                       <div className="text-xs text-white/90 flex items-center gap-1.5 font-medium">
-                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> No browser address bar
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" /> Zero storage clutter (&lt; 1MB)
                       </div>
                     </div>
                   </div>
