@@ -3,15 +3,16 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { 
   Apple, 
-  Smartphone, 
   Share2, 
   PlusSquare, 
   X, 
   CheckCircle2, 
-  Sparkles, 
   MoreVertical,
   Download,
-  HelpCircle
+  ArrowDown,
+  ExternalLink,
+  Copy,
+  Sparkles
 } from 'lucide-react';
 
 export const AndroidIcon = ({ className }: { className?: string }) => (
@@ -24,6 +25,7 @@ interface PWAContextType {
   isInstallable: boolean;
   isInstalled: boolean;
   isIOS: boolean;
+  isIOSSafari: boolean;
   isAndroid: boolean;
   installApp: () => Promise<void>;
   installAndroid: () => Promise<void>;
@@ -35,6 +37,7 @@ const PWAContext = createContext<PWAContextType>({
   isInstallable: false,
   isInstalled: false,
   isIOS: false,
+  isIOSSafari: false,
   isAndroid: false,
   installApp: async () => {},
   installAndroid: async () => {},
@@ -49,9 +52,15 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [isIOSSafari, setIsIOSSafari] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+
+  // Overlays state
+  const [showSafariArrowGuide, setShowSafariArrowGuide] = useState(false);
+  const [showChromeSwitchModal, setShowChromeSwitchModal] = useState(false);
+  const [showGeneralModal, setShowGeneralModal] = useState(false);
   const [modalPlatform, setModalPlatform] = useState<'ios' | 'android'>('ios');
-  const [showModal, setShowModal] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     // 1. Register Service Worker
@@ -61,29 +70,38 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
       });
     }
 
-    // 2. Detect OS accurately
+    // 2. Accurate Browser & OS Detection
     if (typeof window !== 'undefined') {
       const userAgent = window.navigator.userAgent.toLowerCase();
       const isIosDevice = 
         /iphone|ipad|ipod/.test(userAgent) || 
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-      const isAndroidDevice = /android/.test(userAgent);
       
-      setIsIOS(isIosDevice);
-      setIsAndroid(isAndroidDevice);
-      if (isAndroidDevice) {
-        setModalPlatform('android');
-      } else {
-        setModalPlatform('ios');
-      }
+      // Check if true Apple Safari vs Chrome/Instagram/WhatsApp webview
+      const isTrueSafari = 
+        isIosDevice && 
+        /safari/.test(userAgent) && 
+        !/crios|fxios|edgios|instagram|fban|fbav|whatsapp|line|micromessenger/.test(userAgent);
+      
+      const isAndroidDevice = /android/.test(userAgent);
 
-      // Check if already running in standalone PWA app mode
+      setIsIOS(isIosDevice);
+      setIsIOSSafari(isTrueSafari);
+      setIsAndroid(isAndroidDevice);
+      setModalPlatform(isAndroidDevice ? 'android' : 'ios');
+
+      // Check if running in standalone PWA app mode
       const isStandalone = 
         window.matchMedia('(display-mode: standalone)').matches ||
         (window.navigator as any).standalone === true;
       setIsInstalled(isStandalone);
 
-      // 3. Listen to beforeinstallprompt (Android / Chrome native 1-tap)
+      // Automatic trigger if user just arrived in Safari from Chrome / WhatsApp redirect (?install=ios)
+      if (window.location.search.includes('install=ios') && isTrueSafari) {
+        setShowSafariArrowGuide(true);
+      }
+
+      // 3. Android beforeinstallprompt listener
       const handleBeforeInstallPrompt = (e: Event) => {
         e.preventDefault();
         setDeferredPrompt(e);
@@ -104,7 +122,7 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
     }
   }, []);
 
-  // Android-specific installation trigger
+  // Android installation
   const installAndroid = async () => {
     if (deferredPrompt) {
       try {
@@ -119,23 +137,43 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
         console.warn('Native prompt error:', err);
       }
     }
-    // If native prompt is not available (e.g. webview, already prompted, or non-Chrome), open the guided modal
     setModalPlatform('android');
-    setShowModal(true);
+    setShowGeneralModal(true);
   };
 
-  // iOS-specific installation trigger (Always opens guided 2-tap modal since Apple does not permit JS install prompt)
+  // iOS installation with automated Chrome-to-Safari prompt & bouncing arrow
   const installIOS = () => {
-    setModalPlatform('ios');
-    setShowModal(true);
+    if (isIOSSafari) {
+      // Already in Safari! Show the animated bouncing arrow pointing right to the Share button
+      setShowSafariArrowGuide(true);
+    } else if (isIOS) {
+      // User is on iPhone in Chrome, WhatsApp, or Instagram!
+      // Trigger Apple's special x-safari-https:// URL scheme to trigger "Open in Safari?" system dialog
+      const host = window.location.host;
+      const safariUrl = `x-safari-https://${host}/?install=ios#download-app`;
+      setShowChromeSwitchModal(true);
+      
+      // Trigger the prompt
+      try {
+        window.location.href = safariUrl;
+      } catch (e) {
+        console.warn('Error launching safari url:', e);
+      }
+    } else {
+      // Desktop Mac/PC or other browser
+      setModalPlatform('ios');
+      setShowGeneralModal(true);
+    }
   };
 
-  // Universal auto-installer (detects OS and routes appropriately)
+  // Universal installer
   const installApp = async () => {
-    if (isAndroid || deferredPrompt) {
+    if (isAndroid) {
       await installAndroid();
-    } else {
+    } else if (isIOS) {
       installIOS();
+    } else {
+      setShowGeneralModal(true);
     }
   };
 
@@ -145,7 +183,15 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
     } else {
       setModalPlatform(isAndroid ? 'android' : 'ios');
     }
-    setShowModal(true);
+    setShowGeneralModal(true);
+  };
+
+  const copyClinicUrl = () => {
+    if (typeof navigator !== 'undefined') {
+      navigator.clipboard.writeText('https://www.thehealth360.in');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    }
   };
 
   return (
@@ -154,6 +200,7 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
         isInstallable,
         isInstalled,
         isIOS,
+        isIOSSafari,
         isAndroid,
         installApp,
         installAndroid,
@@ -163,43 +210,187 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
     >
       {children}
 
-      {/* Guided Install Modal with Tabs for iOS & Android */}
-      {showModal && (
+      {/* ========================================================================= */}
+      {/* 1. SAFARI ANIMATED BOUNCING ARROW OVERLAY (POINTING AT BOTTOM BAR)        */}
+      {/* ========================================================================= */}
+      {showSafariArrowGuide && (
+        <div 
+          className="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex flex-col justify-end items-center pb-6 sm:pb-8 px-4 animate-in fade-in duration-300"
+          onClick={() => setShowSafariArrowGuide(false)}
+        >
+          {/* Card Above Arrow */}
+          <div 
+            className="w-full max-w-sm bg-[#0F0E17] border-2 border-[#12D6C4]/50 rounded-3xl p-5 text-white shadow-2xl shadow-[#12D6C4]/30 relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Background Radial Glow */}
+            <div className="absolute top-0 right-0 w-44 h-44 bg-[#0284c7]/25 rounded-full blur-[60px] pointer-events-none" />
+
+            {/* Header */}
+            <div className="flex items-center justify-between mb-3.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-white p-1 flex items-center justify-center shrink-0 border border-white/20">
+                  <img src="/icons/icon-192x192.png" alt="Health 360" className="w-full h-full object-contain" />
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-sm text-white leading-tight">
+                    Add to iPhone Screen
+                  </h4>
+                  <p className="text-[11px] text-[#12D6C4] font-semibold">
+                    Follow the arrow below
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setShowSafariArrowGuide(false)}
+                className="w-7 h-7 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition cursor-pointer"
+                aria-label="Close guide"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Step 1 Highlight */}
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-[#0284c7]/25 to-[#12D6C4]/25 border border-[#12D6C4]/40 mb-2.5">
+              <div className="text-[10px] font-black tracking-wider text-[#12D6C4] uppercase mb-1">
+                Step 1: Tap Share Icon Below
+              </div>
+              <p className="text-xs text-white/95 font-medium leading-relaxed">
+                Tap the <Share2 className="w-4 h-4 text-[#38bdf8] inline mx-1 align-sub" /> <strong>Share button</strong> in the middle of your Safari bottom bar.
+              </p>
+            </div>
+
+            {/* Step 2 Highlight */}
+            <div className="p-3 rounded-2xl bg-white/5 border border-white/10 mb-4">
+              <div className="text-[10px] font-bold tracking-wider text-white/60 uppercase mb-1">
+                Step 2: Add to Home Screen
+              </div>
+              <p className="text-xs text-white/80 font-medium leading-relaxed">
+                Scroll down the menu list and tap <PlusSquare className="w-4 h-4 text-emerald-400 inline mx-1 align-sub" /> <strong>&quot;Add to Home Screen&quot;</strong>.
+              </p>
+            </div>
+
+            {/* Close / Got it button */}
+            <button
+              onClick={() => setShowSafariArrowGuide(false)}
+              className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <CheckCircle2 className="w-4 h-4 text-[#12D6C4]" /> Got It, I See The Button
+            </button>
+          </div>
+
+          {/* Giant Animated Bouncing Arrow directly pointing to the Safari bottom toolbar center */}
+          <div className="mt-3 flex flex-col items-center animate-bounce text-[#12D6C4] drop-shadow-[0_0_16px_rgba(18,214,196,0.9)] pointer-events-none">
+            <span className="text-[11px] font-black uppercase tracking-widest text-white bg-black/90 px-3.5 py-1.5 rounded-full border border-[#12D6C4] shadow-lg mb-1.5 flex items-center gap-1">
+              Tap Share Button Below 👇
+            </span>
+            <ArrowDown className="w-10 h-10 stroke-[3.5] text-[#12D6C4]" />
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 2. CHROME-ON-IPHONE SWITCH MODAL (AUTOMATED PROMPT FALLBACK)             */}
+      {/* ========================================================================= */}
+      {showChromeSwitchModal && (
+        <div 
+          className="fixed inset-0 z-[99999] bg-black/85 backdrop-blur-md flex items-end sm:items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setShowChromeSwitchModal(false)}
+        >
+          <div 
+            className="w-full max-w-md bg-[#0F0E17] border border-white/10 rounded-3xl p-6 text-white shadow-2xl relative overflow-hidden"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Background Glow */}
+            <div className="absolute top-0 right-0 w-60 h-60 bg-[#0284c7]/20 rounded-full blur-[80px] pointer-events-none" />
+
+            <button
+              onClick={() => setShowChromeSwitchModal(false)}
+              className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            <div className="flex items-center gap-3.5 mb-4">
+              <div className="w-12 h-12 rounded-2xl bg-white p-1 shadow-lg border border-white/20 flex items-center justify-center shrink-0">
+                <img src="/icons/icon-192x192.png" alt="Health 360" className="w-full h-full object-contain" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-white">
+                  Switching to Safari...
+                </h3>
+                <p className="text-xs text-[#12D6C4] font-medium">
+                  Apple requires Safari to install Home Screen apps
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-white/5 border border-white/10 text-xs text-white/80 leading-relaxed mb-5 space-y-2">
+              <p className="flex items-center gap-2 font-bold text-white">
+                <Sparkles className="w-4 h-4 text-[#12D6C4]" /> Look for Apple’s prompt on your screen:
+              </p>
+              <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 text-center font-semibold text-white/90">
+                &ldquo;Open in Safari?&rdquo; &rarr; Tap <span className="text-[#38bdf8] font-bold">&ldquo;Open&rdquo;</span>
+              </div>
+              <p className="text-white/60 text-[11px]">
+                Once Safari opens, an animated arrow will show you exactly where to tap.
+              </p>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="space-y-2.5">
+              <a
+                href={typeof window !== 'undefined' ? `x-safari-https://${window.location.host}/?install=ios#download-app` : '#'}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#0284c7] to-[#12D6C4] hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-2 transition shadow-lg shadow-[#0284c7]/25 cursor-pointer"
+              >
+                <ExternalLink className="w-4 h-4" /> Open in Safari Now
+              </a>
+
+              <button
+                type="button"
+                onClick={copyClinicUrl}
+                className="w-full py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Copy className="w-3.5 h-3.5" />
+                {copied ? 'Website Link Copied! Paste in Safari' : 'Or Copy Link to Paste in Safari'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* 3. GENERAL MODAL (WITH TABS FOR DESKTOP / MANUAL BROWSING)               */}
+      {/* ========================================================================= */}
+      {showGeneralModal && (
         <div 
           className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
-          onClick={() => setShowModal(false)}
+          onClick={() => setShowGeneralModal(false)}
         >
           <div 
             className="w-full max-w-md bg-[#0F0E17] border border-white/10 rounded-3xl p-6 sm:p-7 text-white shadow-2xl relative overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Background Glow */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-[#0284c7]/20 rounded-full blur-[80px] pointer-events-none" />
 
-            {/* Close Button */}
             <button
-              onClick={() => setShowModal(false)}
+              onClick={() => setShowGeneralModal(false)}
               className="absolute top-5 right-5 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition cursor-pointer"
               aria-label="Close"
             >
               <X className="w-4 h-4" />
             </button>
 
-            {/* Header with App Icon */}
             <div className="flex items-center gap-3.5 mb-5">
               <div className="w-13 h-13 rounded-2xl bg-white p-1 shadow-lg border border-white/20 flex items-center justify-center shrink-0">
-                <img 
-                  src="/icons/icon-192x192.png" 
-                  alt="Health 360 App Icon" 
-                  className="w-full h-full object-contain"
-                />
+                <img src="/icons/icon-192x192.png" alt="Health 360" className="w-full h-full object-contain" />
               </div>
               <div>
-                <h3 className="font-extrabold text-base text-white flex items-center gap-1.5">
+                <h3 className="font-extrabold text-base text-white">
                   Install Health 360 App
                 </h3>
                 <p className="text-xs text-[#12D6C4] font-medium">
-                  Direct Home Screen App · No App Store / APK needed
+                  Direct Home Screen App · No Store / APK needed
                 </p>
               </div>
             </div>
@@ -235,10 +426,9 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
             {modalPlatform === 'ios' ? (
               <div className="space-y-3 mb-6">
                 <p className="text-xs text-white/70 leading-relaxed">
-                  Apple requires installing from <strong>Safari</strong> using 2 simple taps:
+                  On iPhone, install using <strong>Safari</strong>:
                 </p>
 
-                {/* Step 1 */}
                 <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
                   <div className="w-7 h-7 rounded-xl bg-[#0284c7]/20 text-[#0284c7] font-bold text-xs flex items-center justify-center shrink-0">
                     1
@@ -251,12 +441,11 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
                       </span>
                     </div>
                     <p className="text-white/60">
-                      Located in the Safari toolbar at the bottom of your iPhone.
+                      Located in the Safari toolbar at the bottom of your screen.
                     </p>
                   </div>
                 </div>
 
-                {/* Step 2 */}
                 <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
                   <div className="w-7 h-7 rounded-xl bg-[#12D6C4]/20 text-[#12D6C4] font-bold text-xs flex items-center justify-center shrink-0">
                     2
@@ -278,28 +467,26 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
               /* Android Instructions */
               <div className="space-y-3 mb-6">
                 <p className="text-xs text-white/70 leading-relaxed">
-                  On Android, install instantly in <strong>Google Chrome</strong> or <strong>Samsung Internet</strong>:
+                  On Android, install in <strong>Google Chrome</strong>:
                 </p>
 
-                {/* Step 1 */}
                 <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
                   <div className="w-7 h-7 rounded-xl bg-[#0284c7]/20 text-[#0284c7] font-bold text-xs flex items-center justify-center shrink-0">
                     1
                   </div>
                   <div className="flex-1 text-xs">
                     <div className="font-bold text-white mb-0.5 flex items-center gap-1.5">
-                      Tap the Menu (3 dots)
+                      Tap Menu (3 dots)
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-white/10 text-[11px] font-mono">
                         <MoreVertical className="w-3 h-3 text-[#0284c7] inline mr-0.5" /> Menu
                       </span>
                     </div>
                     <p className="text-white/60">
-                      Located in the top-right corner of Google Chrome.
+                      Top-right corner of Chrome.
                     </p>
                   </div>
                 </div>
 
-                {/* Step 2 */}
                 <div className="flex items-start gap-3 p-3.5 rounded-2xl bg-white/5 border border-white/10">
                   <div className="w-7 h-7 rounded-xl bg-[#12D6C4]/20 text-[#12D6C4] font-bold text-xs flex items-center justify-center shrink-0">
                     2
@@ -312,16 +499,15 @@ export function PWAInstallProvider({ children }: { children: React.ReactNode }) 
                       </span>
                     </div>
                     <p className="text-white/60">
-                      The Health 360 icon will be placed directly in your app drawer &amp; home screen!
+                      The Health 360 icon will be placed directly on your home screen!
                     </p>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Dismiss CTA */}
             <button
-              onClick={() => setShowModal(false)}
+              onClick={() => setShowGeneralModal(false)}
               className="w-full py-3.5 rounded-xl bg-gradient-to-r from-[#0284c7] to-[#12D6C4] hover:opacity-95 text-white font-bold text-xs transition shadow-lg shadow-[#0284c7]/25 flex items-center justify-center gap-2 cursor-pointer"
             >
               <CheckCircle2 className="w-4 h-4" /> Got It

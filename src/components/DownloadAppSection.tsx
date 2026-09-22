@@ -14,7 +14,7 @@ import {
 import { usePWAInstall, AndroidIcon } from './PWAInstallProvider';
 
 export default function DownloadAppSection() {
-  const { installAndroid, installIOS, installApp, isInstalled, isIOS, isAndroid } = usePWAInstall();
+  const { installAndroid, installIOS, installApp, isInstalled, isIOS, isIOSSafari, isAndroid } = usePWAInstall();
 
   return (
     <section id="download-app" className="relative py-24 px-6 overflow-hidden bg-[#0A0910] text-white">
@@ -62,8 +62,8 @@ export default function DownloadAppSection() {
                 <div className="w-7 h-7 rounded-lg bg-[#12D6C4]/20 text-[#12D6C4] flex items-center justify-center mb-2">
                   <Apple className="w-3.5 h-3.5" />
                 </div>
-                <div className="font-bold text-xs text-white">2-Tap on iOS</div>
-                <div className="text-[11px] text-white/50">Via Safari Share</div>
+                <div className="font-bold text-xs text-white">Visual Arrow Guide</div>
+                <div className="text-[11px] text-white/50">Follow the arrow on iOS</div>
               </div>
 
               <div className="p-3.5 rounded-2xl bg-white/[0.03] border border-white/5 backdrop-blur-xs text-left col-span-2 sm:col-span-1">
@@ -80,7 +80,8 @@ export default function DownloadAppSection() {
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium bg-white/[0.05] border border-white/10 text-white/80">
                 <span className="w-2 h-2 rounded-full bg-[#12D6C4] animate-pulse" />
                 <span>
-                  {isIOS && '📱 Detected: Apple iPhone / iPad (iOS)'}
+                  {isIOSSafari && '📱 Detected: Apple iPhone (Safari)'}
+                  {isIOS && !isIOSSafari && '📱 Detected: iPhone (Chrome / In-App)'}
                   {isAndroid && '🤖 Detected: Android Phone'}
                   {!isIOS && !isAndroid && '💻 Detected: Desktop / Laptop Browser'}
                 </span>
@@ -143,7 +144,9 @@ export default function DownloadAppSection() {
                         </span>
                       )}
                     </div>
-                    <div className="text-[11px] text-white/60 font-normal">2-Tap Safari Guide</div>
+                    <div className="text-[11px] text-white/60 font-normal">
+                      {isIOSSafari ? 'Tap for Arrow Guide' : (isIOS ? '1-Tap Switch to Safari' : 'Safari Visual Guide')}
+                    </div>
                   </div>
                 </div>
                 <Download className="w-4 h-4 text-white/70 group-hover:translate-y-0.5 transition" />
