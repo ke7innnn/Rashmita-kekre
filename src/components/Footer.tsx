@@ -49,11 +49,11 @@ export default function Footer() {
           <div className="footer-nav-column">
             <h4 className="footer-nav-heading">Say hello!</h4>
             <div className="footer-contact-pills">
+              <a href="tel:+918071583519" className="phone-pill-link">
+                <Phone size={14} /> +91 8071 583 519
+              </a>
               <a href="tel:+918482812859" className="phone-pill-link">
                 <Phone size={14} /> +91 84828 12859
-              </a>
-              <a href="tel:+919834848956" className="phone-pill-link">
-                <Phone size={14} /> +91 98348 48956
               </a>
             </div>
             <div className="footer-social-circles">

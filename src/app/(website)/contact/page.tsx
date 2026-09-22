@@ -155,11 +155,11 @@ export default function ContactPage() {
                     <div>
                       <p style={{ fontWeight: 500, marginBottom: '4px' }}>Phone</p>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                        <a href="tel:+919834848956" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500 }}>
-                          +91 98348 48956
+                        <a href="tel:+918071583519" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500 }}>
+                          +91 8071 583 519 (Clinic Desk)
                         </a>
                         <a href="tel:+918482812859" style={{ color: 'var(--muted-foreground)', fontSize: '0.95rem', fontWeight: 500 }}>
-                          +91 84828 12859
+                          +91 84828 12859 (Mobile / WhatsApp)
                         </a>
                       </div>
                     </div>
@@ -317,7 +317,7 @@ export default function ContactPage() {
                       </form>
 
                       <div className="split-card-link-btn" style={{ marginTop: '1.25rem' }}>
-                        Need urgent booking? <a href="tel:+919834848956">Call Us Now</a>
+                        Need urgent booking? <a href="tel:+918071583519">Call Us Now</a>
                       </div>
                     </>
                   )}

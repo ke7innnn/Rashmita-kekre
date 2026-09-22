@@ -639,13 +639,13 @@ export default function BookingModal({ onClose }: BookingPageProps) {
                       <p className="cst-cta-prompt">To reserve your Craniosacral Therapy assessment, contact our Vasai clinic desk directly:</p>
                       
                       <div className="cst-cta-buttons">
-                        <a href="tel:+919833333333" className="cst-primary-btn">
+                        <a href="tel:+918071583519" className="cst-primary-btn">
                           <Phone size={16} />
-                          Call Desk: +91 98333 33333
+                          Call Desk: +91 8071 583 519
                         </a>
 
                         <a 
-                          href="https://wa.me/919833333333?text=Hi%20Dr.%20Rashmita,%20I%20would%20like%20to%20inquire%20about%20a%20Biodynamic%20Craniosacral%20Therapy%20(BCST)%20session%20at%20HEALTH%20360." 
+                          href="https://wa.me/918482812859?text=Hi%20Dr.%20Rashmita,%20I%20would%20like%20to%20inquire%20about%20a%20Biodynamic%20Craniosacral%20Therapy%20(BCST)%20session%20at%20HEALTH%20360." 
                           target="_blank" 
                           rel="noopener noreferrer" 
                           className="cst-secondary-btn"
