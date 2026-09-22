@@ -8,7 +8,6 @@ import {
   Zap, 
   HardDrive,
   Sparkles,
-  ArrowRight,
   Apple
 } from 'lucide-react';
 import { usePWAInstall, AndroidIcon } from './PWAInstallProvider';
@@ -152,18 +151,6 @@ export default function DownloadAppSection() {
                 <Download className="w-4 h-4 text-white/70 group-hover:translate-y-0.5 transition" />
               </button>
 
-            </div>
-
-            {/* Secondary App Preview Link */}
-            <div className="flex items-center justify-center lg:justify-start gap-4 pt-1">
-              <a
-                href="/app"
-                target="_blank"
-                className="inline-flex items-center gap-1.5 text-xs text-white/60 hover:text-[#12D6C4] transition font-semibold"
-              >
-                <span>Preview standalone app shell</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </a>
             </div>
 
             <p className="text-[11px] text-white/40">

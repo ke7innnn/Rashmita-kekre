@@ -58,7 +58,7 @@ export default function MobileAppHomePage() {
           </span>
         ) : (
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[#12D6C4]/10 text-[#12D6C4] border border-[#12D6C4]/20">
-            <Sparkles className="w-3 h-3" /> Mobile Preview
+            <Sparkles className="w-3 h-3" /> Health 360
           </span>
         )}
       </header>
