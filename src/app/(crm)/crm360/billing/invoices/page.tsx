@@ -175,7 +175,7 @@ export default function InvoiceListPage() {
                       <td className="py-3.5 px-4 text-right font-semibold text-emerald-400 tabular-nums">
                         {formatCurrency(paid)}
                       </td>
-                      <td className="py-3.5 px-4 text-right font-bold text-amber-300 tabular-nums">
+                      <td className="py-3.5 px-4 text-right font-bold text-[#12D6C4] tabular-nums">
                         {formatCurrency(balance)}
                       </td>
                       <td className="py-3.5 px-4 text-center">
