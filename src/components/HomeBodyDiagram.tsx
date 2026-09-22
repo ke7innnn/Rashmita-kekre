@@ -11,15 +11,37 @@ export default function HomeBodyDiagram() {
   const [selectedCondition, setSelectedCondition] = useState<BodyCondition | null>(null);
 
   return (
-    <section id="body-diagram" style={{ padding: '6rem 0', background: 'rgba(0, 159, 199, 0.01)', borderTop: '1px solid rgba(0,0,0,0.03)' }}>
+    <section id="body-diagram" className="py-12 md:py-24" style={{ background: 'rgba(0, 159, 199, 0.01)', borderTop: '1px solid rgba(0,0,0,0.03)' }}>
       <div className="xpad" style={{ maxWidth: '1250px', margin: '0 auto' }}>
         
-        <div className="diagram-page-header" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <p className="subtitle uppercase">Interactive Condition Map</p>
-          <h2 className="diagram-page-title text-balance" style={{ fontSize: '2.8rem', fontWeight: 500 }}>Identify the Reason for Your Pain</h2>
-          <p className="diagram-page-intro text-balance" style={{ maxWidth: '700px', margin: '1rem auto 0', color: 'var(--muted-foreground)' }}>
-            Hover or tap the points on the body diagram to explore specific pain areas, injuries, and joint disorders that can be resolved through professional physiotherapy.
+        <div className="diagram-page-header text-center mb-6 md:mb-12">
+          <p className="subtitle uppercase text-xs">Interactive Condition Map</p>
+          <h2 className="diagram-page-title text-balance text-2xl sm:text-3xl md:text-5xl font-black mt-1">
+            Identify the Reason for Your Pain
+          </h2>
+          <p className="diagram-page-intro text-balance text-xs sm:text-sm md:text-base mt-2 max-w-2xl mx-auto text-muted-foreground">
+            Tap a body area below or touch the joints on the silhouette to explore specific symptoms and rehabilitation options.
           </p>
+        </div>
+
+        {/* Mobile Quick Tap Chips */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-3 mb-5 justify-start sm:justify-center no-scrollbar">
+          <span className="text-[10px] font-black text-muted-foreground shrink-0 uppercase tracking-wider mr-1">
+            Tap Area:
+          </span>
+          {bodyConditions.map((c) => (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCondition(c)}
+              className={`px-3 py-1.5 rounded-full text-xs font-bold shrink-0 transition cursor-pointer ${
+                selectedCondition?.id === c.id
+                  ? 'bg-[#009fc7] text-white shadow-md shadow-[#009fc7]/25'
+                  : 'bg-black/5 text-foreground/80 hover:bg-black/10'
+              }`}
+            >
+              {c.region}
+            </button>
+          ))}
         </div>
 
         <div className="diagram-main-layout">

@@ -76,3 +76,37 @@
   font-size: 0.9rem;
   line-height: 1.55;
 }
+
+@media (max-width: 768px) {
+  .how-section {
+    padding: 3.5rem 0;
+  }
+  .how-header {
+    margin-bottom: 2rem;
+  }
+  .how-title {
+    font-size: 1.85rem;
+  }
+  .how-sub {
+    font-size: 0.9rem;
+  }
+  .how-steps {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  .how-step {
+    padding: 1.5rem 1.25rem;
+    gap: 0.75rem;
+    border-radius: 18px;
+  }
+  .how-step-number {
+    font-size: 2.25rem;
+  }
+  .how-step-title {
+    font-size: 1.05rem;
+  }
+  .how-step-desc {
+    font-size: 0.84rem;
+  }
+}
+

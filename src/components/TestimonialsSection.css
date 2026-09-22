@@ -88,8 +88,21 @@
 }
 
 @media (max-width: 767px) {
-  .testimonials-grid-container {
-    min-height: 1080px;
+  .testimonials-section-center {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+  .testimonials-center-inner {
+    padding: 2.75rem 1.25rem;
+    border-radius: 1.75rem;
+    gap: 2rem;
+  }
+  .testimonials-center-title {
+    font-size: 1.85rem;
+  }
+  .testimonials-mobile-wrapper {
+    width: 100%;
+    position: relative;
   }
 }
 

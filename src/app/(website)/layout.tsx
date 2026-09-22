@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import '../../index.css';
 import SmoothScrollProvider from '@/components/SmoothScrollProvider';
 import WhatsAppWidget from '@/components/WhatsAppWidget';
+import MobileBottomBar from '@/components/MobileBottomBar';
 import { PWAInstallProvider } from '@/components/PWAInstallProvider';
 
 export const metadata: Metadata = {
@@ -46,6 +47,7 @@ export default function RootLayout({
           <SmoothScrollProvider>
             {children}
             <WhatsAppWidget />
+            <MobileBottomBar />
           </SmoothScrollProvider>
         </PWAInstallProvider>
       </body>

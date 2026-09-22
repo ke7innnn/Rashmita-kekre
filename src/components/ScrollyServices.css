@@ -1,7 +1,18 @@
 .scrolly-section {
   position: relative;
-  height: 300vh; /* 3 sections */
   background-color: var(--background);
+}
+
+@media (min-width: 768px) {
+  .scrolly-section {
+    height: 300vh; /* 3 sections on desktop */
+  }
+}
+
+@media (max-width: 767px) {
+  .scrolly-section {
+    height: auto;
+  }
 }
 
 .scrolly-sticky {

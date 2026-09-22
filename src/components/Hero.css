@@ -154,3 +154,60 @@
   flex-shrink: 0;
 }
 
+.hero-trust-proof {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 1rem;
+  padding: 6px 14px;
+  background: rgba(10, 12, 16, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+}
+
+@media (max-width: 640px) {
+  .hero-content {
+    padding-bottom: 6vh;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .hero-usp-badge {
+    padding: 8px 12px;
+    gap: 6px;
+    max-width: 100%;
+    margin-bottom: 1.15rem;
+  }
+
+  .hero-usp-text {
+    font-size: 0.72rem;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
+  }
+
+  .hero-usp-pill {
+    display: none;
+  }
+
+  .hero-actions {
+    width: 100%;
+  }
+
+  .hero-actions .btn-primary {
+    width: 100%;
+    max-width: 320px;
+    padding: 16px 24px;
+    font-size: 0.88rem;
+  }
+
+  .hero-trust-proof {
+    margin-top: 0.85rem;
+    padding: 5px 12px;
+    font-size: 0.7rem;
+  }
+}
+
+

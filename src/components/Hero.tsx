@@ -56,6 +56,23 @@ export default function Hero() {
                 Book Appointment <ArrowRight size={20} />
               </a>
             </Magnetic>
+
+            {/* Mobile Trust Proof */}
+            <motion.div 
+              className="hero-trust-proof"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.6 }}
+            >
+              <div className="flex items-center gap-1 text-[#f6c90e]">
+                {[...Array(5)].map((_, i) => (
+                  <Star key={i} size={11} fill="currentColor" strokeWidth={0} />
+                ))}
+              </div>
+              <span className="text-white/80 text-[11px] font-medium tracking-tight">
+                4.9/5 Rating · 1000+ Recovered
+              </span>
+            </motion.div>
           </div>
         </div>
       </div>

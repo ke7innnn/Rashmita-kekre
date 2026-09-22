@@ -16,7 +16,7 @@ export default function DownloadAppSection() {
   const { installAndroid, installIOS, installApp, isInstalled, isIOS, isIOSSafari, isAndroid } = usePWAInstall();
 
   return (
-    <section id="download-app" className="relative py-24 px-6 overflow-hidden bg-[#0A0910] text-white">
+    <section id="download-app" className="relative py-14 md:py-24 px-4 sm:px-6 overflow-hidden bg-[#0A0910] text-white">
       {/* Background Lighting Accents */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 bg-[#0284c7]/15 rounded-full blur-[120px]" />

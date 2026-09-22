@@ -119,3 +119,53 @@
 .why-feature-title { font-size: 1.05rem; font-weight: 600; margin-bottom: 5px; color: #ffffff; }
 .why-feature-desc { font-size: 0.88rem; color: rgba(255, 255, 255, 0.7); line-height: 1.5; }
 .why-cta { align-self: flex-start; margin-top: 0.5rem; }
+
+@media (max-width: 768px) {
+  .why-section {
+    padding: 3.5rem 0;
+  }
+  .why-container {
+    gap: 2.25rem;
+  }
+  .why-photo-block {
+    height: 270px;
+    max-width: 360px;
+    margin: 0 auto;
+    width: 100%;
+  }
+  .why-content {
+    gap: 1.15rem;
+  }
+  .why-heading {
+    font-size: 1.85rem;
+    line-height: 1.2;
+  }
+  .why-subtext {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+  .why-features-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  .why-feature-card {
+    padding: 1.15rem 1rem;
+    gap: 0.85rem;
+    border-radius: 16px;
+  }
+  .why-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+  }
+  .why-feature-title {
+    font-size: 0.95rem;
+  }
+  .why-feature-desc {
+    font-size: 0.82rem;
+  }
+  .why-cta {
+    width: 100%;
+    justify-content: center;
+  }
+}
