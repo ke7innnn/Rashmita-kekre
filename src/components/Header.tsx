@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Smartphone } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Magnetic from './Magnetic';
+import { usePWAInstall } from './PWAInstallProvider';
 import './Header.css';
 
 export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { installApp } = usePWAInstall();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,6 +33,7 @@ export default function Header() {
             <li><a href="/">Home</a></li>
             <li><a href="/about">About us</a></li>
             <li><a href="/#our-services">Services</a></li>
+            <li><a href="/#download-app">Download App</a></li>
             <li><a href="/gallery">Gallery</a></li>
             <li><a href="/contact">Contact</a></li>
             <li><a href="/careers">Careers</a></li>
@@ -38,6 +41,16 @@ export default function Header() {
         </nav>
 
         <div className="header-actions">
+          <Magnetic strength={0.25}>
+            <button
+              onClick={installApp}
+              className="hidden lg:inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-full text-xs font-bold text-[#0284c7] bg-[#0284c7]/10 hover:bg-[#0284c7]/20 border border-[#0284c7]/20 transition active:scale-95 cursor-pointer"
+              title="Install Health 360 Mobile App"
+            >
+              <Smartphone size={15} /> Download App
+            </button>
+          </Magnetic>
+
           <Magnetic strength={0.25}>
             <a href="/#book" className="btn-primary">
               Book Appointment <ArrowRight size={20} />
@@ -70,6 +83,7 @@ export default function Header() {
                 { name: 'Home', href: '/' },
                 { name: 'About us', href: '/about' },
                 { name: 'Services', href: '/#our-services' },
+                { name: 'Download App', href: '/#download-app' },
                 { name: 'Gallery', href: '/gallery' },
                 { name: 'Contact', href: '/contact' },
                 { name: 'Careers', href: '/careers' },
@@ -92,6 +106,17 @@ export default function Header() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.3 }}
             >
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  installApp();
+                }}
+                className="w-full py-3 mb-2.5 rounded-xl bg-[#0284c7]/15 hover:bg-[#0284c7]/25 border border-[#0284c7]/30 text-[#0284c7] text-xs font-extrabold flex items-center justify-center gap-2 transition cursor-pointer"
+              >
+                <Smartphone size={16} /> Download Mobile App
+              </button>
+
               <a href="/#book" onClick={() => setMobileMenuOpen(false)} className="btn-primary">
                 Book Appointment <ArrowRight size={20} />
               </a>

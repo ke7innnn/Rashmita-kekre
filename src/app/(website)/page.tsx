@@ -13,6 +13,7 @@ import OurServices from '@/components/OurServices';
 import TreatmentMethods from '@/components/TreatmentMethods';
 import InteractiveBodyDiagram from '@/components/InteractiveBodyDiagram';
 import BrandBanner from '@/components/BrandBanner';
+import DownloadAppSection from '@/components/DownloadAppSection';
 import Footer from '@/components/Footer';
 import BookingModal from '@/components/BookingModal';
 
@@ -107,6 +108,7 @@ export default function Home() {
           <HowItWorks />
           <TestimonialsSection />
           <HomeBodyDiagram />
+          <DownloadAppSection />
           <BrandBanner />
         </main>
       ) : currentPage === 'booking' ? (
