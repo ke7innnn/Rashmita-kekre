@@ -34,20 +34,39 @@ interface CertificateModalProps {
   onSuccess?: () => void;
 }
 
-// ─── LocalStorage key helpers ────────────────────────────────────────────────
+// ─── LocalStorage helpers — with 48-hour expiry to prevent zombie/ghost drafts ─
+const DRAFT_TTL_MS = 48 * 60 * 60 * 1000; // 48 hours
+
 const draftKey = (patientId: string, type: string) =>
   `cert_draft_${patientId}_${type}`;
 
+interface DraftEnvelope {
+  data: CertificateData;
+  savedAt: number; // Unix ms
+}
+
 function saveDraft(patientId: string, data: CertificateData) {
   try {
-    localStorage.setItem(draftKey(patientId, data.type), JSON.stringify(data));
+    const envelope: DraftEnvelope = { data, savedAt: Date.now() };
+    localStorage.setItem(draftKey(patientId, data.type), JSON.stringify(envelope));
   } catch {}
 }
 
-function loadDraft(patientId: string, type: string): CertificateData | null {
+/** Returns { data, savedAt } or null if no draft or draft is expired. */
+function loadDraft(
+  patientId: string,
+  type: string
+): { data: CertificateData; savedAt: number } | null {
   try {
     const raw = localStorage.getItem(draftKey(patientId, type));
-    return raw ? (JSON.parse(raw) as CertificateData) : null;
+    if (!raw) return null;
+    const envelope = JSON.parse(raw) as DraftEnvelope;
+    // Auto-expire stale drafts (> 48 hours old) — prevents ghost data
+    if (Date.now() - envelope.savedAt > DRAFT_TTL_MS) {
+      localStorage.removeItem(draftKey(patientId, type));
+      return null;
+    }
+    return { data: envelope.data, savedAt: envelope.savedAt };
   } catch {
     return null;
   }
@@ -57,6 +76,15 @@ function clearDraft(patientId: string, type: string) {
   try {
     localStorage.removeItem(draftKey(patientId, type));
   } catch {}
+}
+
+/** Human-readable relative time: "2 min ago", "1 hr ago" */
+function relativeTime(savedAt: number): string {
+  const diff = Math.floor((Date.now() - savedAt) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)} min ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} hr ago`;
+  return `${Math.floor(diff / 86400)} day(s) ago`;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -81,20 +109,33 @@ export default function CertificateModal({
 
   // Save state: 'idle' | 'saving' | 'saved' | 'unsaved'
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'unsaved'>('idle');
+  // Draft restore notice: null = no draft was restored
+  const [draftRestoredAt, setDraftRestoredAt] = useState<number | null>(null);
+  const [draftNoticeDismissed, setDraftNoticeDismissed] = useState(false);
   const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const savedFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ─── On open: sync state & restore draft ───────────────────────────────────
+  // ─── On open: sync state & restore draft (with expiry check) ─────────────
   useEffect(() => {
     if (isOpen) {
       const draft = loadDraft(patientId, initialData.type);
-      // Always prefer draft over initialData if it exists (contains clinician edits)
-      setData(draft ?? initialData);
+      if (draft) {
+        // Restore draft edits — but always keep initialData.type safe
+        setData({ ...draft.data, type: initialData.type });
+        setDraftRestoredAt(draft.savedAt);
+        setDraftNoticeDismissed(false);
+        setSaveStatus('saved');
+      } else {
+        // No draft (or it expired) — use fresh DB-computed data
+        setData(initialData);
+        setDraftRestoredAt(null);
+        setDraftNoticeDismissed(false);
+        setSaveStatus('idle');
+      }
       setPhone(patientPhone.replace(/\D/g, '').slice(-10));
       setErrorMessage(null);
       setIsSuccess(false);
       setIsSending(false);
-      setSaveStatus(draft ? 'saved' : 'idle');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData.type, patientPhone]);
@@ -615,6 +656,46 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
                 )}
               </AnimatePresence>
             </div>
+
+            {/* Draft Restored Notice — warns clinician she's on a draft, not fresh DB data */}
+            <AnimatePresence>
+              {draftRestoredAt && !draftNoticeDismissed && (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8 }}
+                  className="no-print w-full max-w-[210mm] mb-3 flex items-center justify-between gap-3 bg-amber-500/10 border border-amber-500/30 rounded-xl px-3 py-2 text-[11px]"
+                >
+                  <span className="flex items-center gap-2 text-amber-300">
+                    <AlertTriangle className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                    <span>
+                      <span className="font-bold">Draft restored</span> — saved{' '}
+                      {relativeTime(draftRestoredAt)}. Edit freely or{' '}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearDraft(patientId, data.type);
+                          setData(initialData);
+                          setDraftRestoredAt(null);
+                          setSaveStatus('idle');
+                        }}
+                        className="underline text-amber-200 font-semibold hover:text-white cursor-pointer"
+                      >
+                        discard draft → use fresh DB data
+                      </button>
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setDraftNoticeDismissed(true)}
+                    className="text-amber-400/60 hover:text-amber-200 transition shrink-0 cursor-pointer"
+                    title="Dismiss notice"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Scaled Canvas */}
             <div
