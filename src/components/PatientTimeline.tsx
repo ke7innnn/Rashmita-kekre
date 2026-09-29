@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -12,7 +12,7 @@ import {
   Trash2, Edit2, Edit3, PlayCircle, Folder, File, FolderPlus,
   ShieldAlert, Award, X, Dumbbell, Share2, Send, CheckSquare,
   Ban, ShieldCheck, Receipt, Eye, Printer, CreditCard,
-  UploadCloud, Files, FileUp
+  UploadCloud, Files, FileUp, CalendarDays, CheckCircle2, Filter, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
@@ -109,7 +109,10 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   const multiFileInputRef = useRef<HTMLInputElement>(null);
 
   // Sub-tab navigation state
-  const [activeTab, setActiveTab] = useState<'documents' | 'rom' | 'billing' | 'assessments'>('billing');
+  const [activeTab, setActiveTab] = useState<'sessions' | 'billing' | 'documents' | 'rom' | 'assessments'>('sessions');
+  const [filterRangeStart, setFilterRangeStart] = useState<string>('');
+  const [filterRangeEnd, setFilterRangeEnd] = useState<string>('');
+  const [sessionQuickFilter, setSessionQuickFilter] = useState<'all' | 'first5' | 'last5' | 'completed'>('all');
   const [isSellCourseModalOpen, setIsSellCourseModalOpen] = useState(false);
 
   // WhatsApp real messaging states
@@ -624,6 +627,114 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   });
 
   timelineItems.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
+
+  // ─── Treatment Dates & Session Calculations ───────────────────────────────
+  // Sort all appointments chronologically (earliest to latest)
+  const allChronologicalAppointments = useMemo(() => {
+    return [...(patient?.appointments || [])].sort((a: any, b: any) => {
+      const timeA = new Date(`${a.date.split('T')[0]}T${a.startTime || '00:00'}:00`).getTime();
+      const timeB = new Date(`${b.date.split('T')[0]}T${b.startTime || '00:00'}:00`).getTime();
+      return timeA - timeB;
+    });
+  }, [patient?.appointments]);
+
+  // Completed or attended sessions
+  const completedAppointments = useMemo(() => {
+    return allChronologicalAppointments.filter((a: any) => a.status === 'COMPLETED');
+  }, [allChronologicalAppointments]);
+
+  // Packages summary
+  const packageSessionsUsed = useMemo(() => {
+    return (packages || []).reduce((acc: number, p: any) => acc + (p.sessionsUsed || 0), 0);
+  }, [packages]);
+
+  const packageTotalSessions = useMemo(() => {
+    return (packages || []).reduce((acc: number, p: any) => acc + (p.totalSessions || 0), 0);
+  }, [packages]);
+
+  // Determine overall Start Date, End Date, and Sessions Count
+  const sessionStats = useMemo(() => {
+    const hasCompleted = completedAppointments.length > 0;
+    const hasAnyAppt = allChronologicalAppointments.length > 0;
+
+    let startDateObj: Date;
+    let endDateObj: Date;
+    let count: number;
+
+    if (hasCompleted) {
+      startDateObj = new Date(completedAppointments[0].date);
+      endDateObj = new Date(completedAppointments[completedAppointments.length - 1].date);
+      count = completedAppointments.length;
+    } else if (hasAnyAppt) {
+      startDateObj = new Date(allChronologicalAppointments[0].date);
+      endDateObj = new Date(allChronologicalAppointments[allChronologicalAppointments.length - 1].date);
+      count = allChronologicalAppointments.length;
+    } else if (packages && packages.length > 0) {
+      startDateObj = new Date(packages[0].purchaseDate || packages[0].createdAt || patient.createdAt);
+      endDateObj = new Date();
+      count = packageSessionsUsed > 0 ? packageSessionsUsed : packageTotalSessions || 0;
+    } else {
+      startDateObj = patient?.createdAt ? new Date(patient.createdAt) : new Date();
+      endDateObj = new Date();
+      count = 0;
+    }
+
+    const formatDate = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const diffDays = Math.max(1, Math.round((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+    return {
+      startDate: formatDate(startDateObj),
+      endDate: formatDate(endDateObj),
+      startDateRaw: startDateObj.toISOString().split('T')[0],
+      endDateRaw: endDateObj.toISOString().split('T')[0],
+      count,
+      diffDays,
+      hasAppointments: hasAnyAppt,
+      completedCount: completedAppointments.length,
+      scheduledCount: allChronologicalAppointments.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'WAITING' || a.status === 'IN_PROGRESS').length,
+    };
+  }, [allChronologicalAppointments, completedAppointments, packages, packageSessionsUsed, packageTotalSessions, patient?.createdAt]);
+
+  // Filtered sessions for the interactive date calculator
+  const activeRangeSessions = useMemo(() => {
+    let list = [...allChronologicalAppointments];
+
+    if (sessionQuickFilter === 'completed') {
+      list = list.filter((a: any) => a.status === 'COMPLETED');
+    } else if (sessionQuickFilter === 'first5') {
+      const completed = list.filter((a: any) => a.status === 'COMPLETED');
+      list = completed.length >= 5 ? completed.slice(0, 5) : list.slice(0, 5);
+    } else if (sessionQuickFilter === 'last5') {
+      const completed = list.filter((a: any) => a.status === 'COMPLETED');
+      list = completed.length >= 5 ? completed.slice(-5) : list.slice(-5);
+    }
+
+    if (filterRangeStart) {
+      const startMs = new Date(`${filterRangeStart}T00:00:00`).getTime();
+      list = list.filter((a: any) => new Date(a.date).getTime() >= startMs);
+    }
+
+    if (filterRangeEnd) {
+      const endMs = new Date(`${filterRangeEnd}T23:59:59`).getTime();
+      list = list.filter((a: any) => new Date(a.date).getTime() <= endMs);
+    }
+
+    return list;
+  }, [allChronologicalAppointments, sessionQuickFilter, filterRangeStart, filterRangeEnd]);
+
+  const activeRangeStartDate = useMemo(() => {
+    if (activeRangeSessions.length > 0) {
+      return new Date(activeRangeSessions[0].date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    return sessionStats.startDate;
+  }, [activeRangeSessions, sessionStats.startDate]);
+
+  const activeRangeEndDate = useMemo(() => {
+    if (activeRangeSessions.length > 0) {
+      return new Date(activeRangeSessions[activeRangeSessions.length - 1].date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    return sessionStats.endDate;
+  }, [activeRangeSessions, sessionStats.endDate]);
 
   const romFiles = patient.attachments.filter((a: any) => a.fileType === 'rom-photo' || a.name.includes('ROM'));
 
@@ -1150,18 +1261,27 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   };
 
   // Clinical Certificate — Treatment & Payment Certificate (Mediclaim)
-  const triggerMediclaimConfirm = () => {
+  const triggerMediclaimConfirm = (override?: { startDate?: string; endDate?: string; sessions?: number | string; totalAmount?: string }) => {
     const pName = patient.fullName;
     const age = patient.dateOfBirth 
       ? String(new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()) 
       : (patient.age ? String(patient.age) : '');
     const diagnosis = patient.diagnosis || 'Cervical Spondylosis / Musculoskeletal Pain';
-    const startDate = patient.createdAt
-      ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-      : '1 Aug 2026';
-    const endDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 10);
-    const totalAmount = String(patient.invoices?.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0) || '6,500.00');
+    
+    const startDate = override?.startDate || sessionStats.startDate;
+    const endDate = override?.endDate || sessionStats.endDate;
+    const rawSessionsCount = override?.sessions !== undefined 
+      ? override.sessions 
+      : (sessionStats.count > 0 ? sessionStats.count : 10);
+    const sessions = typeof rawSessionsCount === 'number' 
+      ? `${rawSessionsCount} Sessions` 
+      : (String(rawSessionsCount).includes('Session') ? String(rawSessionsCount) : `${rawSessionsCount} Sessions`);
+    
+    const numericSessions = typeof rawSessionsCount === 'number' 
+      ? rawSessionsCount 
+      : (parseInt(String(rawSessionsCount).replace(/\D/g, '')) || 10);
+    const defaultTotal = `${(numericSessions * 650).toLocaleString('en-IN')}.00`;
+    const totalAmount = override?.totalAmount || String(patient.invoices?.reduce((sum: number, inv: any) => sum + (Number(inv.paidAmount) || 0), 0) || defaultTotal);
 
     setActiveCertificateModal({
       isOpen: true,
@@ -1173,7 +1293,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         diagnosis,
         startDate,
         endDate,
-        sessions: `${sessions} Sessions`,
+        sessions,
         treatmentProvided: 'Manual Therapy, Spinal Mobilization, Postural Ergonomics & Strengthening',
         chargesPerSession: '650.00',
         totalAmount,
@@ -1237,17 +1357,20 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   };
 
   // Clinical Certificate — Physiotherapy Discharge Summary (2 Pages)
-  const triggerDischargeConfirm = () => {
+  const triggerDischargeConfirm = (override?: { startDate?: string; endDate?: string; sessions?: number | string }) => {
     const pName = patient.fullName;
     const age = patient.dateOfBirth 
       ? String(new Date().getFullYear() - new Date(patient.dateOfBirth).getFullYear()) 
       : (patient.age ? String(patient.age) : '');
     const gender = patient.gender || '';
-    const startDate = patient.createdAt
-      ? new Date(patient.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
-      : '10 Aug 2026';
-    const endDate = new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    const sessions = String(patient.sessionPackages?.reduce((sum: number, p: any) => sum + (p.completedSessions || 0), 0) || 12);
+    const startDate = override?.startDate || sessionStats.startDate;
+    const endDate = override?.endDate || sessionStats.endDate;
+    const rawSessionsCount = override?.sessions !== undefined 
+      ? override.sessions 
+      : (sessionStats.count > 0 ? sessionStats.count : 12);
+    const sessions = typeof rawSessionsCount === 'number' 
+      ? `${rawSessionsCount} Sessions` 
+      : (String(rawSessionsCount).includes('Session') ? String(rawSessionsCount) : `${rawSessionsCount} Sessions`);
 
     setActiveCertificateModal({
       isOpen: true,
@@ -1260,7 +1383,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
         diagnosis: patient.diagnosis || 'Rehabilitation Program Completed',
         startDate,
         endDate,
-        sessions: `${sessions} Sessions`,
+        sessions,
         complaints: 'Severe initial pain and restriction of movement affecting occupational duties and self-care.',
         findings: 'Initial examination revealed marked restriction in active range of motion, focal tenderness, and postural compensation.',
         otherTreatment: 'Craniosacral therapy balancing & myofascial trigger release',
@@ -1713,14 +1836,123 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             )}
           </div>
         )}
+
+        {/* Treatment Course & Sessions Summary Banner */}
+        <div className="bg-gradient-to-r from-emerald-500/[0.09] via-teal-500/[0.05] to-emerald-500/[0.03] border border-emerald-500/25 p-4 sm:p-5 rounded-2xl shadow-xl mt-2 space-y-3.5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-emerald-500/15 pb-3">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <CalendarDays className="h-4.5 w-4.5 stroke-[2]" />
+              </div>
+              <div>
+                <h4 className="font-serif font-bold text-sm text-white tracking-wide flex items-center gap-2">
+                  Treatment Course &amp; Sessions Summary
+                  {sessionStats.count > 0 && (
+                    <span className="text-[10px] font-mono font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 px-2 py-0.5 rounded-full">
+                      {sessionStats.count} Sessions Verified
+                    </span>
+                  )}
+                </h4>
+                <p className="text-[11px] text-white/50 font-medium">
+                  Official clinical session dates tracked between first and latest visit
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-start sm:self-auto">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab('sessions');
+                }}
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer"
+                title="View full session-by-session history"
+              >
+                <span>View All Sessions</span>
+                <ChevronRight className="h-3.5 w-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => triggerMediclaimConfirm()}
+                className="px-3.5 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-md"
+                title="Generate Treatment & Payment Certificate using these dates"
+              >
+                <FileText className="h-3.5 w-3.5 stroke-[2.5]" />
+                <span>Certificate ({sessionStats.count > 0 ? sessionStats.count : 10} S.)</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 4 Stat Metric Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Start Date */}
+            <div className="bg-black/40 border border-white/10 p-3 rounded-xl">
+              <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                First Session / Start Date
+              </p>
+              <p className="text-sm font-bold text-white font-mono mt-1">
+                {sessionStats.startDate}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5">Course inception</p>
+            </div>
+
+            {/* End Date */}
+            <div className="bg-black/40 border border-white/10 p-3 rounded-xl">
+              <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                Latest Session / End Date
+              </p>
+              <p className="text-sm font-bold text-white font-mono mt-1">
+                {sessionStats.endDate}
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5">Latest attendance</p>
+            </div>
+
+            {/* Sessions Count */}
+            <div className="bg-black/40 border border-white/10 p-3 rounded-xl">
+              <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                Attended Sessions
+              </p>
+              <div className="flex items-baseline gap-1.5 mt-1">
+                <span className="text-lg font-bold text-emerald-400 font-mono">
+                  {sessionStats.count}
+                </span>
+                <span className="text-xs text-white/60 font-semibold">
+                  Sessions Total
+                </span>
+              </div>
+              <p className="text-[10px] text-white/40 mt-0.5">
+                {sessionStats.completedCount} completed {sessionStats.scheduledCount > 0 ? `· ${sessionStats.scheduledCount} upcoming` : ''}
+              </p>
+            </div>
+
+            {/* Duration / Cadence */}
+            <div className="bg-black/40 border border-white/10 p-3 rounded-xl">
+              <p className="text-[9px] font-bold text-white/40 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                Treatment Period
+              </p>
+              <p className="text-sm font-bold text-white font-mono mt-1">
+                {sessionStats.diffDays} Days
+              </p>
+              <p className="text-[10px] text-white/40 mt-0.5">
+                {Math.ceil(sessionStats.diffDays / 7)} weeks duration
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Sub-tab Switcher */}
       <div className="flex border border-white/10 bg-white/[0.03] p-1.5 gap-2 shrink-0 overflow-x-auto my-4 rounded-2xl relative shadow-md backdrop-blur-md">
         {[
+          { id: 'sessions', label: 'Sessions & Dates' },
+          { id: 'billing', label: 'Session Packages & Billing' },
           { id: 'documents', label: 'Documents & Case Files' },
           { id: 'rom', label: 'Clinical ROM & Referrals' },
-          { id: 'billing', label: 'Session Packages & Billing' },
           { id: 'assessments', label: 'Initial Assessments' },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
@@ -1748,6 +1980,334 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       </div>
 
       {/* Tab Contents */}
+
+      {/* Sessions & Dates Calculator Tab */}
+      {activeTab === 'sessions' && (
+        <div className="p-6 space-y-6 max-w-5xl mx-auto w-full animate-fadeIn">
+          {/* Header & Interactive Range Filter */}
+          <div className="bg-gradient-to-br from-white/[0.05] to-white/[0.02] border border-white/10 p-5 rounded-3xl space-y-4 shadow-xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-white/10 pb-4">
+              <div>
+                <h3 className="text-lg font-serif font-bold text-white flex items-center gap-2">
+                  <span>📅</span> Patient Treatment Sessions &amp; Date Calculator
+                </h3>
+                <p className="text-xxs text-white/50 font-bold uppercase tracking-wider mt-0.5">
+                  Calculate attended sessions between any start and end date for mediclaim or reports
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  resetSessionForm();
+                  setIsAddingSession(true);
+                }}
+                className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold rounded-xl transition shadow-md cursor-pointer self-start md:self-auto"
+              >
+                <Plus className="h-4 w-4 stroke-[2.5]" />
+                + Log Past / New Session
+              </button>
+            </div>
+
+            {/* Quick Filter Presets + Custom Date Pickers */}
+            <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4 bg-black/40 border border-white/10 p-4 rounded-2xl">
+              {/* Quick Presets */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-[10px] font-bold text-white/40 uppercase tracking-wider mr-1 flex items-center gap-1">
+                  <Filter className="w-3 h-3" /> Filter:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSessionQuickFilter('all');
+                    setFilterRangeStart('');
+                    setFilterRangeEnd('');
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
+                    sessionQuickFilter === 'all' && !filterRangeStart && !filterRangeEnd
+                      ? 'bg-white text-black border-transparent shadow'
+                      : 'bg-white/5 text-white/70 hover:text-white border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  All Sessions ({allChronologicalAppointments.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSessionQuickFilter('completed');
+                    setFilterRangeStart('');
+                    setFilterRangeEnd('');
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
+                    sessionQuickFilter === 'completed'
+                      ? 'bg-white text-black border-transparent shadow'
+                      : 'bg-white/5 text-white/70 hover:text-white border-white/10 hover:bg-white/10'
+                  }`}
+                >
+                  Completed Only ({completedAppointments.length})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSessionQuickFilter('first5');
+                    setFilterRangeStart('');
+                    setFilterRangeEnd('');
+                  }}
+                  className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
+                    sessionQuickFilter === 'first5'
+                      ? 'bg-emerald-400 text-black border-transparent shadow'
+                      : 'bg-white/5 text-emerald-300 hover:text-white border-emerald-500/30 hover:bg-emerald-500/10'
+                  }`}
+                  title="First 5 completed sessions (Mediclaim friendly)"
+                >
+                  ⭐ First 5 Sessions
+                </button>
+
+                {allChronologicalAppointments.length > 5 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSessionQuickFilter('last5');
+                      setFilterRangeStart('');
+                      setFilterRangeEnd('');
+                    }}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-xl transition cursor-pointer border ${
+                      sessionQuickFilter === 'last5'
+                        ? 'bg-white text-black border-transparent shadow'
+                        : 'bg-white/5 text-white/70 hover:text-white border-white/10 hover:bg-white/10'
+                    }`}
+                  >
+                    Last 5 Sessions
+                  </button>
+                )}
+              </div>
+
+              {/* Exact Date Range Inputs */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl">
+                  <span className="text-[10px] font-bold text-white/50 uppercase">From:</span>
+                  <input
+                    type="date"
+                    value={filterRangeStart}
+                    onChange={(e) => {
+                      setFilterRangeStart(e.target.value);
+                      setSessionQuickFilter('all');
+                    }}
+                    className="bg-transparent text-xs text-white font-mono font-bold outline-none cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-white/5 border border-white/10 px-2.5 py-1.5 rounded-xl">
+                  <span className="text-[10px] font-bold text-white/50 uppercase">To:</span>
+                  <input
+                    type="date"
+                    value={filterRangeEnd}
+                    onChange={(e) => {
+                      setFilterRangeEnd(e.target.value);
+                      setSessionQuickFilter('all');
+                    }}
+                    className="bg-transparent text-xs text-white font-mono font-bold outline-none cursor-pointer"
+                  />
+                </div>
+
+                {(filterRangeStart || filterRangeEnd) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFilterRangeStart('');
+                      setFilterRangeEnd('');
+                      setSessionQuickFilter('all');
+                    }}
+                    className="p-1.5 rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition cursor-pointer"
+                    title="Clear date filter"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Calculated Results Banner with 1-Click Certificate Action */}
+            <div className="bg-emerald-500/10 border border-emerald-500/30 p-4 rounded-2xl flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> Calculated Session Period
+                </p>
+                <div className="text-sm font-bold text-white flex items-center gap-2 flex-wrap">
+                  <span>Start: <strong className="text-emerald-300 font-mono">{activeRangeStartDate}</strong></span>
+                  <span className="text-white/30">➔</span>
+                  <span>End: <strong className="text-emerald-300 font-mono">{activeRangeEndDate}</strong></span>
+                  <span className="text-white/40">|</span>
+                  <span className="bg-emerald-400/20 text-emerald-300 border border-emerald-400/30 px-2 py-0.5 rounded-lg text-xs font-mono font-bold">
+                    {activeRangeSessions.length} {activeRangeSessions.length === 1 ? 'Session' : 'Sessions'} Attended
+                  </span>
+                </div>
+                <p className="text-[11px] text-white/50">
+                  Total consultation &amp; therapy charges at ₹650/session: <strong className="text-white font-mono">₹{(activeRangeSessions.length * 650).toLocaleString('en-IN')}.00</strong>
+                </p>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => triggerMediclaimConfirm({
+                    startDate: activeRangeStartDate,
+                    endDate: activeRangeEndDate,
+                    sessions: activeRangeSessions.length,
+                    totalAmount: `${(activeRangeSessions.length * 650).toLocaleString('en-IN')}.00`
+                  })}
+                  className="px-4 py-2 bg-emerald-400 hover:bg-emerald-500 text-black text-xs font-bold rounded-xl transition flex items-center gap-1.5 cursor-pointer shadow-lg shadow-emerald-500/10"
+                >
+                  <FileText className="w-4 h-4 stroke-[2.5]" />
+                  <span>Issue Certificate ({activeRangeSessions.length} Sessions)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Session Cards / Table List */}
+          {activeRangeSessions.length === 0 ? (
+            <div className="p-12 text-center text-white/40 border border-dashed border-white/15 rounded-3xl font-medium bg-white/5 space-y-3">
+              <Calendar className="w-10 h-10 mx-auto text-white/20 stroke-[1.5]" />
+              <p className="text-sm font-bold text-white/70">No session appointments logged for this date range.</p>
+              <p className="text-xs text-white/40 max-w-md mx-auto">
+                {packages && packages.length > 0
+                  ? `Note: This patient has ${packageSessionsUsed} package sessions recorded under "Session Packages & Billing". You can also log individual appointment records here.`
+                  : 'Click "+ Log Past / New Session" above to add the patient’s sessions.'}
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  resetSessionForm();
+                  setIsAddingSession(true);
+                }}
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 text-white text-xs font-bold rounded-xl transition cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                Log First Session
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-xs font-bold uppercase tracking-wider text-white/50">
+                  Chronological Session History ({activeRangeSessions.length} Records)
+                </p>
+                <span className="text-[10px] text-white/40 font-mono">
+                  Showing sessions 1 to {activeRangeSessions.length}
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {activeRangeSessions.map((app: any, idx: number) => {
+                  const appDateObj = new Date(app.date);
+                  const dateFormatted = appDateObj.toLocaleDateString('en-IN', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  });
+                  const dayOfWeek = appDateObj.toLocaleDateString('en-IN', { weekday: 'short' });
+                  const isCompleted = app.status === 'COMPLETED';
+
+                  return (
+                    <div
+                      key={app.id}
+                      className="bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 p-4 rounded-2xl transition flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md"
+                    >
+                      <div className="flex items-start sm:items-center gap-3.5">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center font-mono font-bold text-xs shrink-0 border ${
+                          isCompleted
+                            ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30'
+                            : 'bg-white/10 text-white/70 border-white/15'
+                        }`}>
+                          #{idx + 1}
+                        </div>
+
+                        <div>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <h5 className="font-serif font-bold text-sm text-white">
+                              {dateFormatted}
+                            </h5>
+                            <span className="text-[10px] text-white/50 font-bold uppercase">
+                              ({dayOfWeek})
+                            </span>
+                            <span className="text-[10px] text-white/40 font-mono">
+                              {app.startTime} - {app.endTime}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
+                            <span className="text-xs text-emerald-300/90 font-medium">
+                              {app.treatmentType || 'Physiotherapy Session'}
+                            </span>
+                            {app.notes && (
+                              <span className="text-xxs text-white/40 italic">
+                                · {app.notes}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-3 self-end sm:self-center">
+                        <span className={`text-[10px] font-bold px-2.5 py-1 rounded-xl border uppercase tracking-wider ${getStatusStyle(app.status)}`}>
+                          {app.status}
+                        </span>
+
+                        {/* Quick Mark Completed Toggle */}
+                        {app.status !== 'COMPLETED' ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editSessionMutation.mutate({
+                                id: app.id,
+                                payload: { status: 'COMPLETED' }
+                              });
+                            }}
+                            className="px-2.5 py-1 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/30 text-emerald-300 rounded-xl text-[11px] font-bold transition cursor-pointer"
+                            title="Mark session as completed"
+                          >
+                            Mark Completed
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              editSessionMutation.mutate({
+                                id: app.id,
+                                payload: { status: 'SCHEDULED' }
+                              });
+                            }}
+                            className="px-2 py-1 bg-white/5 hover:bg-white/10 border border-white/10 text-white/40 hover:text-white rounded-xl text-[10px] font-semibold transition cursor-pointer"
+                            title="Undo completion status"
+                          >
+                            Revert
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (confirm(`Delete session on ${dateFormatted}?`)) {
+                              deleteSessionMutation.mutate(app.id);
+                            }
+                          }}
+                          className="p-1.5 text-rose-400/60 hover:text-rose-300 hover:bg-rose-500/20 rounded-lg transition cursor-pointer"
+                          title="Delete session"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Case Documents Explorer Tab (Huge Card Placeholders) */}
       {activeTab === 'documents' && (
@@ -2399,7 +2959,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button
-                      onClick={triggerDischargeConfirm}
+                      onClick={() => triggerDischargeConfirm()}
                       disabled={whatsappSending === 'discharge'}
                       className="group p-4 bg-white/[0.02] hover:bg-purple-500/5 border border-white/[0.08] hover:border-purple-500/30 rounded-2xl text-left transition-all duration-200 cursor-pointer"
                     >
@@ -2437,7 +2997,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
                     )}
 
                     <button
-                      onClick={triggerMediclaimConfirm}
+                      onClick={() => triggerMediclaimConfirm()}
                       disabled={whatsappSending === 'mediclaim'}
                       className="group p-3.5 bg-white/[0.02] hover:bg-white/[0.05] border border-white/[0.08] hover:border-sky-500/40 rounded-2xl text-left transition-all duration-200 cursor-pointer flex items-center justify-between"
                     >
@@ -3845,6 +4405,175 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
             queryClient.invalidateQueries({ queryKey: ['patients'] });
           }}
         />
+      )}
+
+      {/* Add / Log Clinical Session Modal — portaled to document.body */}
+      {isAddingSession && isMounted && createPortal(
+        <div className="fixed inset-0 z-[99999] flex items-center justify-center p-4 select-none">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/85 backdrop-blur-md"
+            onClick={() => setIsAddingSession(false)}
+          />
+          <motion.div
+            initial={{ scale: 0.94, opacity: 0, y: 20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            className="relative bg-gradient-to-b from-[#13111C] to-[#0B0A10] border border-white/20 p-6 rounded-3xl shadow-2xl w-full max-w-md flex flex-col z-[100000] text-left space-y-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 rounded-2xl shrink-0">
+                  <Calendar className="w-5 h-5 stroke-[2.2]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-serif font-bold text-white leading-tight">
+                    Log Clinical Session
+                  </h3>
+                  <p className="text-[11px] text-white/50 font-medium mt-0.5">
+                    Record attended or upcoming session for {patient.fullName}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAddingSession(false)}
+                className="p-1.5 rounded-xl hover:bg-white/10 text-white/40 hover:text-white transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                addSessionMutation.mutate({
+                  patientId,
+                  date: sessionDate || new Date().toISOString().split('T')[0],
+                  startTime: sessionStartTime || '09:00',
+                  endTime: sessionEndTime || '09:30',
+                  treatmentType: sessionTreatmentType || 'Physiotherapy Session',
+                  status: sessionStatus,
+                  notes: sessionNotes || undefined,
+                });
+              }}
+              className="space-y-3.5"
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                    Session Date
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={sessionDate || new Date().toISOString().split('T')[0]}
+                    onChange={(e) => setSessionDate(e.target.value)}
+                    className="w-full text-xs bg-white/5 border border-white/15 focus:border-emerald-400 rounded-xl px-3 py-2 text-white font-mono font-bold outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                    Status
+                  </label>
+                  <select
+                    value={sessionStatus}
+                    onChange={(e) => setSessionStatus(e.target.value as any)}
+                    className="w-full text-xs bg-[#13111C] border border-white/15 focus:border-emerald-400 rounded-xl px-3 py-2 text-white font-bold outline-none cursor-pointer"
+                  >
+                    <option value="COMPLETED">Completed (Attended)</option>
+                    <option value="SCHEDULED">Scheduled (Upcoming)</option>
+                    <option value="WAITING">Waiting</option>
+                    <option value="IN_PROGRESS">In Progress</option>
+                    <option value="NO_SHOW">No Show</option>
+                    <option value="CANCELLED">Cancelled</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                    Start Time
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={sessionStartTime}
+                    onChange={(e) => setSessionStartTime(e.target.value)}
+                    className="w-full text-xs bg-white/5 border border-white/15 focus:border-emerald-400 rounded-xl px-3 py-2 text-white font-mono font-bold outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                    End Time
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={sessionEndTime}
+                    onChange={(e) => setSessionEndTime(e.target.value)}
+                    className="w-full text-xs bg-white/5 border border-white/15 focus:border-emerald-400 rounded-xl px-3 py-2 text-white font-mono font-bold outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                  Treatment Modality / Service
+                </label>
+                <select
+                  value={sessionTreatmentType}
+                  onChange={(e) => setSessionTreatmentType(e.target.value)}
+                  className="w-full text-xs bg-[#13111C] border border-white/15 focus:border-emerald-400 rounded-xl px-3 py-2 text-white font-bold outline-none cursor-pointer"
+                >
+                  <option value="Physiotherapy Session">Physiotherapy Session</option>
+                  <option value="Craniosacral Therapy">Craniosacral Therapy</option>
+                  <option value="Manual Therapy & Mobilization">Manual Therapy & Mobilization</option>
+                  <option value="Spine Rehabilitation">Spine Rehabilitation</option>
+                  <option value="Post-Operative Rehab">Post-Operative Rehab</option>
+                  <option value="Ergonomic & Postural Correction">Ergonomic & Postural Correction</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-white/50 uppercase tracking-wider mb-1">
+                  Clinical Notes / Observations (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  value={sessionNotes}
+                  onChange={(e) => setSessionNotes(e.target.value)}
+                  placeholder="e.g. Pain VAS 3/10, completed strengthening exercises"
+                  className="w-full text-xs bg-white/5 border border-white/15 focus:border-emerald-400 rounded-xl p-2.5 text-white outline-none resize-none placeholder-white/30"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-white/10">
+                <button
+                  type="button"
+                  onClick={() => setIsAddingSession(false)}
+                  className="px-4 py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white/70 hover:text-white text-xs font-bold rounded-xl transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={addSessionMutation.isPending}
+                  className="px-4 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-black text-xs font-bold rounded-xl transition flex items-center gap-1.5 shadow-md cursor-pointer disabled:opacity-50"
+                >
+                  {addSessionMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+                  <span>Save Session Record</span>
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        </div>,
+        document.body
       )}
 
       {/* Doctor WhatsApp Phone Number Entry Modal — portaled to document.body */}
