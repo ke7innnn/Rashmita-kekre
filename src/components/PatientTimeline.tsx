@@ -3834,6 +3834,7 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
       {/* 4 Clinical Certificates & Discharge Summaries Modal */}
       {activeCertificateModal && (
         <CertificateModal
+          key={`cert-${patient.id}-${activeCertificateModal.data.type}`}
           isOpen={activeCertificateModal.isOpen}
           onClose={() => setActiveCertificateModal(null)}
           patientId={patient.id}

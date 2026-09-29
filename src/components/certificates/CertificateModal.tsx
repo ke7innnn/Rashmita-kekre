@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -54,6 +54,20 @@ export default function CertificateModal({
   const [isSending, setIsSending] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Sync state to latest initialData each time the modal opens or the certificate type changes.
+  // Without this, React's useState only uses initialData on first mount, causing stale data
+  // from a previous patient/certificate to be sent when the clinician opens a new certificate.
+  useEffect(() => {
+    if (isOpen) {
+      setData(initialData);
+      setPhone(patientPhone.replace(/\D/g, '').slice(-10));
+      setErrorMessage(null);
+      setIsSuccess(false);
+      setIsSending(false);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, initialData.type, patientPhone]);
 
   if (!isOpen) return null;
 
