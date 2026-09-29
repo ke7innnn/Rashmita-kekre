@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -13,16 +13,14 @@ import {
   Loader2,
   CheckCircle,
   AlertTriangle,
-  ExternalLink,
   Eye,
   EyeOff,
   Columns,
   Maximize2,
-  Sliders,
-  ZoomIn,
-  ZoomOut,
   Copy,
   Check,
+  Save,
+  Cloud,
 } from 'lucide-react';
 import CertificateDocument, { CertificateData, CertificateType } from './CertificateDocument';
 import CertificateEditorPanel from './CertificateEditorPanel';
@@ -36,6 +34,32 @@ interface CertificateModalProps {
   onSuccess?: () => void;
 }
 
+// ─── LocalStorage key helpers ────────────────────────────────────────────────
+const draftKey = (patientId: string, type: string) =>
+  `cert_draft_${patientId}_${type}`;
+
+function saveDraft(patientId: string, data: CertificateData) {
+  try {
+    localStorage.setItem(draftKey(patientId, data.type), JSON.stringify(data));
+  } catch {}
+}
+
+function loadDraft(patientId: string, type: string): CertificateData | null {
+  try {
+    const raw = localStorage.getItem(draftKey(patientId, type));
+    return raw ? (JSON.parse(raw) as CertificateData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function clearDraft(patientId: string, type: string) {
+  try {
+    localStorage.removeItem(draftKey(patientId, type));
+  } catch {}
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function CertificateModal({
   isOpen,
   onClose,
@@ -55,38 +79,85 @@ export default function CertificateModal({
   const [isSuccess, setIsSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Sync state to latest initialData each time the modal opens or the certificate type changes.
-  // Without this, React's useState only uses initialData on first mount, causing stale data
-  // from a previous patient/certificate to be sent when the clinician opens a new certificate.
+  // Save state: 'idle' | 'saving' | 'saved' | 'unsaved'
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'unsaved'>('idle');
+  const autosaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedFlashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ─── On open: sync state & restore draft ───────────────────────────────────
   useEffect(() => {
     if (isOpen) {
-      setData(initialData);
+      const draft = loadDraft(patientId, initialData.type);
+      // Always prefer draft over initialData if it exists (contains clinician edits)
+      setData(draft ?? initialData);
       setPhone(patientPhone.replace(/\D/g, '').slice(-10));
       setErrorMessage(null);
       setIsSuccess(false);
       setIsSending(false);
+      setSaveStatus(draft ? 'saved' : 'idle');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, initialData.type, patientPhone]);
 
+  // ─── Autosave: debounce 800ms after any data change ────────────────────────
+  const handleDataChange = useCallback((updated: CertificateData) => {
+    setData(updated);
+    setSaveStatus('unsaved');
+
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = setTimeout(() => {
+      setSaveStatus('saving');
+      saveDraft(patientId, updated);
+      setSaveStatus('saved');
+
+      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
+      savedFlashTimer.current = setTimeout(() => {
+        setSaveStatus('idle');
+      }, 2500);
+    }, 800);
+  }, [patientId]);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
+    };
+  }, []);
+
   if (!isOpen) return null;
 
+  // ─── Manual Save ───────────────────────────────────────────────────────────
+  const handleManualSave = () => {
+    if (autosaveTimer.current) clearTimeout(autosaveTimer.current);
+    setSaveStatus('saving');
+    saveDraft(patientId, data);
+    setTimeout(() => {
+      setSaveStatus('saved');
+      if (savedFlashTimer.current) clearTimeout(savedFlashTimer.current);
+      savedFlashTimer.current = setTimeout(() => setSaveStatus('idle'), 3000);
+    }, 300);
+  };
+
+  // ─── Reset ─────────────────────────────────────────────────────────────────
   const handleReset = () => {
+    clearDraft(patientId, data.type);
     setData(initialData);
     setErrorMessage(null);
+    setSaveStatus('idle');
   };
 
   const handlePrint = () => {
     window.print();
   };
 
-  // Generate safe state-encoded link for patient public view
+  // ─── URLs ──────────────────────────────────────────────────────────────────
   const encodedState = typeof window !== 'undefined' ? btoa(encodeURIComponent(JSON.stringify(data))) : '';
   const safeStateParam = encodeURIComponent(encodedState);
   const publicCertificateUrl = `https://www.thehealth360.in/certificate/${data.type}/${patientId}?s=${safeStateParam}`;
   const pdfDownloadUrl = `https://www.thehealth360.in/api/certificate/pdf?type=${data.type}&s=${safeStateParam}&t=${Date.now()}`;
 
-  // Formatted summary text for WhatsApp
+  // ─── WhatsApp Message ─────────────────────────────────────────────────────
   const generateWhatsAppMessage = () => {
     const pName = data.patientName || 'Patient';
     if (data.type === 'treatment_payment') {
@@ -167,11 +238,15 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
 
   const messageText = generateWhatsAppMessage();
 
+  // ─── Send handlers ─────────────────────────────────────────────────────────
   const handleOpenDirectWhatsApp = () => {
+    // Save before send so it's always the correct version
+    saveDraft(patientId, data);
     const cleanPhone = phone.replace(/\D/g, '').slice(-10);
     const target = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
     const url = `https://wa.me/${target}?text=${encodeURIComponent(messageText)}`;
     window.open(url, '_blank');
+    clearDraft(patientId, data.type);
     if (onSuccess) onSuccess();
     onClose();
   };
@@ -189,10 +264,11 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
       return;
     }
 
+    // Save before send
+    saveDraft(patientId, data);
     setIsSending(true);
     setErrorMessage(null);
 
-    // Map template name to unique approved names
     const templateMap: Record<string, string> = {
       treatment_payment: 'health360_treatment_certificate',
       fitness: 'health360_fitness_certificate',
@@ -202,7 +278,6 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
 
     const templateName = templateMap[data.type] || 'welcome_clinic_info';
 
-    // Map params
     let params: string[] = [];
     if (data.type === 'treatment_payment') {
       params = [
@@ -259,6 +334,7 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
 
       if (res.ok && resData.success) {
         setIsSuccess(true);
+        clearDraft(patientId, data.type);
         if (onSuccess) onSuccess();
         setTimeout(() => {
           setIsSuccess(false);
@@ -291,6 +367,31 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
     }
   };
 
+  // ─── Save button UI helpers ────────────────────────────────────────────────
+  const SaveIcon =
+    saveStatus === 'saving' ? (
+      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+    ) : saveStatus === 'saved' ? (
+      <Check className="w-3.5 h-3.5 text-emerald-400" />
+    ) : (
+      <Save className="w-3.5 h-3.5" />
+    );
+
+  const saveLabel =
+    saveStatus === 'saving'
+      ? 'Saving…'
+      : saveStatus === 'saved'
+      ? 'Saved!'
+      : 'Save Draft';
+
+  const saveBtnClass =
+    saveStatus === 'saved'
+      ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
+      : saveStatus === 'unsaved'
+      ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 animate-pulse'
+      : 'bg-white/5 border-white/10 text-white/70 hover:text-white hover:bg-white/10';
+
+  // ─── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 select-none">
       {/* Backdrop */}
@@ -311,7 +412,7 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
         onClick={(e) => e.stopPropagation()}
       >
         {/* =========================================================
-            1. TOP TOOLBAR WITH MODERN WORKSPACE CONTROLS
+            1. TOP TOOLBAR
            ========================================================= */}
         <div className="no-print bg-[#131B2E] border-b border-slate-800 py-2.5 px-4 sm:px-6 flex flex-wrap items-center justify-between gap-3 shrink-0">
           {/* Left: Title & Mode Selectors */}
@@ -322,6 +423,10 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
                 <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline-flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3" /> Signed
                 </span>
+                {/* Unsaved dot indicator */}
+                {saveStatus === 'unsaved' && (
+                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" title="Unsaved changes" />
+                )}
               </div>
             </div>
 
@@ -419,11 +524,23 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
               <span className="hidden sm:inline">WA Preview</span>
             </button>
 
+            {/* ── SAVE DRAFT BUTTON ── */}
+            <button
+              type="button"
+              onClick={handleManualSave}
+              disabled={saveStatus === 'saving'}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1.5 border cursor-pointer disabled:cursor-not-allowed ${saveBtnClass}`}
+              title="Save certificate edits as draft (auto-restores on next open)"
+            >
+              {SaveIcon}
+              <span className="hidden sm:inline">{saveLabel}</span>
+            </button>
+
             <button
               type="button"
               onClick={handleReset}
               className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-white/70 hover:text-white text-xs font-semibold transition flex items-center gap-1.5 border border-white/10 cursor-pointer"
-              title="Restore initial values"
+              title="Restore initial values and clear draft"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Reset</span>
@@ -457,7 +574,7 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
             <div className="w-[360px] lg:w-[380px] shrink-0 border-r border-slate-800 h-full overflow-hidden flex flex-col z-20">
               <CertificateEditorPanel
                 data={data}
-                onChange={setData}
+                onChange={handleDataChange}
                 onReset={handleReset}
               />
             </div>
@@ -471,7 +588,32 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
                 <Edit3 className="w-3 h-3 text-sky-400" />
                 <span>Click directly on paper text to edit inline or use the left parameters panel.</span>
               </span>
-              <span className="font-mono text-[10px] text-white/40">A4 Portrait · 210 × 297 mm</span>
+              {/* Autosave status pill on canvas bar */}
+              <AnimatePresence>
+                {saveStatus !== 'idle' && (
+                  <motion.span
+                    initial={{ opacity: 0, x: 8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: 8 }}
+                    className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${
+                      saveStatus === 'saved'
+                        ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-400'
+                        : saveStatus === 'saving'
+                        ? 'bg-sky-500/15 border-sky-500/30 text-sky-400'
+                        : 'bg-amber-500/15 border-amber-500/30 text-amber-400'
+                    }`}
+                  >
+                    {saveStatus === 'saving' && <Loader2 className="w-2.5 h-2.5 animate-spin" />}
+                    {saveStatus === 'saved' && <Cloud className="w-2.5 h-2.5" />}
+                    {saveStatus === 'unsaved' && <span className="w-2 h-2 rounded-full bg-amber-400 inline-block" />}
+                    {saveStatus === 'saving'
+                      ? 'Autosaving…'
+                      : saveStatus === 'saved'
+                      ? 'Draft saved'
+                      : 'Unsaved edits'}
+                  </motion.span>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Scaled Canvas */}
@@ -487,7 +629,7 @@ Health 360 Clinic · Vasai West (+91 8071 583 519)`;
                 data={data}
                 isEditable={true}
                 previewOnly={previewOnly}
-                onUpdate={setData}
+                onUpdate={handleDataChange}
               />
             </div>
           </div>
