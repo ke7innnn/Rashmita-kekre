@@ -588,6 +588,119 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
     }
   });
 
+  // ─── Treatment Dates & Session Calculations (Hooks called unconditionally at top) ────
+  // Sort all appointments chronologically (earliest to latest)
+  const allChronologicalAppointments = useMemo(() => {
+    return [...(patient?.appointments || [])].sort((a: any, b: any) => {
+      const dateA = a.date ? (a.date.split('T')[0] || '') : '';
+      const dateB = b.date ? (b.date.split('T')[0] || '') : '';
+      const timeA = new Date(`${dateA}T${a.startTime || '00:00'}:00`).getTime();
+      const timeB = new Date(`${dateB}T${b.startTime || '00:00'}:00`).getTime();
+      return timeA - timeB;
+    });
+  }, [patient?.appointments]);
+
+  // Completed or attended sessions
+  const completedAppointments = useMemo(() => {
+    return allChronologicalAppointments.filter((a: any) => a.status === 'COMPLETED');
+  }, [allChronologicalAppointments]);
+
+  // Packages summary
+  const packageSessionsUsed = useMemo(() => {
+    return (packages || []).reduce((acc: number, p: any) => acc + (p.sessionsUsed || 0), 0);
+  }, [packages]);
+
+  const packageTotalSessions = useMemo(() => {
+    return (packages || []).reduce((acc: number, p: any) => acc + (p.totalSessions || 0), 0);
+  }, [packages]);
+
+  // Determine overall Start Date, End Date, and Sessions Count
+  const sessionStats = useMemo(() => {
+    const hasCompleted = completedAppointments.length > 0;
+    const hasAnyAppt = allChronologicalAppointments.length > 0;
+
+    let startDateObj: Date;
+    let endDateObj: Date;
+    let count: number;
+
+    if (hasCompleted) {
+      startDateObj = new Date(completedAppointments[0].date);
+      endDateObj = new Date(completedAppointments[completedAppointments.length - 1].date);
+      count = completedAppointments.length;
+    } else if (hasAnyAppt) {
+      startDateObj = new Date(allChronologicalAppointments[0].date);
+      endDateObj = new Date(allChronologicalAppointments[allChronologicalAppointments.length - 1].date);
+      count = allChronologicalAppointments.length;
+    } else if (packages && packages.length > 0) {
+      startDateObj = new Date(packages[0].purchaseDate || packages[0].createdAt || patient?.createdAt || Date.now());
+      endDateObj = new Date();
+      count = packageSessionsUsed > 0 ? packageSessionsUsed : packageTotalSessions || 0;
+    } else {
+      startDateObj = patient?.createdAt ? new Date(patient.createdAt) : new Date();
+      endDateObj = new Date();
+      count = 0;
+    }
+
+    const formatDate = (d: Date) => isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    const formatRaw = (d: Date) => isNaN(d.getTime()) ? '' : d.toISOString().split('T')[0];
+    const diffDays = isNaN(startDateObj.getTime()) || isNaN(endDateObj.getTime()) ? 0 : Math.max(1, Math.round((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
+
+    return {
+      startDate: formatDate(startDateObj),
+      endDate: formatDate(endDateObj),
+      startDateRaw: formatRaw(startDateObj),
+      endDateRaw: formatRaw(endDateObj),
+      count,
+      diffDays,
+      hasAppointments: hasAnyAppt,
+      completedCount: completedAppointments.length,
+      scheduledCount: allChronologicalAppointments.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'WAITING' || a.status === 'IN_PROGRESS').length,
+    };
+  }, [allChronologicalAppointments, completedAppointments, packages, packageSessionsUsed, packageTotalSessions, patient?.createdAt]);
+
+  // Filtered sessions for the interactive date calculator
+  const activeRangeSessions = useMemo(() => {
+    let list = [...allChronologicalAppointments];
+
+    if (sessionQuickFilter === 'completed') {
+      list = list.filter((a: any) => a.status === 'COMPLETED');
+    } else if (sessionQuickFilter === 'first5') {
+      const completed = list.filter((a: any) => a.status === 'COMPLETED');
+      list = completed.length >= 5 ? completed.slice(0, 5) : list.slice(0, 5);
+    } else if (sessionQuickFilter === 'last5') {
+      const completed = list.filter((a: any) => a.status === 'COMPLETED');
+      list = completed.length >= 5 ? completed.slice(-5) : list.slice(-5);
+    }
+
+    if (filterRangeStart) {
+      const startMs = new Date(`${filterRangeStart}T00:00:00`).getTime();
+      list = list.filter((a: any) => new Date(a.date).getTime() >= startMs);
+    }
+
+    if (filterRangeEnd) {
+      const endMs = new Date(`${filterRangeEnd}T23:59:59`).getTime();
+      list = list.filter((a: any) => new Date(a.date).getTime() <= endMs);
+    }
+
+    return list;
+  }, [allChronologicalAppointments, sessionQuickFilter, filterRangeStart, filterRangeEnd]);
+
+  const activeRangeStartDate = useMemo(() => {
+    if (activeRangeSessions.length > 0) {
+      const d = new Date(activeRangeSessions[0].date);
+      return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    return sessionStats.startDate;
+  }, [activeRangeSessions, sessionStats.startDate]);
+
+  const activeRangeEndDate = useMemo(() => {
+    if (activeRangeSessions.length > 0) {
+      const d = new Date(activeRangeSessions[activeRangeSessions.length - 1].date);
+      return isNaN(d.getTime()) ? '' : d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+    }
+    return sessionStats.endDate;
+  }, [activeRangeSessions, sessionStats.endDate]);
+
   if (isLoading || !patient) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center py-20 bg-white/5 border border-white/10 rounded-3xl">
@@ -627,114 +740,6 @@ export default function PatientTimeline({ patientId, onBack }: Props) {
   });
 
   timelineItems.sort((a, b) => b.sortDate.getTime() - a.sortDate.getTime());
-
-  // ─── Treatment Dates & Session Calculations ───────────────────────────────
-  // Sort all appointments chronologically (earliest to latest)
-  const allChronologicalAppointments = useMemo(() => {
-    return [...(patient?.appointments || [])].sort((a: any, b: any) => {
-      const timeA = new Date(`${a.date.split('T')[0]}T${a.startTime || '00:00'}:00`).getTime();
-      const timeB = new Date(`${b.date.split('T')[0]}T${b.startTime || '00:00'}:00`).getTime();
-      return timeA - timeB;
-    });
-  }, [patient?.appointments]);
-
-  // Completed or attended sessions
-  const completedAppointments = useMemo(() => {
-    return allChronologicalAppointments.filter((a: any) => a.status === 'COMPLETED');
-  }, [allChronologicalAppointments]);
-
-  // Packages summary
-  const packageSessionsUsed = useMemo(() => {
-    return (packages || []).reduce((acc: number, p: any) => acc + (p.sessionsUsed || 0), 0);
-  }, [packages]);
-
-  const packageTotalSessions = useMemo(() => {
-    return (packages || []).reduce((acc: number, p: any) => acc + (p.totalSessions || 0), 0);
-  }, [packages]);
-
-  // Determine overall Start Date, End Date, and Sessions Count
-  const sessionStats = useMemo(() => {
-    const hasCompleted = completedAppointments.length > 0;
-    const hasAnyAppt = allChronologicalAppointments.length > 0;
-
-    let startDateObj: Date;
-    let endDateObj: Date;
-    let count: number;
-
-    if (hasCompleted) {
-      startDateObj = new Date(completedAppointments[0].date);
-      endDateObj = new Date(completedAppointments[completedAppointments.length - 1].date);
-      count = completedAppointments.length;
-    } else if (hasAnyAppt) {
-      startDateObj = new Date(allChronologicalAppointments[0].date);
-      endDateObj = new Date(allChronologicalAppointments[allChronologicalAppointments.length - 1].date);
-      count = allChronologicalAppointments.length;
-    } else if (packages && packages.length > 0) {
-      startDateObj = new Date(packages[0].purchaseDate || packages[0].createdAt || patient.createdAt);
-      endDateObj = new Date();
-      count = packageSessionsUsed > 0 ? packageSessionsUsed : packageTotalSessions || 0;
-    } else {
-      startDateObj = patient?.createdAt ? new Date(patient.createdAt) : new Date();
-      endDateObj = new Date();
-      count = 0;
-    }
-
-    const formatDate = (d: Date) => d.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    const diffDays = Math.max(1, Math.round((endDateObj.getTime() - startDateObj.getTime()) / (1000 * 60 * 60 * 24)) + 1);
-
-    return {
-      startDate: formatDate(startDateObj),
-      endDate: formatDate(endDateObj),
-      startDateRaw: startDateObj.toISOString().split('T')[0],
-      endDateRaw: endDateObj.toISOString().split('T')[0],
-      count,
-      diffDays,
-      hasAppointments: hasAnyAppt,
-      completedCount: completedAppointments.length,
-      scheduledCount: allChronologicalAppointments.filter((a: any) => a.status === 'SCHEDULED' || a.status === 'WAITING' || a.status === 'IN_PROGRESS').length,
-    };
-  }, [allChronologicalAppointments, completedAppointments, packages, packageSessionsUsed, packageTotalSessions, patient?.createdAt]);
-
-  // Filtered sessions for the interactive date calculator
-  const activeRangeSessions = useMemo(() => {
-    let list = [...allChronologicalAppointments];
-
-    if (sessionQuickFilter === 'completed') {
-      list = list.filter((a: any) => a.status === 'COMPLETED');
-    } else if (sessionQuickFilter === 'first5') {
-      const completed = list.filter((a: any) => a.status === 'COMPLETED');
-      list = completed.length >= 5 ? completed.slice(0, 5) : list.slice(0, 5);
-    } else if (sessionQuickFilter === 'last5') {
-      const completed = list.filter((a: any) => a.status === 'COMPLETED');
-      list = completed.length >= 5 ? completed.slice(-5) : list.slice(-5);
-    }
-
-    if (filterRangeStart) {
-      const startMs = new Date(`${filterRangeStart}T00:00:00`).getTime();
-      list = list.filter((a: any) => new Date(a.date).getTime() >= startMs);
-    }
-
-    if (filterRangeEnd) {
-      const endMs = new Date(`${filterRangeEnd}T23:59:59`).getTime();
-      list = list.filter((a: any) => new Date(a.date).getTime() <= endMs);
-    }
-
-    return list;
-  }, [allChronologicalAppointments, sessionQuickFilter, filterRangeStart, filterRangeEnd]);
-
-  const activeRangeStartDate = useMemo(() => {
-    if (activeRangeSessions.length > 0) {
-      return new Date(activeRangeSessions[0].date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-    return sessionStats.startDate;
-  }, [activeRangeSessions, sessionStats.startDate]);
-
-  const activeRangeEndDate = useMemo(() => {
-    if (activeRangeSessions.length > 0) {
-      return new Date(activeRangeSessions[activeRangeSessions.length - 1].date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-    }
-    return sessionStats.endDate;
-  }, [activeRangeSessions, sessionStats.endDate]);
 
   const romFiles = patient.attachments.filter((a: any) => a.fileType === 'rom-photo' || a.name.includes('ROM'));
 
