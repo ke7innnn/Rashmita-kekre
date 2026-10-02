@@ -282,11 +282,11 @@ export default function AnalyticsTab() {
             <div className="flex justify-between items-start">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">
-                  New Patients Registered
+                  New Patient Intake
                 </span>
                 <div className="text-3xl font-bold text-white mt-1 font-mono tracking-tight flex items-baseline gap-2">
-                  <span>{patients.newRegistered}</span>
-                  <span className="text-xs font-sans font-normal text-white/50">new registrations</span>
+                  <span>{patients.directRegistered ?? patients.newRegistered}</span>
+                  <span className="text-xs font-sans font-normal text-white/50">new walk-in/portal</span>
                 </div>
               </div>
               <span className="p-3 rounded-2xl bg-purple-500/15 text-purple-300 border border-purple-500/30">
@@ -295,9 +295,15 @@ export default function AnalyticsTab() {
             </div>
 
             <div className="mt-5 space-y-3 pt-4 border-t border-white/10 text-xs text-white/70 font-medium">
-              <p className="leading-relaxed">
-                Registered in {formatMonthLabel(selectedMonth)} across online portal, reception check-ins, and doctor referrals.
-              </p>
+              {patients.importedBatch ? (
+                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-[11px] text-purple-200">
+                  <span className="font-bold text-white">+{patients.importedBatch} historical records</span> imported in bulk from clinic records on Sept 10.
+                </div>
+              ) : (
+                <p className="leading-relaxed">
+                  Registered in {formatMonthLabel(selectedMonth)} across online portal, reception check-ins, and referrals.
+                </p>
+              )}
 
               <div className="p-3 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center justify-between">
                 <span className="text-white/60">Total Active Clinic Database</span>

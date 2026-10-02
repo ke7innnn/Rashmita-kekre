@@ -108,6 +108,26 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const directRegistered = await prisma.patient.count({
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+        importBatchId: null,
+      },
+    });
+
+    const importedBatch = await prisma.patient.count({
+      where: {
+        createdAt: {
+          gte: startOfMonth,
+          lte: endOfMonth,
+        },
+        importBatchId: { not: null },
+      },
+    });
+
     // 4. Invoices in requested month
     const invoices = await prisma.invoice.findMany({
       where: {
@@ -170,6 +190,8 @@ export async function GET(req: NextRequest) {
       },
       patients: {
         newRegistered: newPatientsCount,
+        directRegistered,
+        importedBatch,
       },
       invoices: {
         count: invoices.length,
