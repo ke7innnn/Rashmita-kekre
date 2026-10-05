@@ -3,6 +3,37 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
+interface StaffShiftRecord {
+  id: string;
+  date: string;
+  clockInAt: string;
+  clockOutAt: string | null;
+  durationHours: number;
+  notes: string | null;
+}
+
+interface StaffAggregate {
+  userId: string;
+  name: string;
+  email: string;
+  designation: string;
+  uniqueDays: Set<string>;
+  totalMinutes: number;
+  records: StaffShiftRecord[];
+}
+
+function formatStaffName(user: { fullName?: string | null; email?: string | null; designation?: string | null }): string {
+  if (user.fullName && user.fullName.trim()) return user.fullName.trim();
+  const emailPrefix = (user.email || 'staff').split('@')[0];
+  if (emailPrefix.toLowerCase().startsWith('dr.')) {
+    const raw = emailPrefix.slice(3);
+    const capitalized = raw.charAt(0).toUpperCase() + raw.slice(1);
+    return `Dr. ${capitalized}`;
+  }
+  if (user.designation) return `${user.designation} (${emailPrefix})`;
+  return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) {
@@ -14,7 +45,6 @@ export async function GET(req: NextRequest) {
     // Format: YYYY-MM, e.g. "2026-09"
     const requestedMonth = searchParams.get('month');
 
-    // Default to September 2026 if requested or current/last month
     let targetYear: number;
     let targetMonth: number; // 1-12
 
@@ -35,11 +65,9 @@ export async function GET(req: NextRequest) {
     const endOfMonthUTC = new Date(Date.UTC(targetYear, targetMonth, 0, 23, 59, 59, 999));
     const endRange = new Date(endOfMonthUTC.getTime() + (6 * 60 * 60 * 1000)); // 6h buffer after for IST
 
-    const startOfMonth = startRange;
-    const endOfMonth = endRange;
-
     // Helper to test if a timestamp belongs to the target month in UTC or IST
-    const isDateInTargetMonth = (dateObj: Date | string) => {
+    const isDateInTargetMonth = (dateObj: Date | string | null | undefined) => {
+      if (!dateObj) return false;
       const d = new Date(dateObj);
       if (isNaN(d.getTime())) return false;
       const inUTC = d.getUTCFullYear() === targetYear && (d.getUTCMonth() + 1) === targetMonth;
@@ -48,7 +76,9 @@ export async function GET(req: NextRequest) {
       return inUTC || inIST;
     };
 
-    // 1. Payments in requested month
+    // ─────────────────────────────────────────────────────────────
+    // 1. EARNINGS OF THE MONTH: CASH & UPI BREAKDOWN
+    // ─────────────────────────────────────────────────────────────
     const rawPayments = await prisma.payment.findMany({
       where: {
         date: {
@@ -109,7 +139,12 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // 2. Appointments in requested month
+    const upiPercentage = totalCollected > 0 ? Math.round((upiTotal / totalCollected) * 100) : 0;
+    const cashPercentage = totalCollected > 0 ? Math.round((cashTotal / totalCollected) * 100) : 0;
+
+    // ─────────────────────────────────────────────────────────────
+    // 2. TOTAL NUMBER OF SESSIONS & MODALITY BREAKDOWN
+    // ─────────────────────────────────────────────────────────────
     const rawAppointments = await prisma.appointment.findMany({
       where: {
         date: {
@@ -117,13 +152,26 @@ export async function GET(req: NextRequest) {
           lte: endRange,
         },
       },
-      select: {
-        id: true,
-        date: true,
-        startTime: true,
-        status: true,
-        treatmentType: true,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+            referringDoctor: true,
+            treatmentModalityAssigned: true,
+          },
+        },
+        assignedPhysio: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            designation: true,
+          },
+        },
       },
+      orderBy: { date: 'desc' },
     });
 
     const appointments = rawAppointments.filter((a) => isDateInTargetMonth(a.date));
@@ -137,59 +185,290 @@ export async function GET(req: NextRequest) {
     ).length;
     const completionRate = totalAppointments > 0 ? Math.round((completedAppointments / totalAppointments) * 100) : 0;
 
-    // 3. New Patients registered in requested month
-    const newPatientsCount = await prisma.patient.count({
+    // Modality breakdown
+    const modalityCountMap: Record<string, number> = {};
+    appointments.forEach((a) => {
+      const mod = a.treatmentType?.trim() || 'General Physiotherapy';
+      modalityCountMap[mod] = (modalityCountMap[mod] || 0) + 1;
+    });
+
+    const modalityBreakdown = Object.entries(modalityCountMap)
+      .map(([name, count]) => ({
+        name,
+        count,
+        percentage: totalAppointments > 0 ? Math.round((count / totalAppointments) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // ─────────────────────────────────────────────────────────────
+    // 3. PATIENTS WHO CAME IN THE MONTH
+    // ─────────────────────────────────────────────────────────────
+    const patientAttendanceMap = new Map<string, {
+      id: string;
+      fullName: string;
+      phone: string;
+      totalVisits: number;
+      modalities: Set<string>;
+      referringDoctor: string;
+      lastVisitDate: string;
+      statusPill: string;
+    }>();
+
+    appointments.forEach((app) => {
+      if (!app.patient) return;
+      const p = app.patient;
+      const appDateStr = new Date(app.date).toISOString().split('T')[0];
+      const isAttended = app.status === 'COMPLETED' || app.status === 'IN_PROGRESS' || app.status === 'WAITING';
+
+      const existing = patientAttendanceMap.get(p.id) || {
+        id: p.id,
+        fullName: p.fullName,
+        phone: p.phone || '',
+        totalVisits: 0,
+        modalities: new Set<string>(),
+        referringDoctor: p.referringDoctor?.trim() || 'Self / Walk-in',
+        lastVisitDate: appDateStr,
+        statusPill: isAttended ? 'Attended' : app.status,
+      };
+
+      if (isAttended) {
+        existing.totalVisits += 1;
+        existing.statusPill = 'Attended';
+      }
+      if (app.treatmentType) {
+        existing.modalities.add(app.treatmentType);
+      }
+      if (appDateStr > existing.lastVisitDate) {
+        existing.lastVisitDate = appDateStr;
+      }
+
+      patientAttendanceMap.set(p.id, existing);
+    });
+
+    const patientsWhoCameList = Array.from(patientAttendanceMap.values())
+      .map((entry) => ({
+        id: entry.id,
+        fullName: entry.fullName,
+        phone: entry.phone,
+        totalVisits: entry.totalVisits,
+        treatmentTypes: Array.from(entry.modalities),
+        referringDoctor: entry.referringDoctor,
+        lastVisitDate: entry.lastVisitDate,
+      }))
+      .sort((a, b) => b.totalVisits - a.totalVisits);
+
+    // ─────────────────────────────────────────────────────────────
+    // 4. STAFF ATTENDANCE
+    // ─────────────────────────────────────────────────────────────
+    const rawAttendance = await prisma.staffAttendance.findMany({
       where: {
-        createdAt: {
-          gte: startOfMonth,
-          lte: endOfMonth,
+        date: {
+          gte: startRange,
+          lte: endRange,
         },
       },
-    });
-
-    const directRegistered = await prisma.patient.count({
-      where: {
-        createdAt: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
-        importBatchId: null,
-      },
-    });
-
-    const importedBatch = await prisma.patient.count({
-      where: {
-        createdAt: {
-          gte: startOfMonth,
-          lte: endOfMonth,
-        },
-        importBatchId: { not: null },
-      },
-    });
-
-    // 4. Invoices in requested month
-    const invoices = await prisma.invoice.findMany({
-      where: {
-        createdAt: {
-          gte: startOfMonth,
-          lte: endOfMonth,
+      include: {
+        user: {
+          select: {
+            id: true,
+            fullName: true,
+            email: true,
+            designation: true,
+            role: true,
+          },
         },
       },
-      select: {
-        totalAmount: true,
-        paidAmount: true,
-        status: true,
-      },
+      orderBy: { clockInAt: 'desc' },
     });
 
-    let totalInvoiced = 0;
-    let totalInvoicePaid = 0;
-    invoices.forEach((inv) => {
-      totalInvoiced += Number(inv.totalAmount) || 0;
-      totalInvoicePaid += Number(inv.paidAmount) || 0;
+    const attendanceRecords = rawAttendance.filter((r) => isDateInTargetMonth(r.date));
+
+    // Group by staff user
+    const staffMap = new Map<string, StaffAggregate>();
+
+    attendanceRecords.forEach((att) => {
+      const u = att.user;
+      if (!u) return;
+
+      const dateStr = new Date(att.date).toISOString().split('T')[0];
+      const inTime = new Date(att.clockInAt).getTime();
+      const outTime = att.clockOutAt ? new Date(att.clockOutAt).getTime() : inTime + 4 * 3600 * 1000;
+      const diffMins = Math.max(15, Math.min(720, Math.round((outTime - inTime) / (60 * 1000))));
+      const durationHours = parseFloat((diffMins / 60).toFixed(1));
+
+      const existing: StaffAggregate = staffMap.get(u.id) || {
+        userId: u.id,
+        name: formatStaffName(u),
+        email: u.email || '',
+        designation: u.designation || 'Clinical Physiotherapist',
+        uniqueDays: new Set<string>(),
+        totalMinutes: 0,
+        records: [],
+      };
+
+      existing.uniqueDays.add(dateStr);
+      existing.totalMinutes += diffMins;
+      existing.records.push({
+        id: att.id,
+        date: dateStr,
+        clockInAt: att.clockInAt.toISOString(),
+        clockOutAt: att.clockOutAt ? att.clockOutAt.toISOString() : null,
+        durationHours,
+        notes: att.notes,
+      });
+
+      staffMap.set(u.id, existing);
     });
 
-    // 5. Available months in database (for easy switching)
+    const staffSummary = Array.from(staffMap.values()).map((s) => {
+      const daysCount = s.uniqueDays.size;
+      const totalHours = parseFloat((s.totalMinutes / 60).toFixed(1));
+      const avgHoursPerShift = daysCount > 0 ? parseFloat((totalHours / daysCount).toFixed(1)) : 0;
+      return {
+        userId: s.userId,
+        name: s.name,
+        email: s.email,
+        designation: s.designation,
+        daysPresent: daysCount,
+        totalHours,
+        avgHoursPerShift,
+        records: s.records.slice(0, 10),
+      };
+    }).sort((a, b) => b.daysPresent - a.daysPresent);
+
+    const totalStaffShifts = attendanceRecords.length;
+    const totalStaffHours = parseFloat((attendanceRecords.reduce((sum, r) => {
+      const inT = new Date(r.clockInAt).getTime();
+      const outT = r.clockOutAt ? new Date(r.clockOutAt).getTime() : inT + 4 * 3600 * 1000;
+      return sum + (outT - inT);
+    }, 0) / (3600 * 1000)).toFixed(1));
+
+    // ─────────────────────────────────────────────────────────────
+    // 5. DROP-OUTS (MISSED SESSIONS & STALLED PACKAGES)
+    // ─────────────────────────────────────────────────────────────
+    // A: Patients with NO_SHOW or CANCELLED appointments in this month who have not had a subsequent completed appointment
+    const dropoutsMap = new Map<string, {
+      patientId: string;
+      fullName: string;
+      phone: string;
+      referringDoctor: string;
+      reason: string;
+      treatmentType: string;
+      date: string;
+      type: 'NO_SHOW' | 'CANCELLED' | 'STALLED_COURSE';
+      unusedSessions?: number;
+    }>();
+
+    // Check no-shows & cancellations
+    appointments
+      .filter((a) => a.status === 'NO_SHOW' || a.status === 'CANCELLED')
+      .forEach((a) => {
+        if (!a.patient) return;
+        // Check if patient had any completed visit after this date
+        const hasCompletedLater = appointments.some(
+          (other) => other.patientId === a.patientId &&
+            other.status === 'COMPLETED' &&
+            new Date(other.date).getTime() >= new Date(a.date).getTime()
+        );
+
+        if (!hasCompletedLater) {
+          dropoutsMap.set(a.patientId, {
+            patientId: a.patientId,
+            fullName: a.patient.fullName,
+            phone: a.patient.phone || '',
+            referringDoctor: a.patient.referringDoctor || 'Self / Direct',
+            reason: a.status === 'NO_SHOW'
+              ? `Missed session (No-Show on ${new Date(a.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}) — not rebooked`
+              : `Appointment cancelled on ${new Date(a.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })} — no follow-up scheduled`,
+            treatmentType: a.treatmentType || 'Consultation',
+            date: new Date(a.date).toISOString().split('T')[0],
+            type: a.status as 'NO_SHOW' | 'CANCELLED',
+          });
+        }
+      });
+
+    // B: Active packages with unused sessions where patient has not visited clinic in the last 14 days of the target month
+    const activePackages = await prisma.patientPackage.findMany({
+      where: { status: 'ACTIVE' },
+      include: {
+        patient: {
+          select: { id: true, fullName: true, phone: true, referringDoctor: true }
+        },
+        plan: { select: { name: true } }
+      }
+    });
+
+    const monthEndTimestamp = endOfMonthUTC.getTime();
+    activePackages.forEach((pkg) => {
+      const unused = pkg.daysPurchased - pkg.sessionsUsed;
+      if (unused > 0 && pkg.patient) {
+        // If not already in dropouts, check their last appointment
+        if (!dropoutsMap.has(pkg.patient.id)) {
+          const patientApps = appointments.filter((a) => a.patientId === pkg.patient.id && a.status === 'COMPLETED');
+          const lastApp = patientApps[0]; // sorted desc
+          const lastDate = lastApp ? new Date(lastApp.date).getTime() : 0;
+          const daysSinceVisit = lastDate > 0 ? Math.round((monthEndTimestamp - lastDate) / (24 * 3600 * 1000)) : 30;
+
+          if (daysSinceVisit >= 12) {
+            dropoutsMap.set(pkg.patient.id, {
+              patientId: pkg.patient.id,
+              fullName: pkg.patient.fullName,
+              phone: pkg.patient.phone || '',
+              referringDoctor: pkg.patient.referringDoctor || 'Self / Direct',
+              reason: `Stalled Treatment Plan: ${unused} session${unused !== 1 ? 's' : ''} unused (${pkg.plan?.name || 'Package'}). No visit in ${daysSinceVisit} days.`,
+              treatmentType: pkg.plan?.name || 'Treatment Course',
+              date: lastApp ? new Date(lastApp.date).toISOString().split('T')[0] : 'No recent visit',
+              type: 'STALLED_COURSE',
+              unusedSessions: unused,
+            });
+          }
+        }
+      }
+    });
+
+    const dropoutsList = Array.from(dropoutsMap.values());
+
+    // ─────────────────────────────────────────────────────────────
+    // 6. REFERRED DOCTOR NAME BREAKDOWN
+    // ─────────────────────────────────────────────────────────────
+    const doctorPatientsMap: Record<string, Set<string>> = {};
+    let totalDoctorReferred = 0;
+    let selfDirectCount = 0;
+
+    appointments.forEach((a) => {
+      if (!a.patient) return;
+      const rawDoc = (a.patient.referringDoctor || '').trim();
+      const isSelf = !rawDoc ||
+        rawDoc.toLowerCase() === 'self' ||
+        rawDoc.toLowerCase() === 'walk-in' ||
+        rawDoc.toLowerCase() === 'direct' ||
+        rawDoc.toLowerCase() === 'none' ||
+        rawDoc.toLowerCase() === 'google' ||
+        rawDoc.toLowerCase() === 'website';
+
+      if (isSelf) {
+        selfDirectCount++;
+      } else {
+        totalDoctorReferred++;
+        if (!doctorPatientsMap[rawDoc]) {
+          doctorPatientsMap[rawDoc] = new Set();
+        }
+        doctorPatientsMap[rawDoc].add(a.patient.fullName);
+      }
+    });
+
+    const referringDoctorsList = Object.entries(doctorPatientsMap)
+      .map(([doctorName, patientSet]) => ({
+        doctorName,
+        count: patientSet.size,
+        patientNames: Array.from(patientSet),
+        percentage: totalDoctorReferred > 0 ? Math.round((patientSet.size / totalDoctorReferred) * 100) : 0,
+      }))
+      .sort((a, b) => b.count - a.count);
+
+    // ─────────────────────────────────────────────────────────────
+    // 7. AVAILABLE MONTHS CALCULATION
+    // ─────────────────────────────────────────────────────────────
     const recentPaymentsForMonths = await prisma.payment.findMany({
       select: { date: true },
       orderBy: { date: 'desc' },
@@ -225,8 +504,18 @@ export async function GET(req: NextRequest) {
         cardTotal,
         otherTotal,
         transactionCount: payments.length,
-        upiPercentage: totalCollected > 0 ? Math.round((upiTotal / totalCollected) * 100) : 0,
-        cashPercentage: totalCollected > 0 ? Math.round((cashTotal / totalCollected) * 100) : 0,
+        upiPercentage,
+        cashPercentage,
+        avgPerSession: completedAppointments > 0 ? Math.round(totalCollected / completedAppointments) : 0,
+        recentPayments: payments.slice(0, 15).map((p) => ({
+          id: p.id,
+          amount: Number(p.amount),
+          mode: p.paymentMode,
+          date: p.date,
+          patientName: p.invoice?.patient?.fullName || 'Walk-in Patient',
+          patientPhone: p.invoice?.patient?.phone || '',
+          invoiceNumber: p.invoice?.invoiceNumber || '',
+        })),
       },
       sessions: {
         total: totalAppointments,
@@ -235,28 +524,29 @@ export async function GET(req: NextRequest) {
         cancelled: cancelledAppointments,
         scheduled: scheduledAppointments,
         completionRate,
+        modalities: modalityBreakdown,
       },
-      patients: {
-        newRegistered: newPatientsCount,
-        directRegistered,
-        importedBatch,
+      patientsWhoCame: {
+        totalUnique: patientsWhoCameList.length,
+        list: patientsWhoCameList,
       },
-      invoices: {
-        count: invoices.length,
-        totalInvoiced,
-        totalInvoicePaid,
-        pendingBalance: Math.max(0, totalInvoiced - totalInvoicePaid),
+      staffAttendance: {
+        totalShifts: totalStaffShifts,
+        totalHours: totalStaffHours,
+        activeStaffCount: staffSummary.length,
+        staffList: staffSummary,
+      },
+      dropouts: {
+        count: dropoutsList.length,
+        list: dropoutsList,
+      },
+      referringDoctors: {
+        totalDoctors: referringDoctorsList.length,
+        totalReferredPatients: totalDoctorReferred,
+        selfDirectCount,
+        list: referringDoctorsList,
       },
       availableMonths,
-      recentPayments: payments.slice(0, 10).map((p) => ({
-        id: p.id,
-        amount: Number(p.amount),
-        mode: p.paymentMode,
-        date: p.date,
-        patientName: p.invoice?.patient?.fullName || 'Walk-in Patient',
-        patientPhone: p.invoice?.patient?.phone || '',
-        invoiceNumber: p.invoice?.invoiceNumber || '',
-      })),
     });
   } catch (error: any) {
     console.error('Failed to fetch monthly analytics:', error);
