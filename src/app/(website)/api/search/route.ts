@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     // Also look for appointments with clinical notes matching query
     const appointments = await prisma.appointment.findMany({
       where: {
-        notes: { contains: q },
+        notes: { contains: q, mode: 'insensitive' },
       },
       include: {
         patient: true,

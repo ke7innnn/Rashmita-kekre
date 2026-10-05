@@ -152,10 +152,10 @@ export default function CRMSidebar({ children }: Props) {
     } else if (status === 'authenticated' && session?.user) {
       setIsAuthenticated(true);
 
-      // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments, Billing & Appointments
+      // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments, Billing & Appointments, and Clinical Analytics
       const role = (session.user.role || '').toLowerCase();
       const isAdmin = role === 'admin';
-      const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments');
+      const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments') || pathname.startsWith('/crm360/analytics');
 
       if (!isAdmin && !isAllowedPath) {
         router.replace('/crm360/patients');
@@ -178,7 +178,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: 'https://health360-nu.vercel.app/', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'], external: true },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
-    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
+    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/insights', name: 'Insights & Action Queue', icon: Sparkles, category: 'management', roles: ['admin'] },
     { href: '/admin/imports/review', name: 'Import Review Queue', icon: ShieldCheck, category: 'management', roles: ['admin'] },
@@ -194,7 +194,8 @@ export default function CRMSidebar({ children }: Props) {
         item.href === '/crm360/appointments' ||
         item.href === '/crm360/attendance' ||
         item.href === '/crm360/assessments' ||
-        item.href === '/crm360/billing'
+        item.href === '/crm360/billing' ||
+        item.href === '/crm360/analytics'
       );
     }
     return true;

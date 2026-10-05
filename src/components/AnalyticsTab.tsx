@@ -14,37 +14,67 @@ import { formatCurrency, formatCurrencyCompact } from '@/lib/formatters';
 
 export default function AnalyticsTab() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('2026-09');
+  
+  // Dynamic current month (e.g. "2026-10")
+  const defaultMonth = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+  };
+
+  const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
   const [showRecentPayments, setShowRecentPayments] = useState(false);
 
   // 1. Fetch Monthly Performance & Revenue Breakdown
-  const { data: monthlyData, isLoading: isMonthlyLoading, refetch: refetchMonthly } = useQuery({
+  const { 
+    data: monthlyData, 
+    isLoading: isMonthlyLoading, 
+    isError: isMonthlyError,
+    error: monthlyError,
+    refetch: refetchMonthly 
+  } = useQuery({
     queryKey: ['analytics-monthly', selectedMonth],
     queryFn: async () => {
       const res = await fetch(`/api/analytics/monthly?month=${selectedMonth}`);
-      if (!res.ok) throw new Error('Failed to fetch monthly analytics');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || `Failed to fetch monthly analytics (${res.status})`);
+      }
       return res.json();
     },
+    staleTime: 30 * 1000,
+    retry: 2,
   });
 
   // 2. Fetch Heatmap Analytics
-  const { data: heatmap = [], isLoading: isHeatmapLoading } = useQuery({
+  const { 
+    data: heatmap = [], 
+    isLoading: isHeatmapLoading,
+    isError: isHeatmapError,
+    refetch: refetchHeatmap 
+  } = useQuery({
     queryKey: ['analytics-heatmap'],
     queryFn: async () => {
       const res = await fetch('/api/analytics/heatmap');
       if (!res.ok) throw new Error('Failed to fetch heatmap');
       return res.json();
     },
+    retry: 2,
   });
 
   // 3. Fetch Referral Analytics
-  const { data: referrals = [], isLoading: isReferralsLoading } = useQuery({
+  const { 
+    data: referrals = [], 
+    isLoading: isReferralsLoading,
+    isError: isReferralsError,
+    refetch: refetchReferrals 
+  } = useQuery({
     queryKey: ['analytics-referrals'],
     queryFn: async () => {
       const res = await fetch('/api/analytics/referrals');
       if (!res.ok) throw new Error('Failed to fetch referrals');
       return res.json();
     },
+    retry: 2,
   });
 
   // 4. Fetch Clinical Search Results
@@ -118,7 +148,7 @@ export default function AnalyticsTab() {
             >
               {availableMonths.map((m: string) => (
                 <option key={m} value={m} className="bg-[#12101B] text-white">
-                  {formatMonthLabel(m)} {m === '2026-09' ? '(September)' : ''}
+                  {formatMonthLabel(m)} {m === defaultMonth() ? '(Current Month)' : ''}
                 </option>
               ))}
             </select>
@@ -129,10 +159,28 @@ export default function AnalyticsTab() {
             className="p-2.5 rounded-2xl bg-white/[0.04] hover:bg-white/10 border border-white/15 text-white/80 transition cursor-pointer"
             title="Refresh Data"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isMonthlyLoading ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`w-3.5 h-3.5 ${isMonthlyLoading ? 'animate-spin text-[#12D6C4]' : ''}`} />
           </button>
         </div>
       </div>
+
+      {/* Error Banner if monthly API fails */}
+      {isMonthlyError && (
+        <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-between text-xs text-rose-300">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
+            <span>
+              {monthlyError instanceof Error ? monthlyError.message : 'Unable to load revenue and performance metrics for this month.'}
+            </span>
+          </div>
+          <button
+            onClick={() => refetchMonthly()}
+            className="px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 text-white font-bold transition flex items-center gap-1.5 cursor-pointer text-xs"
+          >
+            <RefreshCw className="w-3 h-3" /> Retry
+          </button>
+        </div>
+      )}
 
       {/* ─── PRIMARY MONTHLY PERFORMANCE CARDS (Direct Answer to Doctor's 3 Questions) ─── */}
       <div className="space-y-4">
@@ -141,11 +189,15 @@ export default function AnalyticsTab() {
             <Sparkles className="w-4 h-4 text-[#12D6C4]" />
             Monthly Executive Summary: {formatMonthLabel(selectedMonth)}
           </h4>
-          {isMonthlyLoading && (
+          {isMonthlyLoading ? (
             <span className="text-xs text-[#12D6C4] flex items-center gap-1.5 font-medium">
               <Loader2 className="w-3 h-3 animate-spin" /> Updating metrics...
             </span>
-          )}
+          ) : earnings.totalCollected === 0 ? (
+            <span className="text-xs text-amber-300/80 font-medium bg-amber-500/10 border border-amber-500/20 px-2.5 py-0.5 rounded-full">
+              No payments logged for {formatMonthLabel(selectedMonth)}
+            </span>
+          ) : null}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

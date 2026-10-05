@@ -28,15 +28,32 @@ export async function GET(req: NextRequest) {
       targetMonth = now.getMonth() + 1; // current month
     }
 
-    const startOfMonth = new Date(Date.UTC(targetYear, targetMonth - 1, 1, 0, 0, 0));
-    const endOfMonth = new Date(Date.UTC(targetYear, targetMonth, 0, 23, 59, 59, 999));
+    // Cover Indian Standard Time (UTC+5:30) and UTC boundaries safely
+    const startOfMonthUTC = new Date(Date.UTC(targetYear, targetMonth - 1, 1, 0, 0, 0));
+    const startRange = new Date(startOfMonthUTC.getTime() - (6 * 60 * 60 * 1000)); // 6h buffer before for IST
+
+    const endOfMonthUTC = new Date(Date.UTC(targetYear, targetMonth, 0, 23, 59, 59, 999));
+    const endRange = new Date(endOfMonthUTC.getTime() + (6 * 60 * 60 * 1000)); // 6h buffer after for IST
+
+    const startOfMonth = startRange;
+    const endOfMonth = endRange;
+
+    // Helper to test if a timestamp belongs to the target month in UTC or IST
+    const isDateInTargetMonth = (dateObj: Date | string) => {
+      const d = new Date(dateObj);
+      if (isNaN(d.getTime())) return false;
+      const inUTC = d.getUTCFullYear() === targetYear && (d.getUTCMonth() + 1) === targetMonth;
+      const istDate = new Date(d.getTime() + (5.5 * 60 * 60 * 1000));
+      const inIST = istDate.getUTCFullYear() === targetYear && (istDate.getUTCMonth() + 1) === targetMonth;
+      return inUTC || inIST;
+    };
 
     // 1. Payments in requested month
-    const payments = await prisma.payment.findMany({
+    const rawPayments = await prisma.payment.findMany({
       where: {
         date: {
-          gte: startOfMonth,
-          lte: endOfMonth,
+          gte: startRange,
+          lte: endRange,
         },
       },
       include: {
@@ -56,6 +73,8 @@ export async function GET(req: NextRequest) {
       orderBy: { date: 'desc' },
     });
 
+    const payments = rawPayments.filter((p) => isDateInTargetMonth(p.date));
+
     let totalCollected = 0;
     let upiTotal = 0;
     let cashTotal = 0;
@@ -65,19 +84,37 @@ export async function GET(req: NextRequest) {
     payments.forEach((p) => {
       const amt = Number(p.amount) || 0;
       totalCollected += amt;
-      const mode = (p.paymentMode || '').toUpperCase().trim();
-      if (mode === 'UPI') upiTotal += amt;
-      else if (mode === 'CASH') cashTotal += amt;
-      else if (mode === 'CARD') cardTotal += amt;
-      else otherTotal += amt;
+      const rawMode = (p.paymentMode || '').toUpperCase().trim();
+      if (
+        rawMode.includes('UPI') ||
+        rawMode.includes('GPAY') ||
+        rawMode.includes('PHONEPE') ||
+        rawMode.includes('PAYTM') ||
+        rawMode.includes('QR') ||
+        rawMode.includes('ONLINE') ||
+        rawMode.includes('BHIM')
+      ) {
+        upiTotal += amt;
+      } else if (rawMode.includes('CASH')) {
+        cashTotal += amt;
+      } else if (
+        rawMode.includes('CARD') ||
+        rawMode.includes('DEBIT') ||
+        rawMode.includes('CREDIT') ||
+        rawMode.includes('POS')
+      ) {
+        cardTotal += amt;
+      } else {
+        otherTotal += amt;
+      }
     });
 
     // 2. Appointments in requested month
-    const appointments = await prisma.appointment.findMany({
+    const rawAppointments = await prisma.appointment.findMany({
       where: {
         date: {
-          gte: startOfMonth,
-          lte: endOfMonth,
+          gte: startRange,
+          lte: endRange,
         },
       },
       select: {
@@ -88,6 +125,8 @@ export async function GET(req: NextRequest) {
         treatmentType: true,
       },
     });
+
+    const appointments = rawAppointments.filter((a) => isDateInTargetMonth(a.date));
 
     const totalAppointments = appointments.length;
     const completedAppointments = appointments.filter((a) => a.status === 'COMPLETED').length;
@@ -151,22 +190,31 @@ export async function GET(req: NextRequest) {
     });
 
     // 5. Available months in database (for easy switching)
-    const distinctPaymentDates = await prisma.payment.findMany({
+    const recentPaymentsForMonths = await prisma.payment.findMany({
       select: { date: true },
-      distinct: ['date'],
+      orderBy: { date: 'desc' },
+      take: 200,
     });
 
     const monthsSet = new Set<string>();
-    distinctPaymentDates.forEach((p) => {
+    recentPaymentsForMonths.forEach((p) => {
       const d = new Date(p.date);
-      monthsSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      if (!isNaN(d.getTime())) {
+        monthsSet.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      }
     });
-    // Ensure current month and September 2026 are included
-    monthsSet.add('2026-09');
-    monthsSet.add('2026-10');
-    monthsSet.add('2026-08');
 
-    const availableMonths = Array.from(monthsSet).sort().reverse();
+    // Also include current month and last 4 calendar months
+    const curDate = new Date();
+    for (let i = 0; i <= 4; i++) {
+      const past = new Date(curDate.getFullYear(), curDate.getMonth() - i, 1);
+      monthsSet.add(`${past.getFullYear()}-${String(past.getMonth() + 1).padStart(2, '0')}`);
+    }
+
+    const availableMonths = Array.from(monthsSet)
+      .filter((m) => /^\d{4}-\d{2}$/.test(m))
+      .sort()
+      .reverse();
 
     return NextResponse.json({
       period: `${targetYear}-${String(targetMonth).padStart(2, '0')}`,
