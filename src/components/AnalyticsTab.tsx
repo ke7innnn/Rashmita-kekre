@@ -316,6 +316,64 @@ export default function AnalyticsTab() {
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isMonthlyLoading ? 'animate-spin text-[#12D6C4]' : ''}`} />
           </button>
+
+          <button
+            onClick={() => window.print()}
+            className="px-2.5 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] text-white/80 hover:text-white border border-white/10 text-[11px] font-semibold flex items-center gap-1.5 transition cursor-pointer"
+            title="Print or Save Monthly Audit Summary"
+          >
+            <FileText className="w-3.5 h-3.5 text-[#12D6C4]" />
+            <span className="hidden sm:inline">Print Report</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ─── EXECUTIVE CLINIC STANDINGS RIBBON ─── */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#12D6C4]/10 via-purple-500/10 to-amber-500/10 border border-white/10 flex flex-wrap items-center justify-between gap-4 backdrop-blur-xl">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#12D6C4]/20 border border-[#12D6C4]/40 flex items-center justify-center text-[#12D6C4]">
+            <HeartPulse className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="font-serif font-bold text-white text-sm flex items-center gap-2">
+              <span>Health 360 Clinic Monthly Standings</span>
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-white/80 font-normal">
+                {formatMonthLabel(selectedMonth)}
+              </span>
+            </h3>
+            <p className="text-[11px] text-white/60">
+              Executive month-end performance overview for Dr. Rashmita & Clinical Management.
+            </p>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs font-mono">
+          <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+            <span className="text-white/40 text-[9px] uppercase block">1. Net Revenue</span>
+            <span className="font-bold text-emerald-400">{formatCurrency(earnings.totalCollected)}</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+            <span className="text-white/40 text-[9px] uppercase block">2. Staff Duty</span>
+            <span className="font-bold text-blue-300">{staffAttendance.totalShifts} Shifts ({staffAttendance.overview?.clinicAvgHoursPerDay || 0}h avg)</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+            <span className="text-white/40 text-[9px] uppercase block">3. Patients Came</span>
+            <span className="font-bold text-purple-300">{patientsWhoCame.totalUnique} Unique</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+            <span className="text-white/40 text-[9px] uppercase block">4. Sessions</span>
+            <span className="font-bold text-cyan-300">{sessions.completed} Done ({sessions.completionRate}%)</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+            <span className="text-white/40 text-[9px] uppercase block">5. Drop-outs</span>
+            <span className={`font-bold ${dropouts.count > 0 ? 'text-rose-400' : 'text-emerald-400'}`}>
+              {dropouts.count} {dropouts.count > 0 ? 'To Recover' : 'Clear'}
+            </span>
+          </div>
+          <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10">
+            <span className="text-white/40 text-[9px] uppercase block">6. Doc Referrals</span>
+            <span className="font-bold text-amber-300">{referringDoctors.totalReferredPatients} Patients ({referringDoctors.totalDoctors} Docs)</span>
+          </div>
         </div>
       </div>
 
@@ -389,35 +447,35 @@ export default function AnalyticsTab() {
             </div>
           </motion.div>
 
-          {/* TILE 2: Total Sessions & Completion */}
+          {/* TILE 2: Staff Attendance & Hours */}
           <motion.div
             whileHover={{ scale: 1.015 }}
-            onClick={() => setActiveAuditTab('sessions')}
+            onClick={() => setActiveAuditTab('attendance')}
             className={`p-5 rounded-2xl cursor-pointer transition-all border ${
-              activeAuditTab === 'sessions'
+              activeAuditTab === 'attendance'
                 ? 'bg-gradient-to-b from-white/[0.1] to-white/[0.04] border-[#12D6C4]/60 shadow-[0_0_25px_rgba(18,214,196,0.2)]'
                 : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/10'
             }`}
           >
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">2. Clinical Sessions</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">2. Staff Attendance</span>
                 <div className="text-2xl font-bold text-white mt-0.5 font-mono flex items-baseline gap-2">
-                  <span>{sessions.completed}</span>
-                  <span className="text-xs font-normal text-white/50 font-sans">/ {sessions.total} booked</span>
+                  <span>{staffAttendance.totalShifts}</span>
+                  <span className="text-xs font-normal text-white/50 font-sans">shifts logged</span>
                 </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-[#12D6C4]/15 text-[#12D6C4] border border-[#12D6C4]/30">
-                <Activity className="w-4 h-4" />
+              <div className="p-2.5 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30">
+                <Clock className="w-4 h-4" />
               </div>
             </div>
 
             <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between text-[11px]">
-              <span className="text-[#12D6C4] font-semibold">
-                {sessions.completionRate}% Attendance Rate
+              <span className="text-blue-300 font-semibold">
+                {staffAttendance.activeStaffCount} Active Practitioners
               </span>
-              <span className="text-white/50 font-mono text-[10px]">
-                {sessions.modalities.length} Modalities
+              <span className="text-amber-300 font-mono text-[10px]">
+                {staffAttendance.overview?.clinicAvgHoursPerDay || 0}h avg/shift • {staffAttendance.totalHours}h Total
               </span>
             </div>
           </motion.div>
@@ -434,7 +492,7 @@ export default function AnalyticsTab() {
           >
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">3. Monthly Patient Footfall</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">3. Patients Who Came</span>
                 <div className="text-2xl font-bold text-white mt-0.5 font-mono flex items-baseline gap-2">
                   <span>{patientsWhoCame.totalUnique}</span>
                   <span className="text-xs font-normal text-white/50 font-sans">unique patients</span>
@@ -447,7 +505,7 @@ export default function AnalyticsTab() {
 
             <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between text-[11px]">
               <span className="text-purple-300 font-semibold">
-                View Full Patient Roster
+                View Patient Directory
               </span>
               <span className="text-white/40 text-[10px]">
                 {patientsWhoCame.totalUnique > 0 ? (sessions.completed / patientsWhoCame.totalUnique).toFixed(1) : '0'} avg visits
@@ -455,35 +513,35 @@ export default function AnalyticsTab() {
             </div>
           </motion.div>
 
-          {/* TILE 4: Staff Attendance */}
+          {/* TILE 4: Total Sessions & Completion */}
           <motion.div
             whileHover={{ scale: 1.015 }}
-            onClick={() => setActiveAuditTab('attendance')}
+            onClick={() => setActiveAuditTab('sessions')}
             className={`p-5 rounded-2xl cursor-pointer transition-all border ${
-              activeAuditTab === 'attendance'
+              activeAuditTab === 'sessions'
                 ? 'bg-gradient-to-b from-white/[0.1] to-white/[0.04] border-[#12D6C4]/60 shadow-[0_0_25px_rgba(18,214,196,0.2)]'
                 : 'bg-white/[0.03] hover:bg-white/[0.06] border-white/10'
             }`}
           >
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">4. Staff Attendance</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">4. Total Sessions</span>
                 <div className="text-2xl font-bold text-white mt-0.5 font-mono flex items-baseline gap-2">
-                  <span>{staffAttendance.totalShifts}</span>
-                  <span className="text-xs font-normal text-white/50 font-sans">shifts logged</span>
+                  <span>{sessions.completed}</span>
+                  <span className="text-xs font-normal text-white/50 font-sans">/ {sessions.total} booked</span>
                 </div>
               </div>
-              <div className="p-2.5 rounded-xl bg-blue-500/15 text-blue-400 border border-blue-500/30">
-                <Clock className="w-4 h-4" />
+              <div className="p-2.5 rounded-xl bg-[#12D6C4]/15 text-[#12D6C4] border border-[#12D6C4]/30">
+                <Activity className="w-4 h-4" />
               </div>
             </div>
 
             <div className="mt-3.5 pt-3 border-t border-white/10 flex items-center justify-between text-[11px]">
-              <span className="text-blue-300 font-semibold">
-                {staffAttendance.activeStaffCount} Active Practitioners
+              <span className="text-[#12D6C4] font-semibold">
+                {sessions.completionRate}% Completion Rate
               </span>
               <span className="text-white/50 font-mono text-[10px]">
-                {staffAttendance.totalHours} Total Hours
+                {sessions.modalities.length} Modalities
               </span>
             </div>
           </motion.div>
@@ -500,10 +558,10 @@ export default function AnalyticsTab() {
           >
             <div className="flex justify-between items-start">
               <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">5. Drop-Outs & Stalled</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">5. Any Drop-Outs</span>
                 <div className="text-2xl font-bold text-rose-300 mt-0.5 font-mono flex items-baseline gap-2">
                   <span>{dropouts.count}</span>
-                  <span className="text-xs font-normal text-rose-300/60 font-sans">needs follow-up</span>
+                  <span className="text-xs font-normal text-rose-300/60 font-sans">drop-out alerts</span>
                 </div>
               </div>
               <div className="p-2.5 rounded-xl bg-rose-500/15 text-rose-400 border border-rose-500/30">
@@ -516,7 +574,7 @@ export default function AnalyticsTab() {
                 1-Click WhatsApp Re-engage
               </span>
               <span className="text-white/40 text-[10px]">
-                Active retention
+                Retention recovery
               </span>
             </div>
           </motion.div>
@@ -549,7 +607,7 @@ export default function AnalyticsTab() {
                 {referringDoctors.totalReferredPatients} Referred Patients
               </span>
               <span className="text-white/40 text-[10px]">
-                Network partners
+                Partner network
               </span>
             </div>
           </motion.div>
@@ -563,12 +621,12 @@ export default function AnalyticsTab() {
         {/* Navigation Tabs Bar */}
         <div className="flex flex-wrap gap-2 border-b border-white/10 pb-4">
           {[
-            { id: 'earnings', label: 'Earnings & Collections', icon: Wallet, count: earnings.totalCollected > 0 ? formatCurrencyCompact(earnings.totalCollected) : undefined },
-            { id: 'patients', label: 'Patients Who Came', icon: Users, count: patientsWhoCame.totalUnique },
-            { id: 'attendance', label: 'Staff Attendance', icon: Clock, count: `${staffAttendance.totalShifts} shifts` },
-            { id: 'sessions', label: 'Sessions & Modalities', icon: Activity, count: sessions.completed },
-            { id: 'dropouts', label: 'Drop-Outs & Follow-ups', icon: UserX, count: dropouts.count, alert: dropouts.count > 0 },
-            { id: 'doctors', label: 'Referring Doctors', icon: Stethoscope, count: referringDoctors.totalDoctors },
+            { id: 'earnings', label: '1. Monthly Earnings', icon: Wallet, count: earnings.totalCollected > 0 ? formatCurrencyCompact(earnings.totalCollected) : undefined },
+            { id: 'attendance', label: '2. Staff Attendance', icon: Clock, count: `${staffAttendance.totalShifts} shifts` },
+            { id: 'patients', label: '3. Patients Who Came', icon: Users, count: patientsWhoCame.totalUnique },
+            { id: 'sessions', label: '4. Total Sessions', icon: Activity, count: sessions.completed },
+            { id: 'dropouts', label: '5. Any Drop-Outs', icon: UserX, count: dropouts.count, alert: dropouts.count > 0 },
+            { id: 'doctors', label: '6. Referring Doctors', icon: Stethoscope, count: referringDoctors.totalDoctors },
           ].map((tab) => {
             const Icon = tab.icon;
             const isActive = activeAuditTab === tab.id;
@@ -616,7 +674,7 @@ export default function AnalyticsTab() {
                 <div>
                   <h4 className="text-lg font-serif font-bold text-white flex items-center gap-2">
                     <Wallet className="w-5 h-5 text-emerald-400" />
-                    Revenue Collections: {formatMonthLabel(selectedMonth)}
+                    1. Monthly Earnings (Cash & UPI): {formatMonthLabel(selectedMonth)}
                   </h4>
                   <p className="text-xs text-white/60">
                     Realized income audit with complete payment mode split (UPI, Cash, Card) and transaction receipt logs.
@@ -735,7 +793,7 @@ export default function AnalyticsTab() {
                 <div>
                   <h4 className="text-lg font-serif font-bold text-white flex items-center gap-2">
                     <Users className="w-5 h-5 text-purple-400" />
-                    Patients Who Visited in {formatMonthLabel(selectedMonth)} ({patientsWhoCame.totalUnique})
+                    3. Patients Who Came in {formatMonthLabel(selectedMonth)} ({patientsWhoCame.totalUnique})
                   </h4>
                   <p className="text-xs text-white/60">
                     Comprehensive patient directory of individuals who attended appointments at Health 360 this month.
@@ -852,7 +910,7 @@ export default function AnalyticsTab() {
               <div>
                 <h4 className="text-lg font-serif font-bold text-white flex items-center gap-2">
                   <Activity className="w-5 h-5 text-[#12D6C4]" />
-                  Total Sessions & Modality Performance ({sessions.total} Booked)
+                  4. Total Sessions & Modality Performance ({sessions.completed} Attended / {sessions.total} Booked)
                 </h4>
                 <p className="text-xs text-white/60">
                   Detailed distribution of attended sessions, cancellations, and capacity utilization across modalities.
@@ -934,7 +992,7 @@ export default function AnalyticsTab() {
                 <div>
                   <h4 className="text-lg font-serif font-bold text-white flex items-center gap-2">
                     <UserX className="w-5 h-5 text-rose-400" />
-                    Drop-Out & Stalled Treatment Queue ({dropouts.count})
+                    5. Any Drop-Outs & Patient Recovery Queue ({dropouts.count})
                   </h4>
                   <p className="text-xs text-white/60">
                     Patients who missed their appointments or whose multi-session rehabilitation courses have stalled. Take immediate action to recover retention.
@@ -1026,7 +1084,7 @@ export default function AnalyticsTab() {
                 <div>
                   <h4 className="text-xl font-serif font-bold text-white flex items-center gap-2.5">
                     <Clock className="w-5 h-5 text-[#12D6C4]" />
-                    Clinical Staff Attendance & Working Hours: {formatMonthLabel(selectedMonth)}
+                    2. Staff Attendance & Working Hours: {formatMonthLabel(selectedMonth)}
                   </h4>
                   <p className="text-xs text-white/60 mt-0.5">
                     Day-by-day attendance audit, presence & absence tracking, and average daily working hours for every doctor and staff member.
@@ -1494,7 +1552,7 @@ export default function AnalyticsTab() {
                 <div>
                   <h4 className="text-lg font-serif font-bold text-white flex items-center gap-2">
                     <Stethoscope className="w-5 h-5 text-cyan-400" />
-                    Referring Doctor Channel Breakdown ({referringDoctors.totalDoctors} Active Doctors)
+                    6. Referred Doctor Channels & Network ({referringDoctors.totalDoctors} Active Doctors)
                   </h4>
                   <p className="text-xs text-white/60">
                     Medical partners and external doctors who directed patients to Health 360 in {formatMonthLabel(selectedMonth)}.
