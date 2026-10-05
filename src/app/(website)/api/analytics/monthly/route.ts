@@ -12,25 +12,59 @@ interface StaffShiftRecord {
   notes: string | null;
 }
 
-interface StaffAggregate {
+interface StaffDailyItem {
+  day: number;
+  date: string;
+  weekday: string;
+  isSunday: boolean;
+  isWorkingDay: boolean;
+  status: 'PRESENT' | 'ABSENT' | 'OFF' | 'UPCOMING';
+  hours: number;
+  clockInAt: string | null;
+  clockOutAt: string | null;
+  notes: string | null;
+  shiftCount: number;
+}
+
+interface StaffMemberAttendance {
   userId: string;
   name: string;
   email: string;
+  role: string;
   designation: string;
-  uniqueDays: Set<string>;
-  totalMinutes: number;
+  department: string | null;
+  daysPresent: number;
+  daysAbsent: number;
+  daysOff: number;
+  daysUpcoming: number;
+  totalWorkingDaysInPeriod: number;
+  attendanceRate: number;
+  totalHours: number;
+  avgHoursPerDay: number;
+  avgHoursAcrossWorkingDays: number;
+  totalShifts: number;
+  dailyMatrix: StaffDailyItem[];
+  recentShifts: StaffShiftRecord[];
   records: StaffShiftRecord[];
+  avgHoursPerShift: number;
 }
 
 function formatStaffName(user: { fullName?: string | null; email?: string | null; designation?: string | null }): string {
   if (user.fullName && user.fullName.trim()) return user.fullName.trim();
+  const email = (user.email || '').toLowerCase();
+  if (email.includes('rashmita')) return 'Dr. Rashmita Kekre';
+  if (email.includes('gachchami')) return 'Dr. Gachchami Sharma';
+  if (email.includes('pritee')) return 'Dr. Pritee Patil';
+  if (email.includes('receptionist')) return 'Clinic Receptionist';
+  if (email.includes('physio')) return 'Clinical Physiotherapist';
+
   const emailPrefix = (user.email || 'staff').split('@')[0];
   if (emailPrefix.toLowerCase().startsWith('dr.')) {
     const raw = emailPrefix.slice(3);
     const capitalized = raw.charAt(0).toUpperCase() + raw.slice(1);
     return `Dr. ${capitalized}`;
   }
-  if (user.designation) return `${user.designation} (${emailPrefix})`;
+  if (user.designation) return `${user.designation}`;
   return emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1);
 }
 
@@ -258,8 +292,24 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.totalVisits - a.totalVisits);
 
     // ─────────────────────────────────────────────────────────────
-    // 4. STAFF ATTENDANCE
+    // 4. STAFF ATTENDANCE (EVERY STAFF MEMBER & DAY-BY-DAY AUDIT)
     // ─────────────────────────────────────────────────────────────
+    const allActiveStaffUsers = await prisma.user.findMany({
+      where: { isActive: true },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        designation: true,
+        role: true,
+        department: true,
+      },
+      orderBy: [
+        { role: 'asc' }, // ADMIN first, then PHYSIO
+        { fullName: 'asc' },
+      ],
+    });
+
     const rawAttendance = await prisma.staffAttendance.findMany({
       where: {
         date: {
@@ -278,70 +328,264 @@ export async function GET(req: NextRequest) {
           },
         },
       },
-      orderBy: { clockInAt: 'desc' },
+      orderBy: { clockInAt: 'asc' },
     });
 
-    const attendanceRecords = rawAttendance.filter((r) => isDateInTargetMonth(r.date));
+    // Calendar setup for target month
+    const daysInMonth = new Date(targetYear, targetMonth, 0).getDate();
+    const now = new Date();
+    const todayISTStr = new Date(now.getTime() + (5.5 * 3600 * 1000)).toISOString().split('T')[0];
+    const weekdaysList = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-    // Group by staff user
-    const staffMap = new Map<string, StaffAggregate>();
+    // Map records to user and target day (1..daysInMonth)
+    const userDateRecordMap = new Map<string, typeof rawAttendance>();
+    const monthFilteredRecords: typeof rawAttendance = [];
 
-    attendanceRecords.forEach((att) => {
-      const u = att.user;
-      if (!u) return;
+    rawAttendance.forEach((att) => {
+      const d = new Date(att.date);
+      let recordDay: number | null = null;
 
-      const dateStr = new Date(att.date).toISOString().split('T')[0];
-      const inTime = new Date(att.clockInAt).getTime();
-      const outTime = att.clockOutAt ? new Date(att.clockOutAt).getTime() : inTime + 4 * 3600 * 1000;
-      const diffMins = Math.max(15, Math.min(720, Math.round((outTime - inTime) / (60 * 1000))));
-      const durationHours = parseFloat((diffMins / 60).toFixed(1));
+      if (d.getUTCFullYear() === targetYear && (d.getUTCMonth() + 1) === targetMonth) {
+        recordDay = d.getUTCDate();
+      } else {
+        const ist = new Date(d.getTime() + (5.5 * 3600 * 1000));
+        if (ist.getUTCFullYear() === targetYear && (ist.getUTCMonth() + 1) === targetMonth) {
+          recordDay = ist.getUTCDate();
+        }
+      }
 
-      const existing: StaffAggregate = staffMap.get(u.id) || {
-        userId: u.id,
-        name: formatStaffName(u),
-        email: u.email || '',
-        designation: u.designation || 'Clinical Physiotherapist',
-        uniqueDays: new Set<string>(),
-        totalMinutes: 0,
-        records: [],
+      if (recordDay !== null && recordDay >= 1 && recordDay <= daysInMonth) {
+        const recordDateStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(recordDay).padStart(2, '0')}`;
+        const key = `${att.userId}_${recordDateStr}`;
+        if (!userDateRecordMap.has(key)) userDateRecordMap.set(key, []);
+        userDateRecordMap.get(key)!.push(att);
+        monthFilteredRecords.push(att);
+      }
+    });
+
+    // Compute working days elapsed and clinic daily summary
+    let totalWorkingDaysInMonth = 0;
+    let workingDaysElapsed = 0;
+
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDate = new Date(Date.UTC(targetYear, targetMonth - 1, day));
+      const dayOfWeek = dayDate.getUTCDay();
+      const dateStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isSunday = dayOfWeek === 0;
+      const isUpcoming = dateStr > todayISTStr;
+
+      if (!isSunday) {
+        totalWorkingDaysInMonth++;
+        if (!isUpcoming) {
+          workingDaysElapsed++;
+        }
+      }
+    }
+
+    // Daily Clinic Roster Heatmap
+    const dailyClinicRoster: Array<{
+      day: number;
+      date: string;
+      weekday: string;
+      isSunday: boolean;
+      isUpcoming: boolean;
+      presentCount: number;
+      absentCount: number;
+      offCount: number;
+      totalHours: number;
+    }> = [];
+
+    let clinicTotalHoursMinutes = 0;
+    let clinicTotalPresentShifts = 0;
+
+    const staffSummaries: StaffMemberAttendance[] = allActiveStaffUsers.map((user) => {
+      let daysPresent = 0;
+      let daysAbsent = 0;
+      let daysOff = 0;
+      let daysUpcoming = 0;
+      let userTotalMinutes = 0;
+      let userWorkingDaysInPeriod = 0;
+      const dailyMatrix: StaffDailyItem[] = [];
+      const userShiftRecords: StaffShiftRecord[] = [];
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dayDate = new Date(Date.UTC(targetYear, targetMonth - 1, day));
+        const dayOfWeek = dayDate.getUTCDay();
+        const dateStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+        const isSunday = dayOfWeek === 0;
+        const isUpcoming = dateStr > todayISTStr;
+        const isWorkingDay = !isSunday;
+
+        if (!isUpcoming && isWorkingDay) {
+          userWorkingDaysInPeriod++;
+        }
+
+        const dayRecs = userDateRecordMap.get(`${user.id}_${dateStr}`) || [];
+        let status: 'PRESENT' | 'ABSENT' | 'OFF' | 'UPCOMING' = 'ABSENT';
+        let dayMinutes = 0;
+        let earliestClockIn: string | null = null;
+        let latestClockOut: string | null = null;
+        let shiftNotes: string | null = null;
+
+        if (dayRecs.length > 0) {
+          status = 'PRESENT';
+          daysPresent++;
+          dayRecs.forEach((r) => {
+            const inT = new Date(r.clockInAt).getTime();
+            const outT = r.clockOutAt ? new Date(r.clockOutAt).getTime() : inT + 4 * 3600 * 1000;
+            const diffMins = Math.max(15, Math.min(720, Math.round((outT - inT) / (60 * 1000))));
+            dayMinutes += diffMins;
+            userTotalMinutes += diffMins;
+
+            if (!earliestClockIn || new Date(r.clockInAt) < new Date(earliestClockIn)) {
+              earliestClockIn = r.clockInAt.toISOString();
+            }
+            if (r.clockOutAt && (!latestClockOut || new Date(r.clockOutAt) > new Date(latestClockOut))) {
+              latestClockOut = r.clockOutAt.toISOString();
+            }
+            if (r.notes && !shiftNotes) {
+              shiftNotes = r.notes;
+            }
+
+            userShiftRecords.push({
+              id: r.id,
+              date: dateStr,
+              clockInAt: r.clockInAt.toISOString(),
+              clockOutAt: r.clockOutAt ? r.clockOutAt.toISOString() : null,
+              durationHours: parseFloat((diffMins / 60).toFixed(1)),
+              notes: r.notes,
+            });
+          });
+        } else if (isUpcoming) {
+          status = 'UPCOMING';
+          daysUpcoming++;
+        } else if (isSunday) {
+          status = 'OFF';
+          daysOff++;
+        } else {
+          status = 'ABSENT';
+          daysAbsent++;
+        }
+
+        dailyMatrix.push({
+          day,
+          date: dateStr,
+          weekday: weekdaysList[dayOfWeek],
+          isSunday,
+          isWorkingDay,
+          status,
+          hours: parseFloat((dayMinutes / 60).toFixed(1)),
+          clockInAt: earliestClockIn,
+          clockOutAt: latestClockOut,
+          notes: shiftNotes,
+          shiftCount: dayRecs.length,
+        });
+      }
+
+      const totalHours = parseFloat((userTotalMinutes / 60).toFixed(1));
+      const avgHoursPerDay = daysPresent > 0 ? parseFloat((totalHours / daysPresent).toFixed(1)) : 0;
+      const avgHoursAcrossWorkingDays = userWorkingDaysInPeriod > 0 ? parseFloat((totalHours / userWorkingDaysInPeriod).toFixed(1)) : 0;
+      const attendanceRate = userWorkingDaysInPeriod > 0
+        ? Math.min(100, Math.round((daysPresent / userWorkingDaysInPeriod) * 100))
+        : (daysPresent > 0 ? 100 : 0);
+
+      clinicTotalHoursMinutes += userTotalMinutes;
+      clinicTotalPresentShifts += daysPresent;
+
+      // Sort recent shifts in descending order
+      const sortedShifts = [...userShiftRecords].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+      return {
+        userId: user.id,
+        name: formatStaffName(user),
+        email: user.email || '',
+        role: user.role,
+        designation: user.designation || (user.role === 'ADMIN' ? 'Clinic Director & Physio' : 'Staff Physiotherapist'),
+        department: user.department,
+        daysPresent,
+        daysAbsent,
+        daysOff,
+        daysUpcoming,
+        totalWorkingDaysInPeriod: userWorkingDaysInPeriod,
+        attendanceRate,
+        totalHours,
+        avgHoursPerDay,
+        avgHoursAcrossWorkingDays,
+        totalShifts: userShiftRecords.length,
+        dailyMatrix,
+        recentShifts: sortedShifts.slice(0, 15),
+        records: sortedShifts.slice(0, 10),
+        avgHoursPerShift: avgHoursPerDay,
       };
+    }).sort((a, b) => {
+      if (b.daysPresent !== a.daysPresent) return b.daysPresent - a.daysPresent;
+      return b.totalHours - a.totalHours;
+    });
 
-      existing.uniqueDays.add(dateStr);
-      existing.totalMinutes += diffMins;
-      existing.records.push({
-        id: att.id,
-        date: dateStr,
-        clockInAt: att.clockInAt.toISOString(),
-        clockOutAt: att.clockOutAt ? att.clockOutAt.toISOString() : null,
-        durationHours,
-        notes: att.notes,
+    // Populate daily clinic roster summary
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayDate = new Date(Date.UTC(targetYear, targetMonth - 1, day));
+      const dayOfWeek = dayDate.getUTCDay();
+      const dateStr = `${targetYear}-${String(targetMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+      const isSunday = dayOfWeek === 0;
+      const isUpcoming = dateStr > todayISTStr;
+
+      let presentCount = 0;
+      let absentCount = 0;
+      let offCount = 0;
+      let dayHours = 0;
+
+      staffSummaries.forEach((staff) => {
+        const item = staff.dailyMatrix[day - 1];
+        if (item) {
+          if (item.status === 'PRESENT') {
+            presentCount++;
+            dayHours += item.hours;
+          } else if (item.status === 'ABSENT') {
+            absentCount++;
+          } else if (item.status === 'OFF') {
+            offCount++;
+          }
+        }
       });
 
-      staffMap.set(u.id, existing);
-    });
+      dailyClinicRoster.push({
+        day,
+        date: dateStr,
+        weekday: weekdaysList[dayOfWeek],
+        isSunday,
+        isUpcoming,
+        presentCount,
+        absentCount,
+        offCount,
+        totalHours: parseFloat(dayHours.toFixed(1)),
+      });
+    }
 
-    const staffSummary = Array.from(staffMap.values()).map((s) => {
-      const daysCount = s.uniqueDays.size;
-      const totalHours = parseFloat((s.totalMinutes / 60).toFixed(1));
-      const avgHoursPerShift = daysCount > 0 ? parseFloat((totalHours / daysCount).toFixed(1)) : 0;
-      return {
-        userId: s.userId,
-        name: s.name,
-        email: s.email,
-        designation: s.designation,
-        daysPresent: daysCount,
-        totalHours,
-        avgHoursPerShift,
-        records: s.records.slice(0, 10),
-      };
-    }).sort((a, b) => b.daysPresent - a.daysPresent);
+    const totalStaffShifts = monthFilteredRecords.length;
+    const totalStaffHours = parseFloat((clinicTotalHoursMinutes / 60).toFixed(1));
+    const clinicAvgHoursPerDay = clinicTotalPresentShifts > 0
+      ? parseFloat((totalStaffHours / clinicTotalPresentShifts).toFixed(1))
+      : 0;
 
-    const totalStaffShifts = attendanceRecords.length;
-    const totalStaffHours = parseFloat((attendanceRecords.reduce((sum, r) => {
-      const inT = new Date(r.clockInAt).getTime();
-      const outT = r.clockOutAt ? new Date(r.clockOutAt).getTime() : inT + 4 * 3600 * 1000;
-      return sum + (outT - inT);
-    }, 0) / (3600 * 1000)).toFixed(1));
+    const totalExpectedWorkingDaysAllStaff = workingDaysElapsed * allActiveStaffUsers.length;
+    const overallAttendanceRate = totalExpectedWorkingDaysAllStaff > 0
+      ? Math.min(100, Math.round((clinicTotalPresentShifts / totalExpectedWorkingDaysAllStaff) * 100))
+      : 0;
+
+    const clinicAttendanceOverview = {
+      totalStaffCount: allActiveStaffUsers.length,
+      totalWorkingDaysInMonth,
+      workingDaysElapsed,
+      totalShiftsLogged: totalStaffShifts,
+      totalHoursClocked: totalStaffHours,
+      clinicAvgHoursPerDay,
+      overallAttendanceRate,
+      daysInMonth,
+      targetMonth,
+      targetYear,
+      dailyClinicRoster,
+    };
 
     // ─────────────────────────────────────────────────────────────
     // 5. DROP-OUTS (MISSED SESSIONS & STALLED PACKAGES)
@@ -533,8 +777,9 @@ export async function GET(req: NextRequest) {
       staffAttendance: {
         totalShifts: totalStaffShifts,
         totalHours: totalStaffHours,
-        activeStaffCount: staffSummary.length,
-        staffList: staffSummary,
+        activeStaffCount: allActiveStaffUsers.length,
+        overview: clinicAttendanceOverview,
+        staffList: staffSummaries,
       },
       dropouts: {
         count: dropoutsList.length,

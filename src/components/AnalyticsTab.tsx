@@ -8,7 +8,8 @@ import {
   TrendingUp, CheckCircle2, ChevronDown, ChevronUp, ArrowUpRight,
   Activity, RefreshCw, Wallet, QrCode, Banknote, UserX, Stethoscope,
   Phone, MessageSquare, Clock, ShieldCheck, HeartPulse, UserCheck,
-  ChevronLeft, ChevronRight, BarChart3, Filter
+  ChevronLeft, ChevronRight, BarChart3, Filter, LayoutGrid, CalendarDays,
+  Check, X, Info
 } from 'lucide-react';
 import GlassPanel from './GlassPanel';
 import { formatCurrency, formatCurrencyCompact } from '@/lib/formatters';
@@ -21,6 +22,22 @@ export default function AnalyticsTab() {
   const [patientSearch, setPatientSearch] = useState('');
   const [paymentSearch, setPaymentSearch] = useState('');
   const [doctorSearch, setDoctorSearch] = useState('');
+  const [staffSearch, setStaffSearch] = useState('');
+  const [attendanceViewMode, setAttendanceViewMode] = useState<'cards' | 'matrix'>('cards');
+  const [expandedStaffId, setExpandedStaffId] = useState<string | null>(null);
+  const [selectedDayDetail, setSelectedDayDetail] = useState<{
+    staffName: string;
+    designation: string;
+    day: number;
+    date: string;
+    weekday: string;
+    status: string;
+    hours: number;
+    clockInAt: string | null;
+    clockOutAt: string | null;
+    notes: string | null;
+    shiftCount?: number;
+  } | null>(null);
   const [selectedModalityFilter, setSelectedModalityFilter] = useState<string>('ALL');
 
   // Dynamic default month (e.g. "2026-10")
@@ -154,6 +171,7 @@ export default function AnalyticsTab() {
     totalShifts: 0, 
     totalHours: 0, 
     activeStaffCount: 0, 
+    overview: null,
     staffList: [] 
   };
   const dropouts = monthlyData?.dropouts || { 
@@ -166,6 +184,18 @@ export default function AnalyticsTab() {
     selfDirectCount: 0, 
     list: [] 
   };
+
+  // Filtered Staff List
+  const filteredStaff = useMemo(() => {
+    const list = staffAttendance.staffList || [];
+    if (!staffSearch.trim()) return list;
+    const q = staffSearch.toLowerCase().trim();
+    return list.filter((st: any) =>
+      st.name.toLowerCase().includes(q) ||
+      st.email.toLowerCase().includes(q) ||
+      st.designation.toLowerCase().includes(q)
+    );
+  }, [staffAttendance.staffList, staffSearch]);
 
   // Filtered Patients List
   const filteredPatients = useMemo(() => {
@@ -991,92 +1021,463 @@ export default function AnalyticsTab() {
               exit={{ opacity: 0, y: -8 }}
               className="space-y-6"
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+              {/* Header & View Mode Switcher */}
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                  <h4 className="text-lg font-serif font-bold text-white flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-blue-400" />
-                    Clinical Staff Attendance: {formatMonthLabel(selectedMonth)}
+                  <h4 className="text-xl font-serif font-bold text-white flex items-center gap-2.5">
+                    <Clock className="w-5 h-5 text-[#12D6C4]" />
+                    Clinical Staff Attendance & Working Hours: {formatMonthLabel(selectedMonth)}
                   </h4>
-                  <p className="text-xs text-white/60">
-                    Monthly shift logs, total hours clocked, and attendance punctuality for doctors and staff.
+                  <p className="text-xs text-white/60 mt-0.5">
+                    Day-by-day attendance audit, presence & absence tracking, and average daily working hours for every doctor and staff member.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <div className="px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/10 text-xs font-bold text-white font-mono">
-                    Total: {staffAttendance.totalHours} Hours ({staffAttendance.totalShifts} Shifts)
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center p-1 bg-white/[0.04] border border-white/10 rounded-xl">
+                    <button
+                      onClick={() => setAttendanceViewMode('cards')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        attendanceViewMode === 'cards'
+                          ? 'bg-[#12D6C4] text-black shadow-[0_0_12px_rgba(18,214,196,0.3)]'
+                          : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      <span>Staff Cards</span>
+                    </button>
+                    <button
+                      onClick={() => setAttendanceViewMode('matrix')}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                        attendanceViewMode === 'matrix'
+                          ? 'bg-[#12D6C4] text-black shadow-[0_0_12px_rgba(18,214,196,0.3)]'
+                          : 'text-white/60 hover:text-white'
+                      }`}
+                    >
+                      <LayoutGrid className="w-3.5 h-3.5" />
+                      <span>Monthly Roster Matrix</span>
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Staff Overview Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {staffAttendance.staffList.length === 0 ? (
-                  <div className="col-span-2 p-10 text-center bg-white/[0.02] border border-white/10 rounded-2xl text-white/40 italic">
-                    No staff attendance shifts logged in {formatMonthLabel(selectedMonth)}.
+              {/* Clinic-Wide Attendance KPI Summary Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Active Team</span>
+                    <Users className="w-4 h-4 text-cyan-400" />
                   </div>
-                ) : (
-                  staffAttendance.staffList.map((st: any) => (
-                    <div key={st.userId} className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h5 className="font-serif font-bold text-white text-base flex items-center gap-2">
-                            <span>{st.name}</span>
-                            <span className="text-[9px] font-bold px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                              Active
-                            </span>
-                          </h5>
-                          <p className="text-xs text-white/50">{st.designation}</p>
-                          <p className="text-[10px] text-white/40 font-mono mt-0.5">{st.email}</p>
-                        </div>
+                  <div className="text-xl font-bold font-mono text-white mt-1">
+                    {staffAttendance.overview?.totalStaffCount || staffAttendance.activeStaffCount}
+                  </div>
+                  <span className="text-[10px] text-white/40">Practitioners & Doctors</span>
+                </div>
 
-                        <div className="text-right">
-                          <span className="text-2xl font-bold font-mono text-white block">
-                            {st.daysPresent}
-                          </span>
-                          <span className="text-[10px] uppercase font-bold text-white/40">
-                            Days On Duty
-                          </span>
-                        </div>
-                      </div>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Working Days</span>
+                    <Calendar className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div className="text-xl font-bold font-mono text-white mt-1">
+                    {staffAttendance.overview?.workingDaysElapsed || 0}
+                    <span className="text-xs text-white/40 font-normal"> / {staffAttendance.overview?.totalWorkingDaysInMonth || 26}</span>
+                  </div>
+                  <span className="text-[10px] text-white/40">Mon–Sat Clinic Operational</span>
+                </div>
 
-                      {/* Mini stats row */}
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-white/10">
-                        <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/05">
-                          <span className="text-[9px] text-white/40 font-bold uppercase block">Total Duty Hours</span>
-                          <span className="text-sm font-bold font-mono text-white">{st.totalHours} hrs</span>
-                        </div>
-                        <div className="p-2.5 rounded-xl bg-white/[0.03] border border-white/05">
-                          <span className="text-[9px] text-white/40 font-bold uppercase block">Avg Shift</span>
-                          <span className="text-sm font-bold font-mono text-white">{st.avgHoursPerShift} hrs/day</span>
-                        </div>
-                      </div>
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Total Duty Hours</span>
+                    <Clock className="w-4 h-4 text-emerald-400" />
+                  </div>
+                  <div className="text-xl font-bold font-mono text-emerald-400 mt-1">
+                    {staffAttendance.totalHours} <span className="text-xs font-normal">hrs</span>
+                  </div>
+                  <span className="text-[10px] text-white/40">{staffAttendance.totalShifts} Shifts Clocked</span>
+                </div>
 
-                      {/* Recent Shifts Snippet */}
-                      <div className="space-y-1.5 pt-1">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-white/40">
-                          Recent Shifts ({st.records.length} logged)
-                        </span>
-                        <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
-                          {st.records.slice(0, 5).map((rec: any) => (
-                            <div key={rec.id} className="p-2 rounded-lg bg-white/[0.02] border border-white/05 flex items-center justify-between text-[11px]">
-                              <span className="font-mono text-white/70">
-                                {new Date(rec.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Avg Working Hours</span>
+                    <TrendingUp className="w-4 h-4 text-amber-400" />
+                  </div>
+                  <div className="text-xl font-bold font-mono text-amber-300 mt-1">
+                    {staffAttendance.overview?.clinicAvgHoursPerDay || 0} <span className="text-xs font-normal">hrs/day</span>
+                  </div>
+                  <span className="text-[10px] text-white/40">Per Present Staff Shift</span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 col-span-2 sm:col-span-1">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-white/50">Overall Attendance</span>
+                    <ShieldCheck className="w-4 h-4 text-[#12D6C4]" />
+                  </div>
+                  <div className="text-xl font-bold font-mono text-[#12D6C4] mt-1">
+                    {staffAttendance.overview?.overallAttendanceRate || 0}%
+                  </div>
+                  <span className="text-[10px] text-white/40">Working Days Fulfilled</span>
+                </div>
+              </div>
+
+              {/* Filter Bar & Legend */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/10">
+                <div className="relative flex-1 max-w-sm">
+                  <Search className="w-4 h-4 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Filter by practitioner name, role, email..."
+                    value={staffSearch}
+                    onChange={(e) => setStaffSearch(e.target.value)}
+                    className="w-full pl-9 pr-3 py-1.5 text-xs bg-black/40 border border-white/10 rounded-lg text-white placeholder-white/40 focus:outline-none focus:border-[#12D6C4]"
+                  />
+                </div>
+
+                {/* Legend */}
+                <div className="flex flex-wrap items-center gap-3 text-[11px] text-white/70">
+                  <span className="text-white/40 text-[10px] uppercase font-bold tracking-wider">Legend:</span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]"></span>
+                    <span className="text-emerald-400 font-medium">Present (P)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]"></span>
+                    <span className="text-rose-400 font-medium">Absent (A)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full bg-slate-600"></span>
+                    <span className="text-slate-400 font-medium">Weekly Off (OFF)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 rounded-full border border-dashed border-white/40"></span>
+                    <span className="text-white/40">Upcoming</span>
+                  </span>
+                </div>
+              </div>
+
+              {/* VIEW 1: STAFF CARDS VIEW */}
+              {attendanceViewMode === 'cards' && (
+                <div className="space-y-4">
+                  {filteredStaff.length === 0 ? (
+                    <div className="p-12 text-center bg-white/[0.02] border border-white/10 rounded-2xl text-white/40 italic">
+                      No staff members match the search query "{staffSearch}".
+                    </div>
+                  ) : (
+                    filteredStaff.map((st: any) => {
+                      const initials = (st.name || 'Staff')
+                        .split(' ')
+                        .filter((w: string) => !w.toLowerCase().startsWith('dr.'))
+                        .map((n: string) => n[0])
+                        .join('')
+                        .slice(0, 2)
+                        .toUpperCase() || 'DR';
+                      const isExpanded = expandedStaffId === st.userId;
+
+                      return (
+                        <div
+                          key={st.userId}
+                          className="p-5 rounded-2xl bg-white/[0.02] hover:bg-white/[0.03] border border-white/10 transition-all space-y-4"
+                        >
+                          {/* Top Row: Info + High-level KPI Badges */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#12D6C4]/20 to-blue-500/20 border border-[#12D6C4]/40 flex items-center justify-center text-sm font-bold font-serif text-[#12D6C4] shadow-[0_0_15px_rgba(18,214,196,0.15)]">
+                                {initials}
+                              </div>
+                              <div>
+                                <h5 className="font-serif font-bold text-white text-base flex items-center gap-2">
+                                  <span>{st.name}</span>
+                                  <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${
+                                    st.role === 'ADMIN'
+                                      ? 'bg-purple-500/20 text-purple-300 border-purple-500/40'
+                                      : 'bg-blue-500/20 text-blue-300 border-blue-500/40'
+                                  }`}>
+                                    {st.role === 'ADMIN' ? 'Lead / Admin' : 'Physio Staff'}
+                                  </span>
+                                </h5>
+                                <p className="text-xs text-white/60">{st.designation}</p>
+                                <p className="text-[10px] text-white/40 font-mono mt-0.5">{st.email}</p>
+                              </div>
+                            </div>
+
+                            {/* Right: Quick metrics banner */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                              <div className="px-3 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                <span className="text-[9px] uppercase font-bold text-emerald-400/80 block">Present</span>
+                                <span className="text-base font-bold font-mono text-emerald-400">{st.daysPresent} Days</span>
+                              </div>
+                              <div className="px-3 py-2 rounded-xl bg-rose-500/10 border border-rose-500/20">
+                                <span className="text-[9px] uppercase font-bold text-rose-400/80 block">Absent</span>
+                                <span className="text-base font-bold font-mono text-rose-400">{st.daysAbsent} Days</span>
+                              </div>
+                              <div className="px-3 py-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                                <span className="text-[9px] uppercase font-bold text-amber-300/80 block">Avg Working Hrs</span>
+                                <span className="text-base font-bold font-mono text-amber-300">{st.avgHoursPerDay} hrs/day</span>
+                              </div>
+                              <div className="px-3 py-2 rounded-xl bg-cyan-500/10 border border-cyan-500/20">
+                                <span className="text-[9px] uppercase font-bold text-cyan-300/80 block">Attendance Rate</span>
+                                <span className="text-base font-bold font-mono text-[#12D6C4]">{st.attendanceRate}%</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Progress Bar for Attendance */}
+                          <div className="space-y-1">
+                            <div className="flex justify-between items-center text-[10px] text-white/50">
+                              <span>Attendance Progress ({st.daysPresent} present of {st.totalWorkingDaysInPeriod} working days elapsed)</span>
+                              <span className="font-mono text-white/80">{st.attendanceRate}% Attendance • {st.totalHours} hrs clocked</span>
+                            </div>
+                            <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ${
+                                  st.attendanceRate >= 80 ? 'bg-gradient-to-r from-emerald-500 to-[#12D6C4]' : st.attendanceRate >= 50 ? 'bg-amber-400' : 'bg-rose-500'
+                                }`}
+                                style={{ width: `${Math.min(100, Math.max(2, st.attendanceRate))}%` }}
+                              />
+                            </div>
+                          </div>
+
+                          {/* DAY-BY-DAY ATTENDANCE CALENDAR STRIP */}
+                          <div className="space-y-1.5 pt-2 border-t border-white/10">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] uppercase font-bold tracking-wider text-white/50 flex items-center gap-1.5">
+                                <Calendar className="w-3 h-3 text-[#12D6C4]" />
+                                Day-by-Day Monthly Presence (Click day for details)
                               </span>
-                              <span className="font-mono text-white/50 text-[10px]">
-                                {new Date(rec.clockInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} → {rec.clockOutAt ? new Date(rec.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Open'}
-                              </span>
-                              <span className="font-mono font-bold text-[#12D6C4] text-[10px]">
-                                {rec.durationHours}h
+                              <span className="text-[10px] text-white/40">
+                                {st.dailyMatrix?.length || 0} Days Evaluated
                               </span>
                             </div>
-                          ))}
+
+                            <div className="grid grid-cols-7 sm:grid-cols-10 md:grid-cols-15 lg:grid-cols-16 xl:grid-cols-31 gap-1.5 pt-1">
+                              {st.dailyMatrix?.map((dayItem: any) => {
+                                let bgStyle = 'bg-white/[0.02] border-white/10 text-white/30';
+                                let sublabel = dayItem.weekday;
+                                let badge = '';
+
+                                if (dayItem.status === 'PRESENT') {
+                                  bgStyle = 'bg-emerald-500/20 hover:bg-emerald-500/30 border-emerald-500/40 text-emerald-300 shadow-[0_0_10px_rgba(16,185,129,0.15)] cursor-pointer';
+                                  badge = `${dayItem.hours}h`;
+                                } else if (dayItem.status === 'ABSENT') {
+                                  bgStyle = 'bg-rose-500/20 hover:bg-rose-500/30 border-rose-500/30 text-rose-300 cursor-pointer';
+                                  badge = 'ABS';
+                                } else if (dayItem.status === 'OFF') {
+                                  bgStyle = 'bg-white/[0.04] hover:bg-white/[0.08] border-white/10 text-white/40 cursor-pointer';
+                                  badge = 'OFF';
+                                } else if (dayItem.status === 'UPCOMING') {
+                                  bgStyle = 'bg-transparent border-dashed border-white/10 text-white/20 cursor-default';
+                                  badge = '—';
+                                }
+
+                                return (
+                                  <button
+                                    key={dayItem.day}
+                                    onClick={() => {
+                                      setSelectedDayDetail({
+                                        staffName: st.name,
+                                        designation: st.designation,
+                                        day: dayItem.day,
+                                        date: dayItem.date,
+                                        weekday: dayItem.weekday,
+                                        status: dayItem.status,
+                                        hours: dayItem.hours,
+                                        clockInAt: dayItem.clockInAt,
+                                        clockOutAt: dayItem.clockOutAt,
+                                        notes: dayItem.notes,
+                                        shiftCount: dayItem.shiftCount,
+                                      });
+                                    }}
+                                    title={`Day ${dayItem.day} (${dayItem.weekday}): ${dayItem.status} ${dayItem.hours > 0 ? `(${dayItem.hours}h)` : ''}`}
+                                    className={`p-1.5 rounded-lg border text-center transition-all flex flex-col items-center justify-between min-h-[52px] ${bgStyle}`}
+                                  >
+                                    <span className="text-[9px] font-mono font-bold leading-none block">{dayItem.day}</span>
+                                    <span className="text-[8px] opacity-70 leading-none block mt-0.5">{sublabel}</span>
+                                    <span className="text-[8px] font-bold font-mono mt-1 px-1 py-0.2 rounded bg-black/30">
+                                      {badge}
+                                    </span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Collapsible Shift Records */}
+                          <div className="pt-2">
+                            <button
+                              onClick={() => setExpandedStaffId(isExpanded ? null : st.userId)}
+                              className="flex items-center gap-1.5 text-xs font-semibold text-[#12D6C4] hover:text-[#12D6C4]/80 transition-colors"
+                            >
+                              {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              <span>{isExpanded ? 'Hide Shift Logbook' : `View Shift Logbook (${st.totalShifts} records)`}</span>
+                            </button>
+
+                            <AnimatePresence>
+                              {isExpanded && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  className="mt-3 overflow-hidden"
+                                >
+                                  {st.recentShifts?.length === 0 ? (
+                                    <div className="p-4 rounded-xl bg-black/30 border border-white/05 text-center text-xs text-white/40 italic">
+                                      No clocked attendance records found for this month.
+                                    </div>
+                                  ) : (
+                                    <div className="border border-white/10 rounded-xl overflow-hidden bg-black/40">
+                                      <table className="w-full text-left text-xs">
+                                        <thead className="bg-white/[0.04] text-white/50 text-[10px] uppercase font-mono border-b border-white/10">
+                                          <tr>
+                                            <th className="p-2.5">Date</th>
+                                            <th className="p-2.5">Clock In</th>
+                                            <th className="p-2.5">Clock Out</th>
+                                            <th className="p-2.5">Duration</th>
+                                            <th className="p-2.5">Notes</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-white/05">
+                                          {st.recentShifts.map((rec: any) => (
+                                            <tr key={rec.id} className="hover:bg-white/[0.02]">
+                                              <td className="p-2.5 font-mono text-white/80">
+                                                {new Date(rec.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' })}
+                                              </td>
+                                              <td className="p-2.5 font-mono text-white/60">
+                                                {new Date(rec.clockInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                              </td>
+                                              <td className="p-2.5 font-mono text-white/60">
+                                                {rec.clockOutAt ? new Date(rec.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : <span className="text-emerald-400 font-semibold">Active</span>}
+                                              </td>
+                                              <td className="p-2.5 font-mono font-bold text-emerald-400">
+                                                {rec.durationHours} hrs
+                                              </td>
+                                              <td className="p-2.5 text-white/40 text-[11px] truncate max-w-xs">
+                                                {rec.notes || '—'}
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  )}
+                                </motion.div>
+                              )}
+                            </AnimatePresence>
+                          </div>
                         </div>
-                      </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
+
+              {/* VIEW 2: MONTHLY ROSTER MATRIX GRID */}
+              {attendanceViewMode === 'matrix' && (
+                <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="font-serif font-bold text-white text-base">Monthly Staff Duty & Attendance Matrix</h5>
+                      <p className="text-xs text-white/50">Roster overview of all active doctors and practitioners across all {staffAttendance.overview?.daysInMonth || 30} days.</p>
                     </div>
-                  ))
-                )}
-              </div>
+                  </div>
+
+                  <div className="overflow-x-auto border border-white/10 rounded-xl bg-black/40">
+                    <table className="w-full text-xs text-left border-collapse">
+                      <thead className="bg-white/[0.05] text-white/60 text-[10px] uppercase font-mono border-b border-white/10">
+                        <tr>
+                          <th className="p-3 sticky left-0 bg-[#0d121c] z-10 min-w-[200px]">Doctor / Staff</th>
+                          {staffAttendance.overview?.dailyClinicRoster?.map((d: any) => (
+                            <th
+                              key={d.day}
+                              className={`p-1.5 text-center min-w-[32px] ${d.isSunday ? 'bg-white/[0.03] text-amber-300' : ''}`}
+                              title={`${d.date} (${d.weekday})`}
+                            >
+                              <div className="font-bold">{d.day}</div>
+                              <div className="text-[8px] opacity-60 font-sans">{d.weekday[0]}</div>
+                            </th>
+                          ))}
+                          <th className="p-3 text-center text-emerald-400 min-w-[70px]">Present</th>
+                          <th className="p-3 text-center text-rose-400 min-w-[70px]">Absent</th>
+                          <th className="p-3 text-center text-cyan-300 min-w-[70px]">Rate</th>
+                          <th className="p-3 text-center min-w-[80px]">Total Hrs</th>
+                          <th className="p-3 text-center text-amber-300 min-w-[90px]">Avg Hrs/Day</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/05 font-mono">
+                        {filteredStaff.map((st: any) => (
+                          <tr key={st.userId} className="hover:bg-white/[0.02]">
+                            <td className="p-3 sticky left-0 bg-[#0d121c] z-10 font-sans border-r border-white/10">
+                              <div className="font-bold text-white text-xs">{st.name}</div>
+                              <div className="text-[10px] text-white/50 truncate max-w-[180px]">{st.designation}</div>
+                            </td>
+                            {st.dailyMatrix?.map((dm: any) => {
+                              let cellContent = '—';
+                              let cellClass = 'text-white/20';
+
+                              if (dm.status === 'PRESENT') {
+                                cellContent = 'P';
+                                cellClass = 'bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/40 shadow-[0_0_8px_rgba(16,185,129,0.2)] cursor-pointer';
+                              } else if (dm.status === 'ABSENT') {
+                                cellContent = 'A';
+                                cellClass = 'bg-rose-500/20 text-rose-400 font-bold border border-rose-500/30 cursor-pointer';
+                              } else if (dm.status === 'OFF') {
+                                cellContent = 'OFF';
+                                cellClass = 'bg-white/[0.03] text-white/40 text-[9px] cursor-pointer';
+                              } else if (dm.status === 'UPCOMING') {
+                                cellContent = '·';
+                                cellClass = 'text-white/20';
+                              }
+
+                              return (
+                                <td
+                                  key={dm.day}
+                                  onClick={() => {
+                                    setSelectedDayDetail({
+                                      staffName: st.name,
+                                      designation: st.designation,
+                                      day: dm.day,
+                                      date: dm.date,
+                                      weekday: dm.weekday,
+                                      status: dm.status,
+                                      hours: dm.hours,
+                                      clockInAt: dm.clockInAt,
+                                      clockOutAt: dm.clockOutAt,
+                                      notes: dm.notes,
+                                      shiftCount: dm.shiftCount,
+                                    });
+                                  }}
+                                  title={`${st.name} - Day ${dm.day} (${dm.weekday}): ${dm.status} ${dm.hours > 0 ? `(${dm.hours}h)` : ''}`}
+                                  className="p-1 text-center"
+                                >
+                                  <div className={`w-7 h-7 mx-auto rounded flex items-center justify-center text-[10px] transition-transform hover:scale-110 ${cellClass}`}>
+                                    {cellContent}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                            <td className="p-3 text-center font-bold text-emerald-400 bg-emerald-500/05 border-l border-white/10">
+                              {st.daysPresent}
+                            </td>
+                            <td className="p-3 text-center font-bold text-rose-400 bg-rose-500/05">
+                              {st.daysAbsent}
+                            </td>
+                            <td className="p-3 text-center">
+                              <span className="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 font-bold text-[10px] border border-cyan-500/20">
+                                {st.attendanceRate}%
+                              </span>
+                            </td>
+                            <td className="p-3 text-center font-bold text-white">
+                              {st.totalHours}h
+                            </td>
+                            <td className="p-3 text-center font-bold text-amber-300">
+                              {st.avgHoursPerDay}h
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -1360,6 +1761,114 @@ export default function AnalyticsTab() {
         </div>
       </GlassPanel>
 
+      {/* DAY INSPECTION POPUP / MODAL */}
+      <AnimatePresence>
+        {selectedDayDetail && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-md p-6 rounded-2xl bg-[#0f172a] border border-white/15 shadow-2xl space-y-4 text-white"
+            >
+              <div className="flex justify-between items-start">
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#12D6C4]">
+                    Shift & Attendance Audit
+                  </span>
+                  <h4 className="text-lg font-serif font-bold text-white mt-0.5">
+                    {selectedDayDetail.staffName}
+                  </h4>
+                  <p className="text-xs text-white/60">{selectedDayDetail.designation}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedDayDetail(null)}
+                  className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white/60 hover:text-white transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 rounded-xl bg-white/[0.03] border border-white/10 space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-white/50">Date:</span>
+                  <span className="font-mono font-bold text-white">
+                    {new Date(selectedDayDetail.date).toLocaleDateString('en-IN', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-white/50">Attendance Status:</span>
+                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold border ${
+                    selectedDayDetail.status === 'PRESENT'
+                      ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      : selectedDayDetail.status === 'ABSENT'
+                      ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                      : selectedDayDetail.status === 'OFF'
+                      ? 'bg-slate-500/20 text-slate-300 border-slate-500/40'
+                      : 'bg-white/10 text-white/40 border-white/20'
+                  }`}>
+                    {selectedDayDetail.status === 'OFF' ? 'WEEKLY OFF (SUNDAY)' : selectedDayDetail.status}
+                  </span>
+                </div>
+
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-white/50">Duty Working Hours:</span>
+                  <span className="font-mono font-bold text-emerald-400">
+                    {selectedDayDetail.hours} hrs {selectedDayDetail.hours > 0 ? `(${Math.floor(selectedDayDetail.hours)}h ${Math.round((selectedDayDetail.hours % 1) * 60)}m)` : ''}
+                  </span>
+                </div>
+
+                {selectedDayDetail.clockInAt && (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/50">Clock In Time:</span>
+                    <span className="font-mono text-white">
+                      {new Date(selectedDayDetail.clockInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                )}
+
+                {selectedDayDetail.clockOutAt ? (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/50">Clock Out Time:</span>
+                    <span className="font-mono text-white">
+                      {new Date(selectedDayDetail.clockOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                    </span>
+                  </div>
+                ) : selectedDayDetail.status === 'PRESENT' ? (
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white/50">Clock Out Time:</span>
+                    <span className="text-emerald-400 font-bold">Shift Still Active / Open</span>
+                  </div>
+                ) : null}
+
+                {selectedDayDetail.notes && (
+                  <div className="pt-2 border-t border-white/10 text-xs">
+                    <span className="text-white/50 block mb-1">Shift Notes / Audit Flags:</span>
+                    <p className="p-2 rounded bg-black/40 text-amber-200/90 font-mono text-[11px] border border-amber-500/20">
+                      {selectedDayDetail.notes}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => setSelectedDayDetail(null)}
+                className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-xs font-bold text-white transition-colors"
+              >
+                Close Shift Details
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
+
