@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Save, Search, Plus } from 'lucide-react';
+import { X, Loader2, Save, Search, Plus, AlertCircle, Eye, EyeOff, Clock, CheckCircle } from 'lucide-react';
 const AppointmentSource = { MANUAL_ADMIN: 'MANUAL_ADMIN', WEBSITE: 'WEBSITE', PHONE_AI_AGENT: 'PHONE_AI_AGENT' } as const;
 type AppointmentSource = typeof AppointmentSource[keyof typeof AppointmentSource];
 
@@ -53,6 +53,7 @@ export default function AddAppointmentModal({ onClose }: Props) {
   const queryClient = useQueryClient();
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedPatientName, setSelectedPatientName] = useState<string | null>(null);
+  const [hideBookedSlots, setHideBookedSlots] = useState(false);
 
   // New Patient Inline Creation State
   const [showAddPatient, setShowAddPatient] = useState(false);
@@ -81,8 +82,78 @@ export default function AddAppointmentModal({ onClose }: Props) {
   });
 
   const watchIsRecurring = watch('isRecurring');
+  const watchDate = watch('date') || new Date().toISOString().split('T')[0];
   const watchStartTime = watch('startTime') || '08:00';
   const watchSlotDuration = Number(watch('assignedSlotDuration')) || 15;
+
+  // Query existing appointments for selected date to detect booked slots
+  const { data: dayAppointments = [], isLoading: isDayAppointmentsLoading } = useQuery({
+    queryKey: ['appointments-day-slots', watchDate],
+    queryFn: async () => {
+      if (!watchDate) return [];
+      const res = await fetch(`/api/appointments?date=${watchDate}`);
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!watchDate,
+    staleTime: 10 * 1000,
+  });
+
+  // Calculate booked slots map
+  const bookedSlotsMap = useMemo(() => {
+    const map: Record<string, { patientName: string; status: string; treatment: string }[]> = {};
+    if (!Array.isArray(dayAppointments)) return map;
+
+    dayAppointments.forEach((app: any) => {
+      if (app.status === 'CANCELLED') return;
+      if (!app.startTime) return;
+
+      const [startH, startM] = app.startTime.split(':').map(Number);
+      if (isNaN(startH) || isNaN(startM)) return;
+      const startTotal = startH * 60 + startM;
+
+      let endTotal = startTotal + (Number(app.assignedSlotDuration) || 15);
+      if (app.endTime) {
+        const [endH, endM] = app.endTime.split(':').map(Number);
+        if (!isNaN(endH) && !isNaN(endM)) {
+          const calcEnd = endH * 60 + endM;
+          if (calcEnd > startTotal) endTotal = calcEnd;
+        }
+      }
+
+      for (let t = startTotal; t < endTotal; t += 15) {
+        const hh = String(Math.floor(t / 60)).padStart(2, '0');
+        const mm = String(t % 60).padStart(2, '0');
+        const slotKey = `${hh}:${mm}`;
+        if (!map[slotKey]) map[slotKey] = [];
+        map[slotKey].push({
+          patientName: app.patient?.fullName || 'Occupied',
+          status: app.status,
+          treatment: app.treatmentType || 'Appointment',
+        });
+      }
+    });
+
+    return map;
+  }, [dayAppointments]);
+
+  const bookedCount = useMemo(() => {
+    return TIME_SLOTS_12H.filter(s => !!bookedSlotsMap[s.value]).length;
+  }, [bookedSlotsMap]);
+
+  const availableCount = TIME_SLOTS_12H.length - bookedCount;
+  const currentSlotBookings = bookedSlotsMap[watchStartTime];
+  const isCurrentSlotBooked = !!currentSlotBookings && currentSlotBookings.length > 0;
+
+  // Auto-switch to next available slot if selected slot is booked and hideBooked is enabled
+  useEffect(() => {
+    if (bookedSlotsMap[watchStartTime] && hideBookedSlots) {
+      const firstAvailable = TIME_SLOTS_12H.find(s => !bookedSlotsMap[s.value]);
+      if (firstAvailable) {
+        setValue('startTime', firstAvailable.value);
+      }
+    }
+  }, [watchDate, bookedSlotsMap, hideBookedSlots, watchStartTime, setValue]);
 
   const getFormattedSlotWindow = () => {
     try {
@@ -226,6 +297,13 @@ export default function AddAppointmentModal({ onClose }: Props) {
   } as any);
 
   const onSubmit = (data: any) => {
+    if (bookedSlotsMap[data.startTime]) {
+      const occupant = bookedSlotsMap[data.startTime][0]?.patientName || 'another patient';
+      const confirmed = window.confirm(
+        `Slot Notice: ${data.startTime} is already marked as BOOKED for ${occupant}.\n\nDo you still wish to schedule an overlapping appointment? Click OK to proceed, or Cancel to pick an available slot.`
+      );
+      if (!confirmed) return;
+    }
     mutation.mutate(data);
   };
 
@@ -464,18 +542,58 @@ export default function AddAppointmentModal({ onClose }: Props) {
 
             {/* Start Time (15-Minute Granularity) */}
             <div>
-              <label className="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-1">
-                Start Time (15m)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold uppercase tracking-wider text-white/80">
+                  Start Time (15m)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setHideBookedSlots(!hideBookedSlots)}
+                  className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-lg border transition-all ${
+                    hideBookedSlots
+                      ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 hover:bg-amber-500/30'
+                      : 'bg-white/5 text-white/70 hover:text-white border-white/10 hover:bg-white/10'
+                  }`}
+                  title={hideBookedSlots ? 'Click to show all booked slots' : 'Click to hide booked slots'}
+                >
+                  {hideBookedSlots ? (
+                    <>
+                      <Eye className="w-3 h-3 text-amber-300" />
+                      <span>Hide Booked</span>
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="w-3 h-3 text-white/50" />
+                      <span>Hide Booked</span>
+                    </>
+                  )}
+                </button>
+              </div>
               <select
                 {...register('startTime')}
-                className="block w-full text-sm rounded-xl border border-white/15 bg-[#130E26] px-3 py-2 text-white focus:border-[var(--primary)] focus:outline-none font-semibold cursor-pointer"
+                className={`block w-full text-sm rounded-xl border px-3 py-2 text-white focus:outline-none font-semibold cursor-pointer transition-colors ${
+                  isCurrentSlotBooked
+                    ? 'border-rose-500/70 bg-[#230d17] focus:border-rose-400'
+                    : 'border-white/15 bg-[#130E26] focus:border-[var(--primary)]'
+                }`}
               >
-                {TIME_SLOTS_12H.map((slot) => (
-                  <option key={slot.value} value={slot.value}>
-                    {slot.label}
-                  </option>
-                ))}
+                {TIME_SLOTS_12H.map((slot) => {
+                  const bookings = bookedSlotsMap[slot.value];
+                  const isBooked = !!bookings && bookings.length > 0;
+                  if (hideBookedSlots && isBooked && slot.value !== watchStartTime) {
+                    return null;
+                  }
+                  return (
+                    <option
+                      key={slot.value}
+                      value={slot.value}
+                      disabled={isBooked}
+                      className={isBooked ? 'bg-[#291018] text-rose-300' : 'bg-[#130E26] text-white'}
+                    >
+                      {slot.label} {isBooked ? `⛔ [BOOKED - ${bookings[0].patientName}]` : '✓ Open'}
+                    </option>
+                  );
+                })}
               </select>
               {errors.startTime?.message && <p className="text-xs text-rose-400 mt-1">{errors.startTime.message as string}</p>}
             </div>
@@ -499,6 +617,40 @@ export default function AddAppointmentModal({ onClose }: Props) {
               )}
             </div>
           </div>
+
+          {/* Slot Availability Bar */}
+          <div className="flex items-center justify-between px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] text-white/70">
+            <span className="flex items-center gap-1.5 font-medium">
+              <Clock className="w-3.5 h-3.5 text-white/40" />
+              Day Slot Availability ({watchDate}):
+            </span>
+            <div className="flex items-center gap-2 font-medium">
+              <span className="text-emerald-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                {availableCount} Available
+              </span>
+              <span className="text-white/20">•</span>
+              <span className="text-rose-400 flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
+                {bookedCount} Booked
+              </span>
+            </div>
+          </div>
+
+          {/* Conflict Warning if Selected Slot is Booked */}
+          {isCurrentSlotBooked && (
+            <div className="p-3 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-start gap-2.5 text-rose-200 text-xs">
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-rose-100">
+                  Notice: Selected slot ({TIME_SLOTS_12H.find(s => s.value === watchStartTime)?.label || watchStartTime}) is already booked!
+                </p>
+                <p className="text-[11px] text-rose-300/80 mt-0.5">
+                  Occupied by: {currentSlotBookings.map((b) => `${b.patientName} (${b.treatment})`).join(', ')}
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Computed Slot Preview */}
           <div className="flex items-center justify-between px-3.5 py-2 rounded-xl bg-[var(--primary)]/10 border border-[var(--primary)]/20 text-xs">

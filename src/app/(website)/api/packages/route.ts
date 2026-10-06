@@ -27,14 +27,39 @@ export async function GET(req: NextRequest) {
     
     const packages = await prisma.sessionPackage.findMany({
       where: patientId ? { patientId } : undefined,
-      include: {
-        patient: true,
+      select: {
+        id: true,
+        patientId: true,
+        packageName: true,
+        totalSessions: true,
+        sessionsUsed: true,
+        subSessionNames: true,
+        subSessionNotes: true,
+        price: true,
+        paidAmount: true,
+        paymentStatus: true,
+        expiryDate: true,
+        purchaseDate: true,
+        createdAt: true,
+        patient: {
+          select: {
+            id: true,
+            fullName: true,
+            phone: true,
+          },
+        },
       },
       orderBy: {
         purchaseDate: 'desc',
       },
+      ...(patientId ? {} : { take: 100 }),
     });
-    return NextResponse.json(packages);
+
+    return NextResponse.json(packages, {
+      headers: {
+        'Cache-Control': 'private, max-age=10, stale-while-revalidate=30',
+      },
+    });
   } catch (error: any) {
     console.error('Error fetching session packages:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

@@ -4,8 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import { 
-  CreditCard, Plus, ArrowUpRight, TrendingUp, Users, Calendar, AlertCircle, FileText, ChevronRight
+  CreditCard, Plus, ArrowUpRight, TrendingUp, Users, Calendar, AlertCircle, FileText, ChevronRight, RefreshCw
 } from 'lucide-react';
 import { formatCurrency } from '@/lib/formatters';
 import InvoiceStatusPill from '@/components/billing/InvoiceStatusPill';
@@ -14,38 +15,22 @@ import CountUpNumber from '@/components/billing/CountUpNumber';
 
 export default function BillingOverviewPage() {
   const { data: session } = useSession();
-  const [data, setData] = useState<any>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState<boolean>(true);
 
-  useEffect(() => {
-    fetchOverviewData();
-  }, []);
-
-  useEffect(() => {
-    if (session?.user?.role) {
-      const role = (session.user.role || '').toLowerCase();
-      setIsAdmin(role === 'admin');
-    }
-  }, [session]);
-
-  const fetchOverviewData = async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
+    queryKey: ['billing-overview'],
+    queryFn: async () => {
       const res = await fetch('/api/billing/overview');
-      if (!res.ok) throw new Error('Failed to fetch billing data');
-      const json = await res.json();
-      setData(json);
-    } catch (err: any) {
-      setError(err.message || 'Error loading billing overview');
-    } finally {
-      setLoading(false);
-    }
-  };
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || 'Failed to fetch billing data');
+      }
+      return res.json();
+    },
+    staleTime: 30 * 1000,
+    retry: 2,
+  });
 
-  if (loading) {
+  if (isLoading && !data) {
     return (
       <div className="p-8 space-y-6 max-w-7xl mx-auto">
         <div className="h-8 w-48 bg-white/5 animate-pulse rounded-lg" />
@@ -58,19 +43,27 @@ export default function BillingOverviewPage() {
     );
   }
 
-  if (error) {
+  if (isError && !data) {
     return (
       <div className="p-8 max-w-xl mx-auto text-center space-y-4">
-        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-3xl text-rose-300 text-sm flex items-center justify-center gap-3 backdrop-blur-xl">
-          <AlertCircle className="w-5 h-5 shrink-0" />
-          <span>{error}</span>
+        <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-3xl text-rose-300 text-sm flex flex-col items-center justify-center gap-3 backdrop-blur-xl">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-5 h-5 shrink-0" />
+            <span>{(error as any)?.message || 'Error loading billing overview'}</span>
+          </div>
+          <button
+            onClick={() => refetch()}
+            className="px-4 py-2 bg-white/10 hover:bg-white/20 text-white rounded-xl text-xs font-semibold flex items-center gap-1.5 transition"
+          >
+            <RefreshCw className="w-3.5 h-3.5" /> Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   const { metrics, recentInvoices = [], outstandingPatients = [] } = data || {};
-  const showMonthlyCollected = isAdmin && metrics?.totalCollectedThisMonth !== null && metrics?.totalCollectedThisMonth !== undefined;
+  const showMonthlyCollected = metrics?.totalCollectedThisMonth !== null && metrics?.totalCollectedThisMonth !== undefined;
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto selection:bg-[#12D6C4]/30 select-none">
@@ -86,6 +79,14 @@ export default function BillingOverviewPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="p-2.5 rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-xl text-white/80 hover:bg-white/10 hover:border-white/25 transition cursor-pointer"
+            title="Refresh Billing Data"
+          >
+            <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
+          </button>
           <Link
             href="/crm360/billing/invoices"
             className="px-4 py-2.5 rounded-2xl border border-white/15 bg-white/[0.04] backdrop-blur-xl text-xs font-semibold text-white/80 hover:bg-white/10 hover:border-white/25 transition flex items-center gap-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]"
