@@ -128,14 +128,16 @@ export async function GET(req: NextRequest) {
       })
       .filter((pkg) => pkg.remainingDays > 0 && pkg.daysToExpiry >= 0);
 
+    const isAdmin = role === Role.ADMIN;
+
     return NextResponse.json(
       {
         metrics: {
-          totalOutstanding,
-          totalCollectedThisMonth,
+          totalOutstanding: isAdmin ? totalOutstanding : null,
+          totalCollectedThisMonth: isAdmin ? totalCollectedThisMonth : null,
           activeCoursesCount,
           totalDaysRemaining,
-          overdueCount,
+          overdueCount: isAdmin ? overdueCount : null,
         },
         recentInvoices,
         outstandingPatients,

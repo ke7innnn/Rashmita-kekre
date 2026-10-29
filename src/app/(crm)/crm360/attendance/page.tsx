@@ -2,11 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { Clock, LogIn, LogOut, Calendar, CheckCircle2, UserCheck, ShieldCheck, AlertCircle, RefreshCw, BellRing, ShieldAlert } from 'lucide-react';
 import GlassPanel from '@/components/GlassPanel';
 
 export default function AttendancePage() {
+  const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [isClockedIn, setIsClockedIn] = useState(false);
   const [activeRecord, setActiveRecord] = useState<any>(null);
@@ -17,13 +19,19 @@ export default function AttendancePage() {
   const [currentDateStr, setCurrentDateStr] = useState<string>('');
   const [elapsedMinutes, setElapsedMinutes] = useState(0);
 
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+
+  const userRole = (session?.user?.role || '').toLowerCase();
+  const isAdmin = userRole === 'admin';
 
   useEffect(() => {
     if (session?.user) {
       setUser(session.user);
+      if (userRole !== 'admin') {
+        router.replace('/crm360/patients');
+      }
     }
-  }, [session]);
+  }, [session, userRole, router]);
 
   const fetchAttendance = async () => {
     setLoading(true);
@@ -113,8 +121,6 @@ export default function AttendancePage() {
     return formatHours(mins);
   };
 
-  const isAdmin = user?.role === 'admin' || user?.role === 'ADMIN';
-
   const handleAdminClockOut = async (attendanceId: string, staffName: string) => {
     if (!confirm(`Are you sure you want to clock out ${staffName}?`)) return;
     try {
@@ -141,6 +147,20 @@ export default function AttendancePage() {
       setActionLoading(false);
     }
   };
+
+  if (session?.user && !isAdmin) {
+    return (
+      <div className="p-8 max-w-md mx-auto text-center space-y-4 pt-20">
+        <div className="p-6 rounded-3xl bg-amber-500/10 border border-amber-500/30 text-amber-300 backdrop-blur-xl">
+          <ShieldAlert className="w-10 h-10 mx-auto text-amber-400 mb-2" />
+          <h2 className="text-base font-bold text-white">Admin Attendance Portal</h2>
+          <p className="text-xs text-white/60 mt-1 leading-relaxed">
+            Full staff attendance records and clinic shift logs are restricted to Clinic Administrators. You can clock in and out for your shift directly using the <strong>My Shift Status</strong> card in the sidebar.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 p-6 lg:p-8 max-w-7xl mx-auto">

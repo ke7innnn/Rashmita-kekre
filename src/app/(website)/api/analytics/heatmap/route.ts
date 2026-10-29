@@ -9,6 +9,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const role = ((session.user as any)?.role || '').toLowerCase();
+  if (role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+  }
+
   try {
     // Retrieve all appointments to group in memory (due to SQLite limitation)
     const appointments = await prisma.appointment.findMany({

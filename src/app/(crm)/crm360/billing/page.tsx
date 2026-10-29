@@ -63,7 +63,10 @@ export default function BillingOverviewPage() {
   }
 
   const { metrics, recentInvoices = [], outstandingPatients = [] } = data || {};
-  const showMonthlyCollected = metrics?.totalCollectedThisMonth !== null && metrics?.totalCollectedThisMonth !== undefined;
+  const userRole = (session?.user?.role || '').toLowerCase();
+  const isAdmin = userRole === 'admin';
+  const showMonthlyCollected = isAdmin && metrics?.totalCollectedThisMonth !== null && metrics?.totalCollectedThisMonth !== undefined;
+  const showTotalOutstanding = isAdmin && metrics?.totalOutstanding !== null && metrics?.totalOutstanding !== undefined;
 
   return (
     <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto selection:bg-[#12D6C4]/30 select-none">
@@ -102,94 +105,151 @@ export default function BillingOverviewPage() {
         </div>
       </div>
 
-      {/* Top Metrics Grid with Dynamic Column Layout based on Role */}
-      <div className={`grid grid-cols-1 ${showMonthlyCollected ? 'md:grid-cols-3' : 'md:grid-cols-2'} gap-5`}>
-        {/* Metric 1: Outstanding */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.03, duration: 0.32, ease: 'easeOut' }}
-          className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),0_18px_45px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-300"
-        >
-          {/* Glass bubble specular glare */}
-          <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-white/[0.06] blur-2xl group-hover:bg-white/[0.1] transition-all duration-500" />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
-          <div className="flex justify-between items-start relative z-10">
-            <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
-              Total Outstanding
-            </span>
-            <span className="p-2.5 rounded-2xl bg-white/[0.06] text-white/90 border border-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-              <AlertCircle className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-4 relative z-10">
-            <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
-              <CountUpNumber value={Number(metrics?.totalOutstanding || 0)} currency duration={500} />
-            </div>
-            <p className="text-xs text-white/40 mt-1.5 flex items-center gap-1.5">
-              <span>{metrics?.overdueCount || 0} overdue invoices pending payment</span>
-            </p>
-          </div>
-        </motion.div>
+      {/* Top Metrics Grid: Admin sees financial totals; Staff sees only operational course metrics */}
+      {isAdmin ? (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Metric 1: Outstanding (Admin Only) */}
+          {showTotalOutstanding && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.03, duration: 0.32, ease: 'easeOut' }}
+              className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),0_18px_45px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-white/[0.06] blur-2xl group-hover:bg-white/[0.1] transition-all duration-500" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              <div className="flex justify-between items-start relative z-10">
+                <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                  Total Outstanding
+                </span>
+                <span className="p-2.5 rounded-2xl bg-white/[0.06] text-white/90 border border-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <AlertCircle className="w-4 h-4" />
+                </span>
+              </div>
+              <div className="mt-4 relative z-10">
+                <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
+                  <CountUpNumber value={Number(metrics?.totalOutstanding || 0)} currency duration={500} />
+                </div>
+                <p className="text-xs text-white/40 mt-1.5 flex items-center gap-1.5">
+                  <span>{metrics?.overdueCount || 0} overdue invoices pending payment</span>
+                </p>
+              </div>
+            </motion.div>
+          )}
 
-        {/* Metric 2: Collected This Month (Admin Only) */}
-        {showMonthlyCollected && (
+          {/* Metric 2: Collected This Month (Admin Only) */}
+          {showMonthlyCollected && (
+            <motion.div
+              initial={{ opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.06, duration: 0.32, ease: 'easeOut' }}
+              className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),0_18px_45px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-300"
+            >
+              <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-white/[0.06] blur-2xl group-hover:bg-white/[0.1] transition-all duration-500" />
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+              <div className="flex justify-between items-start relative z-10">
+                <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                  Collected This Month
+                </span>
+                <span className="p-2.5 rounded-2xl bg-white/[0.06] text-white border border-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                  <TrendingUp className="w-4 h-4" />
+                </span>
+              </div>
+              <div className="mt-4 relative z-10">
+                <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
+                  <CountUpNumber value={Number(metrics?.totalCollectedThisMonth || 0)} currency duration={500} />
+                </div>
+                <p className="text-xs text-white/40 mt-1.5">
+                  Recorded payments in {new Date().toLocaleString('default', { month: 'long' })}
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Metric 3: Active Courses */}
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.06, duration: 0.32, ease: 'easeOut' }}
+            transition={{ delay: 0.09, duration: 0.32, ease: 'easeOut' }}
             className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),0_18px_45px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-300"
           >
-            {/* Glass bubble specular glare */}
-            <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-white/[0.06] blur-2xl group-hover:bg-white/[0.1] transition-all duration-500" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-[#12D6C4]/[0.08] blur-2xl group-hover:bg-[#12D6C4]/[0.15] transition-all duration-500" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#12D6C4]/40 to-transparent" />
             <div className="flex justify-between items-start relative z-10">
               <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
-                Collected This Month
+                Active Courses
               </span>
-              <span className="p-2.5 rounded-2xl bg-white/[0.06] text-white border border-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-                <TrendingUp className="w-4 h-4" />
+              <span className="p-2.5 rounded-2xl bg-[#12D6C4]/15 text-[#12D6C4] border border-[#12D6C4]/30 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_15px_rgba(18,214,196,0.2)]">
+                <Users className="w-4 h-4" />
               </span>
             </div>
             <div className="mt-4 relative z-10">
               <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
-                <CountUpNumber value={Number(metrics?.totalCollectedThisMonth || 0)} currency duration={500} />
+                <CountUpNumber value={Number(metrics?.activeCoursesCount || 0)} duration={500} /> <span className="text-sm font-normal text-white/40">courses</span>
               </div>
-              <p className="text-xs text-white/40 mt-1.5">
-                Recorded payments in {new Date().toLocaleString('default', { month: 'long' })}
+              <p className="text-xs text-white/40 mt-1.5 font-medium tabular-nums">
+                {metrics?.totalDaysRemaining || 0} total treatment sessions remaining across patients
               </p>
             </div>
           </motion.div>
-        )}
-
-        {/* Metric 3: Active Courses */}
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.09, duration: 0.32, ease: 'easeOut' }}
-          className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 hover:shadow-[inset_0_1px_2px_rgba(255,255,255,0.3),0_18px_45px_rgba(0,0,0,0.6)] hover:-translate-y-0.5 transition-all duration-300"
-        >
-          {/* Glass bubble specular glare */}
-          <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-[#12D6C4]/[0.08] blur-2xl group-hover:bg-[#12D6C4]/[0.15] transition-all duration-500" />
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#12D6C4]/40 to-transparent" />
-          <div className="flex justify-between items-start relative z-10">
-            <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
-              Active Courses
-            </span>
-            <span className="p-2.5 rounded-2xl bg-[#12D6C4]/15 text-[#12D6C4] border border-[#12D6C4]/30 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_15px_rgba(18,214,196,0.2)]">
-              <Users className="w-4 h-4" />
-            </span>
-          </div>
-          <div className="mt-4 relative z-10">
-            <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
-              <CountUpNumber value={Number(metrics?.activeCoursesCount || 0)} duration={500} /> <span className="text-sm font-normal text-white/40">courses</span>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Staff Metric 1: Active Patient Courses */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.03, duration: 0.32, ease: 'easeOut' }}
+            className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 transition-all duration-300"
+          >
+            <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-[#12D6C4]/[0.08] blur-2xl transition-all duration-500" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#12D6C4]/40 to-transparent" />
+            <div className="flex justify-between items-start relative z-10">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                Active Patient Courses
+              </span>
+              <span className="p-2.5 rounded-2xl bg-[#12D6C4]/15 text-[#12D6C4] border border-[#12D6C4]/30 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2),0_0_15px_rgba(18,214,196,0.2)]">
+                <Users className="w-4 h-4" />
+              </span>
             </div>
-            <p className="text-xs text-white/40 mt-1.5 font-medium tabular-nums">
-              {metrics?.totalDaysRemaining || 0} total treatment sessions remaining across patients
-            </p>
-          </div>
-        </motion.div>
-      </div>
+            <div className="mt-4 relative z-10">
+              <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
+                <CountUpNumber value={Number(metrics?.activeCoursesCount || 0)} duration={500} /> <span className="text-sm font-normal text-white/40">courses</span>
+              </div>
+              <p className="text-xs text-white/40 mt-1.5 font-medium">
+                Active treatment packages in progress across the clinic
+              </p>
+            </div>
+          </motion.div>
+
+          {/* Staff Metric 2: Treatment Sessions Pool */}
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.06, duration: 0.32, ease: 'easeOut' }}
+            className="p-6 rounded-3xl bg-gradient-to-b from-white/[0.08] via-white/[0.03] to-white/[0.015] backdrop-blur-2xl backdrop-saturate-150 border border-white/15 relative overflow-hidden group shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),0_12px_36px_rgba(0,0,0,0.45)] hover:border-white/25 transition-all duration-300"
+          >
+            <div className="pointer-events-none absolute -top-16 -left-16 w-36 h-36 rounded-full bg-white/[0.06] blur-2xl transition-all duration-500" />
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+            <div className="flex justify-between items-start relative z-10">
+              <span className="text-xs font-semibold uppercase tracking-wider text-white/60">
+                Remaining Treatment Sessions
+              </span>
+              <span className="p-2.5 rounded-2xl bg-white/[0.06] text-white border border-white/15 backdrop-blur-md shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
+                <Calendar className="w-4 h-4 text-emerald-400" />
+              </span>
+            </div>
+            <div className="mt-4 relative z-10">
+              <div className="text-3xl font-bold text-white tabular-nums tracking-tight">
+                <CountUpNumber value={Number(metrics?.totalDaysRemaining || 0)} duration={500} /> <span className="text-sm font-normal text-white/40">sessions</span>
+              </div>
+              <p className="text-xs text-white/40 mt-1.5 font-medium">
+                Unused course sessions ready to be redeemed during clinical appointments
+              </p>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Two Column Layout: Left (Recent Invoices & Expiring Packages), Right (Outstanding Balances) */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

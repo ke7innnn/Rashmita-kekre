@@ -152,10 +152,10 @@ export default function CRMSidebar({ children }: Props) {
     } else if (status === 'authenticated' && session?.user) {
       setIsAuthenticated(true);
 
-      // RBAC: Non-admin users can access Patients Directory, Attendance, Digital Assessments, Billing & Appointments, and Clinical Analytics
+      // RBAC: Non-admin users can access Patients Directory, Digital Assessments, Billing & Packages, and Appointments
       const role = (session.user.role || '').toLowerCase();
       const isAdmin = role === 'admin';
-      const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/attendance') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments') || pathname.startsWith('/crm360/analytics');
+      const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments');
 
       if (!isAdmin && !isAllowedPath) {
         router.replace('/crm360/patients');
@@ -173,12 +173,12 @@ export default function CRMSidebar({ children }: Props) {
   const fullNavigation = [
     { href: '/crm360', name: 'Clinic Overview', icon: LayoutGrid, exact: true, category: 'main', roles: ['admin'] },
     { href: '/crm360/patients', name: 'Patients Directory', icon: Users, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
-    { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/crm360/attendance', name: 'Staff Attendance', icon: Clock, category: 'main', roles: ['admin'] },
     { href: '/crm360/appointments', name: 'Appointments', icon: Activity, category: 'main', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/billing', name: 'Billing & Packages', icon: CreditCard, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: 'https://health360-nu.vercel.app/', name: 'AI Voice Agent', icon: PhoneCall, category: 'management', roles: ['admin'], external: true },
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
-    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
     { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/insights', name: 'Insights & Action Queue', icon: Sparkles, category: 'management', roles: ['admin'] },
     { href: '/admin/imports/review', name: 'Import Review Queue', icon: ShieldCheck, category: 'management', roles: ['admin'] },
@@ -192,10 +192,8 @@ export default function CRMSidebar({ children }: Props) {
       return (
         item.href === '/crm360/patients' ||
         item.href === '/crm360/appointments' ||
-        item.href === '/crm360/attendance' ||
         item.href === '/crm360/assessments' ||
-        item.href === '/crm360/billing' ||
-        item.href === '/crm360/analytics'
+        item.href === '/crm360/billing'
       );
     }
     return true;
@@ -810,15 +808,17 @@ export default function CRMSidebar({ children }: Props) {
               </div>
 
               {/* Quick Navigation Shortcuts */}
-              <div className="pt-2 border-t border-white/10 grid grid-cols-2 gap-2">
-                <Link
-                  href="/crm360/attendance"
-                  onClick={() => setShowStaffPopup(false)}
-                  className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-center transition flex flex-col items-center gap-1"
-                >
-                  <Clock className="h-4 w-4 text-emerald-400" />
-                  <span className="text-[11px] font-semibold text-white">Full Attendance Logs</span>
-                </Link>
+              <div className={`pt-2 border-t border-white/10 grid ${isAdmin ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
+                {isAdmin && (
+                  <Link
+                    href="/crm360/attendance"
+                    onClick={() => setShowStaffPopup(false)}
+                    className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-white/10 border border-white/10 text-center transition flex flex-col items-center gap-1"
+                  >
+                    <Clock className="h-4 w-4 text-emerald-400" />
+                    <span className="text-[11px] font-semibold text-white">Full Attendance Logs</span>
+                  </Link>
+                )}
 
                 <button
                   onClick={() => {

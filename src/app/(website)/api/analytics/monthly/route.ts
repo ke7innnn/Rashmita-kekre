@@ -74,6 +74,11 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
+  const role = ((session.user as any)?.role || '').toLowerCase();
+  if (role !== 'admin') {
+    return NextResponse.json({ error: 'Forbidden: Admin access required for clinical analytics' }, { status: 403 });
+  }
+
   try {
     const { searchParams } = new URL(req.url);
     // Format: YYYY-MM, e.g. "2026-09"
