@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Activity, Users, PhoneCall, Library, Settings, 
   LogOut, Menu, X, User as UserIcon, BarChart3, LayoutGrid, Network, Mail, Clock, Search, Sparkles, CreditCard, FileText, BellRing, AlertTriangle, ExternalLink, ShieldCheck,
-  Plus, ChevronRight
+  Plus, ChevronRight, Award
 } from 'lucide-react';
 import AICopilotWidget from './AICopilotWidget';
 import AuroraBackground from './AuroraBackground';
@@ -152,10 +152,15 @@ export default function CRMSidebar({ children }: Props) {
     } else if (status === 'authenticated' && session?.user) {
       setIsAuthenticated(true);
 
-      // RBAC: Non-admin users can access Patients Directory, Digital Assessments, Billing & Packages, and Appointments
+      // RBAC: Non-admin users can access Patients Directory, Digital Assessments, Billing & Packages, Appointments, and Certificates
       const role = (session.user.role || '').toLowerCase();
       const isAdmin = role === 'admin';
-      const isAllowedPath = pathname.startsWith('/crm360/patients') || pathname.startsWith('/crm360/assessments') || pathname.startsWith('/crm360/billing') || pathname.startsWith('/crm360/appointments');
+      const isAllowedPath =
+        pathname.startsWith('/crm360/patients') ||
+        pathname.startsWith('/crm360/assessments') ||
+        pathname.startsWith('/crm360/billing') ||
+        pathname.startsWith('/crm360/appointments') ||
+        pathname.startsWith('/crm360/certificates');
 
       if (!isAdmin && !isAllowedPath) {
         router.replace('/crm360/patients');
@@ -180,6 +185,7 @@ export default function CRMSidebar({ children }: Props) {
     { href: '/crm360/inbox', name: 'Unified Inbox', icon: Mail, category: 'management', roles: ['admin'] },
     { href: '/crm360/analytics', name: 'Clinical Analytics', icon: BarChart3, category: 'management', roles: ['admin'] },
     { href: '/crm360/assessments', name: 'Digital Assessments', icon: FileText, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
+    { href: '/crm360/certificates', name: 'Certificates', icon: Award, category: 'management', roles: ['admin', 'physio', 'receptionist', 'staff'] },
     { href: '/crm360/insights', name: 'Insights & Action Queue', icon: Sparkles, category: 'management', roles: ['admin'] },
     { href: '/admin/imports/review', name: 'Import Review Queue', icon: ShieldCheck, category: 'management', roles: ['admin'] },
     { href: '/crm360/referrals', name: 'Referral Network', icon: Network, category: 'management', roles: ['admin'] },
@@ -193,7 +199,8 @@ export default function CRMSidebar({ children }: Props) {
         item.href === '/crm360/patients' ||
         item.href === '/crm360/appointments' ||
         item.href === '/crm360/assessments' ||
-        item.href === '/crm360/billing'
+        item.href === '/crm360/billing' ||
+        item.href === '/crm360/certificates'
       );
     }
     return true;

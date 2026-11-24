@@ -36,6 +36,7 @@ export async function middleware(req: NextRequest) {
         '/crm360/billing',
         '/crm360/assessments',
         '/crm360/analytics',
+        '/crm360/certificates',
       ];
       const isAllowed = allowedPaths.some(p => pathname.startsWith(p));
       if (!isAllowed) {
@@ -67,6 +68,7 @@ export async function middleware(req: NextRequest) {
         '/api/referring-doctors',
         '/api/analytics',
         '/api/search',
+        '/api/certificates',
       ];
       const isAllowedApi = allowedApiPrefixes.some(p => pathname.startsWith(p));
 
